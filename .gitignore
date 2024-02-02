@@ -1,0 +1,28 @@
+*.py[co]
+*.sw[nop]
+*~
+.#*
+[#]*#
+*.exe.*
+build/darwin/**
+build/Linux/**
+build/linux/**
+build/xcode/**
+cmake-build-debug/**
+docker/slu/tmp-post/pax.regression.tar.gz
+docker/slu/usr/lib/**
+docker/slu/usr/local/bin/**
+docker/slu/.docker/.buildNodeID
+include/pax/meta/version/version_*
+R/pax.regression.Rcheck/**
+R/pax.regression/NAMESPACE
+R/pax.regression/man
+R/testdata/Result/**
+
+syntax: regexp
+\.(a|o|d|obj|so|exe|log|aux|idx|ilg|ind)$
+\.(DS_Store|mode1v3)$
+\.(pbxindex|xcodeproj|build)/
+\.(aux|log|out|toc|nav|pdfsync|snm|upa)
+/doxygen/(html|latex|rtf)/
+# Default ignored files
