@@ -7,4 +7,6 @@ HERE=$(cd "$(dirname "$0")" && pwd)    # absolutized and normalized path to this
 # cached:     the host's view is authoritative (permit delays before updates on the host appear in the container)
 # delegated:  the container's view is authoritative (permit delays before updates on the container appear in the host)
 
-docker run -it --rm -v $HERE/..:/pax:cached axensten/slu
+CMD="docker run -it --rm -v ${HERE}/..:/pax axensten/slu"
+echo ">>>>>> $CMD"
+${CMD}
