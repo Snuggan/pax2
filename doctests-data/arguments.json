@@ -1,0 +1,6 @@
+{
+	"--one" :		"ONE", 
+	"--scalar" :	"SCALAR",
+	"--no-on" :		null,
+	"--unknown2" :	"irrelevant2"
+}
