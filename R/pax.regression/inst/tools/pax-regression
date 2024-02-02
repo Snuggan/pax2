@@ -1,0 +1,134 @@
+#!/usr/bin/env -S Rscript --vanilla
+# encoding: utf-8
+
+
+# Test run:
+# pax-regression  --verbose --meta \
+# 	--aux_dir	/Users/pederaxensten/Desktop/processing/R-testing/big/0-project/ \
+# 	--source    /Users/pederaxensten/Desktop/processing/R-testing/big/4-raster-metrics/19G015/19G015_71525_7775_25.basic-linear \
+# 	--plots     /Users/pederaxensten/Desktop/processing/R-testing/big/4-plots-metrics/plots-metrics.csv \
+# 	--dest      /Users/pederaxensten/Desktop/processing/R-testing/big/5-estimates/19G015
+
+
+
+library( getopt )
+shhh <- suppressPackageStartupMessages
+shhh( library( getopt ) )
+
+
+args = matrix( c(
+	'aux_dir',				'a',	1,	"character",	
+		"Path to auxiliary data directory (location of ruta_meta.csv, species_type.tif, etc.).",
+	'source',				's',	1,	"character",	
+		"Path to source (metrics) stub, 'metrics/raster.<variant>', where <variant> is the name of the estimation to use. ", 
+	'dest',					'd',	1,	"character",	"Path to destination directory.",
+	'plots_with_metrics',	'p',	1,	"character",	"Path to semicolon separated plots file.",
+	'number_of_candidates',	'A',	2,	"integer",		"(default 350) Number of plot candidates to hand to the outlier reduction.",
+	'outlier_removal_perc',	'B',	2,	"double",		"(default  10) Percentage of plot candidates to remove during outlier reduction.",
+	'verbose',				'x',	0,	"logical",		"Output execution information.",
+	'noverbose',			'X',	0,	"logical",		"Do not output execution information.",
+	'meta',					'm',	0,	"logical",		"Save metadata files with execution info.",
+	'nometa',				'M',	0,	"logical",		"Do not save metadata files with execution info.",
+	'debug',				'g',	0,	"logical",		"Output debug info info.",
+	'nodebug',				'G',	0,	"logical",		"Do not output debug info info.",
+	'help',					'h',	0,	"logical",		"this help"
+), ncol=5, byrow=TRUE )
+
+
+###	Get and check arguments.
+opt = getopt( spec=args, command="pax-regression" )
+
+shhh( library( pax.regression ) )
+
+
+if( is.null( opt$help ) ) {
+	if( is.null( opt$source ) ) {
+		cat( "Error: missing 'source' argumernt\n" )
+		opt$help <- TRUE
+	}
+
+	if( is.null( opt$plots_with_metrics ) ) {
+		cat( "Error: missing 'plots_with_metrics' argumernt\n" )
+		opt$help <- TRUE
+	} else if( FALSE && !file.exists( opt$plots_with_metrics ) ) {
+		cat( "Error: no such 'plots_with_metrics' file: ", opt$plots, "\n", sep="" )
+		opt$help <- TRUE
+	}
+
+	if( is.null( opt$aux_dir ) ) {
+		cat( "Error: missing 'aux_dir' argumernt\n" )
+		opt$help <- TRUE
+	} else if( FALSE && !dir.exists( opt$aux_dir ) ) {
+		cat( "Error: no such 'aux_dir' directory: ", opt$aux_dir, "\n", sep="" )
+		opt$help <- TRUE
+	}
+
+	if( is.null( opt$dest ) ) {
+		cat( "Error: missing 'dest' argumernt\n" )
+		opt$help <- TRUE
+	} else if( FALSE && !file.exists( opt$dest ) ) {
+		cat( "Error: no such 'dest' file: ", opt$dest, "\n", sep="" )
+		opt$help <- TRUE
+	}
+
+	if ( is.null(opt$number_of_candidates ) ) { opt$number_of_candidates    = 350	}
+	if ( is.null(opt$outlier_removal_perc ) ) { opt$outlier_removal_perc    = 10	}
+
+	debug				<- !is.null( opt$debug )	&& is.null( opt$nodebug )
+	verbose				<- !is.null( opt$verbose )	&& is.null( opt$noverbose )
+	produce_metadata	<- !is.null( opt$meta )		&& is.null( opt$nometa )
+	
+	metadata_dest_dir	<-	NULL
+	if( produce_metadata ) {
+		metadata_dest_dir	<-	paste0( file.name( file.path( opt$dest, get_ruta_id( opt$source ) ) ), ".metadata" )
+		dir.create( metadata_dest_dir, showWarnings=FALSE, recursive = TRUE )
+		metadata_dest	<-	file.path( metadata_dest_dir, "log_data.txt" )
+		log_set_sink( sink=metadata_dest )
+		if( debug )
+			cat( "\nThere is execution info in the file '", metadata_dest, "'\n\n", sep="", file=stderr() )
+	} else if( debug || verbose ) {
+		log_set_sink( sink=stderr() )
+	}
+}
+
+if( !is.null( opt$help ) ) {
+	cat( getopt( args, usage=TRUE ), "\n" )
+	q();
+}
+
+# Save warning level so that we can restore it later. 
+old_warn_level <- getOption( "warn" )
+if( !debug ) {
+	options( warn = -1 )	# Turn off warnings. 
+}
+
+
+log_item( 
+	   "Tool:                 '",	get_Rscript_filename(), 
+   	"'\nworking directory:    '",	getwd(), 
+	"'\naux_dir:              '",	opt$aux_dir, 
+	"'\nsource:               '",	opt$source, 
+	"'\nplots:                '",	opt$plots_with_metrics, 
+	"'\ndest:                 '",	opt$dest, 
+	"'\nnumber_of_candidates:  ",	opt$number_of_candidates, 
+	" \noutlier_removal_perc:  ",	opt$outlier_removal_perc, 
+	" \nverbose:               ",	verbose, 
+	" \nmeta:                  ",	produce_metadata, 
+	" \ndebug:                 ",	debug,
+	"\n"
+)
+
+pax.regression( 
+	source					=	opt$source,
+	plots					=	opt$plots_with_metrics, 
+	dest					=	opt$dest, 
+	auxiliary_data_dir		=	opt$aux_dir,
+	number_of_candidates	=	opt$number_of_candidates, 
+	outlier_removal_perc	=	opt$outlier_removal_perc, 
+	metadata_dest_dir		=	metadata_dest_dir
+)
+
+# Restore old warning level. 
+options( warn = old_warn_level )
+
+if( verbose )	cat( "    Estimated '", opt$source, "'\n", sep="" )

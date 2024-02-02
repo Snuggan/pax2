@@ -1,0 +1,85 @@
+\documentclass[10pt,english,a4paper]{article}
+%\usepackage[utf8]{inputenc}
+\usepackage{babel,graphics}
+\usepackage{pax3metrics,pax3extra,pax3slides,pax3math}
+
+\title{Stability of Forest Variable Models}
+\author{Peder}
+\setcounter{secnumdepth}{0}
+
+
+\newcommand{\Argmin}{\hat{\PP} = \argmin_{\PP\in\Real^d\;}}
+\newcommand{\PP}{b}
+\newcommand{\myF}[1]{#1(X, \PP)}
+\newcommand{\mtrc}[1]{x_{#1}}
+
+
+\begin{document}
+%{\maketitle}
+
+
+\section{In general}
+
+Optimal parameters to a model $f$: 
+$$
+	\hat{\PP}	= \argmin_{\PP\in\Real^d\;}\sum_{i=1}^n\; \myF{   \rho_f} 
+%				= \argmin_{\PP\in\Real^d\;}\sum_{i=1}^n\; \myF{\ln\rho_f}
+	,
+$$
+where for least squares regression
+$$
+	\myF{\rho_f} = \left[ Y - \myF{f} \right]^2
+	\quad\Longrightarrow\quad
+	\Partial[\rho_f]{\PP_j} = 2\left[ y_i - \myF{f} \right]\cdot\Partial[\myF{f}]{\PP_j}
+	.
+$$
+
+
+
+\section{Squared function}
+
+\newcommand{\Lbase}{\PP_0 + \displaystyle\sum_{j>0}\PP_j\mtrc{j}}%
+
+Let $f$ be $\myF{Q} = (\Lbase)^2$:
+$$
+	\left\{\begin{array}{c@{\;=\;}l@{\;=\;}l}
+		\Partial[Q]{\PP_0}			& 2(\Lbase)					& 2\sqrt{\myF{Q}}					\\[0.5em]
+		\Partial[Q]{\PP_{j\ne 0}}	& 2(\Lbase)\cdot\mtrc{j}	& 2\sqrt{\myF{Q}}\cdot\mtrc{j}
+	\end{array}\right.
+$$
+
+
+
+\section{Exponential function}
+
+\newcommand{\Ebase}{\mtrc{1}\cdot e^{\PP_2\mtrc{2}}}%
+
+Let $f$ be $\myF{E} = \PP_0 + \PP_1\cdot\Ebase$:
+$$
+	\left\{\begin{array}{c@{\;=\;}l@{\;=\;}l}
+		\Partial[E]{\PP_0}	& 1									& 1									\\[0.5em]
+		\Partial[E]{\PP_1}	& \Ebase\							& [\myF{E} - \PP_0]/ \PP_1			\\[0.5em]
+		\Partial[E]{\PP_2}	& \Ebase\cdot\PP_1\cdot\mtrc{2}		& [\myF{E} - \PP_0]\cdot\mtrc{2}
+	\end{array}\right.
+$$
+
+
+
+\section{Power function}
+
+\newcommand{\Pbase}{\mtrc{1}^{ \PP_1 + \PP_2 \mtrc{2}}}%
+\newcommand{\Pinner}{\PP_0\cdot\ln(\mtrc{1})}
+
+Let $f$ be $\myF{P} = \PP_0\cdot\Pbase$:
+$$
+	\left\{\begin{array}{c@{\;=\;}l@{\;=\;}l}
+		\Partial[P]{\PP_0}	& \Pbase							& \myF{P} / \PP_0					\\[0.5em]
+		\Partial[P]{\PP_1}	& \Pbase\cdot\Pinner				& \myF{P}\cdot\ln(\mtrc{1})			\\[0.5em]
+		\Partial[P]{\PP_2}	& \Pbase\cdot\Pinner\cdot\mtrc{2}	& \myF{P}\cdot\ln(\mtrc{1})\cdot\mtrc{2}
+	\end{array}\right.
+$$
+So, we have the condition $\mtrc{1} > 0$, $\forall i$.
+
+
+
+\end{document}
