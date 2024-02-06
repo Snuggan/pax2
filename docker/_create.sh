@@ -28,23 +28,28 @@ echo "Using tag '${PAX_TAG}'"
 #SLU_DIR=.
 SLU_DIR=$(cd "$(dirname "$0")" && pwd)/slu    # absolutized and normalized path to the slu dir in this script's dir
 PAX_DIR="${SLU_DIR}/../.."
-BIN_DIR="${PAX_DIR}/build/Linux"
+BIN_DIR="${PAX_DIR}/build/linux"
 R_DIR="${PAX_DIR}/R"
 
-# Copy the pax* tools.
 mkdir -p ${BIN_DIR}
+mkdir -p ${SLU_DIR}/usr/lib
+mkdir -p ${SLU_DIR}/usr/local/bin
+mkdir -p ${SLU_DIR}/usr/local/etc/makefiles
+
+# Copy the pax* tools.
 cp	-fpXv												\
-	${BIN_DIR}/pax										\
 	${BIN_DIR}/pax-concat-tables						\
 	${BIN_DIR}/pax-metrics								\
-	${BIN_DIR}/pax-time									\
 	${SLU_DIR}/usr/local/bin
+#	${BIN_DIR}/pax										\
+#	${BIN_DIR}/pax-time									\
 
 # Copy libpax* and libpdal_* stuff
-mkdir -p ${SLU_DIR}/usr/lib
+echo "aa"
 cp	-fpXv												\
 	${BIN_DIR}/lib*										\
 	${SLU_DIR}/usr/lib
+echo "bb"
 
 # Copy the pax-regression tool into the docker create sandbox.
 mkdir -p ${SLU_DIR}/usr/local/bin
@@ -65,5 +70,5 @@ ${COMMAND}
 docker push axensten/slu:${PAX_TAG}
 docker push axensten/slu:latest
 docker push axensten/slu:stable
-hg tag "${PAX_TAG}" -m "Updated the docker document to ${PAX_TAG}."
+git tag "${PAX_TAG}" -m "Updated the docker document to ${PAX_TAG}."
 open --url https://hub.docker.com/repository/docker/axensten/slu
