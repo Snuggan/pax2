@@ -12,6 +12,6 @@ HERE=$(cd "$(dirname "$0")" && pwd)    # absolutized and normalized path to this
 #      --rm				Automatically remove the container when it exits
 #  -v, --volume list	Bind mount a volume
 CMD="docker run --interactive --tty --rm --volume ${HERE}/..:/pax axensten/slu bash"
-echo ">>>>>> $CMD"
+#echo ">>>>>> $CMD"
 
 ${CMD}
