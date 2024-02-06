@@ -7,6 +7,11 @@ HERE=$(cd "$(dirname "$0")" && pwd)    # absolutized and normalized path to this
 # cached:     the host's view is authoritative (permit delays before updates on the host appear in the container)
 # delegated:  the container's view is authoritative (permit delays before updates on the container appear in the host)
 
-CMD="docker run -it --rm -v ${HERE}/..:/pax axensten/slu"
+#  -i, --interactive	Keep STDIN open even if not attached
+#  -t, --tty			Allocate a pseudo-TTY
+#      --rm				Automatically remove the container when it exits
+#  -v, --volume list	Bind mount a volume
+CMD="docker run --interactive --tty --rm --volume ${HERE}/..:/pax axensten/slu bash"
 echo ">>>>>> $CMD"
+
 ${CMD}

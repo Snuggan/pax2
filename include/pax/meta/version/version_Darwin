@@ -10,7 +10,7 @@
 #define PAX_REVISION   0
 
 
-// Generated at 2024-02-02T18:08:28Z (Debug)
+// Generated at 2024-02-06T13:07:23Z (Debug)
 namespace pax {
 	struct metadata {
 		static constexpr const char *     author			=	"Peder Axensten, peder#axensten.se";
@@ -34,7 +34,7 @@ namespace pax {
 			static constexpr const char * name				=	"Clang";
 			static constexpr const char * named_version		=	"Clang 17.0.6";
 			static constexpr unsigned     version[]			=	{ 17, 0, 6 };
-			static constexpr const char   dateTtime[]		=	"2024-02-02T18:08:28Z";
+			static constexpr const char   dateTtime[]		=	"2024-02-06T13:07:23Z";
 			static constexpr const char * cpp_standard		=	"C++23";
 			static constexpr const char * standard_library	=	"<undetermined>";
 			static constexpr const char * status			=	"Debug";	// Debug, Release or RelWithDebInfo

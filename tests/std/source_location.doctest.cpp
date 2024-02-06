@@ -17,7 +17,7 @@ namespace pax {
 
 	DOCTEST_TEST_CASE( "debug std::source_location" ) {
 		const auto loc		  = this_source_location();
-		const auto good		  = std::string( "pax2/tests/std/source_location.doctest.cpp:19" );
+		const auto good		  = std::string( "/tests/std/source_location.doctest.cpp:19" );
 		const auto path		  = to_string( loc );
 		DOCTEST_ASCII_CHECK_EQ( path.substr( path.size() - good.size(), good.size() ),	good );
 		DOCTEST_FAST_CHECK_EQ ( loc.line(),				19 );

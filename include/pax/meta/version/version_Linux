@@ -4,13 +4,13 @@
 
 #pragma once
 
-#define PAX_VERSION_MAJOR 3
-#define PAX_VERSION_MINOR 1
+#define PAX_VERSION_MAJOR 1
+#define PAX_VERSION_MINOR 0
 #define PAX_VERSION_PATCH 0
-#define PAX_REVISION   3395
+#define PAX_REVISION   0
 
 
-// Generated at 2024-01-24T16:17:21Z (RelWithDebInfo)
+// Generated at 2024-02-06T13:14:49Z (RelWithDebInfo)
 namespace pax {
 	struct metadata {
 		static constexpr const char *     author			=	"Peder Axensten, peder#axensten.se";
@@ -19,22 +19,22 @@ namespace pax {
 		static constexpr const char *     license			=	"The 2-Clause BSD License";
 
 		struct project {
-			static constexpr const char * name				=	"pax";
-			static constexpr const char * named_version		=	"pax 3.1.0r3395";
-			static constexpr unsigned     version[]			=	{ 3, 1, 0, 3395 };
-			static constexpr const char * title				=	"A personal library of handy things and pdal modules.";
+			static constexpr const char * name				=	"pax2";
+			static constexpr const char * named_version		=	"pax2 1.0.0r0";
+			static constexpr unsigned     version[]			=	{ 1, 0, 0 };
+			static constexpr const char * title				=	"";
 			static constexpr const char * url				=	"";
 			static constexpr const char * md5				=	"0e6b14dd-6777-3626-a025-13df444463b5";
 			static constexpr const char * sha1				=	"6615eaf2-34ad-57b8-a509-81d25ca09d47";
-			static constexpr auto         revision			=	3395;
-			static constexpr auto         changeset			=	0x8a9a85eab7cb;
+			static constexpr auto         revision			=	0;
+			static constexpr auto         changeset			=	0x0;
 		};
 
 		struct compilation {
 			static constexpr const char * name				=	"GNU";
 			static constexpr const char * named_version		=	"GNU 13.2.0";
 			static constexpr unsigned     version[]			=	{ 13, 2, 0 };
-			static constexpr const char   dateTtime[]		=	"2024-01-24T16:17:21Z";
+			static constexpr const char   dateTtime[]		=	"2024-02-06T13:14:49Z";
 			static constexpr const char * cpp_standard		=	"C++23";
 			static constexpr const char * standard_library	=	"<undetermined>";
 			static constexpr const char * status			=	"RelWithDebInfo";	// Debug, Release or RelWithDebInfo
