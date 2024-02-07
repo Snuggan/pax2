@@ -7,10 +7,10 @@
 #define PAX_VERSION_MAJOR 1
 #define PAX_VERSION_MINOR 0
 #define PAX_VERSION_PATCH 0
-#define PAX_REVISION   0
+#define PAX_REVISION    11
 
 
-// Generated at 2024-02-06T13:07:23Z (Debug)
+// Generated at 2024-02-07T09:18:41Z (Debug)
 namespace pax {
 	struct metadata {
 		static constexpr const char *     author			=	"Peder Axensten, peder#axensten.se";
@@ -20,21 +20,20 @@ namespace pax {
 
 		struct project {
 			static constexpr const char * name				=	"pax2";
-			static constexpr const char * named_version		=	"pax2 1.0.0r0";
-			static constexpr unsigned     version[]			=	{ 1, 0, 0 };
+			static constexpr const char * named_version		=	"pax2 1.0.0r11";
+			static constexpr unsigned     version[]			=	{ 1, 0, 0, 11 };
 			static constexpr const char * title				=	"";
-			static constexpr const char * url				=	"";
-			static constexpr const char * md5				=	"0e6b14dd-6777-3626-a025-13df444463b5";
-			static constexpr const char * sha1				=	"6615eaf2-34ad-57b8-a509-81d25ca09d47";
-			static constexpr auto         revision			=	0;
-			static constexpr auto         changeset			=	0x0;
+			static constexpr const char * repository		=	"https://github.com/Snuggan/pax2.git";
+			static constexpr auto         changeset			=	0xf7c5bda;
+			static constexpr const char * changeset_sha1	=	"f7c5bdad537b63487169d06755ea0d54fdf18ccd";
+			static constexpr const char * variant			=	"main";
 		};
 
 		struct compilation {
 			static constexpr const char * name				=	"Clang";
 			static constexpr const char * named_version		=	"Clang 17.0.6";
 			static constexpr unsigned     version[]			=	{ 17, 0, 6 };
-			static constexpr const char   dateTtime[]		=	"2024-02-06T13:07:23Z";
+			static constexpr const char   dateTtime[]		=	"2024-02-07T09:18:41Z";
 			static constexpr const char * cpp_standard		=	"C++23";
 			static constexpr const char * standard_library	=	"<undetermined>";
 			static constexpr const char * status			=	"Debug";	// Debug, Release or RelWithDebInfo

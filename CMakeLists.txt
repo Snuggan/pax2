@@ -109,11 +109,40 @@ string( JOIN "\",\n\t\t\t\t\"" PAX_FLAGS_NICE ${PAX_FLAGS} )
 
 message( STATUS "############### Versions" )
 
+### Version info: revision and changeset.
+find_package( Git )
+if( GIT_EXECUTABLE )
+	execute_process( COMMAND
+		"${GIT_EXECUTABLE}" describe --match=NeVeRmAtCh --always --abbrev=40
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+		OUTPUT_VARIABLE PAX_PROJECT_CHANGESET_SHA1
+		ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE )
+	execute_process( COMMAND
+		"${GIT_EXECUTABLE}" rev-list HEAD --count
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+		OUTPUT_VARIABLE PAX_PROJECT_REVISION
+		ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE )
+	execute_process( COMMAND
+		"${GIT_EXECUTABLE}" log -1 --format=%h
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+		OUTPUT_VARIABLE PAX_PROJECT_CHANGESET
+		ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE )
+	execute_process( COMMAND
+		"${GIT_EXECUTABLE}" rev-parse --abbrev-ref HEAD
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+		OUTPUT_VARIABLE PAX_PROJECT_VARIANT
+		ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE )
+	execute_process( COMMAND
+		"${GIT_EXECUTABLE}" config --get remote.origin.url
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+		OUTPUT_VARIABLE PAX_PROJECT_REPOSITORY
+		ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE )
+endif()
+
 set( UUID_DNS_NAMESPACE 6ba7b810-9dad-11d1-80b4-00c04fd430c8 )
 string( UUID PROJECT_UUID_MD5  NAMESPACE ${UUID_DNS_NAMESPACE} NAME www.pax.se TYPE MD5 )
 string( UUID PROJECT_UUID_SHA1 NAMESPACE ${UUID_DNS_NAMESPACE} NAME www.pax.se TYPE SHA1 )
-message( STATUS "Project:        ${PROJECT_NAME} ${PROJECT_VERSION}r${PROJECT_WC_REVISION} (${CMAKE_BUILD_TYPE})" )
-
+message( STATUS "Project:        ${PROJECT_NAME} ${PROJECT_VERSION}r${PAX_PROJECT_REVISION} (${CMAKE_BUILD_TYPE})" )
 
 ### System metadata
 message( STATUS "System:         ${CMAKE_SYSTEM}" )
@@ -243,20 +272,6 @@ endif ()
 list( JOIN NLOHMANN_JSON_VERSION_ARRAY "."  NLOHMANN_JSON_VERSION )
 list( JOIN NLOHMANN_JSON_VERSION_ARRAY ", " NLOHMANN_JSON_VERSION_ARRAY )
 message( STATUS "nlohmann/json:  ${NLOHMANN_JSON_VERSION}" )
-
-### Version info: revision and changeset.
-set( PROJECT_WC_REVISION				"0" )
-set( PROJECT_WC_CHANGESET				"0" )
-find_package( Hg )
-if( ${HG_WC_INFO} )
-	HG_WC_INFO( ${PROJECT_SOURCE_DIR} PROJECT)
-	set( PROJECT_VERSION_ARRAY "${PROJECT_VERSION_ARRAY}, ${PROJECT_WC_REVISION}" )
-	message( STATUS "Revision:       ${PROJECT_WC_REVISION}" )
-	message( STATUS "Changeset:      0x${PROJECT_WC_CHANGESET}" )
-else()
-	message( STATUS "hg command:     ${HG_FOUND}" )
-	message( STATUS "hg repo:        No" )
-endif()
 
 ### Generate metadata file
 add_definitions( -D__PAX_SYSTEM__=${CMAKE_SYSTEM_NAME} )

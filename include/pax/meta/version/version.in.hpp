@@ -7,7 +7,7 @@
 #define PAX_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
 #define PAX_VERSION_MINOR @PROJECT_VERSION_MINOR@
 #define PAX_VERSION_PATCH @PROJECT_VERSION_PATCH@
-#define PAX_REVISION   @PROJECT_WC_REVISION@
+#define PAX_REVISION    @PAX_PROJECT_REVISION@
 
 
 // Generated at @PROJECT_DATE_TIME@ (@CMAKE_BUILD_TYPE@)
@@ -20,14 +20,13 @@ namespace pax {
 
 		struct project {
 			static constexpr const char * name				=	"@PROJECT_NAME@";
-			static constexpr const char * named_version		=	"@PROJECT_NAME@ @PROJECT_VERSION@r@PROJECT_WC_REVISION@";
-			static constexpr unsigned     version[]			=	{ @PROJECT_VERSION_ARRAY@ };
+			static constexpr const char * named_version		=	"@PROJECT_NAME@ @PROJECT_VERSION@r@PAX_PROJECT_REVISION@";
+			static constexpr unsigned     version[]			=	{ @PROJECT_VERSION_ARRAY@, @PAX_PROJECT_REVISION@ };
 			static constexpr const char * title				=	"@pax_DESCRIPTION@";
-			static constexpr const char * url				=	"@pax_HOMEPAGE_URL@";
-			static constexpr const char * md5				=	"@PROJECT_UUID_MD5@";
-			static constexpr const char * sha1				=	"@PROJECT_UUID_SHA1@";
-			static constexpr auto         revision			=	@PROJECT_WC_REVISION@;
-			static constexpr auto         changeset			=	0x@PROJECT_WC_CHANGESET@;
+			static constexpr const char * repository		=	"@PAX_PROJECT_REPOSITORY@";
+			static constexpr auto         changeset			=	0x@PAX_PROJECT_CHANGESET@;
+			static constexpr const char * changeset_sha1	=	"@PAX_PROJECT_CHANGESET_SHA1@";
+			static constexpr const char * variant			=	"@PAX_PROJECT_VARIANT@";
 		};
 
 		struct compilation {
