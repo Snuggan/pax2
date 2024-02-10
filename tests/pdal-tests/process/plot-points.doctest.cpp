@@ -66,9 +66,9 @@ namespace pax {
 		try {
 			const dir_path laz_folder	  = doctest_data_root() / "plot-metric" / "more-laz";
 			const file_path csv_file	  = laz_folder / ".." / "plots.csv";
-			const file_path file0		  = laz_folder / "18H001_72250_7750_25.laz";
-			const file_path file1		  = laz_folder / "19G026_72450_7275_25.laz";
-			const file_path file2		  = laz_folder / "19G026_72450_7600_25.laz";
+			const file_path file0		  = laz_folder / "18H001_72250_7750_25-quarter.laz";
+			const file_path file1		  = laz_folder / "19G026_72450_7275_25-quarter.laz";
+			const file_path file2		  = laz_folder / "19G026_72450_7600_25-quarter.laz";
 
 			if constexpr( TEST_PROCESS_PLOTS_POINTS ) {
 				const auto						tempdir = std::filesystem::temp_directory_path() / "plots_points";

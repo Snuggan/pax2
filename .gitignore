@@ -14,7 +14,6 @@ docker/slu/usr/lib/**
 docker/slu/usr/local/bin/pax-**
 docker/slu/.docker/.buildNodeID
 include/pax/meta/version/version_**
-doctests-data/plot-metric/more-laz/*
 R/pax.regression.Rcheck/**
 R/pax.regression/NAMESPACE
 R/pax.regression/man

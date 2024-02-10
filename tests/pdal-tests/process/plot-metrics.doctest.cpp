@@ -20,9 +20,9 @@ namespace pax {
 
 	const dir_path laz_folder		= doctest_data_root() / "plot-metric" / "more-laz";
 	const file_path csv_file		= laz_folder / ".." / "plots.csv";
-	const file_path file0			= laz_folder / "18H001_72250_7750_25.laz";
-	const file_path file1			= laz_folder / "19G026_72450_7275_25.laz";
-	const file_path file2			= laz_folder / "19G026_72450_7600_25.laz";
+	const file_path file0			= laz_folder / "18H001_72250_7750_25-quarter.laz";
+	const file_path file1			= laz_folder / "19G026_72450_7275_25-quarter.laz";
+	const file_path file2			= laz_folder / "19G026_72450_7600_25-quarter.laz";
 	
 
 	auto bbox( const pdal::LasHeader & h_ ) noexcept {
@@ -104,13 +104,13 @@ namespace pax {
 		
 			const auto				rows = find_rows( table );
 			DOCTEST_FAST_REQUIRE_EQ( rows.size(), 7 );
-			check_plot( table, rows[ 0 ], "201726533120", 942, 521 );
-			check_plot( table, rows[ 1 ], "201726534120", 456, 456 );
-			check_plot( table, rows[ 2 ], "201726532060", 819, 476 );
-			check_plot( table, rows[ 3 ], "201726533060", 850, 508 );
-			check_plot( table, rows[ 4 ], "201826602060", 669, 480 );
-			check_plot( table, rows[ 5 ], "201826602120", 802, 478 );
-			check_plot( table, rows[ 6 ], "201826603060", 803, 458 );
+			check_plot( table, rows[ 0 ], "201726533120", 229, 128 );
+			check_plot( table, rows[ 1 ], "201726534120", 132, 132 );
+			check_plot( table, rows[ 2 ], "201726532060", 201, 118 );
+			check_plot( table, rows[ 3 ], "201726533060", 212, 125 );
+			check_plot( table, rows[ 4 ], "201826602060", 171, 120 );
+			check_plot( table, rows[ 5 ], "201826602120", 191, 102 );
+			check_plot( table, rows[ 6 ], "201826603060", 198, 121 );
 		} catch( std::exception & error_ ) {
 			Debug{} << error_.what();
 		}
