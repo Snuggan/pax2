@@ -296,7 +296,7 @@ set( PAX_TOOL_LIBS	${PAX_BASE_LIBS} )
 
 ### Setup the 'pax' library target.
 file( GLOB_RECURSE LIB_SOURCE_FILES_LIBS		"${PROJECT_SOURCE_DIR}/include/*.lib.c*" )
-set( CMAKE_MACOSX_RPATH OFF )
+set( CMAKE_MACOSX_RPATH OFF )	# Handles problem: dyld[80443]: Library not loaded: @rpath/liblibpax2.dylib
 add_library( libpax2 SHARED ${LIB_SOURCE_FILES_LIBS} ${LIB_SOURCE_FILES_EXTERNALS} )
 install( TARGETS libpax2 DESTINATION /usr/local/lib )
 #install( TARGETS libpax2 DESTINATION /opt/local/lib )
