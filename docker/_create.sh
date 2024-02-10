@@ -18,11 +18,27 @@ set -e
 PAX_TAG=`date +"%Y.%m.%d"`
 echo "What tag to use? (default is '${PAX_TAG}')"
 read NEW_PAX_TAG
-if [ "$NEW_PAX_TAG" != "" ];
-then
+if [ "$NEW_PAX_TAG" != "" ]; then
 	PAX_TAG=${NEW_PAX_TAG}
 fi
 echo "Using tag '${PAX_TAG}'"
+
+# Ask if we should update dockerhub too.
+UPDATE=""
+while true; do
+	read -p "Do you want to update dockerhub too? (y/n/q) " yn
+	case $yn in 
+		[yY] ) echo "Ok, we will update dockerhub."
+			UPDATE="y"
+			break;;
+		[nN] ) echo "We will not update dockerhub."
+			UPDATE="n"
+			break;;
+		[qQ] ) echo "Quitting..."
+			exit;;
+		* ) echo "Invalid response...";;
+	esac
+done
 
 
 #SLU_DIR=.
@@ -67,8 +83,15 @@ mv -f pax.regression*.tar.gz ${SLU_DIR}/tmp-post/pax.regression.tar.gz
 COMMAND="docker build --progress plain -t axensten/slu:${PAX_TAG} -t axensten/slu:latest -t axensten/slu:stable ${SLU_DIR}"
 echo ${COMMAND}
 ${COMMAND}
-docker push axensten/slu:${PAX_TAG}
-docker push axensten/slu:latest
-docker push axensten/slu:stable
-git tag "${PAX_TAG}" -m "Updated the docker document to ${PAX_TAG}."
-open --url https://hub.docker.com/repository/docker/axensten/slu
+
+# Possibly, update dockerhub.
+if [ "$UPDATE" == "y" ]; then
+	echo "Updating dockerhub!"
+	docker push axensten/slu:${PAX_TAG}
+	docker push axensten/slu:latest
+	docker push axensten/slu:stable
+	git tag "${PAX_TAG}" -m "Updated the docker document to ${PAX_TAG}."
+	open --url https://hub.docker.com/repository/docker/axensten/slu
+else
+	echo "Not updating dockerhub..."
+fi
