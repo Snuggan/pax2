@@ -22,10 +22,11 @@ namespace pax {
 		std::string		 info()			const			{
 			return std20::format( "\033[1m{}\033[0m, part of {}, compiled {} ({})\n\n",
 				m_name, metadata::project::named_version, metadata::compilation::dateTtime, metadata::compilation::status
-			)	+ std20::format( "License:    {}\n", metadata::license )
-				+ std20::format( "Copyright:  {}\n", metadata::copyright )
-				+ std20::format( "Author:     {}\n", metadata::author )
-				+ std20::format( "Maintainer: {}\n", metadata::maintainer )
+			)	+ std20::format( "Copyright:  {}\n", metadata::copyright )
+				+ std20::format( "License:    {}\n", metadata::license )
+			//	+ std20::format( "Author:     {}\n", metadata::author )
+			//	+ std20::format( "Maintainer: {}\n", metadata::maintainer )
+				+ std20::format( "Repository: {}\n", metadata::project::repository )
 				+ std20::format( "\nResources used:\n{}\n{}\n{}\n{}\n", 
 					metadata::fmt::named_version, 
 					metadata::gdal::named_version, 
@@ -69,6 +70,9 @@ namespace pax {
 												metadata::compilation::dateTtime, 
 												metadata::compilation::status 
 					) },
+					{	"copyright",			metadata::copyright							},
+					{	"license",				metadata::license							},
+					{	"repository",			metadata::project::repository				},
 					{	"c++",					metadata::compilation::cpp_standard			},
 					{	"compiler",				metadata::compilation::named_version		},
 					{	"flags",				metadata::compilation::flags				},

@@ -7,25 +7,25 @@
 #define PAX_VERSION_MAJOR 1
 #define PAX_VERSION_MINOR 0
 #define PAX_VERSION_PATCH 0
-#define PAX_REVISION    11
+#define PAX_REVISION    13
 
 
-// Generated at 2024-02-07T09:18:41Z (Debug)
+// Generated at 2024-02-07T11:04:24Z (Debug)
 namespace pax {
 	struct metadata {
 		static constexpr const char *     author			=	"Peder Axensten, peder#axensten.se";
 		static constexpr const char *     maintainer		=	"Peder Axensten, peder#axensten.se";
-		static constexpr const char *     copyright			=	"© 2014–2024, Peder Axensten";
+		static constexpr const char *     copyright			=	"©2014–2024, Peder Axensten";
 		static constexpr const char *     license			=	"The 2-Clause BSD License";
 
 		struct project {
 			static constexpr const char * name				=	"pax2";
-			static constexpr const char * named_version		=	"pax2 1.0.0r11";
-			static constexpr unsigned     version[]			=	{ 1, 0, 0, 11 };
+			static constexpr const char * named_version		=	"pax2 1.0.0r13";
+			static constexpr unsigned     version[]			=	{ 1, 0, 0, 13 };
 			static constexpr const char * title				=	"";
 			static constexpr const char * repository		=	"https://github.com/Snuggan/pax2.git";
-			static constexpr auto         changeset			=	0xf7c5bda;
-			static constexpr const char * changeset_sha1	=	"f7c5bdad537b63487169d06755ea0d54fdf18ccd";
+			static constexpr auto         changeset			=	0xa5589bb;
+			static constexpr const char * changeset_sha1	=	"a5589bb630767d427973ea86b4f0e42cfecdfa2e";
 			static constexpr const char * variant			=	"main";
 		};
 
@@ -33,7 +33,7 @@ namespace pax {
 			static constexpr const char * name				=	"Clang";
 			static constexpr const char * named_version		=	"Clang 17.0.6";
 			static constexpr unsigned     version[]			=	{ 17, 0, 6 };
-			static constexpr const char   dateTtime[]		=	"2024-02-07T09:18:41Z";
+			static constexpr const char   dateTtime[]		=	"2024-02-07T11:04:24Z";
 			static constexpr const char * cpp_standard		=	"C++23";
 			static constexpr const char * standard_library	=	"<undetermined>";
 			static constexpr const char * status			=	"Debug";	// Debug, Release or RelWithDebInfo
