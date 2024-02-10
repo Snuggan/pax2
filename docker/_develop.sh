@@ -10,8 +10,11 @@ HERE=$(cd "$(dirname "$0")" && pwd)    # absolutized and normalized path to this
 #  -i, --interactive	Keep STDIN open even if not attached
 #  -t, --tty			Allocate a pseudo-TTY
 #      --rm				Automatically remove the container when it exits
-#  -v, --volume list	Bind mount a volume
-CMD="docker run --interactive --tty --rm --volume ${HERE}/..:/pax axensten/slu bash"
+
+CMD="docker run --interactive --tty --rm"
+CMD+=" --mount type=bind,target=/pax,source=${HERE}/.."
+CMD+=" axensten/slu bash"
+
 #echo ">>>>>> $CMD"
 
 ${CMD}
