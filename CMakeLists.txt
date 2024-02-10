@@ -296,9 +296,10 @@ set( PAX_TOOL_LIBS	${PAX_BASE_LIBS} )
 
 ### Setup the 'pax' library target.
 file( GLOB_RECURSE LIB_SOURCE_FILES_LIBS		"${PROJECT_SOURCE_DIR}/include/*.lib.c*" )
-add_library( libpax SHARED ${LIB_SOURCE_FILES_LIBS} ${LIB_SOURCE_FILES_EXTERNALS} )
-install( TARGETS libpax DESTINATION /usr/local/lib )
-install( TARGETS libpax DESTINATION /opt/local/lib )
+set( CMAKE_MACOSX_RPATH OFF )
+add_library( libpax2 SHARED ${LIB_SOURCE_FILES_LIBS} ${LIB_SOURCE_FILES_EXTERNALS} )
+install( TARGETS libpax2 DESTINATION /usr/local/lib )
+#install( TARGETS libpax2 DESTINATION /opt/local/lib )
 
 
 ### Setup the doctest targets.
@@ -318,7 +319,7 @@ FOREACH( include_dir ${INCLUDE_DIRS0} )
 			list( APPEND TEMP_SOURCE_FILES ${MAIN_DOCTEST} )	# Add the main file.
 			string( REGEX REPLACE "^.*/(include|tests|tests-ideas)/" "" doctest_name ${include_dir} )
 			add_executable( ${doctest_name} ${TEMP_SOURCE_FILES} )
-			target_link_libraries( ${doctest_name} libpax ${PAX_BASE_LIBS} )
+			target_link_libraries( ${doctest_name} libpax2 ${PAX_BASE_LIBS} )
 			# Comment the next line to impede tests to run automagically. 
 			add_custom_command( TARGET ${doctest_name} COMMENT "Run doctest in ${doctest_name}" POST_BUILD COMMAND ${doctest_name} )
 			list( APPEND DOCTEST_PROJS ${doctest_name} )
@@ -339,7 +340,7 @@ foreach( pax_tool_source ${PAX_TOOL_SOURCES} )
 	# From https://stackoverflow.com/questions/14306642/adding-multiple-executables-in-cmake
 	get_filename_component( pax_tool ${pax_tool_source} NAME_WE )		# NAME_WE: Name without Extension
 	add_executable( ${pax_tool} ${pax_tool_source} )
-	target_link_libraries( ${pax_tool} ${PAX_TOOL_LIBS} libpax )
+	target_link_libraries( ${pax_tool} ${PAX_TOOL_LIBS} libpax2 )
 	install( TARGETS ${pax_tool} DESTINATION /usr/local/bin )
 	set( PAX_TOOLS ${PAX_TOOLS} ${pax_tool} )
 	message( STATUS "${pax_tool}" )
@@ -356,7 +357,7 @@ foreach( pax_pdal_source ${PAX_PDAL_SOURCES} )
 	# From https://stackoverflow.com/questions/14306642/adding-multiple-executables-in-cmake
 	get_filename_component( pax_pdal_tool ${pax_pdal_source} NAME_WE )	# NAME_WE: Name without Extension
 	add_library( ${pax_pdal_tool} SHARED ${pax_pdal_source} )
-	target_link_libraries( ${pax_pdal_tool} PRIVATE ${PAX_TOOL_LIBS} libpax ${PDAL_LIBRARIES} )
+	target_link_libraries( ${pax_pdal_tool} PRIVATE ${PAX_TOOL_LIBS} libpax2 ${PDAL_LIBRARIES} )
 	target_link_directories( ${pax_pdal_tool} PRIVATE ${PDAL_LIBRARY_DIRS} )
 	target_include_directories( ${pax_pdal_tool} PRIVATE ${PDAL_INCLUDE_DIRS})
 	install( TARGETS ${pax_pdal_tool} DESTINATION ${PDAL_LIBRARY_DIRS} )
