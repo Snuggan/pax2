@@ -20,4 +20,4 @@ Pdal filters and command line tools to calculate *z*-metrics from point clouds.
 
 ## Reference
 
-- [How to specify metrics.](metrics-how-to-specify.md)
+- [How to specify metrics.](documentation/metrics-how-to-specify.md)
