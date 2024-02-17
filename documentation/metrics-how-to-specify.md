@@ -1,7 +1,7 @@
 # How to specify metrics
 
 
-A metric identifier has two parts: a *statistic* and a *filter*.
+A metric identifier has two parts: a *statistic* and a *filter*: `*statistic*\_*filter*`.
 
 ## Statistics
 
@@ -26,6 +26,8 @@ The filter format is either of:
 
 - `all\[_ge*MIN*cm\]\[_lt*MAX*cm\]`: all points within the optional limits.
 - `1ret\[_ge*MIN*cm\]\[_lt*MAX*cm\]`: first returns within the optional limits.
+
+The stuff between `\[...\]` is optional.
 
 
 ## Preconfigured sets

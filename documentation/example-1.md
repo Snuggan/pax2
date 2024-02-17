@@ -3,4 +3,7 @@
 
 Below is an example on how to calculate plot and raster metrics as well as creating individual point cloud files for all points in each plot. 
 
-*To be continued.*
+	{
+		<stuff here>
+	}
+
