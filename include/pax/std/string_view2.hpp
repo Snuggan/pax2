@@ -127,6 +127,16 @@ namespace pax {
 	template< Character Ch >
 	basic_string_view2( Ch * const & c_ )	-> basic_string_view2< std::remove_reference_t< Ch > >;
 
+	/// Stream the contents of sp_ to dest_ in the form "[i0, i1, ...]".
+	template< typename Dest, typename Ch, typename Traits >
+	constexpr Dest & operator<<(
+		Dest								  & dest_,
+		const basic_string_view2< Ch, Traits >	v_
+	) {
+		if( v_.size() )		dest_.write( v_.data(), v_.size() - !v_.back() );
+		return dest_;
+	}
+
 }	// namespace pax
 
 namespace std {
