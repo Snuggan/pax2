@@ -5,6 +5,8 @@ A metric identifier has two parts: a *statistic* and a *filter* joined by a '_':
 
 ## Statistics
 
+The statistic may be any of:
+
 - **`count`**		Number of values.
 - **`mean`**		Mean of the values.
 - **`mean2`**		Mean of the squared values.
@@ -15,7 +17,7 @@ A metric identifier has two parts: a *statistic* and a *filter* joined by a '_':
 - **`L3`**		L3-moment (L-skewness).
 - **`L4`**		L4-moment (L-kurtosis).
 - **`mad`**		Median absolute deviation.
-- **`p{*n*}`**	Percentile {}, where {} is in \[0, 100\].
+- **`pn`**		Percentile `n`, where `n` is in \[0, 100\].
 
 You can calculate most other common statistics from the above. 
 
