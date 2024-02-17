@@ -36,7 +36,7 @@ The stuff between `[...]` is optional.
 
 There are also a few named sets of metrics, more or less general. 
 These may be subject to change, but you may always check them by running `pax-metrics --help`. 
-Below `999cm` symbolises the given value of the `--nilsson_level` parameter. 
+Below `*999cm*` symbolises the given value of the `--nilsson_level` parameter. 
 
 ### `basic-linear`
 `variance_all_ge*999cm*`, `p30_all_ge*999cm*`, `p80_all_ge*999cm*`, `p95_all_ge*999cm*`, `count_1ret_ge*999cm*`, `count_1ret`
