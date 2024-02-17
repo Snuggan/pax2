@@ -5,15 +5,14 @@ Pdal filters and command line tools to calculate *z*-metrics from point clouds.
 
 ## pdal filters
 
-- [concat-files](documentation/pdal-concat-files.md) 
 - [plot_metrics](documentation/pdal-plot_metrics.md) calculates metrics (statistics) for *z*-values of all points within each plot. 
-- [plot_points](documentation/pdal-plot_points.md) 
-- [raster_metrics](documentation/pdal-raster_metrics.md) 
-- [remove_overlap](documentation/pdal-remove_overlap.md) 
-- [slu_lm](documentation/pdal-slu_lm.md) 
+- [plot_points](documentation/pdal-plot_points.md) saves all points within plots (plus an optional buffer) to individual files, one for each plot. 
+- [raster_metrics](documentation/pdal-raster_metrics.md) creates rasters with specified metrics (statistics). calculated for each pixel.
+- [remove_overlap](documentation/pdal-remove_overlap.md) removes overlap created by multiple flights by only accepting points with the same source id as the pixel's source id. 
+- [slu_lm](documentation/pdal-slu_lm.md) filters points according to *z*-values and point type.
 
 
 ## Command line tools
 
 - [`pax-concat-files`](documentation/pax-concat-files.md) concatenates csv-like textual table files into one.
-- [`pax-metrics`](documentation/pax-metrics.md) 
+- [`pax-metrics`](documentation/pax-metrics.md) lists specified metrics. Given a set of metric and metric set ids, it returns a sorted list of metrics.

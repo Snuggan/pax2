@@ -1,7 +1,7 @@
 # pdal module slu_lm
 
-Filtering according to z-values and point type, see the options below for details. 
-If there is a dimension HeightAboveGround, its values are copied into dimension Z. 
+Filtering according to *z*-values and point type, see the options below for details. 
+If there is a dimension `HeightAboveGround`, its values are copied into dimension `Z`. 
 Execute `pdal --options filters.slu_lm` for a list of available parameters. ,
 
 
