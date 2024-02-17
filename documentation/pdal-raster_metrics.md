@@ -39,7 +39,15 @@ No data value, a sentinal value to say that no value was set for nodata.
 
 ## Example
 
-	to be written
+	pdal translate input.laz null.laz \
+		-w writers.null \
+	    -f filters.raster_metrics \
+	    --filters.raster_metrics.dest="raster-metrics/result.tif" \
+	    --filters.raster_metrics.resolution="20" \
+	    --filters.raster_metrics.metrics="basic-linear" \
+	    --filters.raster_metrics.nilsson_level="1.85" \
+	    --filters.raster_metrics.gdalopts="BIGTIFF=IF_SAFER,COMPRESS=DEFLATE" \
+	    --filters.raster_metrics.data_type="float"
 
 
 ## See also

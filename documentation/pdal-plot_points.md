@@ -16,7 +16,7 @@ Destination *directory* path for the plot point cloud files.
 Files will be named by the `id` column in the `--plot_file`.
 .
 ### `--dest_format`
-File format to use for resulting point clud files (e.g '.laz'). 
+File format to use for resulting point cloud files (e.g '.laz'). 
 
 ### `--id_column`
 In what column to find the [unique] plot id, to use as destination file name. 
@@ -27,4 +27,12 @@ How much to enlarge the plot diameters. A zero value (the default) will use the 
 
 ## Example
 
-	to be written
+No output?!
+
+	pdal translate input.laz null.laz \
+		-w writers.null \
+	    -f filters.plot_points \
+	    --filters.plot_points.plot_file="plots.csv" \
+	    --filters.plot_points.dest_plot_points="plots-directory0/" \
+	    --filters.plot_points.dest_format=".laz" \
+	    --filters.plot_points.id_column="id" 

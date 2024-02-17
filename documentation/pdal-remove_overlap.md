@@ -16,4 +16,6 @@ You probably do not want use this filter on photogrammetry files.
 
 ## Example
 
-	to be written
+	pdal translate input.laz output.laz \
+	    -f filters.remove_overlap \
+	    --filters.remove_overlap.overlap_resolution="25"

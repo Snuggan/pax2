@@ -25,7 +25,11 @@ never classified (0), unspecified (1), and point on ground (2).
 
 ## Example
 
-	to be written
+	pdal translate input.laz output.laz \
+	    -f filters.slu_lm \
+	    --filters.slu_lm.min_z="-1.0" \
+	    --filters.slu_lm.max_z="40.0" \
+	    --filters.slu_lm.lm_filter="true"
 
 
 ## Comments

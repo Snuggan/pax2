@@ -23,7 +23,13 @@ For some metrics (see [here](metrics-how-to-specify.md)), ignore *z*-values belo
 
 ## Example
 
-	to be written
+	pdal translate input.laz null.laz \
+		-w writers.null \
+	    -f filters.plot_metrics \
+	    --filters.plot_metrics.plot_file="plots.csv" \
+	    --filters.plot_metrics.dest_plot_metrics="plots+metrics.csv" \
+	    --filters.plot_metrics.metrics="basic-linear" \
+	    --filters.plot_metrics.nilsson_level="1.85"
 
 
 ## See also

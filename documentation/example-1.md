@@ -42,7 +42,7 @@ Then we can calculate raster metrics for `points.laz` and for all plots in `plot
 			--input=points.laz \
 			--output=null.bull \
 			--writer=writers.null \
-			--filters.raster_metrics.dest=raster-metrics.tif \
+			--filters.raster_metrics.dest=metrics.tif \
 			--filters.plot_metrics.dest_plot_metrics=plots-metrics.csv \
 			--metadata=.json
 
