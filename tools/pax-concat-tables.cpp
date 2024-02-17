@@ -53,8 +53,8 @@ namespace pax {
 
 		try {
 			const auto parameters = cmd_args::Parameters{ meta2.info(), meta2.description(), meta2.usage() }
-				( 	's', "source",	ANSI_BOLD"Source path." ANSI_RESET" Path of the resulting file."						)
-				( 	'd', "dest",	ANSI_BOLD"Destination path." ANSI_RESET" The files to concatenate."						)
+				( 	's', "source",	ANSI_BOLD"Source path." ANSI_RESET" The files to concatenate."							)
+				( 	'd', "dest",	ANSI_BOLD"Destination path." ANSI_RESET" Path of the resulting file."					)
 				(	'm', "meta", 	"Save metadata files with execution info.",		cmd_args::Parameter_type::off_flag()	)
 				( 	"verbose",		"Display execution progress.", 					cmd_args::Parameter_type::off_flag()	)
 				( 	"count",		"Use progress report based on <count> items.", 	cmd_args::Default_value( "0" )			)
