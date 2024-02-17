@@ -1,6 +1,8 @@
 # pax2
 
-Pdal filters and command line tools to calculate *z*-metrics from point clouds.
+Pdal filters and command line tools to calculate *z*-metrics from point clouds. 
+
+There is a docker image available containing all the stuff of `pax2` as well as the environment needed to run it (pdal, gdal, *etc.*) at [`dockerhub´](https://hub.docker.com/repository/docker/axensten/slu).
 
 
 ## pdal filters
@@ -16,6 +18,11 @@ Pdal filters and command line tools to calculate *z*-metrics from point clouds.
 
 - [`pax-concat-files`](documentation/pax-concat-files.md) concatenates csv-like textual table files into one.
 - [`pax-metrics`](documentation/pax-metrics.md) lists specified metrics. Given a set of metric and metric set ids, it returns a sorted list of metrics.
+
+
+## Examples
+
+- [How to do everything at once:](documentation/example-1.md) How to calculate plot and raster metrics as well as creating individual point cloud files for all points in each plot. 
 
 
 ## Reference
