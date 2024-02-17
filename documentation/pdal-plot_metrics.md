@@ -13,12 +13,13 @@ Plots not entirely within the point cloud bounding box are ignored.
 Destination file path for the resulting plot metric file.
 
 ### `--metrics`
-What metrics to calculate (see [here](metrics.md)).
+What metrics to calculate (see [here](metrics-how-to-specify.md)).
 
 ### `--nilsson_level`
-For some metrics (see [here](metrics.md)), ignore *z*-values below this value.
+For some metrics (see [here](metrics-how-to-specify.md)), ignore *z*-values below this value.
 
 
 ## See also
 
+- [How to specify metrics.](metrics-how-to-specify.md)
 - [`pax-concat-files`](pax-concat-files.md) concatenates csv-like textual table files into one.

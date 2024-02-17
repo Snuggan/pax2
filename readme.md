@@ -16,3 +16,8 @@ Pdal filters and command line tools to calculate *z*-metrics from point clouds.
 
 - [`pax-concat-files`](documentation/pax-concat-files.md) concatenates csv-like textual table files into one.
 - [`pax-metrics`](documentation/pax-metrics.md) lists specified metrics. Given a set of metric and metric set ids, it returns a sorted list of metrics.
+
+
+## Reference
+
+- [How to specify metrics.](metrics-how-to-specify.md)

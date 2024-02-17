@@ -14,10 +14,10 @@ It can be used by 'make' and similar tools as a target file.)
 Size of pixels in the metric rasters. 
 
 ### `--metrics`
-What metrics to calculate (see [here](metrics.md)).
+What metrics to calculate (see [here](metrics-how-to-specify.md)).
 
 ### `--nilsson_level`
-For some metrics (see [here](metrics.md)), ignore *z*-values below this value.
+For some metrics (see [here](metrics-how-to-specify.md)), ignore *z*-values below this value.
 
 ### `--alignment`
 Raster alignment, raster corner will be aligned. 
@@ -33,3 +33,8 @@ Data type for output raster (\"int8\", \"uint64\", \"float\", etc.).
 
 ### `--nodata`
 No data value, a sentinal value to say that no value was set for nodata.
+
+
+## See also
+
+- [How to specify metrics.](metrics-how-to-specify.md)
