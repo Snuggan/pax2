@@ -47,5 +47,5 @@ namespace pax {
 
 namespace PAX_STD20 {
 	template< typename Ch, typename Traits >
-	struct std20::formatter< pax::basic_string_view2< Ch, Traits > > : ostream_formatter {};
+	struct formatter< pax::basic_string_view2< Ch, Traits > > : basic_ostream_formatter< Ch > {};
 }
