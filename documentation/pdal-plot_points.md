@@ -33,6 +33,5 @@ No output?!
 		-w writers.null \
 		-f filters.plot_points \
 		--filters.plot_points.plot_file="plots.csv" \
-		--filters.plot_points.dest_plot_points="plots-directory0/" \
-		--filters.plot_points.dest_format=".laz" \
+		--filters.plot_points.dest_plot_points="plots-directory/" \
 		--filters.plot_points.id_column="id" 
