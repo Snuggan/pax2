@@ -1,7 +1,7 @@
 # How to specify metrics
 
 
-A metric identifier has two parts: a *statistic* and a *filter* joined by a `_` *e.g.* `statistic_filter`.
+A metric identifier has two parts: a *statistic* and a *filter* joined by a '_': `statistic_filter`.
 
 ## Statistics
 
