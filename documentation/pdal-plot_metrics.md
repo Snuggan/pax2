@@ -2,6 +2,8 @@
 
 Calculate metrics (statistics) for all points within each plot. 
 
+Execute `pdal --options filters.plot_metrics` for a list of available parameters and metrics.
+
 
 ## Parameters
 
@@ -17,6 +19,11 @@ What metrics to calculate (see [here](metrics-how-to-specify.md)).
 
 ### `--nilsson_level`
 For some metrics (see [here](metrics-how-to-specify.md)), ignore *z*-values below this value.
+
+
+## Example
+
+	to be written
 
 
 ## See also

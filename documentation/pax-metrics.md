@@ -15,6 +15,11 @@ Output result + metadata info.
 For some metrics (see [here](metrics-how-to-specify.md)), ignore *z*-values below this value.
 
 
+## Example
+
+	pax-metrics --metrics=axtra-allt --nilsson_level=1.85
+
+
 ## See also
 
 - [How to specify metrics.](metrics-how-to-specify.md)

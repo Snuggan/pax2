@@ -2,6 +2,8 @@
 
 Create rasters with specified metrics (statistics). calculated for each pixel. 
 
+Execute `pdal --options filters.raster_metrics` for a list of available parameters and metrics.
+
 
 ## Parameters
 
@@ -33,6 +35,11 @@ Data type for output raster (\"int8\", \"uint64\", \"float\", etc.).
 
 ### `--nodata`
 No data value, a sentinal value to say that no value was set for nodata.
+
+
+## Example
+
+	to be written
 
 
 ## See also

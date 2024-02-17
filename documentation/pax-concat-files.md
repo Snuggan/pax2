@@ -29,6 +29,11 @@ Display execution progress.
 Use progress report based on *count* items.
 
 
+## Example
+
+	pax-concat-tables --source="path-to-directory" --dest="all-plots.csv"
+
+
 ## See also
 
 - [plot_metrics](pdal-plot_metrics.md) calculates metrics (statistics) for *z*-values of all points within each plot. 

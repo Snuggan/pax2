@@ -2,7 +2,8 @@
 
 Filtering according to *z*-values and point type, see the options below for details. 
 If there is a dimension `HeightAboveGround`, its values are copied into dimension `Z`. 
-Execute `pdal --options filters.slu_lm` for a list of available parameters. ,
+
+Execute `pdal --options filters.slu_lm` for a list of available parameters and metrics.
 
 
 ## Parameters
@@ -20,6 +21,11 @@ If 'max_z' has a value smaller than 'min_z', no z-filtering will occur.,
 If false, all point classes will pass.  
 If true, only these point classes will pass: 
 never classified (0), unspecified (1), and point on ground (2). 
+
+
+## Example
+
+	to be written
 
 
 ## Comments

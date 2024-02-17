@@ -2,6 +2,8 @@
 
 Save all points within plots (plus an optional buffer) to individual files, one for each plot. 
 
+Execute `pdal --options filters.plot_points` for a list of available parameters and metrics.
+
 
 ## Parameters
 
@@ -21,3 +23,8 @@ In what column to find the [unique] plot id, to use as destination file name.
 
 ### `--max_distance`
 How much to enlarge the plot diameters. A zero value (the default) will use the plot diameter as specified by the `id` column in `--plot_file`.
+
+
+## Example
+
+	to be written
