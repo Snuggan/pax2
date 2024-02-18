@@ -7,17 +7,17 @@ Execute `pdal --options filters.plot_metrics` for a list of available parameters
 
 ## Parameters
 
-### `--plot_file`
+### `plot_file`
 File path to a csv-type file with at least the required columns `north`, `east`, `radius`, and `id`. 
 Plots not entirely within the point cloud bounding box are ignored. 
 
-### `--dest_plot_metrics`
+### `dest_plot_metrics`
 Destination file path for the resulting plot metric file.
 
-### `--metrics`
+### `metrics`
 What metrics to calculate (see [here](metrics-how-to-specify.md)).
 
-### `--nilsson_level`
+### `nilsson_level`
 For some metrics (see [here](metrics-how-to-specify.md)), ignore *z*-values below this value.
 
 
