@@ -27,7 +27,8 @@ How much to enlarge the plot diameters. A zero value (the default) will use the 
 
 ## Example
 
-No output?!
+> [!WARNING]
+> The example does not work as is, I need to check this.
 
 	pdal translate input.laz null.laz \
 		-w writers.null \
