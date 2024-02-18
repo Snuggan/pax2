@@ -13,19 +13,19 @@ A tool to concatenate csv-like textual table files into one.
 
 ## Parameters
 
-### `--source`
+**`--source`**  
 Source *directory* path. The files to concatenate.
 
-### `--dest`
+**`--dest`**  
 Destination *file* path. Path of the resulting file.
 
-### `--meta`
+**`--meta`**  
 Save metadata files with execution info.
 
-### `--verbose`
+**`--verbose`**  
 Display execution progress.
 
-### `--count`
+**`--count`**  
 Use progress report based on *count* items.
 
 

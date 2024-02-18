@@ -5,13 +5,13 @@ Given a set of metric and metric set ids, it returns a sorted list of metrics.
 
 ## Parameters
 
-### `--metrics`
+**`--metrics`**  
 What metrics to calculate (see [here](metrics-how-to-specify.md)).
 
-### `--json`
+**`--json`**  
 Output result + metadata info.
 
-### `--nilsson_level`
+**`--nilsson_level`**  
 For some metrics (see [here](metrics-how-to-specify.md)), ignore *z*-values below this value.
 
 
