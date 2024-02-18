@@ -25,7 +25,7 @@ It has not been adapted to Windows as I have no access to a Windows development 
 
 ## Examples
 
-- [How to do everything at once:](documentation/example-1.md) How to calculate plot and raster metrics as well as creating individual point cloud files for all points in each plot. 
+- [How to do everything at once:](documentation/example-1.sh) How to calculate plot and raster metrics as well as creating individual point cloud files for all points in each plot. 
 
 
 ## Reference

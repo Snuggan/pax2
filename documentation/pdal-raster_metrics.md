@@ -8,7 +8,7 @@ Execute `pdal --options filters.raster_metrics` for a list of available paramete
 ## Parameters
 
 **`dest`**  
-Destination directory and file name prefix for the metric raster files, *i.e.* `mydir/prefix.tif` will generate files as `mydir/prefix.metricid.tif`. 
+Destination directory and file name template for the metric raster files, *i.e.* `mydir/prefix.tif` will generate files as `mydir/prefix.metricid.tif`. 
 
 **`resolution`**  
 Size of pixels in the metric rasters. 
