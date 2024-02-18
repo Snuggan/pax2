@@ -52,6 +52,6 @@ Below `*999cm*` symbolises the given value of the `--nilsson_level` parameter.
 
 - `count_all`
 - `extra-allt`
-- `count_1ret_lt180cm`
-- `count_all_ge500cm_lt1000cm`
-- `p95_1ret_ge180cm`
+- `count_1ret_lt180cm` is the number of first returns with *z* \< 180 cm.
+- `count_all_ge500cm_lt1000cm` is the number of points with 500 cm \<= *z* \< 1000 cm.
+- `p95_1ret_ge180cm`is percentile 95 of the *z*-values of all points with *z* \>= 180 cm.
