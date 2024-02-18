@@ -8,16 +8,16 @@ Execute `pdal --options filters.slu_lm` for a list of available parameters and m
 
 ## Parameters
 
-### `min_z`
+**`min_z`**  
 Remove points with a *z*-value smaller than the argument `--min_z`.
 Also,sets all remaining negative z-values to zero. You probably don't want to do use this option unless the points are normalized. If '--max_z' has a value smaller than '--min_z', no *z*-filtering will occur.,
 
-### `max_z`
+**`max_z`**  
 Remove points with a *z*-value larger than than the argument `--max_z`.
 You probably don't want to do use this option unless the points are normalized. 
 If 'max_z' has a value smaller than 'min_z', no z-filtering will occur.,
 
-### `lm_filter`
+**`lm_filter`**  
 If false, all point classes will pass.  
 If true, only these point classes will pass: 
 never classified (0), unspecified (1), and point on ground (2). 
