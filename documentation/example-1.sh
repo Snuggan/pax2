@@ -38,7 +38,7 @@ PDAL_METRICS_PIPELINE='{ "pipeline":[
 # plots in ${INPUT_PLOTS_FILE} we calculate metrics and save individual point 
 # cloud files using the command:
 
-echo "${PDAL_METRICS_PIPELINE}"
+#echo "${PDAL_METRICS_PIPELINE}"
 
 pdal translate \
 	--json="${PDAL_METRICS_PIPELINE}" \
