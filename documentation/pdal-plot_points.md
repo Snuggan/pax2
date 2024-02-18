@@ -7,7 +7,7 @@ Execute `pdal --options filters.plot_points` for a list of available parameters 
 
 ## Parameters
 
-**`plot_file`**
+**`plot_file`**  
 File path to a csv-type file with at least the required columns `north`, `east`, `radius`, and `id`. 
 Plots not entirely within the point cloud bounding box are ignored. 
 
