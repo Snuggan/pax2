@@ -8,9 +8,7 @@ Execute `pdal --options filters.raster_metrics` for a list of available paramete
 ## Parameters
 
 **`dest`**  
-Destination directory and file name template for the metric raster files. 
-(An empty file with the file name template and the name of the metric as the suffix is created with the metric files. 
-It can be used by 'make' and similar tools as a target file.) 
+Destination directory and file name prefix for the metric raster files, *i.e.* `mydir/prefix.tif` will generate files as `mydir/prefix.metricid.tif`. 
 
 **`resolution`**  
 Size of pixels in the metric rasters. 
@@ -31,7 +29,7 @@ GDAL writer driver name.
 GDAL driver options (name=value,name=value...).
 
 **`data_type`**  
-Data type for output raster (\"int8\", \"uint64\", \"float\", etc.).
+Data type for output raster (`int8`, `uint64`, `float`, *etc.*).
 
 **`nodata`**  
 No data value, a sentinal value to say that no value was set for nodata.
