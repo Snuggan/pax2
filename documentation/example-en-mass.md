@@ -106,9 +106,9 @@ This file contains metadata on the areas covered by the point cloud files. It ha
 - `scanner_type` what scanner type was used to scan the plot (Leica ALS80 is 0, Leica TerrainMapper is 1). 
 
 
-## The nerdy details
+## Nerdy details
 
 The [Docker](https://www.docker.com/products/docker-desktop) container is based on [Ubuntu](https://ubuntu.com). 
 The tools are written in [C++23](https://en.cppreference.com/w/cpp/23) and compiled with [GCC](https://gcc.gnu.org). 
 A number of libraries are used, mainly: [PDAL](https://pdal.io/), [GDAL](http://www.gdal.org), and [\{fmt\}](https://github.com/fmtlib/fmt). 
-The testing environment is [`doctest`](https://github.com/onqtam/doctest) and the building environment is [`cmake`](https://cmake.org). All are excellent open source software with generous licences. 
+The testing environment is [`doctest`](https://github.com/onqtam/doctest) and the building environment is [`cmake`](https://cmake.org) – all excellent open source software with generous licences. 
