@@ -105,7 +105,6 @@ This file contains metadata on the areas covered by the point cloud files. It ha
 - `leaveson` was the plot measured during the summer season, values are 1. If not, values are 0. 
 - `scanner_type` what scanner type was used to scan the plot (Leica ALS80 is 0, Leica TerrainMapper is 1). 
 
-The included `pax.regression` R library includes a function `check_required_ruta_metadata_cols("path/to/metadata.csv")`, that can be used to check if a file contains the pre-calculated columns. 
 
 ## The really nerdy details
 
