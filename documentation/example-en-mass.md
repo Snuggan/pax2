@@ -83,13 +83,13 @@ These files should be located in the folder `0-project`.
 
 ### plots.csv
 
-This file contains field measurements, ground data. It has a header line followed by data from one plot per line. The regular tools, the `pdal` filter modules, require these columns:
+This file contains plot-related data such as coordinates, radius, field measurements, *etc.* It has a header line followed by data from one plot per line. The regular tools, the `pdal` filter modules, require these columns:
 
 - `east` is the eastern coordinate in the geographical reference system used in rasters and point cloud files.
 - `north` is the northern coordinate in the geographical reference system used in rasters and point cloud files.
 - `radius` in the unit used by geographical reference system used in rasters and point cloud files. Most probably meters. 
 
-Then there are a number of required columns for the estimation we employ for Sweden:
+Then there are also a number of required columns for the estimation we employ for Sweden:
 
 - `leaveson` was the plot measured during the summer season, values are 1. If not, values are 0. 
 - `scanner_type` what scanner type was used to scan the plot (Leica ALS80 is 0, Leica TerrainMapper is 1). 
