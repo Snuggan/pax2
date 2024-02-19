@@ -11,10 +11,6 @@ At the Forest Remote Sensing section of the Swedish University of Agricultural S
 
 Each tool is intended for a specific task and processes one file as specified [here](../readme.md). To run everything in an automated manner there is a [`make` script](../docker/slu/usr/local/etc/makefiles/Makefile), it updates the file structure and estimates the forest variables. All input files need to be organised in a specific file structure. 
 
-I hope you find the image useful.
-
-Peder Axensten, Nyåker 2024
-
 
 ## Processing *en-masse*
 
