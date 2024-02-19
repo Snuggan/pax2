@@ -12,12 +12,12 @@ At the Forest Remote Sensing section of the Swedish University of Agricultural S
 Each tool is intended for a specific task and processes one file as specified [here](../readme.md). To run everything in an automated manner there is a [`make` script](../docker/slu/usr/local/etc/makefiles/Makefile), it updates the file structure and estimates the forest variables. All input files need to be organised in a specific file structure. 
 
 
-## Details
+## Processing *en-masse*
 
 ### 1. Install Docker and tools
 
 You find Docker here: [Get Docker.](https://docs.docker.com/install/)
-(If you are interested, you may have a look at [Get started.](https://docs.docker.com/get-started/))
+(If you are interested, you may have a look at [Get started.](https://docs.docker.com/get-started/)). 
 
 
 ### 2. Create your file structure
@@ -28,61 +28,49 @@ In an otherwise empty directory, create the following directories and put the in
 		dem.tif
 		plots.csv
 		ruta-meta.csv
+		species_type.tif
 	2-pc-source/
-		non-normalized-point-cloud-files-here
+		<non-normalized point-cloud files here>
 	3-pc-filtered/
-		normalized-point-cloud-files-here
+		<normalized point-cloud files here>
 
 - The `dem.tif` is the ground base model to subtract from non-normalised points to obtain normalised *z*-values. 
-- The `plots.csv` contains data on the plots (`east`, `north`, and `radius`) as well as their field measurements.
+- The `plots.csv` contains data on the plots (`east`, `north`, and `radius`) as well as field measurements needed for the estimations.
 - The `ruta-meta.csv` contains other data specific for the Swedish laser scanning. 
+- The `species_type.tif` is specific for the estimations we use for Sweden. 
 
 
 ### 3. Start a Docker session
 
 Run `docker run -it --rm -v your-las-file-directory:/process axensten/slu` to start a session.
 
-- `-it` makes you run interactively. 
-- `--rm` removes the Docker volume once you are done with it. It is better to create a new clean one at each occasion, as this is very quick. Removing the Docker volume does not remove the Docker image axensten/slu, nor your las/laz files as they are in your file system.
-- `-v your-las-file-directory:/process` mounts your las file directory in the Docker volume file hierarchy. You change `your-las-file-directory` to the path where in your file system you want to process your las/laz files, of course. 
-- `axensten/slu` is the Docker image name. The first time you run the command, it will be downloaded from the Docker Hub. Thereafter it is on your system until you remove or update it. It is about 1.5 Gbytes in size. 
-
-The first time you run it on a file directory, you are asked if your files are from Lidar or photogrammetry, as different filtering algorithms and metrics are used. The appropriate `Makefile` is copied. A number of empty directories are also created -- don't change their names:
-
-- `0-project` will need to contain a ground model file `dem.tif` and  `species_type.tif` (that cover the area of the point cloud files to be filtered) and `plots.csv` and `ruta_meta.csv`, that are described under “Format of csv-files”, below. A file called `4-plots-metric.csv` will be produced in the base directory, containing the same data as `plots.csv` but with the addition of required metrics. 
-- `1-rar-source`: put rar-compressed las/laz files here and they will be decompressed. 
-- `2-pc-source`: put your uncompressed las/laz files here. (Any rar-compressed files will be decompressed into this directory.)
-
+The first time you run it on a file directory, a `Makefile` is copied to it. 
 After processing, resulting files will be found in:
 
-- `3-pc-filtered`: point cloud files end up here after they have been filtered.
+- `3-pc-filtered`: point cloud files end up here after they have been filtered and noramised.
 - `4-plot-metrics`: home of the plot_metrics.csv file.
 - `4-raster-metrics`: raster metric files end up here.
 - `5-estimates`: raster value files end up here. 
 - `6-mosaic`: mosaics of the raster value files in `5-estimates`. 
 
 
-### 4. Move the files to the designated directories
+### 4. Process
 
-- Copy/move `dem.tif`, `plots.csv`, and `ruta_meta.csv` to the `0-project` directory.
-- Copy/move your las/laz files into `2-pc-source`.
+To process files efficiently the tool [`make`](https://en.wikipedia.org/wiki/Make_(software)) is used. It maintains a dependency tree of the files to be processed and makes sure that missing files are produced and that old files are updated (an old file is a file that needs to be updated: where any of the files that it is produced from is newer). The `make`script only does what is necessary, if everything is up-to-date it does nothing. 
 
-If at a later stage you get more files to process, just add them in the appropriate directories. Only files that have changed will be processed when you rerun `make`.  
+To start the process, `cd` to your processing directory and issue:
 
-### 5. Process
+	make -j12 -k
 
-To process files efficiently the tool [`make`](https://en.wikipedia.org/wiki/Make_(software)) is used. It maintains a dependency tree of the files to be processed and makes sure that missing files are created and old files are updated. An old file is a file where any of the files that it depends on is newer. Put simply: it only does what is necessary – if there are no new files and all existing files are up to date, it will do nothing. 
+and you are processing. The flag `-j12` means that you will use 12 threads for processing and `-k` means that it will not stop if there are errors, that it will process all files that it can. If you want to process up to a certain level, you can:
 
-- `make -j8 -k filter` will filter the point cloud files in `2-pc-source`. Resulting files are put into `3-pc-filtered`.
-- `make -j8 -k raster` will do `filter` above and then produce raster metrics files from the (normalized)  point cloud files in `3-pc-filtered`. Resulting files are put into `4-raster-metrics`.
-- `make -j8 -k plots` will do `filter` above and then update the metrics for the plots in `4-plots-metrics/plots-metrics.csv` (if this file is missing, `0-project/plots.csv` is copied and used).  It will read all point cloud files in `3-pc-filtered`,  so if you have files there that overlap, these files will all contribute to the metrics. 
-- `make -j8 -k estimate` will do all the above and also calculate the forest variables.
-- `make -j8 -k mosaic` will do all the above and also mosaic the variable rasters and a few of the metric rasters.
-- `make -j8 -k` will do all the above. 
+	make -j12 -k mertrics
 
-All the specific processing parameters are defined in the `Makefile` file. If you feel adventurous, you can open the file and change their values, they are defined and documented in the beginning of the file. If you want to see the details of a specific tool, run it with the `--help` parameter, e.g. `pax-pc --help`.
+This will stop processing once all metrics are calculated – it will not do any estimation.
 
-If there are errors, run `make -k` and you will get a clean list of the problem files with a (possibly cryptic) description of the problem.
+All the specific processing parameters are defined in the `Makefile` file. If you feel adventurous, you can open the file and change their values, they are defined and documented in the beginning of the file.
+
+If there are errors, execute `make -k` and you will get a clean list of the problem files with a description of the problem.
 
 To end the Docker volume session, execute `exit`.
 
