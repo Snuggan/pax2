@@ -81,7 +81,7 @@ These files are text files with the first line containing the headers and then o
 
 These files should be located in the folder `0-project`.
 
-### plots.csv
+### `plots.csv`
 
 This file contains plot-related data such as coordinates, radius, field measurements, *etc.* It has a header line followed by data from one plot per line. The regular tools, the `pdal` filter modules, require these columns:
 
@@ -96,7 +96,7 @@ Then there are also a number of required columns for the estimation we employ fo
 - `variables`* Measured values for the variables that are to be estimated. Typically they are: . `Hgv`, `Volume`, `Biomass`, `Basal_area`, and `Dgv`. 
 
 
-### ruta_meta.csv
+### `ruta_meta.csv`
 
 This file contains metadata on the areas covered by the point cloud files. It has a header line followed by data on one area per line. Required columns (header names) are:
 - `east` is the eastern coordinate in the geographical reference system used in rasters and point cloud files.
@@ -106,6 +106,9 @@ This file contains metadata on the areas covered by the point cloud files. It ha
 - `scanner_type` what scanner type was used to scan the plot (Leica ALS80 is 0, Leica TerrainMapper is 1). 
 
 
-## The really nerdy details
+## The nerdy details
 
-The [Docker](https://www.docker.com/products/docker-desktop) container is based on [Ubuntu](https://ubuntu.com), presently Ubuntu 20.10. The tools are written in [C++17](https://en.cppreference.com/w/cpp/17) and compiled with [GCC](https://gcc.gnu.org). A number of libraries are used: [Boost](http://www.boost.org), [GDAL](http://www.gdal.org), [\{fmt\}](https://github.com/fmtlib/fmt), [LASzip](http://www.laszip.org), [libLAS](http://www.liblas.org), [pdal](http://www.pdal.io), and [taoJSON](https://github.com/taocpp/json). The testing environment is [`doctest`](https://github.com/onqtam/doctest) and the building environment is [`cmake`](https://cmake.org). All are excellent open source software with generous licences. For more details than you want, run `pax --meta`.
+The [Docker](https://www.docker.com/products/docker-desktop) container is based on [Ubuntu](https://ubuntu.com). 
+The tools are written in [C++17](https://en.cppreference.com/w/cpp/17) and compiled with [GCC](https://gcc.gnu.org). 
+A number of libraries are used, mainly: [PDAL](https://pdal.io/), [GDAL](http://www.gdal.org), and [\{fmt\}](https://github.com/fmtlib/fmt). 
+The testing environment is [`doctest`](https://github.com/onqtam/doctest) and the building environment is [`cmake`](https://cmake.org). All are excellent open source software with generous licences. 
