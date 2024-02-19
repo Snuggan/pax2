@@ -1,0 +1,16 @@
+%\metric[ and \metrictag{sample\_kurtosis}{Kurtosis}]{Kurtosis}{pop\_kurtosis}
+\metric{Kurtosis}{kurtosis}
+\metricdescr{The sample kurtosis.}
+%\metricdescr{The population and sample kurtosis. Presently, only the sample kurtosis is distributed.}
+%\metriceq{n\cdot\rawsumfrac{4}{2} - 3\quad\textrm{(population kurtosis)}}
+% Same as population_kurtosis_fisher( s_ )
+% Same as cmoment_raw< 4 >( s_ )*n/( m2*m2 ) - 3
+% where m2 is cmoment_raw< 2 >( s_ )
+% where cmoment_raw< p >( s_ ) is \sum_i (x_i-\bar{x})^p
+\metriceq{\frac{(n+1)(n-1)}{(n-2)(n-3)}\cdot n\cdot\rawsumfrac{4}{2} - \frac{3n^2}{(n-2)(n-3)}%\quad\textrm{(sample kurtosis)}
+}
+% Same as sample_kurtosis_fisher( s_ )
+% Same as sample_kurtosis_pearson( s_ ) - 3.0f*n*n/( (n-2)*(n-3) )
+% Same as cmoment_raw< 4 >( s_ )*n*( n+1 )/( ( n-1 )*( n-2 )*( n-3 )*v*v ) - 3.0f*n*n/( (n-2)*(n-3) )
+% Same as ( cmoment_raw< 4 >( s_ ) / v^2 )*n*( n+1 )/( ( n-1 )*( n-2 )*( n-3 ) ) - 3.0*n*n/( (n-2)*(n-3) )
+% where v is sample_variance( s_ )

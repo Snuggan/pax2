@@ -1,0 +1,22 @@
+\newcommand{\Lmoment}[2]{\frac{1}{#1}\binom{n}{#1}^{-1}\;\sum_{i=1}^n \left[#2\right]\cdot z_{(i)}}
+
+\metric{L-mean}{–}%{L1}
+\metricdescr{The mean has the same value in ordered statistics as in unordered, so \mname{L1} is not included – use \mname{mean} instead.}
+%\metriceq{\frac{1}{n}\;\sum_{i=1}^n z_{(i)} = \meanz}
+
+\metric{L-scale}{L2}
+\metriceq{\Lmoment{2}{\binom{i-1}{1} - \binom{n-i}{1}}}
+
+\metric{L-scewness}{L3}
+\metriceq{\Lmoment{3}{\binom{i-1}{2} -2\binom{i-1}{1}\binom{n-i}{1} + \binom{n-i}{2}}}
+
+\metric{L-kurtosis}{L4}
+\metriceq{\Lmoment{4}{\binom{i-1}{3} - 3\binom{i-1}{2}\binom{n-i}{1} + 3\binom{i-1}{1}\binom{n-i}{2} - \binom{n-i}{3}}}
+
+% \metric{L-scewness ratio}{L3\_ratio}
+% \metricdescr{\aka{L3-moment ratio}{L-scewness ratio}.\\L-moment ratios lie within the interval (–1, 1). Tighter bounds can be found for some specific L-moment ratios. Presently, the L-scewness ratio is not distributed as it is easily calculated from L-scewness and L-scale.}
+% \metriceq{\frac{\textrm{L-scewness}}{\textrm{L-scale}} = \frac{\texttt{L3}}{\texttt{L2}}}
+%
+% \metric{L-kurtosis ratio}{L4\_ratio}
+% \metricdescr{\aka{L4-moment ratio}{L-kurtosis ratio}.\\L-moment ratios lie within the interval (–1, 1). Tighter bounds can be found for some specific L-moment ratios. Presently, the L-kurtosis ratio is not distributed as it is easily calculated from L-kurtosis and L-scale.}
+% \metriceq{\frac{\textrm{L-kurtosis}}{\textrm{L-scale}} = \frac{\texttt{L4}}{\texttt{L2}}}

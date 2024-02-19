@@ -1,0 +1,175 @@
+\documentclass[10pt,english,a4paper
+	%,twoside
+]{article}
+
+% The following is not required -- igore it if you don't have it.
+\usepackage{pax3}
+
+\usepackage{amsmath,hyperref,makeidx}
+
+
+\newcommand{\lidar}{Lidar}
+\newcommand{\slu}{\textsc{slu}}
+\newcommand{\download}{“Skogsdatalabbet” (\url{where.to.download})}
+\newcommand{\tabrow}[1]{\mname{#1\_1ret}	& \mname{#1\_1ret\_ge150cm}	& \mname{#1\_all}	& \mname{#1\_all\_ge150cm}	\\}
+
+
+\title{Swedish {\lidar} Metrics}
+\author{Peder Axensten, Jörgen Wallerman, and Rubén Valbuena}
+\setcounter{secnumdepth}{0}
+
+
+\newcommand{\mname}[1]{{\small\texttt{#1}}}
+
+
+\newlength{\descriptionwidth}
+\settowidth{\descriptionwidth}{\textsc{Description:~~\mbox{}}}
+\newlength{\boxwidth}
+\setlength{\boxwidth}{\textwidth}
+\addtolength{\boxwidth}{-\descriptionwidth}
+
+\newcommand{\metricrow}[2]{\makebox[\descriptionwidth][t]{\textsc{#1}:}\parbox[t]{\boxwidth}{#2}}
+\newcommand{\metrictag}[2]{\mname{#1}\index{#1@\mname{#1} (tag)|see{#2}}}
+\newcommand{\metric}[3][]{\subsubsection{#2\index{#2}}\metricrow{Tag}{\metrictag{#3}{#2}#1}}
+\newcommand{\metricdescr}[1]{\\\metricrow{Description}{#1}}
+\newcommand{\metriceq}[1]{{\small$$#1$$}}
+
+
+
+\newcommand{\where}{,\quad\textrm{where }}
+\newcommand{\idxsee}[2]{\index{#1|see{#2}}}
+\newcommand{\aka}[2]{Also known as #1\idxsee{#1}{#2}}
+\newcommand{\meanz}{\ensuremath{\bar{z}}}
+
+\renewcommand{\indexspace}{}
+\renewcommand{\hyperindexformat}[2]{#1\mbox{,} \hyperpage{#2}}
+
+\newcommand{\rawsum}[1]{\sum_{i=1}^n (z_i-\meanz)^#1}
+\newcommand{\rawsumfrac}[2]{\frac{\rawsum{#1}}{\left[\rawsum{2}\right]^{#2}}}
+\newcommand{\popsum}[1]{\frac{1}{n}\;\rawsum{#1}}
+\newcommand{\samplesum}[1]{\frac{1}{n-1}\;\rawsum{#1}}
+
+
+
+
+\makeindex
+\begin{document}
+\maketitle
+
+
+\section{Introduction}\label{introduction}
+
+To produce the Swedish forest variables (published via the Swedish Forest Agency) we use models with specific metrics as independent data and data from the Swedish \textsc{nfi} as dependent data. Thus, we calculate metrics in raster form as well as for the \textsc{nfi} plots. As such metrics may be useful also in other situations, we make a set of metrics available through {\download}. 
+
+This document contains information on the available metrics. 
+
+
+\subsection{What the metrics may be used for}
+
+The metrics are published as open data under the Simplified \textsc{bsd} License\footnote{\url{https://en.wikipedia.org/wiki/BSD_licenses}} and may be used for any non-criminal purpose as long as the following is clearly stated:
+\emph{“Data is produced by the Swedish University of Agriculture (\textsc{slu}), for more information see \url{www.slu.se}.”}
+
+
+\subsection{What the metrics can be used for}
+
+We use a subset of the metrics to produce the Swedish forest variables published through the Swedish Forest Agency.\footnote{\url{https://skogsstyrelsen.se/skogligagrunddata} (in Swedish)}
+
+
+\subsection{Files}
+
+To define a metric you combine a statistic and a filter, the naming convention is year\_statistic\_filter as detailed in “\nameref{sec:statistics}”, “\nameref{sec:details}”, and “\nameref{sec:filtering}”, below.
+
+\subsubsection{Rasters}
+All the available metrics are saved as geotiff raster files (suffix \mname{.tiff}) using lossless compression and the \textsc{sweref}99 \textsc{tm} projected georeference system. The resolution is 10$\times$10~m$^2$.
+
+\subsubsection{Text file}
+Along with the raster files, there is a text file \mname{year\_plots.csv} containing the metrics as well as forest variables from the Swedish \textsc{nfi} permanent plots. The text file uses semicolon as column separator. The plot coordinates are not included as they are not published by the Swedish \textsc{nfi}. 
+
+
+\section{Metrics}\label{sec:metrics}
+
+\subsubsection{Available statistics}\label{sec:statistics}
+\begin{itemize}
+	\item The number of points: \mname{count}. You probably do not want to use \mname{count} directly, but rather divide two counts with different filtering to get a proportion. 
+	\item Summary statistics: \mname{mean}, \mname{mean2}, \mname{variance}, \mname{skewness}, and \mname{kurtosis}.
+	\item Percentiles: \mname{p10}, \mname{p20}, \mname{p30}, \mname{p40}, \mname{p50}, \mname{p60}, \mname{p70}, 
+								\mname{p80}, \mname{p90}, and \mname{p95}. 
+	\item L-moments: \mname{L2} (\textsc{l}-scale), \mname{L3} (\textsc{l}-skewness), and \mname{L4} (\textsc{l}-kurtosis). 
+	\item Median absolute deviation: \mname{mad}. 
+\end{itemize}
+
+\subsubsection{Filtering}\label{sec:filtering}
+You choose if you want all points (\mname{all}) or only the first returns (\mname{1ret}). Optionally you also choose a boundary (\mname{\_geHcm}).
+\begin{itemize}
+	\item \mname{all} (all points) or \mname{all\_geHcm} (all points greater than or equal to $H$ cm). 
+	\item \mname{1ret} (all first returns) or \mname{1ret\_geHcm} (all first returns greater than or equal to $H$ cm).
+\end{itemize}
+All the statistics come with at least the following filters (\mname{count} has a few extra):
+\\{\small\begin{tabular}{@{}l@{, }l@{, }l@{, and }l@{.}}
+	\tabrow{\mbox{}}
+\end{tabular}}
+
+
+\subsubsection{Examples}
+\begin{itemize}
+	\item \mname{2022\_variance\_all} (sample variance of all points), 
+	\item \mname{2022\_variance\_1ret} (sample variance of first returns), and 
+	\item \mname{2022\_count\_1ret\_ge150cm} (number of first returns greater than or equal to 1.5~m). 
+\end{itemize}
+
+
+\subsection{Definitions}\label{sec:details}
+
+\begin{itemize}
+	\item $n$, the number of values.
+	\item $z_i$, value $i$, where $1\le i\le n$.
+	\item $z_{(i)}$, ordered value $i$, where $1\le i\le n$ and $z_{(i)}\le z_{(i+1)}$.
+	\item $\meanz$, the mean.
+\end{itemize}
+
+\input{metrics/count}
+\input{metrics/mean}
+\input{metrics/stddev}
+\input{metrics/variance}
+\input{metrics/skewness}
+\input{metrics/kurtosis}
+\input{metrics/percentile}
+\input{metrics/mad}
+\input{metrics/L-moments}
+\hspace{2em}
+
+
+\section{List of all the metrics}
+
+{\small
+\begin{tabular}{@{}llll@{}}
+	\hline
+	\tabrow{count}
+	\tabrow{kurtosis}
+	\tabrow{L1}
+	\tabrow{L2}
+	\tabrow{L3}
+	\tabrow{L4}
+	\tabrow{mad}
+	\tabrow{mean}
+	\tabrow{mean2}
+	\tabrow{p10}
+	\tabrow{p20}
+	\tabrow{p30}
+	\tabrow{p40}
+	\tabrow{p50}
+	\tabrow{p60}
+	\tabrow{p70}
+	\tabrow{p80}
+	\tabrow{p90}
+	\tabrow{p95}
+	\tabrow{skewness}
+	\tabrow{stddev}
+	\hline
+	count\_1ret\_ge500cm	& count\_1ret\_ge1000cm	& \multicolumn{2}{l}{count\_1ret\_ge1500cm}	\\
+	count\_all\_ge500cm	& count\_all\_ge1000cm	& \multicolumn{2}{l}{count\_all\_ge1500cm}	\\
+	\hline
+\end{tabular}}
+
+%{\small\printindex}		% Run "makeindex public-metrics.idx" from that directory.
+\end{document}

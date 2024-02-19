@@ -1,0 +1,15 @@
+%\metric[ and \metrictag{sample\_skewness}{Skewness}]{Skewness}{pop\_skewness}
+\metric{Skewness}{skewness}
+\metricdescr{The sample ($G_1$)\index{G1 skewness@$G_1$ skewness|see{Skewness}} skewness.}
+%\metricdescr{The population ($g_1$)\index{g1 skewness@$g_1$ skewness|see{Skewness}} and sample ($G_1$)\index{G1 skewness@$G_1$ skewness|see{Skewness}} skewness. Presently, only the sample skewness is distributed.}
+%\metriceq{\sqrt{n}\cdot\rawsumfrac{3}{1.5}\quad\textrm{(population skewness)}}
+\metriceq{\frac{\sqrt{n(n-1)}}{n-2}\cdot\sqrt{n}\cdot\rawsumfrac{3}{1.5}%\quad\textrm{(sample skewness)}
+}
+
+
+
+% Same as skewness_G1( s_ )
+% Same as skewness_g1( s_ )*fisher_pearson_coeff( s_ )
+% Same as cmoment_raw< 3 >( s_ )/( m*std::sqrt( m/n ) )*fisher_pearson_coeff( s_ )
+% where m is cmoment_raw< 2 >( s_ )
+% and fisher_pearson_coeff( s_ ) is std::sqrt( n*(n-1) )/( n-2 )
