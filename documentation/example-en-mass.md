@@ -109,6 +109,6 @@ This file contains metadata on the areas covered by the point cloud files. It ha
 ## The nerdy details
 
 The [Docker](https://www.docker.com/products/docker-desktop) container is based on [Ubuntu](https://ubuntu.com). 
-The tools are written in [C++17](https://en.cppreference.com/w/cpp/17) and compiled with [GCC](https://gcc.gnu.org). 
+The tools are written in [C++23](https://en.cppreference.com/w/cpp/23) and compiled with [GCC](https://gcc.gnu.org). 
 A number of libraries are used, mainly: [PDAL](https://pdal.io/), [GDAL](http://www.gdal.org), and [\{fmt\}](https://github.com/fmtlib/fmt). 
 The testing environment is [`doctest`](https://github.com/onqtam/doctest) and the building environment is [`cmake`](https://cmake.org). All are excellent open source software with generous licences. 
