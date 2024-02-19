@@ -77,21 +77,24 @@ To end the Docker volume session, execute `exit`.
 
 ## Format of csv-files
 
-These files are text files with the first line containing the headers and then one data item on each line. Line delimiters might be Windows or Linux/MacOS. Column delimiters must be '`;`'. All lines must have the same number of columns (column delimiters). What columns they are required to contain is defined below. Header names are case sensitive. The order of columns is not important and the file might have other columns, as long as they follow the formatting. Do not use “strange” characters, such as `*#\åäö` etc. 
+These files are text files with the first line containing the headers and then one data item on each line. Line delimiters might be either Windows (`\r\n`) or Linux/MacOS (`\n`). Column delimiters must be '`;`'. All lines must have the same number of columns. Required columns are defined below. Header names are case sensitive. The order of columns is not important and the file might have other columns. Do not use “strange” characters, such as `*#\åäö` etc. 
 
 These files should be located in the folder `0-project`.
 
 ### plots.csv
 
-This file contains field measurements, ground data. It has a header line followed by data from one plot per line. Required columns (header names) are:
+This file contains field measurements, ground data. It has a header line followed by data from one plot per line. The regular tools, the `pdal` filter modules, the required columns (header names) are:
+
 - `east` is the eastern coordinate in the geographical reference system used in rasters and point cloud files.
 - `north` is the northern coordinate in the geographical reference system used in rasters and point cloud files.
 - `radius` in the unit used by geographical reference system used in rasters and point cloud files. Most probably meters. 
+
+Then there are a number of required columns for the estimation we employ for Sweden:
+
 - `leaveson` was the plot measured during the summer season, values are 1. If not, values are 0. 
 - `scanner_type` what scanner type was used to scan the plot (Leica ALS80 is 0, Leica TerrainMapper is 1). 
 - `variables`* Measured values for the variables that are to be estimated. Typically they are: . `Hgv`, `Volume`, `Biomass`, `Basal_area`, and `Dgv`. 
 
-The included `pax.regression` R library includes a function `check_required_plot_cols("path/to/plots.csv")`, that can be used to check if a file contains the required columns. 
 
 ### ruta_meta.csv
 
