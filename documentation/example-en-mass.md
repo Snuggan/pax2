@@ -83,7 +83,7 @@ These files should be located in the folder `0-project`.
 
 ### plots.csv
 
-This file contains field measurements, ground data. It has a header line followed by data from one plot per line. The regular tools, the `pdal` filter modules, the required columns (header names) are:
+This file contains field measurements, ground data. It has a header line followed by data from one plot per line. The regular tools, the `pdal` filter modules, require these columns:
 
 - `east` is the eastern coordinate in the geographical reference system used in rasters and point cloud files.
 - `north` is the northern coordinate in the geographical reference system used in rasters and point cloud files.
