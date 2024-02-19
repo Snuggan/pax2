@@ -25,7 +25,8 @@ It has not been adapted to Windows as I have no access to a Windows development 
 
 ## Examples
 
-- [How to do everything at once:](documentation/example-1.sh) How to calculate plot and raster metrics as well as creating individual point cloud files for all points in each plot. 
+- [How to do everything at once:](documentation/example-all-at-once.sh) How to calculate plot and raster metrics as well as creating individual point cloud files for all points in each plot. 
+- [How to estimate forest variables in an automated manner:](documentation/example-en-mass.md) Given \[thousands of\] point cloud files, field measurements *etc* – how to estimate forest variables in an automated manner.
 
 
 ## Reference
