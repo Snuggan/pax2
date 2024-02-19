@@ -1,0 +1,337 @@
+\documentclass[english,a4paper,minion,nofigsidecaption]{article}
+\usepackage{pax3,pax3extra}			% Comment this line if you are not Peder!  :-)
+
+\providecommand{\nolb}[1]{\mbox{#1}}
+\providecommand{\ie}{\textit{i.e.}}
+\providecommand{\abbr}[1]{\texorpdfstring{\textsc{\MakeLowercase{#1}}}{#1}}
+\newcommand{\slu}{\abbr{SLU}}
+
+\usepackage{babel,hyperref,amsmath}
+
+
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{0}
+\renewcommand{\labelenumii}{\arabic{enumii}.}
+
+\newcommand{\als}{\textsc{als}}
+\newcommand{\make}{\href{https://www.gnu.org/software/make/}{\texttt{make}}}
+\newcommand{\pdal}{\href{https://www.pdal.io}{\textsc{pdal}}}
+\newcommand{\gdal}{\href{https://www.gdal.org}{\textsc{gdal}}}
+\newcommand{\R}{\href{https://www.r-project.org}{\textsc{r}}}
+\newcommand{\docker}{\href{https://www.docker.org}{Docker}}
+
+
+\newcommand{\file}[1]{\textsf{#1}}
+\renewcommand{\tt}[1]{\texttt{#1}}
+\newcommand{\id}{\emph{id}}
+
+
+\newcommand{\pu}{\abbr{PU}}
+
+\newcommand{\first}[1]{\ensuremath{\hat{#1}}}
+\newcommand{\perc}[1]{\ensuremath{\first{p}_{#1}}}
+\newcommand{\stdf}{\ensuremath{\first{s}}}
+\newcommand{\hveg}[1]{\ensuremath{\first{q}_{#1}}}
+\newcommand{\prop}[1]{\ensuremath{q'_{#1}}}
+
+\newcommand{\sis}{\abbr{SIS}}%
+\newcommand{\param}[1]{\ensuremath{\hat{\alpha}_{#1}}}%
+\newcommand{\wet}{\ensuremath{w_\textrm{\slu}}}%
+\newcommand{\float}[2]{#1\ensuremath{\cdot}10\ensuremath{^{#2}}}%
+
+\newcommand{\zmin}{–2 m}
+\newcommand{\zmax}{50 m}
+\newcommand{\pixelside}{12.5}
+\newcommand{\thresholdperc}{80}
+\newcommand{\numofplots}{350}
+
+\newcommand{\paxbox}[1]{\noindent\vspace{0.5em}\framebox{\parbox[t]{0.98\linewidth}{\raggedright#1}}\vspace{0.5em}}
+
+
+
+\title{Producing Forest Variables \nolb{from Point Cloud Data}}
+%\author{Peder Axensten}
+\date{\today}
+
+
+
+\begin{document}
+\maketitle
+\abstract{{\noindent}A terse and rather technical description of the forest variable production at \abbr{SLU}.}\vspace{2em}
+
+
+\section{Introduction}
+
+The Remote Sensing section of the Department of Forest Resources at the Swedish Agricultural University (\textsc{slu}) has developed a framework and tools to estimate forest variables wall-to-wall for Sweden\footnote{where-to-find}. The data are the {\als} produced by the Swedish Land Survey and field data from the Swedish National Field Inventory, produced by \textsc{slu}. The framework handles all parts of the process ensuring that all files that need to be processed are processed (in parallel) through all parts of the process. The process has the following principal parts:
+\begin{enumerate}
+	\item Filtering and normalising raw point cloud data.
+	\item Calculating metrics for the area covered and for the individual field plots.
+	\item Modelling and prediction.
+	\item Post-processing: mosaics and evaluation.
+\end{enumerate}
+
+\vspace{0.5em }{\noindent}The process unit (\pu) is the area covered by an individual point data file. These files (and their offsprings) may be processed in parallel, as there are no algorithmic dependencies between them. 
+
+\section{Implementation}
+
+\subsection{Framework}
+
+To coordinate the processing of all files and processing steps, a {\make} script is used. {\make} is a tool to handle file dependency chains in complex processing. If a file is added or changed upstream the dependency chain, {\make} ensures that all dependent files downstream are created or updated. This greatly simplifies updating the data set by only processing dependent files. A {\make} script defines these dependencies and the tools with arguments to execute to produce or update the downstream files. It programmatically describes the complete process. 
+
+Once everything is set up properly, all you need to do to process all files (often in the hundreds of thousands of them) through all parts of the process is to execute one command in the command prompt:
+\\[0.25em]\hspace{5em}{\texttt{make -j12 -k}}.
+\\[0.25em]The argument \texttt{-j12} tells {\make} to use up to 12 threads – use as many as your machine can muster, but using more threads than actually available does not make sense. On big machines with many available threads, a very large number of threads may saturate the file storage bus. Parameter \texttt{-k} tells {\make} not to stop if it encounters an error, so if you have a corrupt file {\make} will continue processing files that are independent of it. If you run the command when all is already up-to-date, nothing will happen except for a message that nothing needs doing. 
+
+\subsection{Tools}
+
+The two {\als} data processing tools used in the first parts of the process are based on {\pdal}, a general tool for point cloud processing. It uses modules for the actual processing. These may be combined into one command, so that the point cloud file is read once and run through the modules as specified before the resulting file is saved. The modules are used sequentially in the {\pdal}-based tools. Some of the modules used are included with {\pdal}, but other had to be developed. 
+
+\subsubsection{Normalising and filtering}
+\paxbox{“raw” point data file + \abbr{DEM} $\rightarrow$ filtered point data file.} 
+A {\pdal} tool with the following modules that are executed sequentially:
+\begin{enumerate}
+	\item \textbf{Normalization} ({\pdal} module \texttt{filters.hag\_dem}). Using a \abbr{DEM}, height above ground is calculated.
+	\item \textbf{Altitude and point class filtering} (proprietary module \texttt{filters.slu\_lm}). All points with $z$-values below {\zmin} and above {\zmax} are removed. For the remaining points, all $z$-values below zero are set to zero. Only points with any of the these classes are retained:%
+		\footnote{\raggedright Swedish Land Survey point classes: \url{https://www.lantmateriet.se/globalassets/kartor-och-geografisk-information/hojddata/pb_laserdata_nedladdning_skog.pdf}.}
+		\\\begin{tabular}{cl}
+			0:	& created, but never classified, 							\\
+			1:	& unspecified (also includes any incorrect classes), or 	\\
+			2:	& point on ground. 
+		\end{tabular}
+	\item \textbf{Flight overlap removal} (proprietary module \texttt{filters.remove\_overlap}). The {\pu} is divided into a raster of pixels of a specified size. In each pixel, only points from the flight with the smallest scan angle are retained. 
+\end{enumerate}
+
+\subsubsection{Calculating metrics}
+\paxbox{Filtered point data file + plot data file $\rightarrow$ metric raster files and plot file.}
+A {\pdal} tool with the following modules that are executed sequentially:
+\begin{enumerate}
+	\item \textbf{Raster metrics} (proprietary module \texttt{filters.raster\_metrics}). Creates one raster file for each metric specified.
+	\item \textbf{Plot metrics} (proprietary module \texttt{filters.plot\_metrics}). Creates a plot file with the original columns and added metric columns. Only contains the plots that are geographically contained by the point data file and is empty if none was contained. 
+\end{enumerate}
+After these modules are executed on all point data files, a tool is run to aggregate all individual plot metric files into one file. This file will be used in the model building. 
+
+\subsubsection{Modelling and prediction}
+\paxbox{metric raster file + metrics plot file + metadata file \nolb{$\rightarrow$ forest variable files.}} 
+To model and estimate an {\R}-based tool is used. A number of plots are chosen from the metric plots file. Using the chosen plots, a local model is calculated for the {\pu} and then applied on the raster metrics to produce forest variable estimations for the {\pu}. The tool is available in the docker container: (\texttt{pax-regression --help}).
+
+\subsubsection{Post-processing}
+{\gdal} is used to produce the final wall-to-wall mosaics and accompanied pyramid files. 
+
+\subsection{{\docker}}
+All processing tools, the framework, and the processing environment are included in an Ubuntu-based {\docker} image available at \url{https://hub.docker.com/repository/docker/axensten/slu}. So if your computer supports {\docker}, you can install the image and run the tools individually or using the framework {\make} script. Some of the proprietary modules might be of use by themselves. Execute \verb|pdal --options filters.<name>| to get detailed information on their use. 
+\begin{itemize}
+	\item \texttt{filters.slu\_lm}, 
+	\item \texttt{filters.remove\_overlap}, 
+	\item \texttt{filters.raster\_metrics}, and 
+	\item \texttt{filters.plot\_metrics} are described above.
+	\item \texttt{filters.plot\_points} creates individual point cloud files of a specified radius, one for each plot contained by the input file.
+\end{itemize}
+
+{\noindent}Apart from {\pdal}, {\gdal}, and other command line tools there are also proprietary ones, {\ie}:
+\begin{itemize}
+	\item \texttt{pax-append-tables} aggregates all \texttt{.csv} files in a directory into one file. 
+\end{itemize}
+
+
+\section{Data}
+
+\begin{itemize}
+	\item All point cloud files produced use the .laz (compressed .las) format.
+	\item All raster files produced use the geotif (.tif) format. The files contain only one band. They may use some non-destructive compression, {\ie} deflate. 
+	\item All tabular data files use semicolon separated text files (.csv, but with semicolon as the column separator). Non-ascii characters are to be avoided, but the files are handled as utf8 if non-ascii characters are present. No \abbr{BOM} (byte order marker). 
+	\item All spatial references are in \abbr{SWEREF}99 \abbr{TM}. 
+\end{itemize}
+
+\filefigure
+	{ills/make-system}
+	{}
+	{width=9cm}
+	{}
+	{Graphic representation of the process. Ovals represent files, rectangles represent processing. Green ovals are in-data, white are temporary files, and blue are final files.}
+
+
+\newpage
+\subsection{Metrics used}
+
+%\newcommand{\metricrestriction}{of all first returns}
+\newcommand{\metricrestriction}{of all values greater than 1.5 m}
+\begin{tabular}{c@{ }l}
+	\perc{x}	& is height percentile $x$ {\metricrestriction};				\\
+	\hveg{x}	& = $\perc{x}\cdot\prop{1.5}$; 									\\
+	\prop{x}	& = $\frac{\textrm{number of first returns above $x$ m}}{\textrm{total number of first returns}}$; and	\\
+	{\stdf}		& is the standard deviation {\metricrestriction}. 				\\
+	% \abbr{N}	& is the northern coordinate in Sweref99 \abbr{TM} [m];			\\
+	% $a_{sl}$	& is the altitude above sea level [m];							\\
+	% $d_c$		& is the distance to coast [km];								\\
+	% $\Delta$p95	& is the annual change of $z$ percentile 95 [m/year]; and		\\
+	% \wet		& is the soil wetness ({\slu}-markfuktighet) [fraction, 0–1].	\\
+\end{tabular}
+
+
+\subsection{Choice of field data for modelling}
+
+Plots are chosen according to global and local criteria and then outliers are identified and removed. 
+For this, metrics \perc{30}, \perc{95}, and \prop{1.5} must be available for all plots. 
+\begin{itemize}
+	\item \textbf{Global criteria} (in \texttt{plot-sample-ruta.r}). Candidate plots must...
+		\begin{enumerate}
+			\item have \abbr{HGV} > 3 m \emph{and} 
+			\item –0.7 + 0.6$\cdot$\perc{95} < \abbr{HGV} < 2.6 + 1.1$\cdot$\perc{95} \emph{and}
+			\item have no overstorey (only if overstorey information is available) \emph{and} 
+			\item have metrics based on at least 20 points (in \texttt{plot-filter.hpp}). 
+		\end{enumerate}
+	\item \textbf{Local criteria} (in \texttt{plot-sample-ruta.r}).  
+		\begin{enumerate}
+			\item Only plots with the same scanner type as the {\pu} are eligible. 
+			\item Only plots with the same scanning season as the {\pu} are eligible (leaves on or off). 
+			\item A “badness” value $b_i$ is calculated and the {\numofplots} eligible plots with the lowest $b_i$ are chosen. Presently, $b_i$ is simply the distance in meters between the plot and the center of the \pu. 
+		\end{enumerate}
+	\item \textbf{Model criteria:} An area must have at least 50 plot candidates – or an error is issued (in \texttt{plot-sample-ruta.r}). 
+	\item \textbf{Outlier removal.} Two robust models (\texttt{rlm} in R) are used:
+		$$
+			\begin{array}{c@{\quad\sim\quad}l}
+				h^\star   	& \perc{95}	\quad\textrm{and}\\
+				v^\star		& \perc{30} + \perc{95} + \hveg{95}.
+			\end{array}
+		$$
+		\begin{enumerate}
+			\item For each plot $i$ of the {\numofplots} plots, $h^\star_i$ and $v^\star_i$ are predicted using the other plots. 
+			\item The distance $m_i = |h^\star_i - \textit{Hgv}_i, (v^\star_i)^2 - (\textit{Hgv}_i)^2|_\textrm{\footnotesize{Mahalanobis}}$ is calculated. 
+			\item A threshold $t_{\thresholdperc}$, equal to percentile {\thresholdperc} of all $m_i$, is calculated. 
+			\item Only plots with $m_i < t_{\thresholdperc}$ are used in the further modelling. 
+		\end{enumerate}
+\end{itemize}
+
+
+\subsection{Modelling}
+
+Presently, only linear modelling is implemented. 
+
+
+\subsubsection{Linear modelling}
+
+$$
+	\begin{array}{l@{\quad\sim\quad}l@{\quad}l}
+		\textit{Hgv}							& 				\perc{95}				& \textrm{in dm}				\\
+		\sqrt{\textit{Volume}}					& \hveg{80} +	\perc{95} +	\stdf		& \textrm{in m}^3/\textrm{ha}	\\
+		\sqrt{\textit{Biomass}_\textit{above}}	& \hveg{80} +	\perc{95} +	\prop{1.5}	& \textrm{in m}^3/\textrm{ha}	\\
+		\sqrt{\textit{Biomass}_\textit{below}}	& \hveg{80} +	\perc{95} +	\prop{1.5}	& \textrm{in m}^3/\textrm{ha}	\\
+		\textit{Basal area}						& \hveg{80} +				\stdf		& \textrm{in m}^2				\\
+		\textit{Dgv}							& \hveg{80}	+	\perc{95} 				& \textrm{in m}					\\
+		% \textrm{\sis} 							&
+		% 		\textrm{\abbr{N}}
+		% 	+	a_{sl}
+		% 	+	d_c
+		% 	+	\textrm{p90}^2
+		% 	+	\Delta\textrm{p95}^2
+		% 	+	\wet
+		% 	+	\wet^2													& \textrm{in ?}
+	\end{array}
+$$
+{\sis} is estimated for both pine and spruce and will be implemented early 2023. 
+
+
+
+\subsection{Prediction}
+
+Forest variables for a {\pu} are predicted using the local model. In case a transformation was used, such as $\sqrt{x_i}$ to predict a variable $\sqrt{X_i}$, the inverse function is multiplied by a bias correction factor to obtain the final predicted value, \ie:
+$$
+	X_i = \left(\sqrt{X_i}\right)^2 \cdot \frac{\sum_j x_j}{\sum_j \left(\sqrt{X_j}\right)^2}.
+$$
+
+
+
+\subsection{Mosaics}
+
+One geo-tif file (with pyramids) is created for each variable as well as for \perc{95} and \prop{1.5}. The file covers the whole estimated area. 
+The tools used are all from the \href{https://gdal.org}{\texttt{gdal} library}: \verb|gdalbuildvrt|, \verb|gdal_translate|, and \verb|gdaladdo|.
+
+
+\newpage
+\section{Evaluation}
+
+Jörgen and/or Mats?
+
+
+
+
+\section{File structure}
+
+There is a file structure with fixed directories, filenames, and file extensions.
+Each project has its own directory with as follows:
+\begin{itemize}
+	\item\file{\textbf{0-project}} Contains \file{dem.tif}, \file{plots.csv}, \file{plots-metric.csv}, and \file{ruta-meta.csv}.
+	\item\file{\textbf{1-rar-source}} Presently not used.
+	\item\file{\textbf{2-pc-source}} Contains the unprocessed \file{{\id}.laz} files.
+	\item\file{\textbf{3-pc-filtered}} Contains the processed (filtered and normalised) \file{{\id}.laz} files.
+	\item\file{\textbf{4-raster-metrics}} Contains the produced raster metric files (\file{{\id}.\emph{metric}.tif}) and their marker files (\file{{\id}.\emph{variant}}). 
+	\item\file{\textbf{5-raster-variables}} Contains the produced raster variable files (\file{{\id}.\emph{variable}.tif}) and their marker files (\file{{\id}.\emph{variant}}). 
+	\item\file{\textbf{makefile}} The \texttt{make} code that runs everything. 
+\end{itemize}
+These directories might have an arbitrary file structure for their files. This structure will be maintained for the destination files. 
+
+Most processing steps generate metadata. It is either saved as a shadow file with the same name as the produced file, but with the extension \file{.json} or saved in a directory called \file{{\id}.metadata} in the same directory. 
+
+
+\subsection{Input files}
+
+\subsubsection{dem.tif}
+A raster file with the ground's elevation above sea-level for the whole area to be processed. 
+Located in \file{0-project}.
+
+\subsubsection{{\id}.laz}
+Unprocessed (in \file{2-pc-source}) or processed (in \file{3-pc-filtered}) point cloud files with $z$-values relative sea-level and ground, respectively. 
+Located in \file{2-pc-source} and \file{3-pc-filtered}.
+
+
+\subsubsection{csv-files}
+
+These files are text files with the first line containing the headers and then one data item on each line. Line delimiters might be Windows or Linux/MacOS. Column delimiters must be ‘\texttt{;}’. All lines must have the same number of columns (column delimiters). What columns they are required to contain is defined below. Header names are case sensitive. The order of columns is not important and the file might have other columns, as long as they follow the formatting. Do not use “strange” characters, such as “\verb|*#\åäö|” etc. Do not use quotes (\tt{"}) around text.
+
+\subsubsection{plots.csv}
+This file contains field measurements, ground data. It has a header line followed by data from one plot per line. Required columns (header names) are:
+\begin{itemize}
+	\item\tt{east} is the eastern coordinate in the geographical reference system used in rasters and point cloud files.
+	\item\tt{north} is the northern coordinate in the geographical reference system used in rasters and point cloud files.
+	\item\tt{radius} in the unit used by geographical reference system used in rasters and point cloud files. Most probably meters.
+	\item\tt{leaveson} was the plot measured during the summer season, values are 1. If not, values are 0.
+	\item\tt{<variables>} Measured values for the variables that are to be estimated. Typically they are: \tt{Hgv}, \tt{Volume}, \verb|Biomass_above|, \verb|Biomass_below|, \verb|Basal_area|, and \tt{Dgv}.
+\end{itemize}
+Located in \file{0-project}.
+
+\subsubsection{ruta-meta.csv}
+This file contains metadata on the areas covered by the point cloud files. It has a header line followed by data on one area per line. Required columns (header names) are:
+\begin{itemize}
+	\item\tt{east} is the eastern coordinate in the geographical reference system used in rasters and point cloud files.
+	\item\tt{north} is the northern coordinate in the geographical reference system used in rasters and point cloud files.
+	\item\tt{id} explanation.
+	\item\tt{leaveson} was the plot measured during the summer season, values are \tt{1}. If not, values are \tt{0}.
+\end{itemize}
+Located in \file{0-project}.
+
+
+\subsection{Produced files}
+
+\subsubsection{plots-metric.csv}
+Same as plots.csv, but with the addition of required metrics. 
+Located in \file{0-project}.
+
+\subsubsection{{\id}.\emph{variant}}
+An empty marker file. 
+\begin{itemize}
+	\item With the metric files: to mark when the metrics required by the regression variant \emph{variant} were produced.
+	\item With the variable files: to mark when the variables produced the regression variant \emph{variant} were produced.
+\end{itemize}
+
+\subsubsection{{\id}.\emph{metric}.tif}
+The metric raster file for ruta {\id} and metric \emph{metric}. 
+Located in \file{4-raster-metrics}.
+
+\subsubsection{{\id}.\emph{variable}.tif}
+The variable raster file for ruta {\id} and metric \emph{variable}. 
+Located in \file{5-variable-metrics}.
+
+
+
+\end{document}
+\end

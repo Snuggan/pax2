@@ -1,3 +1,6 @@
+*.out
+*.aux
+*.log
 *.py[co]
 *.sw[nop]
 *~
