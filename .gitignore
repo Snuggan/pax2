@@ -1,5 +1,6 @@
 *.out
 *.aux
+*.idx
 *.log
 *.py[co]
 *.sw[nop]
