@@ -7,7 +7,7 @@
 
 ## Overview
 
-At the Swedish University of Agricultural Sciences (SLU) we have developed a [set of tools](../readme.md) that we use to produce wall-to-wall rasters of Sweden for a set of forest variables. The tools are command line tools as well as filter modules for the command line tool [PDAL](https://pdal.io/). The tools are packaged in a Docker image [`axensten/slu`](https://cloud.docker.com/repository/docker/axensten/slu) in a ready-to-run environment that also contains `pdal`, `gdal`, *etc.* The example presented here is specific for Sweden nad the input files that we have, but could be adapted for other use cases.
+At the Forest Remote Sensing section of the Swedish University of Agricultural Sciences (SLU) we have developed a [set of tools](../readme.md) that we use to produce wall-to-wall rasters of Sweden for a set of forest variables. The tools are command line tools as well as filter modules for the command line tool [PDAL](https://pdal.io/). The tools are packaged in a Docker image [`axensten/slu`](https://cloud.docker.com/repository/docker/axensten/slu) in a ready-to-run environment that also contains `pdal`, `gdal`, *etc.* The example presented here is specific for Sweden nad the input files that we have, but could be adapted for other use cases.
 
 Each tool is intended for a specific task and processes one file as specified [here](../readme.md). To run everything in an automated manner there is a [`make` script](../docker/slu/usr/local/etc/makefiles/Makefile), it updates the file structure and estimates the forest variables. All input files need to be organised in a specific file structure. 
 
@@ -20,7 +20,25 @@ You find Docker here: [Get Docker.](https://docs.docker.com/install/)
 (If you are interested, you may have a look at [Get started.](https://docs.docker.com/get-started/))
 
 
-### 2. Start a Docker session
+### 2. Create your file structure
+
+In an otherwise empty directory, create the following directories and put the input files in them:
+
+	0-project/
+		dem.tif
+		plots.csv
+		ruta-meta.csv
+	2-pc-source/
+		non-normalized-point-cloud-files-here
+	3-pc-filtered/
+		normalized-point-cloud-files-here
+
+- The `dem.tif` is the ground base model to subtract from non-normalised points to obtain normalised *z*-values. 
+- The `plots.csv` contains data on the plots (`east`, `north`, and `radius`) as well as their field measurements.
+- The `ruta-meta.csv` contains other data specific for the Swedish laser scanning. 
+
+
+### 3. Start a Docker session
 
 Run `docker run -it --rm -v your-las-file-directory:/process axensten/slu` to start a session.
 
@@ -44,14 +62,14 @@ After processing, resulting files will be found in:
 - `6-mosaic`: mosaics of the raster value files in `5-estimates`. 
 
 
-### 3. Move the files to the designated directories
+### 4. Move the files to the designated directories
 
 - Copy/move `dem.tif`, `plots.csv`, and `ruta_meta.csv` to the `0-project` directory.
 - Copy/move your las/laz files into `2-pc-source`.
 
 If at a later stage you get more files to process, just add them in the appropriate directories. Only files that have changed will be processed when you rerun `make`.  
 
-### 4. Process
+### 5. Process
 
 To process files efficiently the tool [`make`](https://en.wikipedia.org/wiki/Make_(software)) is used. It maintains a dependency tree of the files to be processed and makes sure that missing files are created and old files are updated. An old file is a file where any of the files that it depends on is newer. Put simply: it only does what is necessary – if there are no new files and all existing files are up to date, it will do nothing. 
 
