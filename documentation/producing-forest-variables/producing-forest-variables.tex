@@ -62,7 +62,7 @@
 
 \section{Introduction}
 
-The Remote Sensing section of the Department of Forest Resources at the Swedish Agricultural University (\textsc{slu}) has developed a framework and tools to estimate forest variables wall-to-wall for Sweden\footnote{where-to-find}. The data are the {\als} produced by the Swedish Land Survey and field data from the Swedish National Field Inventory, produced by \textsc{slu}. The framework handles all parts of the process ensuring that all files that need to be processed are processed (in parallel) through all parts of the process. The process has the following principal parts:
+The Remote Sensing section of the Department of Forest Resources at the Swedish Agricultural University (\textsc{slu}) has developed a framework and tools to estimate forest variables wall-to-wall for Sweden\footnote{where-to-find}. The data are from the {\als} produced by the Swedish Land Survey and field data from the Swedish National Field Inventory, produced by \textsc{slu}. The framework handles all parts of the process ensuring that all files that need to be processed are processed (in parallel) through all parts of the process. The process has the following principal parts:
 \begin{enumerate}
 	\item Filtering and normalising raw point cloud data.
 	\item Calculating metrics for the area covered and for the individual field plots.
@@ -76,11 +76,11 @@ The Remote Sensing section of the Department of Forest Resources at the Swedish 
 
 \subsection{Framework}
 
-To coordinate the processing of all files and processing steps, a {\make} script is used. {\make} is a tool to handle file dependency chains in complex processing. If a file is added or changed upstream the dependency chain, {\make} ensures that all dependent files downstream are created or updated. This greatly simplifies updating the data set by only processing dependent files. A {\make} script defines these dependencies and the tools with arguments to execute to produce or update the downstream files. It programmatically describes the complete process. 
+To coordinate the processing of all files and processing steps, a {\make} script is used, it is a tool to handle file dependency chains in complex processing. If a file is added or changed upstream the dependency chain, {\make} ensures that all dependent files downstream are created or updated. This greatly simplifies updating the data set by only processing affected files. A {\make} script defines these dependencies and the tools (with arguments) to execute to produce or update the downstream files. It programmatically describes the complete process. 
 
 Once everything is set up properly, all you need to do to process all files (often in the hundreds of thousands of them) through all parts of the process is to execute one command in the command prompt:
-\\[0.25em]\hspace{5em}{\texttt{make -j12 -k}}.
-\\[0.25em]The argument \texttt{-j12} tells {\make} to use up to 12 threads – use as many as your machine can muster, but using more threads than actually available does not make sense. On big machines with many available threads, a very large number of threads may saturate the file storage bus. Parameter \texttt{-k} tells {\make} not to stop if it encounters an error, so if you have a corrupt file {\make} will continue processing files that are independent of it. If you run the command when all is already up-to-date, nothing will happen except for a message that nothing needs doing. 
+\\[0.25em]\mbox{}\hspace{5em}{\texttt{make -j12 -k}}
+\\[0.25em]The argument \texttt{-j12} tells {\make} to use up to 12 threads – use as many as your machine can muster. On big machines with many available threads, a very large number of threads may saturate the file storage bus. Parameter \texttt{-k} tells {\make} not to stop if it encounters an error, so if you have a corrupt file {\make} will continue processing files that are independent of it. If you run the command when all is already up-to-date, nothing will be done. 
 
 \subsection{Tools}
 
@@ -112,13 +112,13 @@ After these modules are executed on all point data files, a tool is run to aggre
 
 \subsubsection{Modelling and prediction}
 \paxbox{metric raster file + metrics plot file + metadata file \nolb{$\rightarrow$ forest variable files.}} 
-To model and estimate an {\R}-based tool is used. A number of plots are chosen from the metric plots file. Using the chosen plots, a local model is calculated for the {\pu} and then applied on the raster metrics to produce forest variable estimations for the {\pu}. The tool is available in the docker container: (\texttt{pax-regression --help}).
+To model and estimate an {\R}-based tool is used. A number of plots are chosen from the metric plots file using criterias specific for the area estimated. Using the chosen plots, a local model is calculated for the {\pu} and then applied on the raster metrics to produce forest variable estimations. The tool is available in the docker container: (\texttt{pax-regression --help}).
 
 \subsubsection{Post-processing}
 {\gdal} is used to produce the final wall-to-wall mosaics and accompanied pyramid files. 
 
 \subsection{{\docker}}
-All processing tools, the framework, and the processing environment are included in an Ubuntu-based {\docker} image available at \url{https://hub.docker.com/repository/docker/axensten/slu}. So if your computer supports {\docker}, you can install the image and run the tools individually or using the framework {\make} script. Some of the proprietary modules might be of use by themselves. Execute \verb|pdal --options filters.<name>| to get detailed information on their use. 
+All processing tools, the framework, and the processing environment are included in an Ubuntu-based {\docker} image available at \url{https://hub.docker.com/repository/docker/axensten/slu}. So if your system has {\docker}, you can install the image and run the tools individually or using the framework {\make} script. Some of the proprietary {\pdal} modules might be of use individually. Execute \verb|pdal --options filters.<name>| to get detailed information on their use. 
 \begin{itemize}
 	\item \texttt{filters.slu\_lm}, 
 	\item \texttt{filters.remove\_overlap}, 
@@ -139,7 +139,6 @@ All processing tools, the framework, and the processing environment are included
 	\item All point cloud files produced use the .laz (compressed .las) format.
 	\item All raster files produced use the geotif (.tif) format. The files contain only one band. They may use some non-destructive compression, {\ie} deflate. 
 	\item All tabular data files use semicolon separated text files (.csv, but with semicolon as the column separator). Non-ascii characters are to be avoided, but the files are handled as utf8 if non-ascii characters are present. No \abbr{BOM} (byte order marker). 
-	\item All spatial references are in \abbr{SWEREF}99 \abbr{TM}. 
 \end{itemize}
 
 \filefigure
@@ -156,9 +155,9 @@ All processing tools, the framework, and the processing environment are included
 %\newcommand{\metricrestriction}{of all first returns}
 \newcommand{\metricrestriction}{of all values greater than 1.5 m}
 \begin{tabular}{c@{ }l}
-	\perc{x}	& is height percentile $x$ {\metricrestriction};				\\
-	\hveg{x}	& = $\perc{x}\cdot\prop{1.5}$; 									\\
-	\prop{x}	& = $\frac{\textrm{number of first returns above $x$ m}}{\textrm{total number of first returns}}$; and	\\
+	\perc{n}	& is height percentile $n$ {\metricrestriction};				\\
+	\hveg{n}	& = $\perc{n}\cdot\prop{1.5}$; 									\\
+	\prop{z}	& = $\frac{\textrm{number of first returns above $z$ m}}{\textrm{total number of first returns}}$; and	\\
 	{\stdf}		& is the standard deviation {\metricrestriction}. 				\\
 	% \abbr{N}	& is the northern coordinate in Sweref99 \abbr{TM} [m];			\\
 	% $a_{sl}$	& is the altitude above sea level [m];							\\
@@ -184,7 +183,7 @@ For this, metrics \perc{30}, \perc{95}, and \prop{1.5} must be available for all
 		\begin{enumerate}
 			\item Only plots with the same scanner type as the {\pu} are eligible. 
 			\item Only plots with the same scanning season as the {\pu} are eligible (leaves on or off). 
-			\item A “badness” value $b_i$ is calculated and the {\numofplots} eligible plots with the lowest $b_i$ are chosen. Presently, $b_i$ is simply the distance in meters between the plot and the center of the \pu. 
+			\item A “badness” value $b_i$ is calculated and the {\numofplots} eligible plots with the lowest $b_i$ are chosen. Presently, $b_i$ is simply the distance between the plot and the centre of the \pu. 
 		\end{enumerate}
 	\item \textbf{Model criteria:} An area must have at least 50 plot candidates – or an error is issued (in \texttt{plot-sample-ruta.r}). 
 	\item \textbf{Outlier removal.} Two robust models (\texttt{rlm} in R) are used:
@@ -205,7 +204,7 @@ For this, metrics \perc{30}, \perc{95}, and \prop{1.5} must be available for all
 
 \subsection{Modelling}
 
-Presently, only linear modelling is implemented. 
+Presently, only linear modelling is used. 
 
 
 \subsubsection{Linear modelling}
@@ -228,7 +227,7 @@ $$
 		% 	+	\wet^2													& \textrm{in ?}
 	\end{array}
 $$
-{\sis} is estimated for both pine and spruce and will be implemented early 2023. 
+%{\sis} is estimated for both pine and spruce and will be implemented early 2023. 
 
 
 
@@ -261,9 +260,10 @@ There is a file structure with fixed directories, filenames, and file extensions
 Each project has its own directory with as follows:
 \begin{itemize}
 	\item\file{\textbf{0-project}} Contains \file{dem.tif}, \file{plots.csv}, \file{plots-metric.csv}, and \file{ruta-meta.csv}.
-	\item\file{\textbf{1-rar-source}} Presently not used.
+%	\item\file{\textbf{1-rar-source}} Presently not used.
 	\item\file{\textbf{2-pc-source}} Contains the unprocessed \file{{\id}.laz} files.
 	\item\file{\textbf{3-pc-filtered}} Contains the processed (filtered and normalised) \file{{\id}.laz} files.
+	\item\file{\textbf{4-plot-metrics}} Contains the produced local plot metric files and the concatenated file of them (\file{plots-metrics.csv}). 
 	\item\file{\textbf{4-raster-metrics}} Contains the produced raster metric files (\file{{\id}.\emph{metric}.tif}) and their marker files (\file{{\id}.\emph{variant}}). 
 	\item\file{\textbf{5-raster-variables}} Contains the produced raster variable files (\file{{\id}.\emph{variable}.tif}) and their marker files (\file{{\id}.\emph{variant}}). 
 	\item\file{\textbf{makefile}} The \texttt{make} code that runs everything. 
@@ -286,18 +286,21 @@ Located in \file{2-pc-source} and \file{3-pc-filtered}.
 
 \subsubsection{csv-files}
 
-These files are text files with the first line containing the headers and then one data item on each line. Line delimiters might be Windows or Linux/MacOS. Column delimiters must be ‘\texttt{;}’. All lines must have the same number of columns (column delimiters). What columns they are required to contain is defined below. Header names are case sensitive. The order of columns is not important and the file might have other columns, as long as they follow the formatting. Do not use “strange” characters, such as “\verb|*#\åäö|” etc. Do not use quotes (\tt{"}) around text.
+These files are text files with the first line containing the headers and then one data item on each line. Line delimiters might be Windows or Linux/MacOS. Column delimiters must be ‘\texttt{;}’. All lines must have the same number of columns. What columns they are required to contain is defined below. Header names are case sensitive. The order of columns is not important and the file might have other columns. Do not use “strange” characters, such as “\verb|*#\åäö|” etc. Do not use quotes (\tt{"}) around text.
 
 \subsubsection{plots.csv}
-This file contains field measurements, ground data. It has a header line followed by data from one plot per line. Required columns (header names) are:
+This file contains field measurements, ground data. It has a header line followed by data from one plot per line. Required columns (header names) for metrics calculations \emph{and} estimation are:
 \begin{itemize}
 	\item\tt{east} is the eastern coordinate in the geographical reference system used in rasters and point cloud files.
 	\item\tt{north} is the northern coordinate in the geographical reference system used in rasters and point cloud files.
 	\item\tt{radius} in the unit used by geographical reference system used in rasters and point cloud files. Most probably meters.
+\end{itemize}
+In addition, estimation also requires:
+\begin{itemize}
 	\item\tt{leaveson} was the plot measured during the summer season, values are 1. If not, values are 0.
 	\item\tt{<variables>} Measured values for the variables that are to be estimated. Typically they are: \tt{Hgv}, \tt{Volume}, \verb|Biomass_above|, \verb|Biomass_below|, \verb|Basal_area|, and \tt{Dgv}.
 \end{itemize}
-Located in \file{0-project}.
+
 
 \subsubsection{ruta-meta.csv}
 This file contains metadata on the areas covered by the point cloud files. It has a header line followed by data on one area per line. Required columns (header names) are:
@@ -320,7 +323,7 @@ Located in \file{0-project}.
 An empty marker file. 
 \begin{itemize}
 	\item With the metric files: to mark when the metrics required by the regression variant \emph{variant} were produced.
-	\item With the variable files: to mark when the variables produced the regression variant \emph{variant} were produced.
+	\item With the variable files: to mark that the variables were produced using the regression variant \emph{variant}.
 \end{itemize}
 
 \subsubsection{{\id}.\emph{metric}.tif}
