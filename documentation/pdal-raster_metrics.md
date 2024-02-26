@@ -1,6 +1,6 @@
 # pdal module raster_metrics
 
-Create rasters with specified metrics (statistics). calculated for each pixel. 
+Create rasters with specified metrics (statistics) calculated for each pixel. 
 
 Execute `pdal --options filters.raster_metrics` for a list of available parameters and metrics.
 

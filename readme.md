@@ -12,7 +12,7 @@ It has not been adapted to Windows as I have no access to a Windows development 
 
 - [plot_metrics](documentation/pdal-plot_metrics.md) calculates metrics (statistics) for *z*-values of all points within each plot. 
 - [plot_points](documentation/pdal-plot_points.md) saves all points within plots (plus an optional buffer) to individual files, one for each plot. 
-- [raster_metrics](documentation/pdal-raster_metrics.md) creates rasters with specified metrics (statistics). calculated for each pixel.
+- [raster_metrics](documentation/pdal-raster_metrics.md) creates rasters with specified metrics (statistics) calculated for each pixel.
 - [remove_overlap](documentation/pdal-remove_overlap.md) removes overlap created by multiple flights by – per pixel – only accepting points with the same source id as the point in the pixel with the smallest angle. 
 - [slu_lm](documentation/pdal-slu_lm.md) filters points according to *z*-values and point type.
 
