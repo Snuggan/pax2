@@ -2,7 +2,7 @@
 
 Pdal filters and command line tools to calculate *z*-metrics from point clouds. 
 
-There is a docker image available containing all the stuff of `pax2` as well as the environment needed to run it (pdal, gdal, *etc.*) at [`dockerhub`](https://hub.docker.com/repository/docker/axensten/slu). 
+There is a docker image available at [`dockerhub`](https://hub.docker.com/repository/docker/axensten/slu) that contains all the stuff of `pax2` as well as the environment needed to run it (pdal, gdal, *etc.*). 
 
 The code should compile on MacOS and Ubuntu, but requires very recent versions of either clang or gcc. 
 It has not been adapted to Windows as I have no access to a Windows development environment (nor any experience), but I would welcome if someone wanted to help with this. 
