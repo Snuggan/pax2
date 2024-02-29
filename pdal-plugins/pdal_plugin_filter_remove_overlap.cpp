@@ -31,18 +31,21 @@ void pax::Remove_overlap::addArgs( pdal::ProgramArgs & args_ ) {
 
 
 pdal::PointViewSet pax::Remove_overlap::run( pdal::PointViewPtr view_ ) {
+	// Produce new point cloud with correct size (with empty points).
 	const pdal::PointViewPtr		filtered{ view_->size() ? overlap_filter( view_ ) : view_ };
 	
-// Export metadata.
+	// Create metadata.
 	pdal::MetadataNode				meta = getMetadata();
 	meta.add( "points-in",			view_->size() );
 	meta.add( "points-out",			filtered->size() );
 	meta.add( "points-removed",		view_->size() - filtered->size() );
 	
+	// Export metadata.
 	pdal::MetadataNode				arguments( "arguments" );
 	arguments.add( "resolution",	m_overlap_resolution );
 	meta.add( arguments );
 
+	// Create new point cloud (pdal::PointViewSet) with the result (pdal::PointViewPtr) and return it.
 	pdal::PointViewSet				result;
 	result.insert( filtered );
 	return 		    				result;
@@ -51,6 +54,7 @@ pdal::PointViewSet pax::Remove_overlap::run( pdal::PointViewPtr view_ ) {
 
 
 pdal::PointViewPtr pax::Remove_overlap::overlap_filter( pdal::PointViewPtr view_ ) {
+	// Pre-calculating some constants. 
 	using ID					  = pdal::Dimension::Id;
 	const auto 						size0{ view_->size() };
 	const bool						active{
@@ -59,6 +63,7 @@ pdal::PointViewPtr pax::Remove_overlap::overlap_filter( pdal::PointViewPtr view_
 		&&	view_->hasDim( ID::ScanAngleRank )
 	};
 
+	// Generate metadata.
 	pdal::MetadataNode				meta = getMetadata();
 	pdal::MetadataNode				status( "status" );
 	status.add( "has-resolution",	m_overlap_resolution > 0.0 );
@@ -88,8 +93,10 @@ pdal::PointViewPtr pax::Remove_overlap::overlap_filter( pdal::PointViewPtr view_
 				points->appendPoint( *view_, idx );
 		}
 
+		// Return the filtered set of points. 
 	    return points;
 	}
 
+	// We didn't do anything, return the original. 
     return view_;
 }
