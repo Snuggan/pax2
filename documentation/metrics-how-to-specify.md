@@ -39,7 +39,7 @@ These may be subject to change, but you may always check them by running `pax-me
 Below `*999cm*` symbolises the given value of the `--nilsson_level` parameter. 
 
 **`basic-linear`**  
-`variance_all_ge*999cm*`, `p30_all_ge*999cm*`, `p80_all_ge*999cm*`, `p95_all_ge*999cm*`, `count_1ret_ge*999cm*`, `count_1ret`
+`count_all`, `variance_all_ge*999cm*`, `p30_all_ge*999cm*`, `p80_all_ge*999cm*`, `p95_all_ge*999cm*`, `count_1ret_ge*999cm*`, `count_1ret`
 
 **`inka-berries`**  
 `L3_all`, `p30_all`, `count_1ret_ge*999cm*`, `count_1ret`, `mean2_1ret`.
