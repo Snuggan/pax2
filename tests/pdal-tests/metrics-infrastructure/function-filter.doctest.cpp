@@ -75,7 +75,8 @@ namespace pax::metrics {
 
 			const auto result		  = metric_set( std::span{ collection }, nilsson );
 			std::size_t 				i{};
-			DOCTEST_FAST_CHECK_EQ( result.size(),				8 );
+			DOCTEST_FAST_CHECK_EQ( result.size(),				9 );
+			DOCTEST_FAST_CHECK_EQ( to_string( result[ i ] ),	"count_all"	);							++i;
 			DOCTEST_FAST_CHECK_EQ( to_string( result[ i ] ),	"skewness_all_ge125cm_lt250cm"	);		++i;
 			DOCTEST_FAST_CHECK_EQ( to_string( result[ i ] ),	"variance_all_ge182cm"			);		++i;
 			DOCTEST_FAST_CHECK_EQ( to_string( result[ i ] ),	"p30_all_ge182cm"				);		++i;

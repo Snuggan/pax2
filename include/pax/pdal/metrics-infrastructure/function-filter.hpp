@@ -115,6 +115,7 @@ namespace pax::metrics {
 		static std::vector< Function_filter > create_set( const std::string_view id_, const metrics_value_type nilsson_ ) {
 			if       ( id_ == "basic-linear" ) {
 				return { 
+					{ Function::count(),	Filter:: all()				},
 					{ Function::variance(),	Filter:: all_ge( nilsson_ )	},
 					{ Function::p( 30 ),	Filter:: all_ge( nilsson_ )	},
 					{ Function::p( 80 ),	Filter:: all_ge( nilsson_ )	},
