@@ -42,7 +42,7 @@ namespace pax {
 
 
 
-	asprs::Classification get_classification(
+	inline asprs::Classification get_classification(
 		const pdal::PointViewPtr	view_, 
 		const pdal::PointId 		idx_ 
 	) {
@@ -53,25 +53,29 @@ namespace pax {
 	
 
 	pdal::PointViewSet Slu_lm::run( pdal::PointViewPtr view_ ) {
-		if( m_max_z < m_min_z ) {	// No z-value filtering...
+		// No z-value filtering?
+		if( m_max_z < m_min_z ) {
 			m_min_z = std::numeric_limits< decltype( m_min_z ) >::lowest();
 			m_max_z = std::numeric_limits< decltype( m_max_z ) >::max();
 		}
 
+		// Produce new (filtered) point cloud.
 		const pdal::PointViewPtr		filtered{ slu_filter( view_ ) };
 		
-	// Export metadata.
+		// Create metadata.
 		pdal::MetadataNode				meta = getMetadata();
 		meta.add( "points-in",			view_->size() );
 		meta.add( "points-out",			filtered->size() );
 		meta.add( "points-removed",		view_->size() - filtered->size() );
 		
+		// Export metadata.
 		pdal::MetadataNode				arguments( "arguments" );
 		arguments.add( "min_z",			m_min_z );
 		arguments.add( "max_z",			m_max_z );
 		arguments.add( "lm_filter",		m_lm_filter );
 		meta.add( arguments );
 
+		// Create new point cloud (pdal::PointViewSet) with the result (pdal::PointViewPtr) and return it.
 		pdal::PointViewSet				result;
 		result.insert( filtered );
 		return 		    				result;
@@ -80,34 +84,40 @@ namespace pax {
 
 
 	pdal::PointViewPtr Slu_lm::slu_filter( pdal::PointViewPtr view_ ) const {
-		pdal::PointViewPtr		points{ view_->makeNew() };
-		auto					pts_idx{ points->size() };
-		
-		// Metadata export. 
-		std::size_t 			z_negative{}, z_small{}, z_large{}, not_lm{};
-		
 		// The pdal hag_dem filter puts normalized points into a specific dimension: HeightAboveGround. 
 		// We want to overwrite unnormalized z-values with normalized.
 		const bool				has_hag_dim{ view_->hasDim( pdal::Dimension::Id::HeightAboveGround ) };
 		const auto				hag_dim{ has_hag_dim ? pdal::Dimension::Id::HeightAboveGround : pdal::Dimension::Id::Z };
-		
+
+		// Create a new empty point cloud.
+		pdal::PointViewPtr		points{ view_->makeNew() };
+		auto					pts_idx{ points->size() };
+
+		// For metadata generation. 
+		std::size_t 			z_negative{}, z_small{}, z_large{}, not_lm{};
+
+		// Filter the points.
 		for( pdal::PointId idx = 0; idx < view_->size(); ++idx ) {
 			const auto			z             { view_->getFieldAs< coordinate_type >( hag_dim, idx ) };
 			const auto			classification{ get_classification( view_, idx ) };
-			if(	( z >= m_min_z ) && ( z <= m_max_z ) 
-				&& ( !m_lm_filter || normal_lm_filter( main_classification( classification ) ) ) 
+			if (	( z >= m_min_z ) 
+				&&	( z <= m_max_z ) 
+				&&	( !m_lm_filter || normal_lm_filter( main_classification( classification ) ) ) 
 			) {
+				// Include the point.
 				points->appendPoint( *view_, idx );
 				( z < 0 )		? ++z_negative : 0;
 				points->setField( pdal::Dimension::Id::Z, pts_idx, ( z < 0 ) ? 0.0 : z );
 				++pts_idx;
 			} else {
+				// Exclude the point, but count the reason for exclusion.
 				( z < m_min_z )	? ++z_small : 0;
 				( z > m_max_z )	? ++z_large : 0;
 				!normal_lm_filter( classification ) ? ++not_lm : 0;
 			}
 		}
 
+		// Generate metadata.
 		pdal::MetadataNode				filtering( "filtering" );
 		filtering.add( "z-made-zero",	z_negative );
 		filtering.add( "z-small",		z_small );
@@ -116,7 +126,8 @@ namespace pax {
 		pdal::MetadataNode				meta = getMetadata();
 		meta.add( filtering );
 
+		// Return the point cloud (pdal::PointViewPtr).
 	    return points;
 	}
 
-} // namespace pax
+}	// namespace pax
