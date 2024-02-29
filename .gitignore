@@ -17,7 +17,7 @@ docker/slu/tmp-post/pax.regression.tar.gz
 docker/slu/usr/lib/**
 docker/slu/usr/local/bin/pax-**
 docker/slu/.docker/.buildNodeID
-*/meta/version/version_**
+include/pax/meta/version/version_**
 R/pax.regression.Rcheck/**
 R/pax.regression/NAMESPACE
 R/pax.regression/man
