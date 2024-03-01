@@ -12,7 +12,7 @@ namespace pax {
 		"Filtering according to z-values and point type, see the options below for details. "
 		"If there is a dimension HeightAboveGround, its values are copied into dimension Z. "
 		"Execute 'pdal --options filters.slu_lm' for a list of available parameters. ",
-		"<no link yet>"		// Example: "http://pdal.io/stages/writers.text.html"
+		"https://github.com/Snuggan/pax2/blob/main/documentation/pdal-slu_lm.md"
 	};
 
 	CREATE_SHARED_STAGE( Slu_lm, s_info )

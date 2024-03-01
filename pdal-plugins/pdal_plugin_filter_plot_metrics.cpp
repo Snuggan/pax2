@@ -12,7 +12,7 @@ namespace pax {
 			"filters.plot_metrics",
 			"Calculate metrics (statistics) for all points within the plots. "
 			"Execute 'pdal --options filters.plot_metrics' for a list of available parameters and metrics. ",
-			"<no link yet>"		// Example: "http://pdal.io/stages/writers.text.html"
+			"https://github.com/Snuggan/pax2/blob/main/documentation/pdal-plot_metrics.md"
 	};
 
 	CREATE_SHARED_STAGE( plot_metrics, s_info )

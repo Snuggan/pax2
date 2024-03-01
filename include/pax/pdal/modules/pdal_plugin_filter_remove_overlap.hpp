@@ -38,7 +38,7 @@ namespace pax {
 
 		void addArgs( pdal::ProgramArgs & args_ )	        		override;
 		pdal::PointViewSet run( pdal::PointViewPtr view_ )	        override;
-		virtual pdal::PointViewPtr overlap_filter( pdal::PointViewPtr view_ );
+		pdal::PointViewPtr overlap_filter( pdal::PointViewPtr view_ );
 
 		Remove_overlap( const Remove_overlap & )				  = delete;
 		Remove_overlap & operator=( const Remove_overlap & )	  = delete;

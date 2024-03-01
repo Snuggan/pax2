@@ -11,7 +11,7 @@ namespace pax {
 		"filters.plot_points",
 		"Save all points within plots [plus an optional buffer] to individual files. "
 		"Execute 'pdal --options filters.plot_points' for a list of available parameters. ",
-		"<no link yet>"		// Example: "http://pdal.io/stages/writers.text.html"
+		"https://github.com/Snuggan/pax2/blob/main/documentation/pdal-plot_points.md"
 	};
 
 	CREATE_SHARED_STAGE( plot_points, s_info )

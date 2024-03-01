@@ -10,7 +10,7 @@ static pdal::PluginInfo const s_info {
 	"The pixel's source id is the source id of the point with the smallest scan angle within the pixel "
 	"(so different pixels might have different source id). " 
 	"Execute 'pdal --options filters.remove_overlap' for a list of available parameters. ",
-	"<no link yet>"		// Example: "http://pdal.io/stages/writers.text.html"
+	"https://github.com/Snuggan/pax2/blob/main/documentation/pdal-remove_overlap.md"
 };
 
 CREATE_SHARED_STAGE( pax::Remove_overlap, s_info )

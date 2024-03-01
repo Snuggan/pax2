@@ -20,7 +20,7 @@ static pdal::PluginInfo const s_info {
 		"filters.raster_metrics",
 		"Create rasters with specified metrics (statistics). "
 		"Execute 'pdal --options filters.raster_metrics' for a list of available parameters and metrics. ",
-		"<no link yet>"		// Example: "http://pdal.io/stages/writers.text.html"
+		"https://github.com/Snuggan/pax2/blob/main/documentation/pdal-raster_metrics.md"
 };
 
 CREATE_SHARED_STAGE( pax::Raster_metrics, s_info )
