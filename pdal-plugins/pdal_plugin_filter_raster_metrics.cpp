@@ -56,6 +56,14 @@ void pax::Raster_metrics::addArgs( pdal::ProgramArgs & args ) {
 }
 
 
+void pax::Raster_metrics::addDimensions( pdal::PointLayoutPtr layout_ ) {
+	// Don't know if this is necessary, as we only use standard dimensions...
+	layout_->registerDim( pdal::Dimension::Id::X );
+	layout_->registerDim( pdal::Dimension::Id::Y );
+	layout_->registerDim( pdal::Dimension::Id::Z );
+}
+
+
 
 
 pdal::PointViewSet pax::Raster_metrics::run( pdal::PointViewPtr view_ ) {

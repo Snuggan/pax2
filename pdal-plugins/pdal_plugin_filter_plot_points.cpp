@@ -33,6 +33,13 @@ namespace pax {
 	}
 
 
+	void pax::plot_points::addDimensions( pdal::PointLayoutPtr layout_ ) {
+		// Don't know if this is necessary, as we only use standard dimensions...
+		layout_->registerDim( pdal::Dimension::Id::X );
+		layout_->registerDim( pdal::Dimension::Id::Y );
+	}
+
+
 
 	pdal::PointViewSet plot_points::run( pdal::PointViewPtr view_ ) {
 		pdal::PointViewSet						result;

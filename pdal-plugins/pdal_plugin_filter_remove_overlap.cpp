@@ -29,6 +29,16 @@ void pax::Remove_overlap::addArgs( pdal::ProgramArgs & args_ ) {
 }
 
 
+void pax::Remove_overlap::addDimensions( pdal::PointLayoutPtr layout_ ) {
+	// Don't know if this is necessary, as we only use standard dimensions...
+	layout_->registerDim( pdal::Dimension::Id::PointSourceId );
+	layout_->registerDim( pdal::Dimension::Id::ScanAngleRank );
+	layout_->registerDim( pdal::Dimension::Id::X );
+	layout_->registerDim( pdal::Dimension::Id::Y );
+}
+
+
+
 
 pdal::PointViewSet pax::Remove_overlap::run( pdal::PointViewPtr view_ ) {
 	// Produce new point cloud with correct size (with empty points).

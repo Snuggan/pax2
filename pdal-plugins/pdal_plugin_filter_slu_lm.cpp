@@ -41,6 +41,13 @@ namespace pax {
 	}
 
 
+	void Slu_lm::addDimensions( pdal::PointLayoutPtr layout_ ) {
+		// Don't know if this is necessary, as we only use standard dimensions...
+		layout_->registerDim( pdal::Dimension::Id::Classification );
+		layout_->registerDim( pdal::Dimension::Id::Z );
+	}
+
+
 
 	inline asprs::Classification get_classification(
 		const pdal::PointViewPtr	view_, 

@@ -36,8 +36,9 @@ namespace pax {
 
 		coordinate_type		m_overlap_resolution{ 0.0 };
 
-		void addArgs( pdal::ProgramArgs & args_ )	        		override;
-		pdal::PointViewSet run( pdal::PointViewPtr view_ )	        override;
+		void addArgs( pdal::ProgramArgs & args_ )					override;
+		void addDimensions( pdal::PointLayoutPtr layout_ )			override;
+		pdal::PointViewSet run( pdal::PointViewPtr view_ )			override;
 		pdal::PointViewPtr overlap_filter( pdal::PointViewPtr view_ );
 
 		Remove_overlap( const Remove_overlap & )				  = delete;

@@ -40,6 +40,7 @@ namespace pax {
 
 	private:
 		void addArgs( pdal::ProgramArgs & )					override;
+		void addDimensions( pdal::PointLayoutPtr layout_ )	override;
 		pdal::PointViewSet run( pdal::PointViewPtr view_ )	override;
 
 		using coordinate_type		  = double;
