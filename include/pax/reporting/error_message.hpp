@@ -8,6 +8,7 @@
 #include <string_view>
 #include <source_location>
 #include <stdexcept>
+#include <iostream>
 
 
 namespace pax {
@@ -48,6 +49,34 @@ namespace pax {
 		const std::error_code			ec_ = std::error_code{},
 		const std::source_location	  & sl_ = std::source_location::current()
 	) {	return user_error_message( std20::format( "{}: {}", to_string( sl_ ), message_ ), ec_ );					}
+
+
+	/// At destruction this class will write a message to std::cerr unless previously deactivated.
+	class Final_error_message {
+		std::string						m_message;
+
+	public:
+		Final_error_message( const std::source_location sl_ = std::source_location::current() ) 
+			: Final_error_message{ "Something went wrong...", sl_ } {}
+
+		Final_error_message(
+			const std::string_view		message_, 
+			const std::source_location	sl_ = std::source_location::current()
+		) :	m_message{ std::format( "{}: error: {}\n", to_string( sl_ ), message_ ) } {}
+		
+		Final_error_message( const Final_error_message & )				= default;
+		Final_error_message( Final_error_message && )					= default;
+		Final_error_message & operator=( const Final_error_message & )	= default;
+		Final_error_message & operator=( Final_error_message && )		= default;
+
+		~Final_error_message() {
+			if( m_message.size() )		std::cerr << m_message;
+		}
+
+		void deactivate() noexcept {
+			m_message.clear();
+		}
+	};
 
 
 
