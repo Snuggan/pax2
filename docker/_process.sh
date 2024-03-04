@@ -2,7 +2,7 @@
 
 #PROCESSING="/Users/pederaxensten/Desktop/processing"
 PROCESSING=$(cd "$(dirname "$0")" && pwd)    # absolutized and normalized path to this script
-echo $PROCESSING
+echo "### Working directory: $PROCESSING"
 
 # There are three options to the -v flag:
 # consistent: perfect consistency (host and container have an identical view of the mount at all times)
