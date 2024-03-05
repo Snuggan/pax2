@@ -48,7 +48,7 @@ BIN_DIR="${PAX_DIR}/build/linux"
 R_DIR="${PAX_DIR}/R"
 
 mkdir -p ${BIN_DIR}
-mkdir -p ${SLU_DIR}/usr/lib
+mkdir -p ${SLU_DIR}/usr/local/lib
 mkdir -p ${SLU_DIR}/usr/local/bin
 mkdir -p ${SLU_DIR}/usr/local/etc/makefiles
 
@@ -64,7 +64,7 @@ cp	-fpXv												\
 echo "aa"
 cp	-fpXv												\
 	${BIN_DIR}/lib*										\
-	${SLU_DIR}/usr/lib
+	${SLU_DIR}/usr/local/lib
 echo "bb"
 
 # Copy the pax-regression tool into the docker create sandbox.

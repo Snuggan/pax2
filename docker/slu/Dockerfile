@@ -49,7 +49,7 @@ RUN		echo "--- Main stuff ---" \
 		&&	make -j10 -k \
 		&&	make \
 		&&	make install \
-		&&	ln -s /usr/lib/x86_64-linux-gnu/libgdal.so /usr/lib/libgdal.so \
+		&&	ln -s /usr/lib/x86_64-linux-gnu/libgdal.so /usr/local/lib/libgdal.so \
 		&&	hash pdal \
 		&&	cd ../.. \
 		&&	rm -rf PDAL
