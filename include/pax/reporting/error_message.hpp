@@ -56,6 +56,11 @@ namespace pax {
 		std::string						m_message;
 
 	public:
+		Final_error_message( const Final_error_message & )				= delete;
+		Final_error_message( Final_error_message && )					= delete;
+		Final_error_message & operator=( const Final_error_message & )	= delete;
+		Final_error_message & operator=( Final_error_message && )		= delete;
+
 		Final_error_message( const std::source_location sl_ = std::source_location::current() ) 
 			: Final_error_message{ "Something went wrong...", sl_ } {}
 
@@ -64,67 +69,54 @@ namespace pax {
 			const std::source_location	sl_ = std::source_location::current()
 		) :	m_message{ std::format( "{}: error: {}\n", to_string( sl_ ), message_ ) } {}
 		
-		Final_error_message( const Final_error_message & )				= default;
-		Final_error_message( Final_error_message && )					= default;
-		Final_error_message & operator=( const Final_error_message & )	= default;
-		Final_error_message & operator=( Final_error_message && )		= default;
-
-		~Final_error_message() {
-			if( m_message.size() )		std::cerr << m_message;
-		}
-
-		void deactivate() noexcept {
-			m_message.clear();
-		}
+		~Final_error_message()	{	if( m_message.size() )	std::cerr << m_message;		}
+		void deactivate()		{	m_message.clear();									}
 	};
 
 
 
-	/// Output a string in a formatted way.
+	/// Add a second string in a formatted way.
 	/** - After the first '\t' of a line, text is output starting from a fixed character position.
 		- Each line except the first is prefixed with a tab.			**/
-	template< typename Out >
-	Out & format_message(
-		Out							  & out_,
-		const std::string_view			message_
+	inline std::string format_message(
+		std::string						result,
+		std::string_view				message_
 	) {
 		static constexpr auto split = []( std::string_view v, char c ) {
 			auto i					  = v.find( c );
 			i						  = ( i >= v.size() ) ? v.size() : i;
 			return make_pair( v.substr( 0, i ), ( i >= v.size() ) ? "" : v.substr( i+1 ) );
 		};
-		auto msg					  = split( message_, '\n' );
-		out_ << msg.first << '\n';
-		while( msg.second.size() ) {
-			msg						  = split( msg.second, '\n' );
-			const auto line			  = split( msg.first,  '\t' );
-			out_ << ( line.second.empty()
-				? std20::format( "\t{}\n", line.first )
-				: std20::format( "\t{: <20}{}\n", std20::format( "{}:", line.first ), line.second )
-			);
+		while( message_.size() ) {
+			const auto lines		  = split( message_, '\n' );
+			const auto line1		  = split( lines.first, '\t' );
+			result = line1.second.empty()
+				? std20::format( "{}\n\t{}", result, line1.first )
+				: std20::format( "{}\n\t{: <20}{}", result, std20::format( "{}:", line1.first ), line1.second );
+			message_				  = lines.second;
 		}
-		return out_;
+		return result;
 	}
 
 	/// Output the exception string. 
-	template< typename Out >
-	Out & operator<<(
-		Out							  & out_,
+	template< typename Ch, typename Tr >
+	auto & operator<<(
+		std::basic_ostream< Ch, Tr >  & out_,
 		const std::runtime_error	  & exception_
-	) {	return format_message( out_, exception_.what() );															}
+	) {	return out_ << exception_.what();															}
 
 
-	/// Add textual lines to the exception string. 
+	/// Add textual lines to the exception string.
 	inline std::runtime_error & operator<<(
 		std::runtime_error			  & exception_,
-		const std::string_view			addition_
-	) {	return exception_ = std::runtime_error{ std::format( "{}\n{}", exception_.what(), addition_ ) };			}
+		const std::string_view			message_
+	) {	return exception_ = std::runtime_error{ format_message( exception_.what(), message_ ) };	}
 
 	/// Add textual lines to the exception string. 
 	inline decltype( auto ) operator<<(
 		std::runtime_error			 && exception_,
-		const std::string_view			addition_
-	) {	return exception_ = std::runtime_error{ std::format( "{}\n{}", exception_.what(), addition_ ) };			}
+		const std::string_view			message_
+	) {	return exception_ = std::runtime_error{ format_message( exception_.what(), message_ ) };	}
 
 }	// namespace pax
 
