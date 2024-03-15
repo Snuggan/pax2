@@ -29,7 +29,10 @@ namespace pax {
 		const std::filesystem::path	  & path_,
 		const std::error_code			ec_ = std::error_code{},
 		const std::source_location	  & sl_ = std::source_location::current()
-	) {	return error_message( std20::format( "{}\nPath\t'{}'", message_, to_string( path_ ) ), ec_, sl_ );					}
+	) {
+		return error_message( message_, ec_, sl_ )
+			<< std20::format( "Path\t'{}'", to_string( path_ ) );
+	}
 
 
 

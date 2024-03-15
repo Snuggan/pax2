@@ -40,16 +40,16 @@ namespace pax {
 		const std::string_view			message_,
 		const std::source_location	  & sl_ = std::source_location::current()
 	) {
-		return std20::format( "{}: {}", to_string( sl_ ), message_ );
+		return std20::format( "{}: {}\n\tPath:               'www'", to_string( sl_ ), message_ );
 	}
 	
 	
 	DOCTEST_TEST_CASE( "filesystem checked_path" ) {
-		DOCTEST_CHECK_THROWS_WITH_AS( file_path  ( "www" ), message_str( "Not a regular file\nPath\t'www'" ).c_str(),			std::runtime_error );
-		DOCTEST_CHECK_THROWS_WITH_AS( dir_path   ( "www" ), message_str( "No such directory\nPath\t'www'" ).c_str(),			std::runtime_error );
-		DOCTEST_CHECK_THROWS_WITH_AS( source_path( "www" ), message_str( "No such file or directory\nPath\t'www'" ).c_str(),	std::runtime_error );
+		DOCTEST_CHECK_THROWS_WITH_AS( file_path  ( "www" ), message_str( "Not a regular file" ).c_str(),		std::runtime_error );
+		DOCTEST_CHECK_THROWS_WITH_AS( dir_path   ( "www" ), message_str( "No such directory" ).c_str(),			std::runtime_error );
+		DOCTEST_CHECK_THROWS_WITH_AS( source_path( "www" ), message_str( "No such file or directory" ).c_str(),	std::runtime_error );
 		DOCTEST_CHECK_THROWS_WITH_AS( dest_path  ( "www/vvv" ), 
-							message_str( "Can't save file here as there is no parent directory\nPath\t'www'" ).c_str(),		std::runtime_error );
+							message_str( "Can't save file here as there is no parent directory" ).c_str(),		std::runtime_error );
 		DOCTEST_CHECK_NOTHROW       ( dest_path  ( "www" ) );
 	}
 	DOCTEST_TEST_CASE( "filesystem file_path" ) {
