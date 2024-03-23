@@ -49,11 +49,12 @@ namespace pax {
 	};
 
 	int main_concat_tables( int argc, const char **argv ) {
-		std::filesystem::path		dest, source;
+		std::filesystem::path		source, dest;
+		std::string					trouble;
 
 		try {
 			const auto parameters = cmd_args::Parameters{ meta2.info(), meta2.description(), meta2.usage() }
-				( 	's', "source",	ANSI_BOLD"Source path." ANSI_RESET" The files to concatenate."							)
+				( 	's', "source",	ANSI_BOLD"Source path." ANSI_RESET" Directory of the files to concatenate."				)
 				( 	'd', "dest",	ANSI_BOLD"Destination path." ANSI_RESET" Path of the resulting file."					)
 				(	'm', "meta", 	"Save metadata files with execution info.",		cmd_args::Parameter_type::off_flag()	)
 				( 	"verbose",		"Display execution progress.", 					cmd_args::Parameter_type::off_flag()	)
@@ -62,21 +63,24 @@ namespace pax {
 
 			const auto args		  = parameters.parse( argc, argv );
 			source				  = args.cast< std::filesystem::path >( "source" );
-			dest				  = args.cast< std::filesystem::path >( "dest" );		
+			dest				  = args.cast< std::filesystem::path >( "dest" );
+			trouble				  = std20::format( "Tool\t{}\nSource\t{}\nDestinatrion\t{}\n", 
+										meta2.name(), to_string( source ), to_string( dest ) );
 
-			const auto				result_meta = concat_tables( source, dest, args.flag( "verbose" ), args.cast< std::size_t >( "count" ) );
+			const auto meta_res	  = concat_tables( source, dest, args.flag( "verbose" ), args.cast< std::size_t >( "count" ) );
 
 			// Save json file.
 			if( args.flag( "meta" ) ) {
-				Json_value json = to_json( meta2 );
+				Json_value json						= to_json( meta2 );
 				json[ "execution" ][ "arguments" ]	= args;
-				json[ "execution" ][ "result" ]		= result_meta;
+				json[ "execution" ][ "result" ]		= meta_res;
 				save_json( dest, json );
 			}
 			return EXIT_SUCCESS;
 		} 
-		catch( const std::exception & e_ )	{	std::cerr << e_.what() << '\n';				}
-		catch( ... ) 						{	std::cerr << "<Unknown_exception>\n";		}
+		catch( Runtime_exception    & e_ )	{	std::cerr << ( e_ << trouble ).what();										} 
+		catch( const std::exception & e_ )	{	std::cerr << ( error_message( e_.what() ) << trouble ).what();				} 
+		catch( ... ) 						{	std::cerr << ( error_message( "<Unknown_exception>" ) << trouble ).what();	}
 
 		const auto failure = std20::format( ANSI_BOLD"{} failed to concat {}\n" ANSI_RESET, meta2.name(), to_string( source ) );
 		fprintf( stderr, "%s", failure.c_str() );
