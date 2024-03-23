@@ -375,11 +375,11 @@ namespace pax::cmd_args {
 
 		template< typename ...Properts >
 		void m_set( Invisible, Properts && ...properties_ )						noexcept
-		{	m_visible = false;										m_set( std::forward< Properts >( properties_ )... );	}
+		{	m_visible = false;									m_set( std::forward< Properts >( properties_ )... );	}
 
 		template< typename ...Properts >
 		void m_set( Default_value< Char > dv_, Properts && ...properties_ )		noexcept
-		{	m_default_value = dv_;									m_set( std::forward< Properts >( properties_ )... );	}
+		{	m_default_value = dv_;								m_set( std::forward< Properts >( properties_ )... );	}
 	};
 
 
@@ -443,7 +443,7 @@ namespace pax::cmd_args {
 			
 		private:
 			std::map< String, Parameter >		m_longs{};
-			std::map< Char,        String >		m_abbrevs{};
+			std::map< Char,   String >			m_abbrevs{};
 		};
 
 		Arguments_type							arguments{};

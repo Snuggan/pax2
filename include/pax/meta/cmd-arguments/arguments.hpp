@@ -9,6 +9,8 @@
 #include "../../concepts.hpp"
 #include "../../reporting/error_message.hpp"
 
+#include <pax/reporting/debug.hpp>
+
 #include <span>
 #include <string_view>
 #include <vector>
@@ -218,7 +220,9 @@ namespace pax { namespace cmd_args {
 
 		template< typename J >
 		static void assign( J & j_, const Args & arguments_ ) {	
-			for( const auto & ref : arguments_ ) {
+			// Output named arguments.
+			for( const auto & ref : arguments_ ) if( ref.first.size() ) {
+				Debug{} << ref.first << ": " << ref.second.size();
 				using std::size;
 				const std::string			id = cmd_args::is_anonymous( Sview( ref.first ) ) ? "<anonymous>" : ref.first;
 				if( size( ref.second ) == 0 ) 											j_[ id ] = ref.second;
