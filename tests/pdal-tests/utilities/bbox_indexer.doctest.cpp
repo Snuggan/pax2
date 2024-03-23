@@ -27,9 +27,9 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ(   Bbox_indexer( Box2( 0.0, 4.0, 0.0, 16.0 ), 1.0 ).pixels(), 12u );
 		DOCTEST_CHECK_NOTHROW(   Bbox_indexer( Box2( 0.0, 4.0, 7.0,  4.0 ), 1.0 ) );
 		DOCTEST_FAST_CHECK_EQ(   Bbox_indexer( Box2( 0.0, 4.0, 7.0,  4.0 ), 1.0 ).pixels(),  7u );
-		DOCTEST_CHECK_THROWS_AS( Bbox_indexer( Box2( 1.0, 4.0, 0.0, 16.0 ), 1.0 ), std::runtime_error );
-		DOCTEST_CHECK_THROWS_AS( Bbox_indexer( Box2( 0.0, 5.0, 7.0,  4.0 ), 1.0 ), std::runtime_error );
-		DOCTEST_CHECK_THROWS_AS( Bbox_indexer( Box2( 0.0, 4.0, 7.0, 16.0 ), 0.0 ), std::runtime_error );
+		DOCTEST_CHECK_THROWS_AS( Bbox_indexer( Box2( 1.0, 4.0, 0.0, 16.0 ), 1.0 ), Runtime_exception );
+		DOCTEST_CHECK_THROWS_AS( Bbox_indexer( Box2( 0.0, 5.0, 7.0,  4.0 ), 1.0 ), Runtime_exception );
+		DOCTEST_CHECK_THROWS_AS( Bbox_indexer( Box2( 0.0, 4.0, 7.0, 16.0 ), 0.0 ), Runtime_exception );
 
 		// Check affine vector:
 		const auto			   aff{ box.affine_vector() };
@@ -54,15 +54,15 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( box.row( box.miny() ),	box.rows() - 1 );
 		DOCTEST_FAST_CHECK_EQ( box.row( 12.5 ),			3u );
 		DOCTEST_FAST_CHECK_EQ( box.row( box.maxy() ),	0u );
-		DOCTEST_CHECK_THROWS_AS( box.row( nudge_down( box.miny() ) ), std::runtime_error );
-		DOCTEST_CHECK_THROWS_AS( box.row( nudge_up  ( box.maxy() ) ), std::runtime_error );
+		DOCTEST_CHECK_THROWS_AS( box.row( nudge_down( box.miny() ) ), Runtime_exception );
+		DOCTEST_CHECK_THROWS_AS( box.row( nudge_up  ( box.maxy() ) ), Runtime_exception );
 
 		// Check the col calculation:
 		DOCTEST_FAST_CHECK_EQ( box.col( box.minx() ),	0u );
 		DOCTEST_FAST_CHECK_EQ( box.col( 2.5 ),			2u );
 		DOCTEST_FAST_CHECK_EQ( box.col( box.maxx() ),	box.cols() - 1 );
-		DOCTEST_CHECK_THROWS_AS( box.col( nudge_down( box.minx() ) ), std::runtime_error );
-		DOCTEST_CHECK_THROWS_AS( box.col( nudge_up  ( box.maxx() ) ), std::runtime_error );
+		DOCTEST_CHECK_THROWS_AS( box.col( nudge_down( box.minx() ) ), Runtime_exception );
+		DOCTEST_CHECK_THROWS_AS( box.col( nudge_up  ( box.maxx() ) ), Runtime_exception );
 
 		// Check the index calculation:
 		DOCTEST_FAST_CHECK_EQ( box.index( box.minx(), box.miny() ), box.pixels() - box.cols() );

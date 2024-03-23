@@ -32,7 +32,6 @@
 namespace pax {
 
 	constexpr bool output{ false };
-	using Report = std::runtime_error;
 	
 	DOCTEST_TEST_CASE( "Final_error_message" ) {
 		auto err1 = Final_error_message();
@@ -50,22 +49,22 @@ namespace pax {
 	DOCTEST_TEST_CASE( "debug" ) {
 		try {
 			PAX_THROW_IF( std::make_error_code( std::errc( 1 ) ) );
-		} catch( Report & re_ ) {
+		} catch( Runtime_exception & re_ ) {
 			if( output )	std::cerr << re_;
 		}
 		try {
 			PAX_THROW_IF( std::make_error_condition( std::errc( 1 ) ) );
-		} catch( Report & re_ ) {
+		} catch( Runtime_exception & re_ ) {
 			if( output )	std::cerr << re_;
 		}
 		try {
 			PAX_THROW_UNLESS( all( 0<1, 2==2, 2==3 ) );
-		} catch( Report & re_ ) {
+		} catch( Runtime_exception & re_ ) {
 			if( output )	std::cerr << re_;
 		}
 		try {
 			PAX_THROW_UNLESS( 2==3 );
-		} catch( Report & re_ ) {
+		} catch( Runtime_exception & re_ ) {
 			if( output )	std::cerr << re_;
 		}
 	}

@@ -110,7 +110,7 @@ namespace pax {
 			DOCTEST_CHECK_THROWS_WITH_AS(
 				parse2table( std::string_view( "a1,a2\nb1,b2\nc1\n" ) ), 
 				"parse2table: Varying number of columns as row 2 has 1 column[s] and not as expected 2.", 
-				std::runtime_error
+				Runtime_exception
 			);
 		}
 	}

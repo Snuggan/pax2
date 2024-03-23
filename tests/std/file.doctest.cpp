@@ -45,11 +45,11 @@ namespace pax {
 	
 	
 	DOCTEST_TEST_CASE( "filesystem checked_path" ) {
-		DOCTEST_CHECK_THROWS_WITH_AS( file_path  ( "www" ), message_str( "Not a regular file" ).c_str(),		std::runtime_error );
-		DOCTEST_CHECK_THROWS_WITH_AS( dir_path   ( "www" ), message_str( "No such directory" ).c_str(),			std::runtime_error );
-		DOCTEST_CHECK_THROWS_WITH_AS( source_path( "www" ), message_str( "No such file or directory" ).c_str(),	std::runtime_error );
+		DOCTEST_CHECK_THROWS_WITH_AS( file_path  ( "www" ), message_str( "Not a regular file" ).c_str(),		Runtime_exception );
+		DOCTEST_CHECK_THROWS_WITH_AS( dir_path   ( "www" ), message_str( "No such directory" ).c_str(),			Runtime_exception );
+		DOCTEST_CHECK_THROWS_WITH_AS( source_path( "www" ), message_str( "No such file or directory" ).c_str(),	Runtime_exception );
 		DOCTEST_CHECK_THROWS_WITH_AS( dest_path  ( "www/vvv" ), 
-							message_str( "Can't save file here as there is no parent directory" ).c_str(),		std::runtime_error );
+							message_str( "Can't save file here as there is no parent directory" ).c_str(),		Runtime_exception );
 		DOCTEST_CHECK_NOTHROW       ( dest_path  ( "www" ) );
 	}
 	DOCTEST_TEST_CASE( "filesystem file_path" ) {

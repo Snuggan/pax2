@@ -12,6 +12,8 @@
 
 
 namespace pax {
+	
+	using Runtime_exception = std::runtime_error;
 
 	/// Helper: nice std::source_location string.
 	inline std::string to_string( const std::source_location & sl_ ) {
@@ -41,7 +43,7 @@ namespace pax {
 	inline auto user_error_message(
 		const std::string_view			message_,
 		const std::error_code			ec_ = std::error_code{}
-	) {	return std::runtime_error( std20::format( "{}{}", message_, to_string( ec_, "\nPossibly due to\t" ) ) );	}
+	) {	return Runtime_exception( std20::format( "{}{}", message_, to_string( ec_, "\nPossibly due to\t" ) ) );	}
 
 	/* Error message with error code and source location. */
 	inline auto error_message( 
@@ -102,21 +104,21 @@ namespace pax {
 	template< typename Ch, typename Tr >
 	auto & operator<<(
 		std::basic_ostream< Ch, Tr >  & out_,
-		const std::runtime_error	  & exception_
+		const Runtime_exception		  & exception_
 	) {	return out_ << exception_.what();															}
 
 
 	/// Add textual lines to the exception string.
-	inline std::runtime_error & operator<<(
-		std::runtime_error			  & exception_,
+	inline Runtime_exception & operator<<(
+		Runtime_exception			  & exception_,
 		const std::string_view			message_
-	) {	return exception_ = std::runtime_error{ format_message( exception_.what(), message_ ) };	}
+	) {	return exception_ = Runtime_exception{ format_message( exception_.what(), message_ ) };	}
 
 	/// Add textual lines to the exception string. 
 	inline decltype( auto ) operator<<(
-		std::runtime_error			 && exception_,
+		Runtime_exception			 && exception_,
 		const std::string_view			message_
-	) {	return exception_ = std::runtime_error{ format_message( exception_.what(), message_ ) };	}
+	) {	return exception_ = Runtime_exception{ format_message( exception_.what(), message_ ) };	}
 
 }	// namespace pax
 
