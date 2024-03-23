@@ -300,7 +300,6 @@ file( GLOB_RECURSE LIB_SOURCE_FILES_LIBS		"${PROJECT_SOURCE_DIR}/include/*.lib.c
 set( CMAKE_MACOSX_RPATH OFF )	# Handles problem: dyld[80443]: Library not loaded: @rpath/liblibpax2.dylib
 add_library( libpax2 SHARED ${LIB_SOURCE_FILES_LIBS} ${LIB_SOURCE_FILES_EXTERNALS} )
 install( TARGETS libpax2 DESTINATION /usr/local/lib )
-#install( TARGETS libpax2 DESTINATION /opt/local/lib )
 
 
 ### Setup the doctest targets.
@@ -320,7 +319,7 @@ FOREACH( include_dir ${INCLUDE_DIRS0} )
 			list( APPEND TEMP_SOURCE_FILES ${MAIN_DOCTEST} )	# Add the main file.
 			string( REGEX REPLACE "^.*/(include|tests|tests-ideas)/" "" doctest_name ${include_dir} )
 			add_executable( ${doctest_name} ${TEMP_SOURCE_FILES} )
-			target_link_libraries( ${doctest_name} libpax2 ${PAX_BASE_LIBS} )
+			target_link_libraries( ${doctest_name} ${PAX_BASE_LIBS} )	# Removed libpax2
 			# Comment the next line to impede tests to run automagically. 
 			add_custom_command( TARGET ${doctest_name} COMMENT "Run doctest in ${doctest_name}" POST_BUILD COMMAND ${doctest_name} )
 			list( APPEND DOCTEST_PROJS ${doctest_name} )
@@ -339,9 +338,9 @@ message( STATUS "# Tools" )
 file( GLOB PAX_TOOL_SOURCES "tools/*.cpp" )
 foreach( pax_tool_source ${PAX_TOOL_SOURCES} )
 	# From https://stackoverflow.com/questions/14306642/adding-multiple-executables-in-cmake
-	get_filename_component( pax_tool ${pax_tool_source} NAME_WE )		# NAME_WE: Name without Extension
+	get_filename_component( pax_tool ${pax_tool_source} NAME_WE )	# NAME_WE: Name without Extension
 	add_executable( ${pax_tool} ${pax_tool_source} )
-	target_link_libraries( ${pax_tool} ${PAX_TOOL_LIBS} libpax2 )
+	target_link_libraries( ${pax_tool} ${PAX_TOOL_LIBS} )			# Removed libpax2
 	install( TARGETS ${pax_tool} DESTINATION /usr/local/bin )
 	set( PAX_TOOLS ${PAX_TOOLS} ${pax_tool} )
 	message( STATUS "${pax_tool}" )
