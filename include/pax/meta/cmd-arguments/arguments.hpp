@@ -9,8 +9,6 @@
 #include "../../concepts.hpp"
 #include "../../reporting/error_message.hpp"
 
-#include <pax/reporting/debug.hpp>
-
 #include <span>
 #include <string_view>
 #include <vector>
@@ -222,15 +220,15 @@ namespace pax { namespace cmd_args {
 		static void assign( J & j_, const Args & arguments_ ) {	
 			// Output named arguments.
 			for( const auto & ref : arguments_ ) if( ref.first.size() ) {
-				Debug{} << ref.first << ": " << ref.second.size();
-				using std::size;
-				const std::string			id = cmd_args::is_anonymous( Sview( ref.first ) ) ? "<anonymous>" : ref.first;
-				if( size( ref.second ) == 0 ) 											j_[ id ] = ref.second;
-				else if( size( ref.second ) == 1 ) {
-					if     ( cmd_args::is_flag_on ( Sview( ref.second.front() ) ) )		j_[ id ] = true;
-					else if( cmd_args::is_flag_off( Sview( ref.second.front() ) ) )		j_[ id ] = false;
-					else																j_[ id ] = ref.second.front();
-				} else																	j_[ id ] = ref.second;		
+				Sview	id = ref.first;
+						id = cmd_args::is_anonymous( id ) ? "<anonymous>" : id;
+				if( ref.second.size() == 1 ) {
+					const Sview											item	 = ref.second.front();
+					if( ( id == "help" ) || ( id == "version" ) )		{}		   // Ignore these.
+					else if( cmd_args::is_flag_on ( item ) )			j_[ id ] = true;
+					else if( cmd_args::is_flag_off( item ) )			j_[ id ] = false;
+					else												j_[ id ] = item;
+				} else													j_[ id ] = ref.second;		
 			}
 		}
 	};
