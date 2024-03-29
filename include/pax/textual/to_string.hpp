@@ -22,7 +22,7 @@ namespace pax {
 			const T				  & t_, 
 			const std::string_view	fmt_
 		) {
-			return std20::format( runtime_format( fmt_ ), t_ );
+			return std20::format( std20::runtime_format( fmt_ ), t_ );
 		}
 	};
 

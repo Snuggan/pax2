@@ -9,6 +9,7 @@
 
 #include <filesystem>
 #include <random>
+#include <fstream>		// std::ofstream::trunc
 
 
 namespace pax {

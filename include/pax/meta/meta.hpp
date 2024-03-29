@@ -7,6 +7,7 @@
 #include "version.hpp"
 #include "../std/format.hpp"
 #include <thread>				// std::thread::hardware_concurrency
+#include <chrono>				// std::formatter< std::chrono::sys_time< Duration > >
 
 
 namespace pax {
@@ -61,7 +62,6 @@ namespace pax {
 				metadata::pdal::named_version,
 				metadata::json::named_version
 			};
-			const auto time = std::chrono::floor< std::chrono::seconds >( std::chrono::system_clock::now() );
 
 			j_ = {
 				{	"compilation",		{
@@ -86,7 +86,7 @@ namespace pax {
 				}},
 				{	"execution",		{
 					{	"concurrency",			std::thread::hardware_concurrency()			},
-					{	"time",					std20::format( "{:%FT%T}Z", time )			},
+					{	"time",					std20::format( "{:%FT%T}Z", std::chrono::system_clock::now() )	},
 					{	"tool",			{
 						{	"author",			metadata::author							},
 						{	"copyright",		metadata::copyright							},
