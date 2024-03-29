@@ -6,7 +6,7 @@
 
 
 // Using std::format works well with clang 18. 
-// It does not work with gcc 13.2, however. 
+// It does not work with gcc 13.2, however. I think it will with gcc 14. 
 // So I stick with fmt::format until I have a gcc that handles C++26.
 #define PAX_EXTERNAL_USE_FMT	( __cplusplus <= 202302L )
 
