@@ -240,6 +240,9 @@ namespace pax {
 	span2( Ch * const & c_ )	-> span2< std::remove_reference_t< Ch >, std::dynamic_extent >;
 
 }	// namespace pax
+
+
+
 namespace std {
 
 	/// Stream the contents of sp_ to dest_ in the form "[i0, i1, ...]".
@@ -248,16 +251,20 @@ namespace std {
 		Dest					  & dest_,
 		const std::span< T, N >		sp_
 	) {
-		if constexpr( pax::Character< T > ) {
-			if constexpr( N != 0 ) if( sp_.size() )
-				dest_.write( sp_.data(), sp_.size() - !sp_.back() );
-		} else {
-			// If the is a string type, put items inside "".
-			constexpr auto			delimit = pax::String< T > ? "\"" : "";
+		if constexpr( !pax::Character< T > ) {
+			constexpr auto			delimit  = pax::String< T > ? "\", \"" : ", ";
 			dest_ << '[';
-			if constexpr( N != 0 ) for( bool leading{ true }; const auto & item : sp_ )
-				dest_ << ( ( leading ? ( leading = false, true ) : false ) ? "" : ", " ) << delimit << item << delimit;
+			if constexpr( N > 0 ) if( sp_.size() > 0 ) {
+				if constexpr( pax::String< T > )	dest_ << '"';
+				dest_ << sp_.front();
+				if constexpr( N > 1 ) if( sp_.size() > 1 ) 
+					for( const auto & item : sp_.template subspan< 1 >() ) 
+						dest_ << delimit << item;
+				if constexpr( pax::String< T > )	dest_ << '"';
+			}
 			dest_ << ']';
+		} else if constexpr( N > 0 ) if( sp_.size() > 0 ) {
+			dest_.write( sp_.data(), sp_.size() - !sp_.back() );
 		}
 		return dest_;
 	}

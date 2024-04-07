@@ -6,6 +6,9 @@
 #include <pax/reporting/as_ascii.hpp>
 #include <pax/external/doctest/doctest-pax.hpp>
 
+#include <sstream>
+#include <vector>
+
 
 namespace pax {
 	
@@ -15,6 +18,62 @@ namespace pax {
 		constexpr const span2< const char >	null_;
 		constexpr const span2< const char, dynamic_extent >			str( "abcdefghijkl" );
 		constexpr const span2 			strN( "abcdefghijkl" );
+
+		{	// operator<<
+			{
+				std::ostringstream		out{};
+				out << span2( "" );
+				DOCTEST_FAST_CHECK_EQ( out.str(), "" );
+				out << span2< const char * >{};
+				DOCTEST_FAST_CHECK_EQ( out.str(), "[]" );
+				out << span2< int >{};
+				DOCTEST_FAST_CHECK_EQ( out.str(), "[][]" );
+			} {
+				std::ostringstream		out{};
+				out << span2( "chars" );
+				DOCTEST_FAST_CHECK_EQ( out.str(), "chars" );
+			} {
+				constexpr char const  * values[3] = { "first", "second", "third" };
+				std::ostringstream		out{};
+				out << span2( values );
+				DOCTEST_FAST_CHECK_EQ( out.str(), "[\"first\", \"second\", \"third\"]" );
+			} {
+				std::ostringstream		out{};
+				out << span2( std::string( "chars" ) );
+				DOCTEST_FAST_CHECK_EQ( out.str(), "chars" );
+			} {
+				constexpr std::string	values[3] = { "first", "second", "third" };
+				std::ostringstream		out{};
+				out << span2( values );
+				DOCTEST_FAST_CHECK_EQ( out.str(), "[\"first\", \"second\", \"third\"]" );
+			} {
+				constexpr int			values[3] = { 1, 2, 3 };
+				std::ostringstream		out{};
+				out << span2( values );
+				DOCTEST_FAST_CHECK_EQ( out.str(), "[1, 2, 3]" );
+			} {
+				const std::vector< int > values{};
+				std::ostringstream		out{};
+				out << span2( values );
+				DOCTEST_FAST_CHECK_EQ( out.str(), "[]" );
+			} {
+				std::vector< int >		values{};
+				values.push_back( 1 );
+				std::ostringstream		out{};
+				out << span2( values );
+				DOCTEST_FAST_CHECK_EQ( out.str(), "[1]" );
+			} {
+				const std::vector< int > values{{ 1, 2 }};
+				std::ostringstream		out{};
+				out << span2( values );
+				DOCTEST_FAST_CHECK_EQ( out.str(), "[1, 2]" );
+			} {
+				const std::vector< int > values{{ 1, 2, 3 }};
+				std::ostringstream		out{};
+				out << span2( values );
+				DOCTEST_FAST_CHECK_EQ( out.str(), "[1, 2, 3]" );
+			}
+		}
 
 		{	// front, back
 			char			str[ 10 ] = { '1','2','3','4','5','6','7','8','9','0' };
