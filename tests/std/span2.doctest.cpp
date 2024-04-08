@@ -33,8 +33,8 @@ namespace pax {
 				out << span2( "chars" );
 				DOCTEST_FAST_CHECK_EQ( out.str(), "chars" );
 			} {
-				constexpr char const  * values[3] = { "first", "second", "third" };
 				std::ostringstream		out{};
+				constexpr char const  * values[3] = { "first", "second", "third" };
 				out << span2( values );
 				DOCTEST_FAST_CHECK_EQ( out.str(), "[\"first\", \"second\", \"third\"]" );
 			} {
@@ -42,8 +42,8 @@ namespace pax {
 				out << span2( std::string( "chars" ) );
 				DOCTEST_FAST_CHECK_EQ( out.str(), "chars" );
 			} {
-				constexpr std::string	values[3] = { "first", "second", "third" };
 				std::ostringstream		out{};
+				constexpr std::string	values[3] = { "first", "second", "third" };
 				out << span2( values );
 				DOCTEST_FAST_CHECK_EQ( out.str(), "[\"first\", \"second\", \"third\"]" );
 			} {
@@ -52,26 +52,19 @@ namespace pax {
 				out << span2( values );
 				DOCTEST_FAST_CHECK_EQ( out.str(), "[1, 2, 3]" );
 			} {
-				const std::vector< int > values{};
 				std::ostringstream		out{};
+				std::vector< int >		values{};
 				out << span2( values );
 				DOCTEST_FAST_CHECK_EQ( out.str(), "[]" );
-			} {
-				std::vector< int >		values{};
 				values.push_back( 1 );
-				std::ostringstream		out{};
 				out << span2( values );
-				DOCTEST_FAST_CHECK_EQ( out.str(), "[1]" );
-			} {
-				const std::vector< int > values{{ 1, 2 }};
-				std::ostringstream		out{};
+				DOCTEST_FAST_CHECK_EQ( out.str(), "[][1]" );
+				values.push_back( 2 );
 				out << span2( values );
-				DOCTEST_FAST_CHECK_EQ( out.str(), "[1, 2]" );
-			} {
-				const std::vector< int > values{{ 1, 2, 3 }};
-				std::ostringstream		out{};
+				DOCTEST_FAST_CHECK_EQ( out.str(), "[][1][1, 2]" );
+				values.push_back( 3 );
 				out << span2( values );
-				DOCTEST_FAST_CHECK_EQ( out.str(), "[1, 2, 3]" );
+				DOCTEST_FAST_CHECK_EQ( out.str(), "[][1][1, 2][1, 2, 3]" );
 			}
 		}
 
