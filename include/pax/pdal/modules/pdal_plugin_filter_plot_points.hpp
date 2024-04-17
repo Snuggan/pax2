@@ -24,7 +24,8 @@ namespace pax {
 		using value_type			  = float;
 
 		// pax member variables:
-		std::string						m_plot_file{}, m_dest_plot_points{}, m_id_column{ "id" }, m_dest_format{ ".laz" };
+		std::string						m_plot_file{}, m_dest_plot_points_directory{}, 
+										m_id_column{ "id" }, m_dest_format{ ".laz" };
 		double							m_buffer{ 0.0 };
 		pdal::SpatialReference			m_srs;
 	};

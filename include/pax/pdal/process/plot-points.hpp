@@ -60,10 +60,10 @@ namespace pax {
 		/// Access the points.
 		void save( 
 			const pdal::PointViewPtr  & view_ptr_,
-			const dir_path			  & dest_dir_,
+			const dir_path			  & dest_plot_points_directory_,
 			string_view					file_format_ = laz_suffix
 		) const {
-			const std::filesystem::path	dest   = dest_dir_ / ( m_id + file_format_ );
+			const std::filesystem::path	dest   = dest_plot_points_directory_ / ( m_id + file_format_ );
 			try{
 				// Create a new view and add the plot's points to it. 
 				pdal::PointViewPtr		points{ view_ptr_->makeNew() };
@@ -169,21 +169,21 @@ namespace pax {
 		/// Save the plots' point couds in the specified directory. 
 		/** Returns the number of plots processed.		**/
 		std::size_t save(
-			const dir_path		  & dest_dir_, 
+			const dir_path		  & dest_plot_points_directory_, 
 			const string_view		output_file_format_
 		) const {
 			if( m_processed_plots ) 
 				for( const Plot_points & plot : m_plots ) 
-					if( !plot.empty() )				plot.save( m_view_ptr, dest_dir_, output_file_format_ );
+					if( !plot.empty() )				plot.save( m_view_ptr, dest_plot_points_directory_, output_file_format_ );
 			return m_processed_plots;
 		}
 
 		/// Return metadata of result. 
 		template< typename Json >
-		[[nodiscard]] Json json( const dir_path & dest_dir_ ) const {
+		[[nodiscard]] Json json( const dir_path & dest_plot_points_directory_ ) const {
 			return Json{
 				{	"plots",						{
-					{	"destination",				dest_dir_						},
+					{	"destination",				dest_plot_points_directory_		},
 					{	"total",					m_plots.size()					},
 					{	"saved-plots",				m_processed_plots				}, 
 					{	"plot-inclusion",			Plot_points::inclusion_id()		}
@@ -196,14 +196,14 @@ namespace pax {
 		static std::size_t process(
 			const pdal::PointViewPtr				view_ptr_, 
 			const file_path						  & plots_source_, 
-			const dir_path						  & dest_dir_, 
+			const dir_path						  & dest_plot_points_directory_, 
 			const coord_type						max_disdance_, 
 			const string_view						id_column_			  = "id",
 			const string_view						output_file_format_	  = ".laz"
 		) {
 			Process_plots_points					plots{ plots_source_, max_disdance_, view_ptr_, id_column_ };
 			plots.process( bbox( view_ptr_ ) );
-			return plots.save( dest_dir_, output_file_format_ );
+			return plots.save( dest_plot_points_directory_, output_file_format_ );
 		}
 	};
 

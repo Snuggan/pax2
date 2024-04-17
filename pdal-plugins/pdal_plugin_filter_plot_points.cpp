@@ -25,7 +25,7 @@ namespace pax {
 		args.add( "plot_file", 			"File path to a csv-type file with at least the required columns 'north', 'east', 'radius' and 'id'. "
 										"Plots not entirely within the point cloud bounding box are ignored. ",
 											m_plot_file ).setPositional();
-		args.add( "dest_plot_points",	"Destination path (to a directory) for the plot point cloud files. ", m_dest_plot_points ).setPositional();
+		args.add( "dest_plot_points",	"Destination path (to a directory) for the plot point cloud files. ", m_dest_plot_points_directory ).setPositional();
 		args.add( "dest_format",		"File format to use for resulting point clud files (e.g '.laz'). ", m_dest_format, m_dest_format );
 		args.add( "id_column",			"In what column to find the [unique] plot id, to use as destination file name. ", m_id_column, m_id_column );
 		args.add( "max_distance",		"How much to enlarge the plot diameters. A zero value (the default) will use the plot diameter. ",
@@ -46,7 +46,7 @@ namespace pax {
 		try {
 			if( m_buffer > 0 ) {
 
-				Process_plots_points::process( view_, m_plot_file, m_dest_plot_points, m_buffer, m_id_column, m_dest_format );
+				Process_plots_points::process( view_, m_plot_file, m_dest_plot_points_directory, m_buffer, m_id_column, m_dest_format );
 
 				// Export metadata.
 				pdal::MetadataNode				metrics_node( "plot_points" );		
@@ -56,7 +56,7 @@ namespace pax {
 		
 				pdal::MetadataNode				arguments( "arguments" );
 				arguments.add( "plot_file",		to_string( m_plot_file ) );
-				arguments.add( "dest_plot_points",	to_string( m_dest_plot_points ) );
+				arguments.add( "dest_plot_points",	to_string( m_dest_plot_points_directory ) );
 				arguments.add( "max_distance",	m_buffer );
 				meta.add( arguments );
 			}
