@@ -14,7 +14,7 @@ Plots not entirely within the point cloud bounding box are ignored.
 **`dest_plot_points`**  
 Destination *directory* path for the plot point cloud files. 
 Files will be named by the `id` column in the `--plot_file`.
-.
+
 **`dest_format`**  
 File format to use for resulting point cloud files (e.g '.laz'). 
 
