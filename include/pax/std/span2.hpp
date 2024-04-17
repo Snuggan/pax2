@@ -18,7 +18,7 @@ namespace pax {
 	/// - Most `std::span` member functions stay the same, but some no longer have UB (i.e. `subspan`). 
 	template< typename T, std::size_t N = std::dynamic_extent >
 	class span2 : public std::span< T, N > {
-		using base = std::span< T, N >;
+		using     base = std::span< T, N >;
 
 #if( __cpp_lib_span >= 202311L )
 		using base::at;									// Came in C++26, might throw an exception.
@@ -33,8 +33,7 @@ namespace pax {
 				:											std::size_t{};
 		}
 
-		template< Character Ch >
-		[[nodiscard]] static constexpr std::size_t charlen( Ch * c_ ) noexcept {
+		[[nodiscard]] static constexpr std::size_t charlen( T * c_ ) noexcept {
 			auto					itr = c_;
 			if( itr && *itr )		while( *( ++itr ) );
 			return itr - c_;
