@@ -39,6 +39,11 @@ namespace pax {
 			return itr - c_;
 		}
 
+		template< std::size_t I >
+		static constexpr bool	is_dynamic = ( I == std::dynamic_extent );
+		template< std::size_t I >
+		static constexpr bool	is_static  = !is_dynamic< I >;
+
 	public:
 		using base::span;
 		
@@ -53,13 +58,13 @@ namespace pax {
 
 		/// Turns an array into a static `span2`.
 		template< std::size_t N0 >
-		constexpr span2( T( & c_ )[ N0 ] )	noexcept requires ( N == N0 )		: base( c_, N ) {}
+		constexpr span2( T( & c_ )[ N0 ] )	noexcept requires ( is_static < N > && ( N == N0 ) )	: base( c_, N ) {}
 
 		/// Turns an array of characters into a dynamic `span2`. Does not include a final `'\0'` character.
-		constexpr span2( T * & c_ )			noexcept requires Character< T >	: base( c_, charlen( c_ ) ) {}
+		constexpr span2( T * & c_ )			noexcept requires ( is_dynamic< N > && Character< T > )	: base( c_, charlen( c_ ) ) {}
 
 		/// Turns an array of const characters into a dynamic `span2`. Does not include a final `'\0'` character.
-		constexpr span2( T * const & c_ )	noexcept requires Character< T >	: base( c_, charlen( c_ ) ) {}
+		constexpr span2( T * const & c_ )	noexcept requires ( is_dynamic< N > && Character< T > )	: base( c_, charlen( c_ ) ) {}
 
 
 		/// Returns `data() != nullptr`.
@@ -68,15 +73,14 @@ namespace pax {
 		}
 
 		/// Returns a dynamically sized `span2` of the first `i_` elements.
-		///	- If `i_ > size()`, `span2< T >( data(), size() )` is returned.
+		///	- If `i_ > size()`, `*this` is returned.
 		[[nodiscard]] constexpr auto first( const std::size_t i_ = 1 )			const noexcept {
 			return span2< T >( base::data(), std::min( i_, base::size() ) );
 		}
 
 		/// Returns a statically sized `span2` of the first `I` elements.
 		///	- If `I > extent`, `*this` is returned.
-		template< std::size_t I >
-			requires( ( I != std::dynamic_extent ) && ( base::extent != std::dynamic_extent ) )
+		template< std::size_t I >		requires( is_static< I > && is_static< base::extent > )
 		[[nodiscard]] constexpr auto first()									const noexcept {
 			static constexpr std::size_t 	sz = std::min( I, base::extent );
 			return span2< T, sz >( base::data(), sz );
@@ -84,23 +88,21 @@ namespace pax {
 
 		/// Returns a statically sized `span2` of the first `I` elements.
 		///	- There is an `assert( I <= size() )`.
-		template< std::size_t I >
-			requires( ( I != std::dynamic_extent ) && ( base::extent == std::dynamic_extent ) )
+		template< std::size_t I >		requires( is_static< I > && is_dynamic< base::extent > )
 		[[nodiscard]] constexpr auto first()									const noexcept {
 			assert( I <= base::size() && "first< I >() requires I <= size()." );
 			return span2< T, I >( base::data(), I );
 		}
 
 		/// Returns a dynamically sized `span2` of the last `i_` elements.
-		///	- If `i_ > size()`, `span2< T >( data(), size() )` is returned.
+		///	- If `i_ > size()`, `*this` is returned.
 		[[nodiscard]] constexpr auto last( const std::size_t i_ = 1 )			const noexcept {
 			return ( i_ < base::size() ) ? span2< T >( base::end() - i_, i_ ) : *this;
 		}
 
 		/// Returns a statically sized `span2` of the last `I` elements.
 		///	- If `I > extent`, `*this` is returned.
-		template< std::size_t I >
-			requires( ( I != std::dynamic_extent ) && ( base::extent != std::dynamic_extent ) )
+		template< std::size_t I >		requires( is_static< I > && is_static< base::extent > )
 		[[nodiscard]] constexpr auto last()										const noexcept {
 			static constexpr std::size_t	offset = ( I < base::extent ) ? base::extent - I : 0u;
 			return span2< T, base::extent - offset >( base::data() + offset, base::extent - offset );
@@ -108,14 +110,13 @@ namespace pax {
 
 		/// Returns a statically sized `span2` of the last `I` elements.
 		///	- There is an `assert( I <= size() )`.
-		template< std::size_t I >
-			requires( ( I != std::dynamic_extent ) && ( base::extent == std::dynamic_extent ) )
+		template< std::size_t I >		requires( is_static< I > && is_dynamic< base::extent > )
 		[[nodiscard]] constexpr auto last()										const noexcept {
 			assert( I <= base::size() && "last< I >() requires I <= size()." );
 			return span2< T, I >( base::end() - I, I );
 		}
 
-		/// Returns a `span2` of all elements except the first `i_`.
+		/// Returns a dynamically sized `span2` of all elements except the first `i_`.
 		///	- If `i_ > size()`, `span2< T >( data() + size(), 0 )` is returned.
 		[[nodiscard]] constexpr auto not_first( const std::size_t i_ = 1 )		const noexcept {
 			return ( i_ < base::size() )	? span2< T >( base::data() + i_, base::size() - i_ )
@@ -124,47 +125,44 @@ namespace pax {
 
 		/// Returns a statically sized `span2` of all elements except the first `I`.
 		///	- If `I > extent`, `span2< T, 0 >( data() + size(), 0 )` is returned.
-		template< std::size_t I >
-			requires( ( I != std::dynamic_extent ) && ( base::extent != std::dynamic_extent ) )
+		template< std::size_t I >			requires( is_static< I > && is_static< base::extent > )
 		[[nodiscard]] constexpr auto not_first()								const noexcept {
-			static constexpr std::size_t		offset = ( I < base::extent ) ? I : base::extent;
-			static constexpr std::size_t		sz = base::extent - offset;
+			static constexpr std::size_t	offset = ( I < base::extent ) ? I : base::extent;
+			static constexpr std::size_t	sz = base::extent - offset;
 			return span2< T, sz >( base::data() + offset, sz );
 		}
 
-		/// Returns a `span2` of all elements except the last `i_`.
-		///	- If `i_ > size()`, `span2< T >( data() + size(), 0 )` is returned.
+		/// Returns a dynamically sized `span2` of all elements except the last `i_`.
+		///	- If `i_ > size()`, `span2< T >( data(), 0 )` is returned.
 		[[nodiscard]] constexpr auto not_last( const std::size_t  i_ = 1 )		const noexcept {
 			return span2< T >( base::data(), ( i_ < base::size() ) ? base::size() - i_ : 0u );
 		}
 
 		/// Returns a statically sized `span2` of all elements except the last `I`.
 		///	- If `I > extent`, `span< T, 0 >( data(), 0 )` is returned.
-		template< std::size_t I >
-			requires( ( I != std::dynamic_extent ) && ( base::extent != std::dynamic_extent ) )
+		template< std::size_t I >			requires( is_static< I > && is_static< base::extent > )
 		[[nodiscard]] constexpr auto not_last()									const noexcept {
 			static constexpr std::size_t 	sz = ( I < base::extent ) ? base::extent - I : 0u;
 			return span2< T, sz >( base::data(), sz );
 		}
 
-		/// Returns a `span2` of `size_` elements starting at `offset_`.
+		/// Returns a dynamically sized `span2` of `size_` elements starting at `offset_`.
 		///	- If `offset_ < 0`, `offset_ += size()` is used (the offset is seen from the back), 
 		///	- If `offset_ + size_ >= size()`: returns `not_first( offset_ )`.
 		[[nodiscard]] constexpr auto subspan( 
-			const std::ptrdiff_t 	offset_, 
-			const std::size_t 		size_ 
+			const std::ptrdiff_t 			offset_, 
+			const std::size_t 				size_ 
 		) const noexcept {
-			const auto 				offset = subspan_offset( offset_, base::size() );
+			const auto 						offset = subspan_offset( offset_, base::size() );
 			return span2< T >( base::data() + offset, std::min( base::size() - offset, size_ ) );
 		}
 
 		/// Returns a statically sized `span2` of `Len` elements starting at `offset_`.
 		///	- If `offset_ < 0`, an `offset_ += size()` is used (the offset is seen from the back), 
 		///	- There is an `assert( offset_ + Len <= size() )`.
-		template< std::size_t Len >
-			requires( Len != std::dynamic_extent )
+		template< std::size_t Len >			requires is_static< Len >
 		[[nodiscard]] constexpr auto subspan( const std::ptrdiff_t offset_ )	const noexcept	{
-			const auto 				offset = subspan_offset( offset_, base::size() );
+			const auto 						offset = subspan_offset( offset_, base::size() );
 			assert( offset + Len <= base::size()  && "subspan< Len >( v_, offset_ ) requires offset_ + Len <= size()." );
 			return span2< T, Len >( base::data() + offset, Len );
 		}
@@ -173,7 +171,7 @@ namespace pax {
 		///	- If `Offset < 0`, an offset = `Offset + size()` is used (the offset is seen from the back), 
 		///	- If `Offset + Len > size()`, returns `not_first< offset >()`.
 		template< std::ptrdiff_t Offset, std::size_t Len >	
-			requires( ( Len != std::dynamic_extent ) && ( base::extent != std::dynamic_extent ) )
+			requires( is_static< Len > && is_static< base::extent > )
 		[[nodiscard]] constexpr auto subspan()									const noexcept {
 			static constexpr auto	offset = subspan_offset( Offset, base::extent );
 			static constexpr auto 	len    = std::min( base::extent - offset, Len );
@@ -184,7 +182,7 @@ namespace pax {
 		///	- If `Offset < 0`, an offset = `Offset + size()` is used (the offset is seen from the back), 
 		///	- There is an `assert( offset + Len <= size() )`.
 		template< std::ptrdiff_t Offset, std::size_t Len >
-			requires( ( Len != std::dynamic_extent ) && ( base::extent == std::dynamic_extent ) )
+			requires( is_static< Len > && is_dynamic< base::extent > )
 		[[nodiscard]] constexpr auto subspan()									const noexcept {
 			const auto 				offset = subspan_offset( Offset, base::size() );
 			assert( offset + Len <= base::size() && "subspan< Offset, Len >( v_ ) requires Offset + Len <= size()." );
@@ -219,6 +217,7 @@ namespace pax {
 namespace std {
 
 	/// Stream the contents of `sp_` to `dest_` in the form `[i0, i1, ...]`.
+	/// - If T is a string type, each item is surrounded by '"'.
 	template< typename Dest, typename T, std::size_t N >
 	constexpr Dest & operator<<(
 		Dest					  & dest_,
