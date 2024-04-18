@@ -115,7 +115,7 @@ namespace pax {
 			return span2< T, I >( base::end() - I, I );
 		}
 
-		/// Returns a `span2` of all elements but the first `i_`.
+		/// Returns a `span2` of all elements except the first `i_`.
 		///	- If `i_ > size()`, `span2< T >( data() + size(), 0 )` is returned.
 		[[nodiscard]] constexpr auto not_first( const std::size_t i_ = 1 )		const noexcept {
 			return ( i_ < base::size() )	? span2< T >( base::data() + i_, base::size() - i_ )
@@ -138,7 +138,7 @@ namespace pax {
 			return span2< T >( base::data(), ( i_ < base::size() ) ? base::size() - i_ : 0u );
 		}
 
-		/// Returns a statically sized `span2` of all elements except the first `I`.
+		/// Returns a statically sized `span2` of all elements except the last `I`.
 		///	- If `I > extent`, `span< T, 0 >( data(), 0 )` is returned.
 		template< std::size_t I >
 			requires( ( I != std::dynamic_extent ) && ( base::extent != std::dynamic_extent ) )

@@ -258,7 +258,7 @@ PDAL_METRICS_PIPELINE	:=	{	"pipeline":[						\
 		"plot_file":"$(base_data_dir)plots.csv",					\
 		"dest_plot_points":"$(plots_individual_points_dir)",		\
 		"max_distance":"$(plots_individual_points_dir_max_dist)",	\
-		"id_column":"Descriptiontxt",								\
+		"id_column":"id",											\
 		"dest_format":".laz"										\
 	}																\
 ] }
