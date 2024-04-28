@@ -148,7 +148,6 @@ pdal::PointViewSet pax::Raster_metrics::run( pdal::PointViewPtr view_ ) {
 		// Export metadata.
 		pdal::MetadataNode				meta = getMetadata();
 		meta.add( metrics_node );
-		meta.add( "executed",			std::chrono::floor< std::chrono::seconds >( std::chrono::system_clock::now() ) );
 		meta.add( "points-in",			view_->size() );
 		meta.add( "has-ReturnNumber",	has_return_number );
 		meta.add( "height-dimension",	view_->hasDim( pdal::Dimension::Id::HeightAboveGround ) 
