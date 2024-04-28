@@ -86,7 +86,8 @@ namespace pax {
 				}},
 				{	"execution",		{
 					{	"concurrency",			std::thread::hardware_concurrency()			},
-					{	"time",					std20::format( "{:%FT%T}Z", std::chrono::system_clock::now() )	},
+					{	"time",					std20::format( "{:%FT%T}Z", 
+						std::chrono::floor< std::chrono::seconds >( std::chrono::system_clock::now() ) )	},
 					{	"tool",			{
 						{	"author",			metadata::author							},
 						{	"copyright",		metadata::copyright							},
