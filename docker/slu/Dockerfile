@@ -1,4 +1,4 @@
-FROM	ubuntu:23.10
+FROM	ubuntu:24.04
 LABEL	url="https://hub.docker.com/repository/docker/axensten/slu" \
 		organiusation="SLU, Swedish University of Agricultural Sciences" \
 		maintainer="Peder Axensten <peder.axensten@slu.se>"
