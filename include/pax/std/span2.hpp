@@ -21,7 +21,7 @@ namespace pax {
 		using     base = std::span< T, N >;
 
 #if( __cpp_lib_span >= 202311L )
-		using base::at;									// Came in C++26, might throw an exception.
+		using base::at;		// Came in C++26, might throw an exception.
 #endif
 		
 		[[nodiscard]] static constexpr std::size_t subspan_offset( 
@@ -46,25 +46,31 @@ namespace pax {
 
 	public:
 		using base::span;
-		
+
+		constexpr span2()								noexcept = default;
 		constexpr span2( const span2 & )				noexcept = default;
 		constexpr span2( span2 && )						noexcept = default;
 		constexpr span2 & operator=( const span2 & )	noexcept = default;
 		constexpr span2 & operator=( span2 && )			noexcept = default;
 
-		/// Turns a `Contiguous_elements` into a `span2`. If `a_` is statically sized, the resulting `span2` will be too. 
+		/// Turns a `Contiguous_elements` into a `span2`.
+		/// If `a_` is statically sized, the resulting `span2` will be too. 
 		template< Contiguous_elements A >
-		constexpr span2( A && a_ )			noexcept : base( std::data( a_ ), std::size( a_ ) ) {}
+		constexpr span2( A && a_ )			noexcept 
+			: base( std::data( a_ ), std::size( a_ ) ) {}
 
 		/// Turns an array into a static `span2`.
 		template< std::size_t N0 >
-		constexpr span2( T( & c_ )[ N0 ] )	noexcept requires ( is_static < N > && ( N == N0 ) )	: base( c_, N ) {}
+		constexpr span2( T( & c_ )[ N0 ] )	noexcept requires ( is_static < N > && ( N == N0 ) )
+			: base( c_, N ) {}
 
-		/// Turns an array of characters into a dynamic `span2`. Does not include a final `'\0'` character.
-		constexpr span2( T * & c_ )			noexcept requires ( is_dynamic< N > && Character< T > )	: base( c_, charlen( c_ ) ) {}
+		/// Turns an array of characters into a dynamic `span2`. Does not include a final `'\0'`.
+		constexpr span2( T * & c_ )			noexcept requires ( is_dynamic< N > && Character< T > )
+			: base( c_, charlen( c_ ) ) {}
 
-		/// Turns an array of const characters into a dynamic `span2`. Does not include a final `'\0'` character.
-		constexpr span2( T * const & c_ )	noexcept requires ( is_dynamic< N > && Character< T > )	: base( c_, charlen( c_ ) ) {}
+		/// Turns an array of const characters into a dynamic `span2`. Does not include a final `'\0'`.
+		constexpr span2( T * const & c_ )	noexcept requires ( is_dynamic< N > && Character< T > )
+			: base( c_, charlen( c_ ) ) {}
 
 
 		/// Returns `data() != nullptr`.
@@ -90,7 +96,7 @@ namespace pax {
 		///	- There is an `assert( I <= size() )`.
 		template< std::size_t I >		requires( is_static< I > && is_dynamic< base::extent > )
 		[[nodiscard]] constexpr auto first()									const noexcept {
-			assert( I <= base::size() && "first< I >() requires I <= size()." );
+			assert( I <= base::size() && "requires I <= size()." );
 			return span2< T, I >( base::data(), I );
 		}
 
@@ -112,7 +118,7 @@ namespace pax {
 		///	- There is an `assert( I <= size() )`.
 		template< std::size_t I >		requires( is_static< I > && is_dynamic< base::extent > )
 		[[nodiscard]] constexpr auto last()										const noexcept {
-			assert( I <= base::size() && "last< I >() requires I <= size()." );
+			assert( I <= base::size() && "requires I <= size()." );
 			return span2< T, I >( base::end() - I, I );
 		}
 
@@ -163,7 +169,7 @@ namespace pax {
 		template< std::size_t Len >			requires is_static< Len >
 		[[nodiscard]] constexpr auto subspan( const std::ptrdiff_t offset_ )	const noexcept	{
 			const auto 						offset = subspan_offset( offset_, base::size() );
-			assert( offset + Len <= base::size()  && "subspan< Len >( v_, offset_ ) requires offset_ + Len <= size()." );
+			assert( offset + Len <= base::size()  && "requires offset_ + Len <= size()." );
 			return span2< T, Len >( base::data() + offset, Len );
 		}
 
@@ -173,8 +179,8 @@ namespace pax {
 		template< std::ptrdiff_t Offset, std::size_t Len >	
 			requires( is_static< Len > && is_static< base::extent > )
 		[[nodiscard]] constexpr auto subspan()									const noexcept {
-			static constexpr auto	offset = subspan_offset( Offset, base::extent );
-			static constexpr auto 	len    = std::min( base::extent - offset, Len );
+			static constexpr auto			offset = subspan_offset( Offset, base::extent );
+			static constexpr auto 			len    = std::min( base::extent - offset, Len );
 			return span2< T, len >( base::data() + offset, len );
 		}
 
@@ -184,8 +190,8 @@ namespace pax {
 		template< std::ptrdiff_t Offset, std::size_t Len >
 			requires( is_static< Len > && is_dynamic< base::extent > )
 		[[nodiscard]] constexpr auto subspan()									const noexcept {
-			const auto 				offset = subspan_offset( Offset, base::size() );
-			assert( offset + Len <= base::size() && "subspan< Offset, Len >( v_ ) requires Offset + Len <= size()." );
+			const auto 						offset = subspan_offset( Offset, base::size() );
+			assert( offset + Len <= base::size() && "requires Offset + Len <= size()." );
 			return span2< T, Len >( base::data() + offset, Len );
 		}
 
@@ -227,8 +233,8 @@ namespace std {
 			constexpr auto			delimit  = pax::String< T > ? "\", \"" : ", ";
 			dest_ << '[';
 			if constexpr( N > 0 ) if( sp_.size() > 0 ) {
-				if constexpr( pax::String< T > )	dest_ << '"';
-				dest_ << sp_.front();
+				if constexpr( pax::String< T > )	dest_ << '"' << sp_.front();
+				else								dest_ << sp_.front();
 				if constexpr( N > 1 ) if( sp_.size() > 1 ) 
 					for( const auto & item : sp_.template subspan< 1 >() ) 
 						dest_ << delimit << item;
@@ -259,8 +265,9 @@ namespace std {
 		V						 && v_
 	) noexcept {
 		if constexpr( pax::Character_array< V > ) 
-				return operator<=>( sp_, pax::span2( v_ ) );
-		else	return std::lexicographical_compare_three_way( begin( sp_ ), end( sp_ ), begin( v_ ), end( v_ ) );
+			return operator<=>( sp_, pax::span2( v_ ) );
+		else
+			return std::lexicographical_compare_three_way( begin( sp_ ), end( sp_ ), begin( v_ ), end( v_ ) );
 	}
 
 	/// Implement `get` for statically sized `std::span`.

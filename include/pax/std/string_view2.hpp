@@ -37,6 +37,7 @@ namespace pax {
 		/// Creates a basic_string_view2. (From basic_string_view.)
 		using base::basic_string_view;
 		
+		constexpr basic_string_view2()											noexcept = default;
 		constexpr basic_string_view2( const basic_string_view2 & )				noexcept = default;
 		constexpr basic_string_view2( basic_string_view2 && )					noexcept = default;
 		constexpr basic_string_view2 & operator=( const basic_string_view2 & )	noexcept = default;
