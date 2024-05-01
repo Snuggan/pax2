@@ -13,11 +13,11 @@
 namespace pax {
 	
 	DOCTEST_TEST_CASE( "parts" ) {
-		constexpr const span2			first_( "abcde" );
-		constexpr const span2			last_( "jkl" );
+		const span2							first_( "abcde" );
+		const span2							last_( "jkl" );
 		constexpr const span2< const char >	null_;
 		constexpr const span2< const char, dynamic_extent >			str( "abcdefghijkl" );
-		constexpr const span2 			strN( "abcdefghijkl" );
+		const span2 						strN( "abcdefghijkl" );
 
 		{	// operator<<
 			{
@@ -43,7 +43,7 @@ namespace pax {
 				DOCTEST_FAST_CHECK_EQ( out.str(), "chars" );
 			} {
 				std::ostringstream		out{};
-				constexpr std::string	values[3] = { "first", "second", "third" };
+				const std::string		values[3] = { "first", "second", "third" };
 				out << span2( values );
 				DOCTEST_FAST_CHECK_EQ( out.str(), "[\"first\", \"second\", \"third\"]" );
 			} {

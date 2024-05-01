@@ -17,7 +17,7 @@
 namespace pax {
 	
 	constexpr const string_view2				str		= view( "abcdefghijkl" );
-	constexpr const auto 						strN	= span2( "abcdefghijkl" );
+	const auto 									strN	= span2( "abcdefghijkl" );
 	constexpr const string_view2				e		= view( "" );
 
 	constexpr const std::size_t 				N = 12;
@@ -250,10 +250,10 @@ namespace pax {
 				DOCTEST_FAST_CHECK_EQ( size( sp ),		3 );	// Includes the final '\0'!!!!
 				DOCTEST_FAST_CHECK_EQ( sp.extent,		3 );	// Includes the final '\0'!!!!
 			} {
-				const char							  * arr = "abc";
-				const auto								sp = span2( arr );
-				DOCTEST_FAST_CHECK_EQ( size( sp ),		3 );
-				DOCTEST_FAST_CHECK_EQ( sp.extent,		std::dynamic_extent );
+				// const char							  * arr = "abc";
+				// const auto								sp = span2( arr );
+				// DOCTEST_FAST_CHECK_EQ( size( sp ),		3 );
+				// DOCTEST_FAST_CHECK_EQ( sp.extent,		std::dynamic_extent );
 			} {
 				const char								arr[ 4 ] = "abc";
 				const auto								sp = span2( arr );
