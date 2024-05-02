@@ -24,6 +24,7 @@ namespace pax {
 		using base::at;		// Came in C++26, might throw an exception.
 #endif
 		
+		
 		[[nodiscard]] static constexpr std::size_t subspan_offset( 
 			const std::ptrdiff_t 	offset_, 
 			const std::size_t 		size_ 
