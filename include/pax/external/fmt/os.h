@@ -9,9 +9,11 @@
 #define FMT_OS_H_
 
 #include <cerrno>
-#include <cstddef>
-#include <cstdio>
-#include <system_error>  // std::system_error
+#ifndef FMT_IMPORT_STD
+#  include <cstddef>
+#  include <cstdio>
+#  include <system_error>  // std::system_error
+#endif
 
 #include "format.h"
 
@@ -227,13 +229,17 @@ class buffered_file {
 
   FMT_API auto descriptor() const -> int;
 
-  void vprint(string_view format_str, format_args args) {
-    fmt::vprint(file_, format_str, args);
+  void vprint(string_view fmt, format_args args) {
+    fmt::vprint(file_, fmt, args);
+  }
+  void vprint_locked(string_view fmt, format_args args) {
+    fmt::vprint_locked(file_, fmt, args);
   }
 
-  template <typename... Args>
-  inline void print(string_view format_str, const Args&... args) {
-    vprint(format_str, fmt::make_format_args(args...));
+  template <typename... T>
+  inline void print(string_view fmt, const T&... args) {
+    const auto& vargs = fmt::make_format_args(args...);
+    detail::is_locking<T...>() ? vprint(fmt, vargs) : vprint_locked(fmt, vargs);
   }
 };
 
@@ -384,7 +390,7 @@ class file_buffer final : public buffer<char> {
 
  public:
   FMT_API file_buffer(cstring_view path, const ostream_params& params);
-  FMT_API file_buffer(file_buffer&& other);
+  FMT_API file_buffer(file_buffer&& other) noexcept;
   FMT_API ~file_buffer();
 
   void flush() {
@@ -431,8 +437,7 @@ class FMT_API ostream {
     output to the file.
    */
   template <typename... T> void print(format_string<T...> fmt, T&&... args) {
-    vformat_to(std::back_inserter(buffer_), fmt,
-               fmt::make_format_args(args...));
+    vformat_to(appender(buffer_), fmt, fmt::make_format_args(args...));
   }
 };
 

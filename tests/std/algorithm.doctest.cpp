@@ -2,10 +2,10 @@
 //	Contact: peder ( at ) axensten.se
 
 
+#include <pax/std/format.hpp>
 #include <pax/std/algorithm.hpp>
 #include <pax/external/doctest/doctest-pax.hpp>
 
-#include <pax/std/format.hpp>
 #include <pax/reporting/as_ascii.hpp>
 #include <pax/reporting/debug.hpp>
 
@@ -93,7 +93,10 @@ namespace pax {
 
 	DOCTEST_TEST_CASE( "textual" ) {
 		{	// std::format output
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", view( first( abc, 3 ) ) ),	"abc" );
+			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", std::string_view( "abc" ) ),	"abc" );
+			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", pax::string_view2( "abc" ) ),	"abc" );
+			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", first( abc, 3 ) ),				"abc" );
+			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", view( first( abc, 3 ) ) ),		"abc" );
 
 			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", span2( first( abc, 3 ) ) ),	"['a', 'b', 'c']" );
 			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", first( ints, 0 ) ),	"[]" );

@@ -4,10 +4,11 @@
 
 #pragma once
 
-#include "../reporting/progress.hpp"
-#include "../textual/json.hpp"
+#include "../std/format.hpp"
 #include "../std/algorithm.hpp"
 #include "../std/file.hpp"
+#include "../reporting/progress.hpp"
+#include "../textual/json.hpp"
 
 
 namespace pax {

@@ -4,14 +4,12 @@
 
 #pragma once
 
-
-// Using std::format works well with clang 18. 
-// It does not work with gcc 13.2, however. I think it will with gcc 14. 
-// So I stick with fmt::format until I have a gcc that handles C++26.
-#define PAX_EXTERNAL_USE_FMT	( __cplusplus <= 202302L )
+#include "format-too.hpp"
 
 
-#if PAX_EXTERNAL_USE_FMT
+#if PAX_USE_STD_FORMAT
+#	include <format>
+#else
 	//	https://fmt.dev/latest/index.html
 	//	https://github.com/fmtlib/fmt
 #	define FMT_HEADER_ONLY
@@ -19,24 +17,28 @@
 #	include "../external/fmt/chrono.h"
 #	include "../external/fmt/ostream.h"
 #	include "../external/fmt/ranges.h"
-#	define PAX_STD20 fmt
-#else
-#	include <format>
-#	define PAX_STD20 std
 #endif
 
-namespace std20 = PAX_STD20;
 
 namespace pax {
+
 	template< typename Ch, typename Traits >
 	class basic_string_view2;
+
 }	// Namespace pax
 
-namespace PAX_STD20 {
-#	if PAX_EXTERNAL_USE_FMT
 
+namespace std20 {
+
+	template< typename Ch, typename Traits >
+	struct formatter< pax::basic_string_view2< Ch, Traits >, Ch > 
+		:  formatter< std::basic_string_view < Ch, Traits > > {};
+
+#	if !PAX_USE_STD_FORMAT
+
+		// For fmt 10.2.2
 		template< typename Ch, typename Traits >
-		struct formatter< pax::basic_string_view2< Ch, Traits > > : basic_ostream_formatter< Ch > {};
+		struct detail::is_std_string_like< pax::basic_string_view2< Ch, Traits > > : std::true_type {};
 
 		/// When the formatter is not known at compile time, std::format may not be used as usual.
 		/** Instead the format argument signals this case by having a specific type.		**/
@@ -44,10 +46,5 @@ namespace PAX_STD20 {
 			return fmt::runtime( fmt_ );
 		}
 
-#	else
-
-		template< typename Ch, typename Traits >
-		struct formatter< pax::basic_string_view2< Ch, Traits > > : formatter< std::basic_string_view< Ch >, Ch > {};
-
 #	endif
-}	// namespace PAX_STD20
+}	// namespace std20

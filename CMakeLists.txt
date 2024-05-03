@@ -215,7 +215,8 @@ message( STATUS "doctest:        ${DOCTEST_VERSION}" )
 
 
 ### fmt metadata
-set( FORMAT "${PAX_DIRECTORY}/external/fmt/core.h" )	# set( FORMAT "${PAX_DIRECTORY}/external/fmt/base.h" )
+#set( FORMAT "${PAX_DIRECTORY}/external/fmt/core.h" )
+set( FORMAT "${PAX_DIRECTORY}/external/fmt/base.h" )
 file( READ ${FORMAT} fmt_version_h )
 if( fmt_version_h MATCHES "FMT_VERSION ([0-9]+)([0-9][0-9])([0-9][0-9])" )
 	math( EXPR FMT_VERSION_MAJOR ${CMAKE_MATCH_1} )	# Use math to skip leading zeros if any.
