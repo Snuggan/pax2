@@ -4,11 +4,16 @@
 
 #pragma once
 
-#include "format-too.hpp"
+
+// Using std::format works well with clang 18. 
+// It does not work with gcc 13.2, however. I think it will with gcc 14. 
+// So I stick with fmt::format until I have a gcc that handles C++26.
+#define PAX_USE_STD_FORMAT			( __cplusplus > 202302L )
 
 
 #if PAX_USE_STD_FORMAT
 #	include <format>
+#	define std20 std
 #else
 	//	https://fmt.dev/latest/index.html
 	//	https://github.com/fmtlib/fmt
@@ -17,6 +22,7 @@
 #	include "../external/fmt/chrono.h"
 #	include "../external/fmt/ostream.h"
 #	include "../external/fmt/ranges.h"
+#	define std20 fmt
 #endif
 
 
