@@ -11,7 +11,7 @@ dependent_preparation.lidar_exponential <- function( variant, x ) {
 }
 
 independent_variables.lidar_exponential <- function( variant ) {
-	c(	"prop_1ret_gel_of_1ret", "sample_std_dev_gel", "p30_gel", "p80_gel", "p95_gel"	)
+	c(	"prop_1ret_gel_of_1ret", "sample_std_dev_gel", "p30_gel", "p80_gel", "p95_gel", "species_type"	)
 }
 
 independent_preparation.lidar_exponential <- function( variant, x ) {
@@ -60,12 +60,12 @@ predict.lidar_exponential <- function(
 ) {
 	log_begin()
 
-	# # Add the (cropped) tree species raster to the metrics.
-	# tree_species_file	<-	file.path( auxiliary_data_dir, "species_type.tif" )
-	# metrics$species_type <-	terra::crop(
-	# 	x				=	read_one_raster( source = tree_species_file ),
-	# 	y				=	metrics[[ 1 ]]
-	# )
+	# Add the (cropped) tree species raster to the metrics. 
+	tree_species_file	<-	file.path( auxiliary_data_dir, "species_type.tif" )
+	metrics$species_type <-	terra::crop( 
+		x				=	read_one_raster( source = tree_species_file ), 
+		y				=	metrics[[ 1 ]]
+	)
 	
 	# Make predictions.
 	x <- list()

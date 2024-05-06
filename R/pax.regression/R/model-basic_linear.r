@@ -2,7 +2,7 @@
 
 
 independent_variables.basic_linear <- function( variant ) {
-	c( "count_1ret", "count_1ret_ge150cm", "variance_all_ge150cm", "p80_all_ge150cm", "p95_all_ge150cm" )
+	c( "count_1ret", "count_1ret_ge150cm", "variance_all_ge150cm", "p80_all_ge150cm", "p95_all_ge150cm", "species_type" )
 }
 
 independent_preparation.basic_linear <- function( variant, x ) {
@@ -32,12 +32,12 @@ build_models.basic_linear <- function(
 ) {
 	log_begin()
 
-	Hgv					<-	as.formula( Hgv		   	  ~ p95_all_ge150cm )
-	RootVol				<-	as.formula( RootVol 	  ~ p95_all_ge150cm + h80veg + stddev  )
-	RootBioAbove		<-	as.formula( RootBioAbove  ~ p95_all_ge150cm + h80veg + vegprop )
-	RootBioBelow		<-	as.formula( RootBioBelow  ~ p95_all_ge150cm + h80veg + vegprop )
-	Basal_area			<-	as.formula( Basal_area	  ~                   h80veg + stddev  )
-	Dgv					<-	as.formula( Dgv			  ~ p95_all_ge150cm + h80veg )
+	Hgv					<-	as.formula( Hgv		   	  ~ species_type + p95_all_ge150cm )
+	RootVol				<-	as.formula( RootVol 	  ~ species_type + p95_all_ge150cm + h80veg + stddev  )
+	RootBioAbove		<-	as.formula( RootBioAbove  ~ species_type + p95_all_ge150cm + h80veg + vegprop )
+	RootBioBelow		<-	as.formula( RootBioBelow  ~ species_type + p95_all_ge150cm + h80veg + vegprop )
+	Basal_area			<-	as.formula( Basal_area	  ~ species_type +                   h80veg + stddev  )
+	Dgv					<-	as.formula( Dgv			  ~ species_type + p95_all_ge150cm + h80veg )
 
 	models <- list(
 		Hgv				=	rlm( formula=Hgv,			data=plots ), 
