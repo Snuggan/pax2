@@ -30,7 +30,7 @@ namespace pax {
 
 	template< typename Ch, typename Traits >
 	class basic_string_view2;
-
+	
 }	// Namespace pax
 
 
