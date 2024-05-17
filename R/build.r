@@ -6,7 +6,7 @@
 #
 # To prepare and install the package:
 # 1. In R, run: roxygenize( package.dir, roclets = NULL, clean = TRUE )
-# 2. I the terminal, run: R CMD check pax-regression
+# 2. I the terminal, run: R CMD check pax.regression
 # 3. In R, install the package.
 #
 ################################################
@@ -31,7 +31,7 @@ if( !is.null( opt$help ) ) {
     q();
 }
 
-package.dir			<- file.path( pax.dir, "R", "pax.regression" )
+package.dir			<- file.path( pax.dir, "R", "pax.regression/" )
 
 # Remove the invisible files that MacOS places everywhere and that turn up as warnings.
 DS_Store 			<- list.files( package.dir, pattern="^\\.DS_Store$", all.files=TRUE, recursive=TRUE )
