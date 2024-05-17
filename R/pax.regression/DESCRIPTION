@@ -1,9 +1,8 @@
-Encoding: UTF-8
 Package: pax.regression
 Type: Package
 Title: Tools to Use for Regression in the Forestry Domain
 Version: 0.3
-Date: 2020-06-08
+Date: 2024-05-06
 Author: Peder Axensten
 Maintainer: Peder Axensten <peder.axensten@slu.se>
 Description: A package for use at RS at the SRH department of SLU. If you don't understand the abbreviations, this is not for you. 
@@ -13,4 +12,5 @@ Depends:
 	robustbase,
 	utils
 License: GPL
-RoxygenNote: 7.1.2
+Encoding: UTF-8
+RoxygenNote: 7.3.1

@@ -12,7 +12,7 @@
 ################################################
 
 
-pax.dir			<- file.path( "/Users", "peder", "develop", "pax" )
+pax.dir			<- file.path( "/Users", "pederaxensten", "develop", "pax2" )
 
 
 require( getopt,   quietly=TRUE )
@@ -38,7 +38,8 @@ DS_Store 			<- list.files( package.dir, pattern="^\\.DS_Store$", all.files=TRUE,
 file.remove( file.path( package.dir, DS_Store ) )
 
 if( dir.exists( package.dir ) ) {
-	roxygenize( package.dir=package.dir, roclets = NULL, clean = TRUE)
+	cat ( "In dir ", package.dir, "<\n" )
+	roxygenise( package.dir=package.dir, roclets = NULL, clean = TRUE )
 	if( !is.null( opt$check ) ) {
 		cat( "Check\n" )
 		system( paste( "RCMD check --as-cran", package.dir ) )
