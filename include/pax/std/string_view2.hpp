@@ -28,6 +28,20 @@ namespace pax {
 		using base::starts_with, base::ends_with, base::find, base::rfind, base::contains, base::npos;
 		using base::find_first_of, base::find_last_of, base::find_first_not_of, base::find_last_not_of;
 
+		template< std::integral Int >
+		[[nodiscard]] static constexpr std::size_t substr_offset( 
+			const Int			 	offset_, 
+			const std::size_t 		size_ 
+		) noexcept {
+			if constexpr( std::is_unsigned_v< Int > ) {
+				return	std::min( offset_, size_ );
+			} else {
+				return	( offset_ >= 0 )					  ? std::min( std::size_t( offset_ ), size_ ) 
+					:	( std::size_t( -offset_ ) < size_ )	  ? size_ - std::size_t( -offset_ )
+					:											std::size_t{};
+			}
+		}
+
 	public:
 		/// All basic_string_view have dynamic extent. (From basic_string_view.)
 		static constexpr std::size_t 	extent = -1;		// NOT -1u!!		
@@ -95,14 +109,12 @@ namespace pax {
 		/// Returns a view to `size_` characters starting at position `offset_.
 		/// If `offset_ >= size()` an empty view is returned. 
 		/// If `offset_ + size_ >= size()` an truncated view is returned. 
+		template< std::integral Int >
 		[[nodiscard]] constexpr auto substr( 
-			const std::ptrdiff_t 				offset_, 
+			const Int			 				offset_, 
 			const std::size_t 					size_ 
 		) 	const noexcept {
-			const auto offset = 
-					(  offset_ >= 0 )							? std::min( std::size_t( offset_ ), base::size() ) 
-				:	( std::size_t( -offset_ ) < base::size() )  ? base::size() + offset_
-				:	  std::size_t{};
+			const auto offset				  = substr_offset( offset_, base::size() );
 			return basic_string_view2( base::data() + offset, std::min( base::size() - offset, size_ ) );
 		}
 
