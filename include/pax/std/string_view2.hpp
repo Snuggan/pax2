@@ -24,23 +24,9 @@ namespace pax {
 		using base::remove_prefix, base::remove_suffix;		// Changes state.
 		using base::compare;								// More readable to use operator== etc.
 
-		// Use stuff from "algorithms.hpp" or <algorithm> instead...
+		// Use stuff from "algorithms.hpp" (or <algorithm> instead).
 		using base::starts_with, base::ends_with, base::find, base::rfind, base::contains, base::npos;
 		using base::find_first_of, base::find_last_of, base::find_first_not_of, base::find_last_not_of;
-
-		template< std::integral Int >
-		[[nodiscard]] static constexpr std::size_t substr_offset( 
-			const Int			 	offset_, 
-			const std::size_t 		size_ 
-		) noexcept {
-			if constexpr( std::is_unsigned_v< Int > ) {
-				return	std::min( offset_, size_ );
-			} else {
-				return	( offset_ >= 0 )					  ? std::min( std::size_t( offset_ ), size_ ) 
-					:	( std::size_t( -offset_ ) < size_ )	  ? size_ - std::size_t( -offset_ )
-					:											std::size_t{};
-			}
-		}
 
 	public:
 		/// All basic_string_view have dynamic extent. (From basic_string_view.)
@@ -106,16 +92,23 @@ namespace pax {
 			return basic_string_view2( base::data(), ( i_ < base::size() ) ? base::size() - i_ : 0u );
 		}
 
-		/// Returns a view to `size_` characters starting at position `offset_.
-		/// If `offset_ >= size()` an empty view is returned. 
-		/// If `offset_ + size_ >= size()` an truncated view is returned. 
+		/// Returns a view to `length` characters starting at position `offset`.
+		///	- If `offset < 0`, then `offset + size()` is used (the offset is seen from the end), 
+		/// - If `offset >= size()` an empty view is returned. 
+		/// - If `offset + length >= size()` a truncated view is returned. 
 		template< std::integral Int >
 		[[nodiscard]] constexpr auto substr( 
-			const Int			 				offset_, 
-			const std::size_t 					size_ 
+			Int			 						offset, 
+			const std::size_t 					length 
 		) 	const noexcept {
-			const auto offset				  = substr_offset( offset_, base::size() );
-			return basic_string_view2( base::data() + offset, std::min( base::size() - offset, size_ ) );
+			if constexpr( std::is_unsigned_v< Int > ) {
+				offset	= std::min( offset, base::size() );
+			} else {
+				offset	= ( offset >= 0 )							? std::min( std::size_t( offset ), base::size() ) 
+						: ( std::size_t( -offset ) < base::size() )	? base::size() - std::size_t( -offset )
+						:											  std::size_t{};
+			}
+			return basic_string_view2( base::data() + offset, std::min( base::size() - offset, length ) );
 		}
 
 		/// Copy the string referenced to by `*this` to dest_. Returns `size().
