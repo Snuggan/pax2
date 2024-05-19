@@ -13,6 +13,8 @@
 
 namespace pax {
 
+	/// What span2 or string_view2 is suitable for a type?
+	/// Candidates are span2< T >, span2< T, N >, or string_view2< T >.
 	template< Contiguous_elements C, bool Dynamic = false >
 	struct view_type {
 		using type = span2< Value_type_t< C >, Dynamic ? std::dynamic_extent : extent_v< C > >;
@@ -72,13 +74,18 @@ namespace pax {
 
 
 	namespace detail {
-		[[nodiscard]] inline constexpr std::size_t subview_offset( 
-			const std::ptrdiff_t 			offset_, 
+		template< std::integral Int >
+		[[nodiscard]] static constexpr std::size_t subview_offset( 
+			const Int			 			offset_, 
 			const std::size_t 				size_ 
 		) noexcept {
-			return	(  offset_ >= 0 )					  ? std::min( std::size_t( offset_ ), size_ ) 
-				:	( std::size_t( -offset_ ) < size_ )	  ? size_ + offset_ 
-				:											std::size_t{};
+			if constexpr( std::is_unsigned_v< Int > ) {
+				return	std::min( offset_, size_ );
+			} else {
+				return	( offset_ >= 0 )					  ? std::min( std::size_t( offset_ ), size_ ) 
+					:	( std::size_t( -offset_ ) < size_ )	  ? size_ - std::size_t( -offset_ )
+					:											std::size_t{};
+			}
 		}
 
 		// Return true iff copying to dest_ requires backward copy.
