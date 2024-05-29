@@ -44,8 +44,9 @@ namespace pax {
 	pdal::PointViewSet plot_points::run( pdal::PointViewPtr view_ ) {
 		pdal::PointViewSet						result;
 		try {
-			if( m_buffer > 0 ) {
-
+			if( m_buffer <= 0 ) {
+				std::cerr << error_message( "To export points in plots the radius needs to be larger than zero." ).what() << '\n';
+			} else {
 				Process_plots_points::process( view_, m_plot_file, m_dest_plot_points_directory, m_buffer, m_id_column, m_dest_format );
 
 				// Export metadata.
@@ -53,7 +54,7 @@ namespace pax {
 				pdal::MetadataNode				meta = getMetadata();
 				meta.add( metrics_node );
 				meta.add( "points-in",			view_->size() );
-		
+	
 				pdal::MetadataNode				arguments( "arguments" );
 				arguments.add( "plot_file",		to_string( m_plot_file ) );
 				arguments.add( "dest_plot_points",	to_string( m_dest_plot_points_directory ) );
