@@ -54,11 +54,12 @@ namespace pax {
 		) const {
 			// Convert the column ids to indeces and check they are valid.
 			Size							idxs[] = { m_header.index( col_ids_[ I ] )... };
-			for( const auto idx : idxs )
-				if( idx > m_header.size() ) throw error_message( 
-					"Text_table: To create a value of type T a column '{}' is specified, but there is none in the table.", 
-					col_ids_[ idx ]
-				);
+			for( std::size_t i=0; i<col_ids_.size(); ++i ) {
+				if( idxs[ i ] > m_header.size() ) throw error_message( std20::format(
+					"Text_table: To create a value of type T a column '{}' is needed, but there is none in the table.", 
+					col_ids_[ i ]
+				) );
+			}
 
 			// Create and push a value for each row in the table [with true row predicate_].
 			Size		 					r{};					// The predicator needs the row number.
@@ -74,7 +75,8 @@ namespace pax {
 					itr+= m_table.cols();
 				}
 			} catch( const std::exception & error_ ) {
-				throw error_message( std20::format( "{} (Text_table row {}: Creating type '{}' from columns {}.)", 
+				throw error_message( std20::format( 
+					"{} (Text_table row {}: Creating type '{}' from columns {}.)", 
 					error_.what(), r+1, type_name_rt< T >, std::span( col_ids_ )
 				) );
 			}

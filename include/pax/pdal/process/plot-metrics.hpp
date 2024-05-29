@@ -107,11 +107,15 @@ namespace pax {
 
 	public:
 		/// Construct the base data from the plots source file (a csv type of file).
-		explicit Process_plots_metrics( const file_path & plots_source_ ) :
-			m_plots_table{ plots_source_ },
-			m_plots{ m_plots_table.export_values< Plot_metrics, Plot_metrics::Tuply >( Plot_metrics::names() ) },
-			m_plots_source{ plots_source_ }
-		{}
+		explicit Process_plots_metrics( const file_path & plots_source_ ) 
+			try :
+				m_plots_table( plots_source_ ), 
+				m_plots( m_plots_table.export_values< Plot_metrics, Plot_metrics::Tuply >( Plot_metrics::names() ) ), 
+				m_plots_source( plots_source_ )
+			{}
+			catch( Runtime_exception & e_ ) {
+				throw e_ << std20::format( "Table at\t{}", to_string( plots_source_ ) );
+			}
 
 
 		/// Process an individual point cloud file. 
