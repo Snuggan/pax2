@@ -53,11 +53,10 @@ namespace pax {
 			std::integer_sequence< Size, I... >
 		) const {
 			// Convert the column ids to indeces and check they are valid.
-			Size							idxs[] = { m_header.index( col_ids_[ I ] )... };
+			const Size						idxs[] = { m_header.index( col_ids_[ I ] )... };
 			std::string						missing;
-			for( std::size_t i=0; i<col_ids_.size(); ++i ) {
+			for( std::size_t i=0; i<col_ids_.size(); ++i ) 
 				if( idxs[ i ] > m_header.size() )	missing+= std::string( missing.empty() ? "\"" : "\", \"" ) + col_ids_[ i ];
-			}
 			if( missing.size() ) throw error_message( std20::format( "Missing column[s]: {}\".", missing ) );
 
 			// Create and push a value for each row in the table [with true row predicate_].
