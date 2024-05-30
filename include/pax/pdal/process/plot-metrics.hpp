@@ -114,7 +114,7 @@ namespace pax {
 				m_plots_source( plots_source_ )
 			{}
 			catch( Runtime_exception & e_ ) {
-				throw e_ << std20::format( "Table at\t{}", to_string( plots_source_ ) );
+				throw e_ << std20::format( "In table\t{}", to_string( plots_source_ ) );
 			}
 
 
