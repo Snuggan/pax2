@@ -9,6 +9,7 @@
 #include <source_location>
 #include <stdexcept>
 #include <iostream>
+// #include <stacktrace>
 
 
 namespace pax {
@@ -43,7 +44,7 @@ namespace pax {
 	inline auto user_error_message(
 		const std::string_view			message_,
 		const std::error_code			ec_ = std::error_code{}
-	) {	return Runtime_exception( std20::format( "{}{}", message_, to_string( ec_, "\nPossibly due to\t" ) ) );	}
+	) {	return Runtime_exception( std20::format( "{}{}\n", message_, to_string( ec_, "\nPossibly due to\t" ) ) );	}
 
 	/* Error message with error code and source location. */
 	inline auto error_message( 
@@ -93,8 +94,8 @@ namespace pax {
 			const auto lines		  = split( message_, '\n' );
 			const auto line1		  = split( lines.first, '\t' );
 			result = line1.second.empty()
-				? std20::format( "{}\n\t{}", result, line1.first )
-				: std20::format( "{}\n\t{: <20}{}", result, std20::format( "{}:", line1.first ), line1.second );
+				? std20::format( "{}\t{}\n", result, line1.first )
+				: std20::format( "{}\t{: <20}{}\n", result, std20::format( "{}:", line1.first ), line1.second );
 			message_				  = lines.second;
 		}
 		return result;
@@ -124,21 +125,27 @@ namespace pax {
 
 
 
-#define PAX_REPORT_IF( _act_, _test_ )		\
-	if(  static_cast< bool >( _test_ ) )	_act_ pax::error_message( "Not allowed: " #_test_ ) 
+#define PAX_REPORT_IF( _action_, _test_, _prefix_ )		\
+	if(  static_cast< bool >( _test_ ) )	_action_ pax::error_message( _prefix_ #_test_ ) 
 
-#define PAX_REPORT_UNLESS( _act_, _test_ )	\
-	if( !static_cast< bool >( _test_ ) )	_act_ pax::error_message( "Failed: " #_test_ ) 
+#define PAX_REPORT_UNLESS( _action_, _test_, _prefix_ )	\
+	if( !static_cast< bool >( _test_ ) )	_action_ pax::error_message( _prefix_ #_test_ ) 
 
-
-/// Unless the condition is met, throw an exception.
-/** @{ **/
-#define PAX_THROW_IF( _test_ )				PAX_REPORT_IF    ( throw, _test_ )
-#define PAX_THROW_UNLESS( _test_ )			PAX_REPORT_UNLESS( throw, _test_ )
-/** @} **/
 
 /// Unless the condition is met, display a warning. 
 /** @{ **/
-#define PAX_WARN_IF( _test_ )				PAX_REPORT_IF    ( std::cerr <<, _test_ )
-#define PAX_WARN_UNLESS( _test_ )			PAX_REPORT_UNLESS( std::cerr <<, _test_ )
+#define PAX_WARN_IF( _test_ )				PAX_REPORT_IF	 ( std::cerr <<, _test_, "Warning, not allowed: " )
+#define PAX_WARN_UNLESS( _test_ )			PAX_REPORT_UNLESS( std::cerr <<, _test_, "Warning, failed: " )
+/** @} **/
+
+/// Unless the condition is met, throw an exception.
+/** @{ **/
+#define PAX_THROW_IF( _test_ )				PAX_REPORT_IF	 ( throw,		 _test_, "Exception, not allowed: " )
+#define PAX_THROW_UNLESS( _test_ )			PAX_REPORT_UNLESS( throw,		 _test_, "Exception, failed: " )
+/** @} **/
+
+/// Unless the condition is met, display a warning and terminate. 
+/** @{ **/
+#define PAX_TERMINATE_IF( _test_ )		{	PAX_REPORT_IF	 ( std::cerr <<, _test_, "Terminated, not allowed: " );	std::terminate();	}
+#define PAX_TERMINATE_UNLESS( _test_ )	{	PAX_REPORT_UNLESS( std::cerr <<, _test_, "Terminated, failed: " );		std::terminate();	}
 /** @} **/

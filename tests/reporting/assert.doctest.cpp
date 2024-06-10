@@ -46,11 +46,19 @@ namespace pax {
 		DOCTEST_CHECK_NOTHROW  ( PAX_THROW_UNLESS( true  ) << "More..." );
 		DOCTEST_CHECK_NOTHROW  ( PAX_WARN_UNLESS ( true  ) << "More..." );
 	}
-	DOCTEST_TEST_CASE( "debug" ) {
+	DOCTEST_TEST_CASE( "warn_if, warn_unless" ) {
+		if( output ) {
+			PAX_WARN_IF( std::make_error_code( std::errc( 1 ) ) );
+			PAX_WARN_IF( std::make_error_condition( std::errc( 1 ) ) );
+			PAX_WARN_UNLESS( all( 0<1, 2==2, 2==3 ) );
+			PAX_WARN_UNLESS( 2==3 );
+		}
+	}
+	DOCTEST_TEST_CASE( "throw_if, throw_unless" ) {
 		try {
-			PAX_THROW_IF( std::make_error_code( std::errc( 1 ) ) );
+			PAX_THROW_IF( std::make_error_code( std::errc( 1 ) ) ) << "More\tInfo 1\nHej\tigen!\nHej\tigen!";
 		} catch( Runtime_exception & re_ ) {
-			if( output )	std::cerr << re_;
+			if( output )	std::cerr << ( re_ << "More\tInfo 2" );
 		}
 		try {
 			PAX_THROW_IF( std::make_error_condition( std::errc( 1 ) ) );
@@ -66,6 +74,14 @@ namespace pax {
 			PAX_THROW_UNLESS( 2==3 );
 		} catch( Runtime_exception & re_ ) {
 			if( output )	std::cerr << re_;
+		}
+	}
+	DOCTEST_TEST_CASE( "abort_if, abort_unless" ) {
+		if( output && false ) {
+			PAX_TERMINATE_IF( std::make_error_code( std::errc( 1 ) ) );
+			PAX_TERMINATE_IF( std::make_error_condition( std::errc( 1 ) ) );
+			PAX_TERMINATE_UNLESS( all( 0<1, 2==2, 2==3 ) );
+			PAX_TERMINATE_UNLESS( 2==3 );
 		}
 	}
 
