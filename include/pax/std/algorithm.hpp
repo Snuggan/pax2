@@ -168,7 +168,7 @@ namespace pax {
 			&& ( size( v0_ ) == size( v1_ ) );
 	}
 
-	/// Return true iff any part of v1_ overlaps any part of v2_.
+	/// Return true iff any element in v1_ by address is also an element in v2_.
 	/// Cheap: 1 addition, 2 comparisons, and 2 bolean &&.
 	template< Contiguous_elements V0, Contiguous_elements V1 >
 	[[nodiscard]] constexpr bool overlap( 
