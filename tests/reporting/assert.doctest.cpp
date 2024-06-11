@@ -33,12 +33,6 @@ namespace pax {
 
 	constexpr bool output{ false };
 	
-	DOCTEST_TEST_CASE( "Final_error_message" ) {
-		auto err1 = Final_error_message();
-		auto err2 = Final_error_message( "Hej!" );
-		err1.deactivate();
-		err2.deactivate();
-	}
 	DOCTEST_TEST_CASE( "debug THROW_UNLESS" ) {
 		DOCTEST_CHECK_NOTHROW  ( PAX_THROW_IF( false  ) << "More..." );
 		DOCTEST_CHECK_NOTHROW  ( PAX_WARN_IF ( false  ) << "More..." );

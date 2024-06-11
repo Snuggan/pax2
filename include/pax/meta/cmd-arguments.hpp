@@ -476,7 +476,7 @@ namespace pax::cmd_args {
 				arguments.finalize( item.second );
 
 		} catch( const std::exception & error_ ) {
-			throw user_error_message( std20::format( "Error: {} Use argument --help for info.", error_.what() ) );
+			throw user_error_message( std20::format( "Error: {} Use argument --help for info.", no_control_suffix( error_.what() ) ) );
 		}
 
 		return arguments;

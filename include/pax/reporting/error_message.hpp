@@ -54,29 +54,6 @@ namespace pax {
 	) {	return user_error_message( std20::format( "{}: {}", to_string( sl_ ), message_ ), ec_ );					}
 
 
-	/// At destruction this class will write a message to std::cerr unless previously deactivated.
-	class Final_error_message {
-		std::string						m_message;
-
-	public:
-		Final_error_message( const Final_error_message & )				= delete;
-		Final_error_message( Final_error_message && )					= delete;
-		Final_error_message & operator=( const Final_error_message & )	= delete;
-		Final_error_message & operator=( Final_error_message && )		= delete;
-
-		Final_error_message( const std::source_location sl_ = std::source_location::current() ) 
-			: Final_error_message{ "Something went wrong...", sl_ } {}
-
-		Final_error_message(
-			const std::string_view		message_, 
-			const std::source_location	sl_ = std::source_location::current()
-		) :	m_message{ std::format( "{}: error: {}\n", to_string( sl_ ), message_ ) } {}
-		
-		~Final_error_message()	{	if( m_message.size() )	std::cerr << m_message;		}
-		void deactivate()		{	m_message.clear();									}
-	};
-
-
 
 	/// Add a second string in a formatted way.
 	/** - After the first '\t' of a line, text is output starting from a fixed character position.
@@ -99,6 +76,13 @@ namespace pax {
 			message_				  = lines.second;
 		}
 		return result;
+	}
+
+
+	/// Remove trailing control characters, such as '\n', '\r', or '\t'.
+	constexpr std::string_view no_control_suffix( std::string_view sv_ ) {
+		while( sv_.size() && ( sv_.back() < 32 ) )		sv_.remove_suffix( 1 );
+		return sv_;
 	}
 
 	/// Output the exception string. 

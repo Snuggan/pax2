@@ -40,7 +40,7 @@ namespace pax {
 		const std::string_view			message_,
 		const std::source_location	  & sl_ = std::source_location::current()
 	) {
-		return std20::format( "{}: {}\n\tPath:               'www'", to_string( sl_ ), message_ );
+		return std20::format( "{}: {}\n\tPath:               'www'\n", to_string( sl_ ), message_ );
 	}
 	
 	

@@ -37,20 +37,20 @@ namespace pax::cmd_args {
 					{ "Test name", "--one", "ONE", "--scalar=SCALAR", "SCALAR3", "-oO", "--no-on", "--no-off" };
 		
 				DOCTEST_CHECK_THROWS_WITH( parameters.parse( 0, argv ),
-					"Error: Parameter '--one' requires a value, but none was given. Use argument --help for info." );
+					"Error: Parameter '--one' requires a value, but none was given. Use argument --help for info.\n" );
 				DOCTEST_CHECK_THROWS_WITH( parameters.parse( 3, argv ), 
-					"Error: Parameter '--scalar' requires a value, but none was given. Use argument --help for info." );
+					"Error: Parameter '--scalar' requires a value, but none was given. Use argument --help for info.\n" );
 				DOCTEST_CHECK_NOTHROW( parameters.parse( 4, argv ) );
 			} {
 				const char *		argv[] = 
 					{ "Test name", "--scalar=SCALAR", "--one", "ONE", "--scalar", "SCALAR2" };
 				DOCTEST_CHECK_THROWS_WITH( parameters.parse( 6, argv ), 
-					"Error: Parameter '--scalar' is a scalar, but was given multiple values 'SCALAR' and 'SCALAR2'. Use argument --help for info." );
+					"Error: Parameter '--scalar' is a scalar, but was given multiple values 'SCALAR' and 'SCALAR2'. Use argument --help for info.\n" );
 			} {
 				const char *		argv[] = 
 					{ "Test name", "--unknown=irrelevant" };
 				DOCTEST_CHECK_THROWS_WITH( parameters.parse( 2, argv ), 
-					"Error: Unknown parameter '--unknown'. Use argument --help for info." );
+					"Error: Unknown parameter '--unknown'. Use argument --help for info.\n" );
 			}
 		}
 
@@ -72,10 +72,10 @@ namespace pax::cmd_args {
 				DOCTEST_CHECK_EQ( values.flag( "off" ),				false );
 				DOCTEST_CHECK_EQ( values.flag( "on" ),				false );
 
-				DOCTEST_CHECK_THROWS_WITH( values.flag( "scalar" ), "Parameter '--scalar' is not a flag." );
+				DOCTEST_CHECK_THROWS_WITH( values.flag( "scalar" ), "Parameter '--scalar' is not a flag.\n" );
 				DOCTEST_CHECK_THROWS_WITH( values.one_of( "scalar", std::span( one_of ).first( 2 ) ), 
-					"'SCALAR' (value of '--scalar') is not one of the required values." );
-				DOCTEST_CHECK_THROWS_WITH( values( "no-such" ), 	"Unknown parameter '--no-such'." );
+					"'SCALAR' (value of '--scalar') is not one of the required values.\n" );
+				DOCTEST_CHECK_THROWS_WITH( values( "no-such" ), 	"Unknown parameter '--no-such'.\n" );
 			} {
 				const auto values{ parameters.parse( 7, argv ) };
 				DOCTEST_CHECK_EQ( values.flag( "invisible" ),		false );
