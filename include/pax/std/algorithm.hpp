@@ -229,7 +229,7 @@ namespace pax {
 	}
 
 	/// Returns a statically sized span of the first I elements of v_.
-	///	- If i_ > size( v_ ), a span of all v_ is returned.
+	///	- If I > size( v_ ), a span of all v_ is returned.
 	template< std::size_t I, Contiguous_elements V >
 		requires( ( I != dynamic_extent ) && ( extent_v< V > != dynamic_extent ) )
 	[[nodiscard]] constexpr auto first( V && v_ ) noexcept {
