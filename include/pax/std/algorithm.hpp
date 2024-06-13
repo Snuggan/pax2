@@ -531,7 +531,7 @@ namespace pax {
 					?	size( u_ ) : 0u;
 	}
 
-	/// Returns 1, if the beginning of `view_` is `ch_` and 0 otherwise.
+	/// Returns 1, if the beginning of `view_` is `t_` and 0 otherwise.
 	template< Contiguous_elements V >
 	[[nodiscard]] constexpr std::size_t starts_with(  
 		const V							  & v_, 
@@ -577,7 +577,7 @@ namespace pax {
 				?	size( u_ ) : 0u;
 	}
 
-	/// Returns 1, if the end of `view_` is `ch_` and 0 otherwise.
+	/// Returns 1, if the end of `view_` is `t_` and 0 otherwise.
 	template< Contiguous_elements V >
 	[[nodiscard]] constexpr std::size_t ends_with(  
 		const V							  & v_, 
@@ -636,7 +636,7 @@ namespace pax {
 		using std::data, std::size;
 		const std::size_t 					i  = find( v_, by_ );
 		const std::size_t 					sz = ( i >= size( view( v_ ) ) ) ? 0 : size( view( by_ ) );
-		return std::pair{ first( view( v_ ), i ), not_first( view( v_ ), i + sz ) };
+		return std::pair{ first( v_, i ), not_first( v_, i + sz ) };
 	}
 
 	/// Split `view_` into two parts: before and after the first `x_`, not including it.
@@ -667,7 +667,7 @@ namespace pax {
 
 
 
-	/// Returns `v_`, possibly excluding a leading `ch_`. 
+	/// Returns `v_`, possibly excluding a leading `t_`. 
 	/// Returns a [non-owning] string view into v_.
 	template< Contiguous_elements V >
 	[[nodiscard]] constexpr auto trim_front( 
@@ -677,7 +677,7 @@ namespace pax {
 		return not_first( v_, starts_with( v_, t_ ) );
 	}
 
-	/// Returns `v_` possibly excluding a trailing `ch_`. 
+	/// Returns `v_` possibly excluding a trailing `t_`. 
 	/// Returns a [non-owning] string view into v_.
 	template< Contiguous_elements V >
 	[[nodiscard]] constexpr auto trim_back( 
