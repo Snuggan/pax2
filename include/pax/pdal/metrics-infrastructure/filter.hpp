@@ -7,8 +7,9 @@
 #include "_general.hpp"
 #include <pax/reporting/error_message.hpp>
 
+#include <cstdint>		// std::uint16_t
 #include <string_view>
-#include <limits>	// std::numeric_limits
+#include <limits>		// std::numeric_limits
 
 
 namespace pax::metrics {
