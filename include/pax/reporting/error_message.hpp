@@ -7,7 +7,7 @@
 #include "../std/format.hpp"
 #include <string_view>
 #include <source_location>
-#include <stdexcept>
+#include <exception>
 #include <iostream>
 // #include <stacktrace>
 
