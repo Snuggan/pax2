@@ -10,15 +10,17 @@
 namespace pax { 
 
 	// Implements the power of N by clever repeated multiplication.
-	template< typename T > 
-	constexpr T power_detail( T v_, int n_ )		noexcept	{
+	template< typename T, typename Int > 
+		requires std::is_integral_v< Int >
+	constexpr T power_detail( T v_, Int n_ )		noexcept	{
 		switch( n_ ) {
 			case  0: 	return T( 1 );
 			case  1: 	return v_;
 			case  2: 	return v_*v_;
 			case  3: 	return v_*v_*v_;
-			default:	if( n_ < 0 ) return T( 1 )/power_detail( v_, -n_ );
 		}
+		if constexpr( std::is_signed_v< Int > )
+			if( n_ < 0 ) return T( 1 )/power_detail( v_, -n_ );
 	
 		// Remove the power of two part of n_.
 		while( !( n_ & 1 ) ) {	// While n_ is even...
@@ -47,7 +49,7 @@ namespace pax {
 	constexpr auto power( const T & v_, P n_ )		noexcept	{
 		if constexpr( std::is_integral_v< P > )	return power_detail( v_, n_ );
 		else return ( n_ == int( n_ ) )				 ? power_detail( v_, int( n_ ) )
-													 : std::pow( v_, n_ );	// v_ must be non-complex.
+													 : std::pow( v_, n_ );
 	}
 
 	/// Calculates the square: v_ * v_.
@@ -73,7 +75,7 @@ namespace pax {
 	template< typename T > 
 	struct root_detail_t {
 		using type = std::remove_cv_t< T >;
-		static constexpr bool is_negative( const T & t_ )	noexcept	{	return t_ < T{};				}
+		static constexpr bool is_negative( const T & t_ )	noexcept	{	return t_ < T{};						}
 	};
 
 	template< typename T > 
