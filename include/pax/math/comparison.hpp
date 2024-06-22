@@ -19,38 +19,34 @@
 
 namespace pax {
 
-	[[nodiscard]] constexpr bool all()									noexcept	{	return true;	}
-	[[nodiscard]] constexpr bool any()									noexcept	{	return false;	}
-	[[nodiscard]] constexpr bool none()									noexcept	{	return true;	}
-
 	/// Return true, iff all t_... are true.
 	template< typename ...Ts >
-	[[nodiscard]] constexpr bool all( bool t_, Ts && ...ts_ )			noexcept	{
-		return t_ && all( static_cast< bool >( std::forward< Ts >( ts_ ) )... );
+	[[nodiscard]] constexpr bool all( Ts && ...ts_ )					noexcept	{
+		return ( true && ... && static_cast< bool >( ts_ ) );
 	}
 
 	template< typename Pred, typename ...Ts >
 		requires(( true && ... && std::is_invocable_r_v< bool, Pred, Ts > ))
-	[[nodiscard]] constexpr bool all( Pred && pred_, Ts && ...ts_  )				{
-		return all( pred_( std::forward< Ts >( ts_ ) )... );
+	[[nodiscard]] constexpr bool all( Ts && ...ts_  )					noexcept	{
+		return ( true && ... && pred_( ts_ ) );
 	}
 
 	/// Return true, iff at least one t_... is true.
 	template< typename ...Ts >
-	[[nodiscard]] constexpr bool any( bool t_, Ts && ...ts_ )			noexcept	{
-		return t_ || any( static_cast< bool >( std::forward< Ts >( ts_ ) )... );
+	[[nodiscard]] constexpr bool any( Ts && ...ts_ )					noexcept	{
+		return ( false || ... || static_cast< bool >( ts_ ) );
 	}
 
 	template< typename Pred, typename ...Ts >
 		requires std::is_invocable_v< bool, Pred >
-	[[nodiscard]] constexpr bool any( Pred && pred_, Ts && ...ts_  )				{
-		return any( pred_( std::forward< Ts >( ts_ ) )... );
+	[[nodiscard]] constexpr bool any( Pred && pred_, Ts && ...ts_  )	noexcept	{
+		return ( true || ... || pred_( ts_ ) );
 	}
 
 	/// Return true, iff no t_... is true.
 	template< typename ...Ts >
 	[[nodiscard]] constexpr bool none( Ts && ...ts_ )					noexcept	{
-		return !any( std::forward< Ts >( ts_ )... );
+		return !( false || ... || static_cast< bool >( ts_ ) );
 	}
 
 
