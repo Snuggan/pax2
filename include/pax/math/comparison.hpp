@@ -27,7 +27,7 @@ namespace pax {
 
 	template< typename Pred, typename ...Ts >
 		requires(( true && ... && std::is_invocable_r_v< bool, Pred, Ts > ))
-	[[nodiscard]] constexpr bool all( Ts && ...ts_  )					noexcept	{
+	[[nodiscard]] constexpr bool all( Pred && pred_, Ts && ...ts_  )	noexcept	{
 		return ( true && ... && pred_( ts_ ) );
 	}
 
@@ -38,7 +38,7 @@ namespace pax {
 	}
 
 	template< typename Pred, typename ...Ts >
-		requires std::is_invocable_v< bool, Pred >
+		requires(( true && ... && std::is_invocable_r_v< bool, Pred, Ts > ))
 	[[nodiscard]] constexpr bool any( Pred && pred_, Ts && ...ts_  )	noexcept	{
 		return ( true || ... || pred_( ts_ ) );
 	}
