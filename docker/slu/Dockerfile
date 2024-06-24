@@ -5,7 +5,7 @@ LABEL	url="https://hub.docker.com/repository/docker/axensten/slu" \
 
 ENV		TZ=Europe/Stockholm
 
-RUN		echo "--- Main stuff ---" \
+RUN		echo "\n\n--- Main stuff ---" \
 		&&	ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
 		&&	apt-get update \
 		&&	apt-get install -y --no-install-recommends \
@@ -44,12 +44,8 @@ RUN		echo "--- Main stuff ---" \
 		# Make g++-14 the default:
 		&&	update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 50 \
 		&&	update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 50 \
-		&&	export CXX=/usr/local/bin/g++-14 \
-		&&	export CC=/usr/local/bin/gcc-14 \
-		&&	echo "--- PDAL ---\n\n"
-
-
-		RUN		 		echo "--- 2nd act... ---\n\n" \
+		#
+		&&	echo "\n\n--- PDAL ---\n\n" \
 		&&	git clone https://github.com/PDAL/PDAL.git \
 		&&	cd PDAL \
 		&&	mkdir build \
@@ -67,7 +63,7 @@ RUN		echo "--- Main stuff ---" \
 # Copy stuff related to running the pax tools.
 COPY	usr/ /usr/
 COPY	tmp-post/ /tmp/
-RUN		echo "---- The pax stuff ---" \
+RUN		echo "\n\n---- The pax stuff ---" \
 		# Install the pax.regression package.
 		&&	R -q -e 'install.packages( pkgs="tmp/pax.regression.tar.gz", repos=NULL )' \
 		&&	rm -rf /tmp/pax.regression.tar.gz \
