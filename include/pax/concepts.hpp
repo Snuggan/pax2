@@ -39,7 +39,7 @@ namespace pax {
 		&&	requires( T t ) {
 				{ size( t ) } -> std::convertible_to< std::size_t >;
 				std::is_pointer_v< decltype( data( t ) ) >;
-				std::contiguous_iterator< decltype( begin( t ) ) >;
+				requires std::contiguous_iterator< decltype( begin( t ) ) >;
 			};
 
 	/// A concept to match "handlers" of contigous elements, i.e. pointer, Contiguous_elements_object etc.
