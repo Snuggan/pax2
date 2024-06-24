@@ -10,12 +10,13 @@ RUN		echo "--- Main stuff ---" \
 		&&	apt-get update \
 		&&	apt-get install -y --no-install-recommends \
 				git \
-				mercurial \
 				curl \
 				# XZ-format compression utilities:
 				xz-utils \
 				# Informational list of build-essential packages:
 				build-essential \
+				gcc-14 \
+				g++-14 \
 				libgdal-dev \
 				gdb \
 				# gfortran is used by some R modules:
@@ -36,11 +37,19 @@ RUN		echo "--- Main stuff ---" \
 				r-cran-raster \
 				r-cran-sf \
 				r-cran-terra \
-		# Remove the apt-get cache, as it is needed no longer.
+		# Remove the apt-get cache, as it is needed no longer:
 		&&	rm -Rf /var/lib/apt/lists/* \
-		# Remove the apt cache.
+		# Remove the apt cache:
 		&&	ldconfig \
-		&&	echo "--- PDAL ---" \
+		# Make g++-14 the default:
+		&&	update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 50 \
+		&&	update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 50 \
+		&&	export CXX=/usr/local/bin/g++-14 \
+		&&	export CC=/usr/local/bin/gcc-14 \
+		&&	echo "--- PDAL ---\n\n"
+
+
+		RUN		 		echo "--- 2nd act... ---\n\n" \
 		&&	git clone https://github.com/PDAL/PDAL.git \
 		&&	cd PDAL \
 		&&	mkdir build \

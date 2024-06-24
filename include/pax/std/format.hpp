@@ -8,7 +8,7 @@
 // Using std::format works well with clang 18. 
 // It does not work with gcc 13.2, however. I think it will with gcc 14. 
 // So I stick with fmt::format until I have a gcc that handles C++26.
-#define PAX_USE_STD_FORMAT			( __cplusplus > 202302L )
+#define PAX_USE_STD_FORMAT			( ( __cplusplus > 202302L ) || false )
 
 
 #if PAX_USE_STD_FORMAT

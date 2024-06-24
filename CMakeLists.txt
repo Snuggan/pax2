@@ -9,7 +9,11 @@ project( "pax2"
 
 
 ## Set the c++ standard required.
-set( CMAKE_CXX_STANDARD 				23 )
+if( ${CMAKE_CXX_COMPILER_ID} MATCHES "GNU" )
+	set( CMAKE_CXX_STANDARD 			23 )
+else()
+	set( CMAKE_CXX_STANDARD 			26 )
+endif()
 set( CMAKE_CXX_STANDARD_REQUIRED 		ON )
 set( CMAKE_CXX_EXTENSIONS 				OFF )
 
@@ -18,10 +22,14 @@ list( APPEND PAX_FLAGS
 #	-v									# Verbose.
 	-O3									# Turn on all sorts of optimizations.
 	-msse3								# i386 and x86-64 Options: use sse.
-	-pedantic -Wall -Wextra -Werror		# Maximum number of checks.
+	-Wpedantic -Wall -Wextra -Werror	# Maximum number of checks.
 	-Wno-unused-function				# What is unused in one target might be used in another...
 	-Wno-unknown-attributes				# Allow unknown attributes, such as [[likely]].
 	-Wno-ambiguous-reversed-operator
+	-Wuninitialized						# Warns about uninitialized variables.
+#	-Wconversion						# Warns about implicit conversions that may change a value.
+#	-Wsign-conversion					# Warns about implicit conversions between signed and unsigned types.
+#	-Wshadow							# Warns if a variable declaration shadows one from an outer scope.
 )
 
 
