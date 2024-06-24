@@ -39,9 +39,10 @@ namespace pax {
 		&&	requires( T t ) {
 				{ size( t ) } -> std::convertible_to< std::size_t >;
 				std::is_pointer_v< decltype( data( t ) ) >;
+				std::contiguous_iterator< decltype( begin( t ) ) >;
 			};
 
-	/// A concept to match "handlers" of contigous elements, i.e. std::array, std::string, std::span etc.
+	/// A concept to match "handlers" of contigous elements, i.e. pointer, Contiguous_elements_object etc.
 	template< typename T >
 	concept Contiguous_elements		= 
 			Contiguous_elements_object< T >						// Containers, viewers.
