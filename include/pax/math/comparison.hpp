@@ -83,7 +83,7 @@ namespace pax {
 
 	/// Return true iff t_ is a NaN.
 	constexpr auto is_nan		  = []< typename T >( const T t_ )	noexcept	{
-		if constexpr( std::numeric_limits< T >::has_quiet_NaN )	return t_ != t_;
+		if constexpr( std::numeric_limits< T >::has_quiet_NaN )	return std::isnan( t_ );
 		else													return false;
 	};
 
