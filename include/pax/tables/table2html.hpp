@@ -43,14 +43,11 @@ namespace pax {
 			"		font-family: ArialUnicodeMS, arial, sans-serif;\n"
 			"		font-variant-numeric: lining-nums tabular-nums;\n"
 			"	}\n"
-			"	thead {\n"
+			"	thead tr td {\n"
 			"		background-color: #70AD47;\n"
 			"		font-weight: bold;\n"
 			"		position: sticky;\n"
 			"		top: 0;\n"
-			"	}\n"
-			"	thead tr td {\n"
-			"		background-color: #70AD47;\n"
 			"	}\n"
 			"	tr {\n"
 			"		background-color: #D2DFCA;\n"
@@ -73,11 +70,6 @@ namespace pax {
 
 		using pair						  = std::pair< std::string_view, std::string_view >;
 
-		static std::string link( std::string_view link_ ) noexcept {
-			link_ = trim( link_, []( char c ){ return c == ' '; } );
-			return std::string( "<a href=\"mailto:" ) + link_ + "\">" + link_ + "</a>";
-		}
-
 		static void chew_row(
 			const std::string_view			row_, 
 			std::string					  & str_, 
@@ -89,7 +81,7 @@ namespace pax {
 			while( cols.second.size() ) {
 				cols					  = split_by( cols.second, col_delimiter_ );
 				str_ += td;
-				str_ += cols.first.contains( '@' ) ? link( cols.first ) : cols.first;
+				str_ += cols.first;
 				str_ += td_;
 				--num_col_;
 			}
