@@ -31,6 +31,7 @@ namespace pax {
 			"</body>\n"
 			"</html>\n"
 		};
+		static constexpr std::size_t	base_sz = base[ 0 ].size() + base[ 1 ].size() + base[ 2 ].size() + base[ 3 ].size() + base[ 4 ].size();
 
 		static constexpr std::string_view default_css =
 			"	table {\n"
@@ -63,14 +64,12 @@ namespace pax {
 
 		static constexpr std::string_view	td	  = "<td>";
 		static constexpr std::string_view	td_	  = "</td>";
-		static constexpr std::size_t		td_sz = td.size() + td_.size();
 		static constexpr std::string_view	tr	  = "\t<tr>";
 		static constexpr std::string_view	tr_	  = "</tr>\n";
-		static constexpr std::size_t		tr_sz = tr.size() + tr_.size();
 
 		using pair						  = std::pair< std::string_view, std::string_view >;
 
-		static void chew_row(
+		static void process_row(
 			const std::string_view			row_, 
 			std::string					  & str_, 
 			const char						col_delimiter_, 
@@ -96,36 +95,40 @@ namespace pax {
 		static std::string table2html( 
 			const std::string_view			table_,
 			const std::string_view			title_,
-			std::string_view				css_,			///< Css code without <style> tags.
-			const bool						add_header_		///< Table if tag, if any.
+			std::string_view				css_		///< Css code without <style> tags.
 		) noexcept {
-			if( css_.empty() )				css_ = default_css;
+			if( css_.empty() )				css_	  = default_css;
 			const auto 						meta	  = String_count2( table_ );
-			std::string						header{}, body{};
 			pair							rows{ {}, table_ };
+			std::string						body{};
+			body.reserve( 
+				  base_sz + title_.size() + css_.size() 
+				+ table_.size() 
+					+ meta.rows()*( tr.size() + tr_.size() + meta.cols_in_first()*( td.size() + td_.size() ) )
+					- meta.counts()[ meta.col_delimiter() ]
+			);
+			body +=	base[ 0 ];
+			body +=	title_;
+			body +=	base[ 1 ];
+			body +=	css_;
+			body +=	base[ 2 ];
 			
-			// Get the header, if requiered.
-			if( add_header_ && rows.second.size() ) {
+			// Process the header.
+			if( rows.second.size() ) {
 				rows					  = split_by( rows.second, Newline{} );
-				header.reserve( rows.first.size() +	tr_sz + meta.cols_in_first()*( td_sz ) );
-				chew_row( rows.first, header, meta.col_delimiter(), meta.cols_in_first() );
+				process_row( rows.first, body, meta.col_delimiter(), meta.cols_in_first() );
 			}
+			body +=	base[ 3 ];
 		
-			// Get the body. 
-			body.reserve( rows.second.size() + meta.rows()*( tr_sz + meta.cols_in_first()*( td_sz ) ) );
+			// Process the body. 
 			while( rows.second.size() ) {
 				rows					  = split_by( rows.second, Newline{} );
-				if( rows.first.size() ) 
-					chew_row( rows.first, body, meta.col_delimiter(), meta.cols_in_first() );
+				if( rows.first.size() ) 	// Skip empty rows
+					process_row( rows.first, body, meta.col_delimiter(), meta.cols_in_first() );
 			}
+			body += base[ 4 ];
 		
-			// Put together the parts.
-			return std::string{}
-				+ base[ 0 ] + title_ 
-				+ base[ 1 ] + css_
-				+ base[ 2 ] + header
-				+ base[ 3 ] + body
-				+ base[ 4 ];
+			return body;
 		}
 	};
 	
@@ -135,10 +138,9 @@ namespace pax {
 	inline std::string table2html( 
 		const std::string_view			table_,
 		const std::string_view			title_,
-		const std::string_view			css_ = "",			///< Css code without <style> tags.
-		const bool						add_header_ = true	///< Table if tag, if any.
+		const std::string_view			css_ = ""		///< Css code without <style> tags.
 	) noexcept {
-		return html_table::table2html( table_, title_, css_, add_header_ );
+		return html_table::table2html( table_, title_, css_ );
 	}
 
 }	// namespace pax

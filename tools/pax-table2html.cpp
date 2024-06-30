@@ -36,10 +36,10 @@
 
 namespace pax { 
 	const Meta2			meta2 {
-		"pax-html-table",
-		"pax-html-table <directory path>", 
-		"Convert a csv-like file into a html table.", 
-		"Cells containing a '@' character are converted into a mailto link."
+		"pax-table2html",
+		"pax-table2html <directory path>", 
+		"Convert a csv-like file into a fully conformant html table."
+		"\n- If 'title' is not specified the filename without file suffix is used."
 	};
 
 	int main_concat_tables( int argc, const char **argv ) {
@@ -48,11 +48,10 @@ namespace pax {
 
 		try {
 			const auto parameters = cmd_args::Parameters{ meta2.info(), meta2.description(), meta2.usage() }
-				( 	'd', "dest",	ANSI_BOLD"Destination path." ANSI_RESET" Path of the resulting html file.", 
-																				cmd_args::Default_value( "" )			)
-				( 	"title",		"Title of html page.",						cmd_args::Default_value( "" )			)
-				( 	"css",			"Path to <style> contens.",					cmd_args::Default_value( "" )			)
-				(	"header", 		"Save metadata files with execution info.",	cmd_args::Parameter_type::on_flag()		)
+				( 	'd', "dest",		ANSI_BOLD"Destination path." ANSI_RESET" Path of the resulting html file.", 
+																			cmd_args::Default_value( "" )	)
+				( 	"title",			"Title of html page.",				cmd_args::Default_value( "" )	)
+				( 	"css",				"Path to <style> contents.",		cmd_args::Default_value( "" )	)
 				;
 
 			const auto args			  = parameters.parse( argc, argv );
@@ -66,8 +65,7 @@ namespace pax {
 			const std::string html	  = table2html( 
 				read_string( source_path ), 
 				title.empty()		  ? source_path.stem().native() : title, 
-				css_path.empty()	  ? "" : read_string( css_path ), 
-				args.flag( "header" ) 
+				css_path.empty()	  ? "" : read_string( css_path )
 			);
 
 			if( dest_path.empty() )	dest_path = source_path.parent_path() / ( source_path.stem().native() + ".html" );
