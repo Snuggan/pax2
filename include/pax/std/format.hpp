@@ -5,12 +5,9 @@
 #pragma once
 
 
-// Using std::format works well with clang 18. 
-// It does not work with gcc 13.2, however. I think it will with gcc 14. 
-// So I stick with fmt::format until I have a gcc that handles C++26.
+// Using std::format works well with clang 18. It does not work with gcc 13.2 or 14, however.
+// So I stick with fmt::format until gcc implements std::runtime_format as defined in C++26.
 #define PAX_USE_STD_FORMAT			( ( __cplusplus > 202302L ) || false )
-
-
 #if PAX_USE_STD_FORMAT
 #	include <format>
 #	define std20 std
@@ -27,10 +24,8 @@
 
 
 namespace pax {
-
 	template< typename Ch, typename Traits >
 	class basic_string_view2;
-	
 }	// Namespace pax
 
 
