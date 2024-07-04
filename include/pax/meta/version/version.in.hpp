@@ -107,5 +107,12 @@ namespace pax {
 			static constexpr const char * libraries			=	"@PDAL_LIBRARIES@";
 			static constexpr const char * definitions		=	"@PDAL_DEFINITIONS@";
 		};
+
+		struct type_name_rt {	//	https://github.com/willwray/type_name
+			static constexpr const char * name				=	"type_name_rt";
+			static constexpr const char * named_version		=	"type_name_rt @TYPE_NAME_RT_VERSION@";
+			static constexpr unsigned     version[]			=	{ @TYPE_NAME_RT_VERSION_ARRAY@ };
+			static constexpr const char * include_dir		=	"@TYPE_NAME_RT@";
+		};
 	};
 }	// namespace pax

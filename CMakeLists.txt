@@ -259,6 +259,23 @@ else()
 endif()
 
 
+### nlohmann/json metadata
+set( NLOHMANN_JSON "${PAX_DIRECTORY}/external/nlohmann-json/json.hpp" )
+file( READ ${NLOHMANN_JSON} pegtl )
+if( pegtl MATCHES "NLOHMANN_JSON_VERSION_MAJOR ([0-9]+)" )
+	list( APPEND NLOHMANN_JSON_VERSION_ARRAY ${CMAKE_MATCH_1} )
+	if( pegtl MATCHES "NLOHMANN_JSON_VERSION_MINOR ([0-9]+)" )
+		list( APPEND NLOHMANN_JSON_VERSION_ARRAY ${CMAKE_MATCH_1} )
+		if( pegtl MATCHES "NLOHMANN_JSON_VERSION_PATCH ([0-9]+)" )
+			list( APPEND NLOHMANN_JSON_VERSION_ARRAY ${CMAKE_MATCH_1} )
+		endif ()
+	endif ()
+endif ()
+list( JOIN NLOHMANN_JSON_VERSION_ARRAY "."  NLOHMANN_JSON_VERSION )
+list( JOIN NLOHMANN_JSON_VERSION_ARRAY ", " NLOHMANN_JSON_VERSION_ARRAY )
+message( STATUS "nlohmann/json:  ${NLOHMANN_JSON_VERSION}" )
+
+
 ### PDAL metadata
 set( BUILD_PLUGIN_TILEDB		ON )		# See https://pdal.io/en/latest/faq.html
 find_package( PDAL 2.4.0 REQUIRED CONFIG )
@@ -275,21 +292,13 @@ else()
 endif()
 
 
-### nlohmann/json metadata
-set( NLOHMANN_JSON "${PAX_DIRECTORY}/external/nlohmann-json/json.hpp" )
-file( READ ${NLOHMANN_JSON} pegtl )
-if( pegtl MATCHES "NLOHMANN_JSON_VERSION_MAJOR ([0-9]+)" )
-	list( APPEND NLOHMANN_JSON_VERSION_ARRAY ${CMAKE_MATCH_1} )
-	if( pegtl MATCHES "NLOHMANN_JSON_VERSION_MINOR ([0-9]+)" )
-		list( APPEND NLOHMANN_JSON_VERSION_ARRAY ${CMAKE_MATCH_1} )
-		if( pegtl MATCHES "NLOHMANN_JSON_VERSION_PATCH ([0-9]+)" )
-			list( APPEND NLOHMANN_JSON_VERSION_ARRAY ${CMAKE_MATCH_1} )
-		endif ()
-	endif ()
-endif ()
-list( JOIN NLOHMANN_JSON_VERSION_ARRAY "."  NLOHMANN_JSON_VERSION )
-list( JOIN NLOHMANN_JSON_VERSION_ARRAY ", " NLOHMANN_JSON_VERSION_ARRAY )
-message( STATUS "nlohmann/json:  ${NLOHMANN_JSON_VERSION}" )
+### type_name_rt metadata
+set( TYPE_NAME_RT "${PAX_DIRECTORY}/external/type_name_rt.hpp" )
+file( READ ${TYPE_NAME_RT} TYPE_NAME_RT_version_h )
+set( TYPE_NAME_RT_VERSION "<not specified>" )
+set( TYPE_NAME_RT_VERSION_ARRAY "0" )
+message( STATUS "type_name_rt:   ${TYPE_NAME_RT_VERSION}" )
+
 
 ### Generate metadata file
 add_definitions( -D__PAX_SYSTEM__=${CMAKE_SYSTEM_NAME} )
