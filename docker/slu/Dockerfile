@@ -22,6 +22,7 @@ RUN		echo "\n\n--- Main stuff ---" \
 				# gfortran is used by some R modules:
 				gfortran \
 				cmake \
+				doctest-dev \
 				libboost-all-dev \
 				# libfmt-dev \
 				libgdal-dev gdal-bin \

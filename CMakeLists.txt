@@ -237,6 +237,14 @@ endif ()
 message( STATUS "fmt:            ${FMT_VERSION}" )
 
 
+### fast_float metadata
+set( FAST_FLOAT "${PAX_DIRECTORY}/external/fast_float/fast_float.h" )
+file( READ ${FAST_FLOAT} FAST_FLOAT_version_h )
+set( FAST_FLOAT_VERSION "<not specified>" )
+set( FAST_FLOAT_VERSION_ARRAY "0" )
+message( STATUS "fast_float:     ${FAST_FLOAT_VERSION}" )
+
+
 ### GDAL metadata
 find_package( GDAL 2.1 REQUIRED )	# For all targets
 if( ${GDAL_FOUND} )

@@ -61,21 +61,28 @@ namespace pax {
 			static constexpr const char * generated			=	"@CMAKE_GENERATOR@";
 		};
 
-		struct doctest {
+		struct doctest {		//	https://github.com/doctest/doctest
 			static constexpr const char * name				=	"doctest";
 			static constexpr const char * named_version		=	"doctest @DOCTEST_VERSION@";
 			static constexpr unsigned     version[]			=	{ @DOCTEST_VERSION_ARRAY@ };
 			static constexpr const char * include_dir		=	"@DOCTEST@";
 		};
 
-		struct fmt {
+		struct fmt {			//	https://github.com/fmtlib/fmt
 			static constexpr const char * name				=	"fmt";
 			static constexpr const char * named_version		=	"fmt @FMT_VERSION@";
 			static constexpr unsigned     version[]			=	{ @FMT_VERSION_ARRAY@ };
 			static constexpr const char * include_dir		=	"@FORMAT@";
 		};
 
-		struct gdal {
+		struct fast_float {		//	https://github.com/fastfloat/fast_float
+			static constexpr const char * name				=	"fast_float";
+			static constexpr const char * named_version		=	"fast_float @FAST_FLOAT_VERSION@";
+			static constexpr unsigned     version[]			=	{ @FAST_FLOAT_VERSION_ARRAY@ };
+			static constexpr const char * include_dir		=	"@FAST_FLOAT@";
+		};
+
+		struct gdal {			//	
 			static constexpr const char * name				=	"gdal";
 			static constexpr const char * named_version		=	"gdal @GDAL_VERSION@";
 			static constexpr unsigned     version[]			=	{ @GDAL_VERSION_ARRAY@ };
@@ -83,7 +90,15 @@ namespace pax {
 			static constexpr const char * lib				=	"@GDAL_LIBRARY@";
 		};
 
-		struct pdal {
+		struct nlohmann_json {	//	https://github.com/nlohmann/json
+			static constexpr const char * name				=	"nlohmann/json";
+			static constexpr const char * named_version		=	"nlohmann/json @NLOHMANN_JSON_VERSION@";
+			static constexpr unsigned     version[]			=	{ @NLOHMANN_JSON_VERSION_ARRAY@ };
+			static constexpr const char * include_dir		=	"@NLOHMANN_JSON@";
+		};
+		using json = nlohmann_json;
+
+		struct pdal {			//	https://github.com/PDAL/PDAL
 			static constexpr const char * name				=	"pdal";
 			static constexpr const char * named_version		=	"pdal @PDAL_VERSION@";
 			static constexpr unsigned     version[]			=	{ @PDAL_VERSION_ARRAY@ };
@@ -92,13 +107,5 @@ namespace pax {
 			static constexpr const char * libraries			=	"@PDAL_LIBRARIES@";
 			static constexpr const char * definitions		=	"@PDAL_DEFINITIONS@";
 		};
-
-		struct nlohmann_json {
-			static constexpr const char * name				=	"nlohmann/json";
-			static constexpr const char * named_version		=	"nlohmann/json @NLOHMANN_JSON_VERSION@";
-			static constexpr unsigned     version[]			=	{ @NLOHMANN_JSON_VERSION_ARRAY@ };
-			static constexpr const char * include_dir		=	"@NLOHMANN_JSON@";
-		};
-		using json = nlohmann_json;
 	};
 }	// namespace pax
