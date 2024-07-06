@@ -14,7 +14,7 @@
 
 namespace pax {
 
-	class String_count2 {
+	class String_meta {
 		using Count				  = std::size_t;
 
 		Count						m_count[ 128 ]={};
@@ -34,12 +34,12 @@ namespace pax {
 		}
 		
 	public:
-		constexpr String_count2()										= default;
-		constexpr String_count2( const String_count2 & )				= default;
-		constexpr String_count2 & operator=( const String_count2 & )	= default;
+		constexpr String_meta()										= default;
+		constexpr String_meta( const String_meta & )				= default;
+		constexpr String_meta & operator=( const String_meta & )	= default;
 		
 		template< typename Ch >
-		constexpr String_count2( const std::basic_string_view< Ch > str_ ) noexcept;
+		constexpr String_meta( const std::basic_string_view< Ch > str_ ) noexcept;
 		
 		/// Returns a span to the total counts of all ascii characters (code<128).
 		constexpr auto counts()			const noexcept	{
@@ -70,7 +70,7 @@ namespace pax {
 
 
 	template< typename Ch >
-	constexpr String_count2::String_count2( const std::basic_string_view< Ch > str_ ) noexcept	{
+	constexpr String_meta::String_meta( const std::basic_string_view< Ch > str_ ) noexcept	{
 		using View			  = std::basic_string_view< Ch >;
 		
 		for( const unsigned c : str_ )		( c < 128 )	? ++m_count[ c ] : ++m_non_ascii;
@@ -150,7 +150,7 @@ namespace pax {
 		std::size_t, 											///< Number of columns.
 		Ch														///< Column mark useg, e.g. ';'.
 	> parse2table( const std::basic_string_view< Ch > str_ ) {
-		const String_count2					count( str_ );
+		const String_meta					count( str_ );
 		const auto rows					  = count.rows();
 		const auto cols					  = count.cols_in_first();
 		const Ch   col_mark				  = count.col_delimiter();
@@ -160,5 +160,111 @@ namespace pax {
 			col_mark
 		};
 	};
+
+
+
+	class String_numeric {
+		enum class Contents {
+			uinteger, 
+			integer, 
+			floating_point, 
+			other
+		};
+		Contents	m_contents;
+
+		template< typename Itr >
+		static constexpr bool is_negative( 
+			Itr					  & itr_, 
+			const Itr				end_
+		) noexcept {
+			if( itr_ != end_ ) {
+				const bool			negative = ( *itr_ == '-' );
+				if( negative || ( *itr_ == '+' ) )	++itr_;
+				return negative;
+			}
+			return false;
+		}
+
+		template< typename Itr >
+		static constexpr bool is_digits( 
+			Itr					  & itr_, 
+			const Itr				end_
+		) noexcept {
+			const auto				start = itr_;
+			while( ( itr_ != end_ ) && ( *itr_ >= '0' ) && ( *itr_ <= '9' ) )	++itr_;
+			return itr_ != start;	// At least one digit.
+		}
+
+		template< typename Char, typename Traits >
+		static constexpr Contents contents( const std::basic_string_view< Char, Traits > str_ ) noexcept {
+			auto					itr  = str_.begin();
+			const auto				end  = str_.end();
+
+			// Is it an integer?
+			const bool				negative = is_negative( itr, end );
+			if( itr == end )		return Contents::other;
+			const bool 				pre_integer = is_digits( itr, end );
+			if( pre_integer && ( itr == end ) )
+									return negative ? Contents::integer : Contents::uinteger;
+	
+			// Is it a floating point?
+			if( *itr != '.' )		return Contents::other;
+			++itr;
+			if( !is_digits( itr, end ) && !pre_integer ) 				// A single '.' is not a floating point.
+									return Contents::other;
+			if( itr == end )		return Contents::floating_point;	// Either "ddd." or ".ddd".
+	
+			// Is it a floating point with exponent?
+			if( ( *itr != 'e' ) && ( *itr != 'E' ) )					// An ending 'e' is not a floating point.
+									return Contents::other;
+			++itr;
+			is_negative( itr, end );
+			if( itr == end )		return Contents::other;				// An ending 'e' and a sign is not a floating point.
+
+			if( !is_digits( itr, end ) )								// ... and some garbage.
+									return Contents::other;
+			if( itr == end )		return Contents::floating_point;
+			return Contents::other;										// A floating point + garbage.
+		}
+	
+	public:
+		constexpr String_numeric( const std::string_view str_ ) noexcept : m_contents{ contents( str_ ) } {};
+	
+		constexpr bool is_unsigned_integer()	noexcept {	return ( m_contents == Contents::uinteger );				}
+		constexpr bool is_negative_integer()	noexcept {	return ( m_contents == Contents::integer );					}
+		constexpr bool is_integer()				noexcept {	return is_unsigned_integer() || is_negative_integer();		}
+		constexpr bool is_floating_point()		noexcept {	return ( m_contents == Contents::floating_point );			}
+		constexpr bool is_nonnumeric()			noexcept {	return ( m_contents == Contents::other );					}
+		constexpr bool is_numeric()				noexcept {	return !is_nonnumeric();									}
+	};
+
+	static_assert( String_numeric( "" )				.is_nonnumeric() );
+	static_assert( String_numeric( "+" )			.is_nonnumeric() );
+	static_assert( String_numeric( "-" )			.is_nonnumeric() );
+	static_assert( String_numeric( "123" )			.is_unsigned_integer() );
+	static_assert( String_numeric( "+123" )			.is_unsigned_integer() );
+	static_assert( String_numeric( "-123" )			.is_negative_integer() );
+	static_assert( String_numeric( "." )			.is_nonnumeric() );
+	static_assert( String_numeric( "+." )			.is_nonnumeric() );
+	static_assert( String_numeric( "-." )			.is_nonnumeric() );
+	static_assert( String_numeric( "0." )			.is_floating_point() );
+	static_assert( String_numeric( "+0." )			.is_floating_point() );
+	static_assert( String_numeric( "-0." )			.is_floating_point() );
+	static_assert( String_numeric( ".9" )			.is_floating_point() );
+	static_assert( String_numeric( "+.9" )			.is_floating_point() );
+	static_assert( String_numeric( "-.9" )			.is_floating_point() );
+	static_assert( String_numeric( "123.9" )		.is_floating_point() );
+	static_assert( String_numeric( "+123.9" )		.is_floating_point() );
+	static_assert( String_numeric( "-123.9" )		.is_floating_point() );
+	static_assert( String_numeric( "123.9e" )		.is_nonnumeric() );
+	static_assert( String_numeric( "+123.9e+" )		.is_nonnumeric() );
+	static_assert( String_numeric( "-123.9e-" )		.is_nonnumeric() );
+	static_assert( String_numeric( "123.9e8" )		.is_floating_point() );
+	static_assert( String_numeric( "+123.9e+8" )	.is_floating_point() );
+	static_assert( String_numeric( "-123.9e-8" )	.is_floating_point() );
+	static_assert( String_numeric( "123.9e8x" )		.is_nonnumeric() );
+	static_assert( String_numeric( "+123.9e+8x" )	.is_nonnumeric() );
+	static_assert( String_numeric( "-123.9e-8x" )	.is_nonnumeric() );
+
 
 }	// namespace pax

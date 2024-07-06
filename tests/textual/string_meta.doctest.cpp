@@ -2,16 +2,16 @@
 //	Contact: peder ( at ) axensten.se
 
 
-#include <pax/tables/parse2table.hpp>
+#include <pax/textual/string_meta.hpp>
 
 #include <pax/external/doctest/doctest-pax.hpp>
 
 
 namespace pax {
 	
-	DOCTEST_TEST_CASE( "String_count2" ) { 
+	DOCTEST_TEST_CASE( "String_meta" ) { 
 		{	// empty
-			constexpr String_count2		count{ std::string_view( "" ) };
+			constexpr String_meta		count{ std::string_view( "" ) };
 			DOCTEST_FAST_CHECK_EQ( count.size(),			0 );
 			DOCTEST_FAST_CHECK_EQ( count.ascii(),			0 );
 			DOCTEST_FAST_CHECK_EQ( count.non_ascii(),		0 );
@@ -21,7 +21,7 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( count.cols_in_first(),	1 );
 		}
 		{	// no_rows
-			constexpr String_count2		count{ std::string_view( "a,b,c;d" ) };
+			constexpr String_meta		count{ std::string_view( "a,b,c;d" ) };
 			DOCTEST_FAST_CHECK_EQ( count.size(),			7 );
 			DOCTEST_FAST_CHECK_EQ( count.ascii(),			7 );
 			DOCTEST_FAST_CHECK_EQ( count.non_ascii(),		0 );
@@ -31,7 +31,7 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( count.cols_in_first(),	3 );
 		}
 		{	// no_cols
-			constexpr String_count2		count{ std::string_view( "a\nb\rc\n\rd\r\n" ) };
+			constexpr String_meta		count{ std::string_view( "a\nb\rc\n\rd\r\n" ) };
 			DOCTEST_FAST_CHECK_EQ( count.size(),			10 );
 			DOCTEST_FAST_CHECK_EQ( count.ascii(),			10 );
 			DOCTEST_FAST_CHECK_EQ( count.non_ascii(),		0 );
@@ -41,7 +41,7 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( count.cols_in_first(),	1 );
 		}
 		{	// good
-			constexpr String_count2		count{ std::string_view( "a1,a2\nb1,b2\nc1,c2\n" ) };
+			constexpr String_meta		count{ std::string_view( "a1,a2\nb1,b2\nc1,c2\n" ) };
 			DOCTEST_FAST_CHECK_EQ( count.size(),			18 );
 			DOCTEST_FAST_CHECK_EQ( count.ascii(),			18 );
 			DOCTEST_FAST_CHECK_EQ( count.non_ascii(),		0 );
@@ -51,7 +51,7 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( count.cols_in_first(),	2 );
 		}
 		{	// empty_row
-			constexpr String_count2		count{ std::string_view( "a1,a2\nb1,b2\n\nc1,c2\n" ) };
+			constexpr String_meta		count{ std::string_view( "a1,a2\nb1,b2\n\nc1,c2\n" ) };
 			DOCTEST_FAST_CHECK_EQ( count.size(),			19 );
 			DOCTEST_FAST_CHECK_EQ( count.ascii(),			19 );
 			DOCTEST_FAST_CHECK_EQ( count.non_ascii(),		0 );
@@ -61,7 +61,7 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( count.cols_in_first(),	2 );
 		}
 		{	// bad
-			constexpr String_count2		count{ std::string_view( "a1,a2\nb1,b2\nc1\n" ) };
+			constexpr String_meta		count{ std::string_view( "a1,a2\nb1,b2\nc1\n" ) };
 			DOCTEST_FAST_CHECK_EQ( count.size(),			15 );
 			DOCTEST_FAST_CHECK_EQ( count.ascii(),			15 );
 			DOCTEST_FAST_CHECK_EQ( count.non_ascii(),		0 );

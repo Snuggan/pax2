@@ -6,8 +6,8 @@
 
 #include "header.hpp"
 #include "table.hpp"
-#include "parse2table.hpp"
 
+#include "../textual/string_meta.hpp"
 #include "../textual/from_string.hpp"
 #include "../std/file.hpp"
 #include "../std/span2.hpp"

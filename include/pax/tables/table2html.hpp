@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "parse2table.hpp"			// String_count2
-#include "../std/algorithm.hpp"		// split
+#include "../textual/string_meta.hpp"	// String_meta
+#include "../std/algorithm.hpp"			// split
 
 
 namespace pax { 
@@ -104,7 +104,7 @@ namespace pax {
 			std::string_view				css_		///< Css code without <style> tags.
 		) noexcept {
 			if( css_.empty() )				css_	  = default_css;
-			const auto 						meta	  = String_count2( table_ );
+			const auto 						meta	  = String_meta( table_ );
 			pair							rows{ {}, table_ };
 			std::string						body{};
 			body.reserve( 
