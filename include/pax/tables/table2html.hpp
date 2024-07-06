@@ -79,8 +79,10 @@ namespace pax {
 			const std::string_view			row_, 
 			std::string					  & str_, 
 			const char						col_delimiter_, 
-			int			 					num_col_
+			const int			 			num_col_, 
+			std::vector< String_numeric > & numeric_
 		) noexcept {
+			int								num_col{};
 			str_ += tr;
 			pair							cols{ {}, row_ };
 			while( cols.second.size() ) {
@@ -88,9 +90,13 @@ namespace pax {
 				str_ += td;
 				str_ += cols.first;
 				str_ += td_;
-				--num_col_;
+				if( num_col >= int( numeric_.size() ) )
+					numeric_.resize( numeric_.size() + 1 );
+				numeric_[ num_col ]+= String_numeric( cols.first );
+				++num_col;
 			}
-			while( --num_col_ >= 0 ) {
+			num_col-= num_col_;
+			while( ++num_col <= 0 ) {
 				str_ += td;
 				str_ += td_;
 			}
@@ -105,36 +111,39 @@ namespace pax {
 		) noexcept {
 			if( css_.empty() )				css_	  = default_css;
 			const auto 						meta	  = String_meta( table_ );
+			std::vector< String_numeric >	col_types;
+			col_types.resize( meta.cols_in_first() );
 			pair							rows{ {}, table_ };
 			std::string						body{};
 			body.reserve( 
-				  base_sz + title_.size() + css_.size() 
+				  base[ 3 ].size() 
 				+ table_.size() 
 					+ meta.rows()*( tr.size() + tr_.size() + meta.cols_in_first()*( td.size() + td_.size() ) )
 					- meta.counts()[ meta.col_delimiter() ]
 			);
-			body +=	base[ 0 ];
-			body +=	title_;
-			body +=	base[ 1 ];
-			body +=	css_;
-			body +=	base[ 2 ];
 			
 			// Process the header.
 			if( rows.second.size() ) {
 				rows					  = split_by( rows.second, Newline{} );
-				process_row( rows.first, body, meta.col_delimiter(), meta.cols_in_first() );
+				process_row( rows.first, body, meta.col_delimiter(), meta.cols_in_first(), col_types );
 			}
 			body +=	base[ 3 ];
 		
 			// Process the body. 
+			col_types.clear();
+			col_types.resize( meta.cols_in_first() );
 			while( rows.second.size() ) {
 				rows					  = split_by( rows.second, Newline{} );
 				if( rows.first.size() ) 	// Skip empty rows
-					process_row( rows.first, body, meta.col_delimiter(), meta.cols_in_first() );
+					process_row( rows.first, body, meta.col_delimiter(), meta.cols_in_first(), col_types );
 			}
-			body += base[ 4 ];
-		
-			return body;
+
+			std::string		css2;
+			for( std::size_t c{}; c<col_types.size(); ++c )
+				if( col_types[ c ].is_numeric() )
+					css2+= std20::format( "\ttd:nth-of-type({}) {{ text-align:right; }}\n", c+1 );
+
+			return std20::format( "{}{}{}{}{}{}{}{}", base[ 0 ], title_, base[ 1 ], css_, css2, base[ 2 ], body, base[ 4 ] );
 		}
 	};
 	

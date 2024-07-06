@@ -14,6 +14,98 @@
 
 namespace pax {
 
+	class String_numeric {
+		enum class Contents {
+			undetermined, 		// Default value, not yet checked.
+			uinteger, 
+			integer, 
+			floating_point, 
+			other
+		};
+		Contents	m_contents;
+
+		template< typename Itr >
+		static constexpr bool is_negative( 
+			Itr					  & itr_, 
+			const Itr				end_
+		) noexcept {
+			if( itr_ != end_ ) {
+				const bool			negative = ( *itr_ == '-' );
+				if( negative || ( *itr_ == '+' ) )	++itr_;
+				return negative;
+			}
+			return false;
+		}
+
+		template< typename Itr >
+		static constexpr bool is_digits( 
+			Itr					  & itr_, 
+			const Itr				end_
+		) noexcept {
+			const auto				start = itr_;
+			while( ( itr_ != end_ ) && ( *itr_ >= '0' ) && ( *itr_ <= '9' ) )	++itr_;
+			return itr_ != start;	// At least one digit.
+		}
+
+		template< typename Char, typename Traits >
+		static constexpr Contents contents( const std::basic_string_view< Char, Traits > str_ ) noexcept {
+			auto					itr  = str_.begin();
+			const auto				end  = str_.end();
+
+			// Is it an integer?
+			const bool				negative = is_negative( itr, end );
+			if( itr == end )		return Contents::other;
+			const bool 				pre_integer = is_digits( itr, end );
+			if( pre_integer && ( itr == end ) )
+									return negative ? Contents::integer : Contents::uinteger;
+	
+			// Is it a floating point?
+			if( *itr != '.' )		return Contents::other;
+			++itr;
+			if( !is_digits( itr, end ) && !pre_integer ) 				// A single '.' is not a floating point.
+									return Contents::other;
+			if( itr == end )		return Contents::floating_point;	// Either "ddd." or ".ddd".
+	
+			// Is it a floating point with exponent?
+			if( ( *itr != 'e' ) && ( *itr != 'E' ) )					// An ending 'e' is not a floating point.
+									return Contents::other;
+			++itr;
+			is_negative( itr, end );
+			if( itr == end )		return Contents::other;				// An ending 'e' and a sign is not a floating point.
+
+			if( !is_digits( itr, end ) )								// ... and some garbage.
+									return Contents::other;
+			if( itr == end )		return Contents::floating_point;
+			return Contents::other;										// A floating point + garbage.
+		}
+	
+	public:
+		constexpr String_numeric() noexcept : m_contents{ Contents::undetermined } {};
+		constexpr String_numeric( const std::string_view str_ ) noexcept : m_contents{ contents( str_ ) } {};
+	
+		constexpr bool is_determined()			noexcept {	return ( m_contents != Contents::undetermined );						}
+		constexpr bool is_unsigned_integer()	noexcept {	return ( m_contents == Contents::uinteger );							}
+		constexpr bool is_integer()				noexcept {	return is_determined() && ( m_contents <= Contents::integer );			}
+		constexpr bool is_floating_point()		noexcept {	return ( m_contents == Contents::floating_point );						}
+		constexpr bool is_numeric()				noexcept {	return is_determined() && ( m_contents <= Contents::floating_point );	}
+		constexpr bool is_nonnumeric()			noexcept {	return ( m_contents == Contents::other );								}
+		
+		constexpr String_numeric & operator+=( const String_numeric other_ ) noexcept {
+			m_contents = ( m_contents >= other_.m_contents ) ? m_contents : other_.m_contents;
+			return *this;
+		}
+		
+		constexpr friend String_numeric operator+( 
+			String_numeric			a_, 
+			const String_numeric	b_
+		) noexcept {
+			return a_ += b_;
+		}
+	};
+
+
+
+	/// Check a string for a number of mainly table related properties. 
 	class String_meta {
 		using Count				  = std::size_t;
 
@@ -163,87 +255,15 @@ namespace pax {
 
 
 
-	class String_numeric {
-		enum class Contents {
-			uinteger, 
-			integer, 
-			floating_point, 
-			other
-		};
-		Contents	m_contents;
-
-		template< typename Itr >
-		static constexpr bool is_negative( 
-			Itr					  & itr_, 
-			const Itr				end_
-		) noexcept {
-			if( itr_ != end_ ) {
-				const bool			negative = ( *itr_ == '-' );
-				if( negative || ( *itr_ == '+' ) )	++itr_;
-				return negative;
-			}
-			return false;
-		}
-
-		template< typename Itr >
-		static constexpr bool is_digits( 
-			Itr					  & itr_, 
-			const Itr				end_
-		) noexcept {
-			const auto				start = itr_;
-			while( ( itr_ != end_ ) && ( *itr_ >= '0' ) && ( *itr_ <= '9' ) )	++itr_;
-			return itr_ != start;	// At least one digit.
-		}
-
-		template< typename Char, typename Traits >
-		static constexpr Contents contents( const std::basic_string_view< Char, Traits > str_ ) noexcept {
-			auto					itr  = str_.begin();
-			const auto				end  = str_.end();
-
-			// Is it an integer?
-			const bool				negative = is_negative( itr, end );
-			if( itr == end )		return Contents::other;
-			const bool 				pre_integer = is_digits( itr, end );
-			if( pre_integer && ( itr == end ) )
-									return negative ? Contents::integer : Contents::uinteger;
-	
-			// Is it a floating point?
-			if( *itr != '.' )		return Contents::other;
-			++itr;
-			if( !is_digits( itr, end ) && !pre_integer ) 				// A single '.' is not a floating point.
-									return Contents::other;
-			if( itr == end )		return Contents::floating_point;	// Either "ddd." or ".ddd".
-	
-			// Is it a floating point with exponent?
-			if( ( *itr != 'e' ) && ( *itr != 'E' ) )					// An ending 'e' is not a floating point.
-									return Contents::other;
-			++itr;
-			is_negative( itr, end );
-			if( itr == end )		return Contents::other;				// An ending 'e' and a sign is not a floating point.
-
-			if( !is_digits( itr, end ) )								// ... and some garbage.
-									return Contents::other;
-			if( itr == end )		return Contents::floating_point;
-			return Contents::other;										// A floating point + garbage.
-		}
-	
-	public:
-		constexpr String_numeric( const std::string_view str_ ) noexcept : m_contents{ contents( str_ ) } {};
-	
-		constexpr bool is_unsigned_integer()	noexcept {	return ( m_contents == Contents::uinteger );				}
-		constexpr bool is_negative_integer()	noexcept {	return ( m_contents == Contents::integer );					}
-		constexpr bool is_integer()				noexcept {	return is_unsigned_integer() || is_negative_integer();		}
-		constexpr bool is_floating_point()		noexcept {	return ( m_contents == Contents::floating_point );			}
-		constexpr bool is_nonnumeric()			noexcept {	return ( m_contents == Contents::other );					}
-		constexpr bool is_numeric()				noexcept {	return !is_nonnumeric();									}
-	};
-
+	static_assert( !String_numeric()				.is_determined() );
+	static_assert( String_numeric( "" )				.is_determined() );
+	static_assert( String_numeric( "" )				.is_nonnumeric() );
 	static_assert( String_numeric( "" )				.is_nonnumeric() );
 	static_assert( String_numeric( "+" )			.is_nonnumeric() );
 	static_assert( String_numeric( "-" )			.is_nonnumeric() );
 	static_assert( String_numeric( "123" )			.is_unsigned_integer() );
 	static_assert( String_numeric( "+123" )			.is_unsigned_integer() );
-	static_assert( String_numeric( "-123" )			.is_negative_integer() );
+	static_assert( String_numeric( "-123" )			.is_integer() );
 	static_assert( String_numeric( "." )			.is_nonnumeric() );
 	static_assert( String_numeric( "+." )			.is_nonnumeric() );
 	static_assert( String_numeric( "-." )			.is_nonnumeric() );
@@ -265,6 +285,9 @@ namespace pax {
 	static_assert( String_numeric( "123.9e8x" )		.is_nonnumeric() );
 	static_assert( String_numeric( "+123.9e+8x" )	.is_nonnumeric() );
 	static_assert( String_numeric( "-123.9e-8x" )	.is_nonnumeric() );
+
+	static_assert( ( String_numeric() + String_numeric( "1" ) )			.is_integer() );
+	static_assert( ( String_numeric( "1" ) + String_numeric( ".9" ) )	.is_numeric() );
 
 
 }	// namespace pax
