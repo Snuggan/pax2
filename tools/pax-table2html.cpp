@@ -51,21 +51,18 @@ namespace pax {
 				( 	'd', "dest",		ANSI_BOLD"Destination path." ANSI_RESET" Path of the resulting html file.", 
 																			cmd_args::Default_value( "" )	)
 				( 	"title",			"Title of html page.",				cmd_args::Default_value( "" )	)
-				( 	"css",				"Path to <style> contents.",		cmd_args::Default_value( "" )	)
 				;
 
 			const auto args			  = parameters.parse( argc, argv );
 			source_path				  = args().front();
 			dest_path				  = args.cast< std::filesystem::path >( "dest" );
 			auto title				  = args.cast< std::string           >( "title" );
-			const auto css_path		  = args.cast< std::filesystem::path >( "css" );
 			trouble					  = std20::format( "Tool\t{}\nSource\t{}\nDestinatrion\t{}\n", 
 											meta2.name(), to_string( source_path ), to_string( dest_path ) );
 
 			const std::string html	  = table2html( 
 				read_string( source_path ), 
-				title.empty()		  ? source_path.stem().native() : title, 
-				css_path.empty()	  ? "" : read_string( css_path )
+				title.empty()		  ? source_path.stem().native() : title
 			);
 
 			if( dest_path.empty() )	dest_path = source_path.parent_path() / ( source_path.stem().native() + ".html" );

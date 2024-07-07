@@ -49,6 +49,12 @@ namespace pax {
 
 		template< typename Char, typename Traits >
 		static constexpr Contents contents( const std::basic_string_view< Char, Traits > str_ ) noexcept {
+			
+			// Most strings are not numeric, so start with a quick check...
+			// Retyrn, unless first character is any of +,-./0123456789.
+			if( str_.empty() || ( str_.front() < '+' ) || ( str_.front() > '9' ) )
+									return Contents::other;
+
 			auto					itr  = str_.begin();
 			const auto				end  = str_.end();
 
@@ -64,7 +70,7 @@ namespace pax {
 			++itr;
 			if( !is_digits( itr, end ) && !pre_integer ) 				// A single '.' is not a floating point.
 									return Contents::other;
-			if( itr == end )		return Contents::floating_point;	// Either "ddd." or ".ddd".
+			if( itr == end )		return Contents::floating_point;	// Either "d.d", "d.", or ".d".
 	
 			// Is it a floating point with exponent?
 			if( ( *itr != 'e' ) && ( *itr != 'E' ) )					// An ending 'e' is not a floating point.
@@ -255,9 +261,8 @@ namespace pax {
 
 
 
-	static_assert( !String_numeric()				.is_determined() );
+	static_assert(!String_numeric()					.is_determined() );
 	static_assert( String_numeric( "" )				.is_determined() );
-	static_assert( String_numeric( "" )				.is_nonnumeric() );
 	static_assert( String_numeric( "" )				.is_nonnumeric() );
 	static_assert( String_numeric( "+" )			.is_nonnumeric() );
 	static_assert( String_numeric( "-" )			.is_nonnumeric() );
