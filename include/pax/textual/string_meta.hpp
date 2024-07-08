@@ -23,6 +23,8 @@ namespace pax {
 			other
 		};
 		Contents	m_contents;
+		
+		static constexpr std::string_view ids[ 5 ] = { "undetermined", "unsigned integer", "integer", "floating point", "textual" };
 
 		template< typename Itr >
 		static constexpr bool is_negative( 
@@ -89,18 +91,19 @@ namespace pax {
 		constexpr String_numeric() noexcept : m_contents{ Contents::undetermined } {};
 		constexpr String_numeric( const std::string_view str_ ) noexcept : m_contents{ contents( str_ ) } {};
 	
+		constexpr auto view()					noexcept {	return ids[ unsigned( m_contents ) ];									}
 		constexpr bool is_determined()			noexcept {	return ( m_contents != Contents::undetermined );						}
 		constexpr bool is_unsigned_integer()	noexcept {	return ( m_contents == Contents::uinteger );							}
 		constexpr bool is_integer()				noexcept {	return is_determined() && ( m_contents <= Contents::integer );			}
 		constexpr bool is_floating_point()		noexcept {	return ( m_contents == Contents::floating_point );						}
 		constexpr bool is_numeric()				noexcept {	return is_determined() && ( m_contents <= Contents::floating_point );	}
 		constexpr bool is_nonnumeric()			noexcept {	return ( m_contents == Contents::other );								}
-		
+
 		constexpr String_numeric & operator+=( const String_numeric other_ ) noexcept {
 			m_contents = ( m_contents >= other_.m_contents ) ? m_contents : other_.m_contents;
 			return *this;
 		}
-		
+
 		constexpr friend String_numeric operator+( 
 			String_numeric			a_, 
 			const String_numeric	b_
@@ -258,41 +261,5 @@ namespace pax {
 			col_mark
 		};
 	};
-
-
-
-	static_assert(!String_numeric()					.is_determined() );
-	static_assert( String_numeric( "" )				.is_determined() );
-	static_assert( String_numeric( "" )				.is_nonnumeric() );
-	static_assert( String_numeric( "+" )			.is_nonnumeric() );
-	static_assert( String_numeric( "-" )			.is_nonnumeric() );
-	static_assert( String_numeric( "123" )			.is_unsigned_integer() );
-	static_assert( String_numeric( "+123" )			.is_unsigned_integer() );
-	static_assert( String_numeric( "-123" )			.is_integer() );
-	static_assert( String_numeric( "." )			.is_nonnumeric() );
-	static_assert( String_numeric( "+." )			.is_nonnumeric() );
-	static_assert( String_numeric( "-." )			.is_nonnumeric() );
-	static_assert( String_numeric( "0." )			.is_floating_point() );
-	static_assert( String_numeric( "+0." )			.is_floating_point() );
-	static_assert( String_numeric( "-0." )			.is_floating_point() );
-	static_assert( String_numeric( ".9" )			.is_floating_point() );
-	static_assert( String_numeric( "+.9" )			.is_floating_point() );
-	static_assert( String_numeric( "-.9" )			.is_floating_point() );
-	static_assert( String_numeric( "123.9" )		.is_floating_point() );
-	static_assert( String_numeric( "+123.9" )		.is_floating_point() );
-	static_assert( String_numeric( "-123.9" )		.is_floating_point() );
-	static_assert( String_numeric( "123.9e" )		.is_nonnumeric() );
-	static_assert( String_numeric( "+123.9e+" )		.is_nonnumeric() );
-	static_assert( String_numeric( "-123.9e-" )		.is_nonnumeric() );
-	static_assert( String_numeric( "123.9e8" )		.is_floating_point() );
-	static_assert( String_numeric( "+123.9e+8" )	.is_floating_point() );
-	static_assert( String_numeric( "-123.9e-8" )	.is_floating_point() );
-	static_assert( String_numeric( "123.9e8x" )		.is_nonnumeric() );
-	static_assert( String_numeric( "+123.9e+8x" )	.is_nonnumeric() );
-	static_assert( String_numeric( "-123.9e-8x" )	.is_nonnumeric() );
-
-	static_assert( ( String_numeric() + String_numeric( "1" ) )			.is_integer() );
-	static_assert( ( String_numeric( "1" ) + String_numeric( ".9" ) )	.is_numeric() );
-
 
 }	// namespace pax

@@ -18,6 +18,25 @@ namespace pax {
 
 		using pair						  = std::pair< std::string_view, std::string_view >;
 
+		static std::string process_header(
+			const std::string_view				header_, 
+			const std::span< String_numeric >	col_types_, 
+			const char							col_delimiter_
+		) noexcept {
+			std::size_t						idx{};
+			std::string						str;
+			str.reserve( col_types_.size()*64 );
+			pair							heads{ {}, header_ };
+			while( heads.second.size() ) {
+				heads					  = split_by( heads.second, col_delimiter_ );
+				str						  = std20::format( 
+												"{}\t\t<td title=\"{}\">{}</td>\n", 
+												str, col_types_[ idx++ ].view(), heads.first 
+											);
+			}
+			return str;
+		}
+
 		static void process_row(
 			const std::string_view			row_, 
 			std::string					  & str_, 
@@ -52,16 +71,10 @@ namespace pax {
 			const std::string_view			title_
 		) noexcept {
 			const auto 						meta = String_meta( table_ );
-			std::vector< String_numeric >	col_types( meta.cols_in_first() );
-			pair							rows{ {}, table_ };
+			pair							rows = split_by( table_, Newline{} );
 			
-			// Process the header.
-			std::string						header{};
-			header.reserve( tr_.size() + meta.cols_in_first()*( 32 + td.size() + td_.size() ) );
-			if( rows.second.size() ) {
-				rows					  = split_by( rows.second, Newline{} );
-				process_row( rows.first, header, meta.col_delimiter(), meta.cols_in_first(), col_types );
-			}
+			// Save the header for later processing.
+			const auto						header = rows.first;
 		
 			// Process the body. 
 			std::string						body{};
@@ -70,16 +83,15 @@ namespace pax {
 				+ meta.rows()*( tr.size() + tr_.size() + meta.cols_in_first()*( td.size() + td_.size() ) )
 				- meta.counts()[ meta.col_delimiter() ]
 			);
-			col_types.clear();
-			col_types.resize( meta.cols_in_first() );
+			std::vector< String_numeric >	col_types( meta.cols_in_first() );
 			while( rows.second.size() ) {
 				rows					  = split_by( rows.second, Newline{} );
 				if( rows.first.size() ) 	// Skip empty rows
 					process_row( rows.first, body, meta.col_delimiter(), meta.cols_in_first(), col_types );
 			}
 
-			// Get numerical columns.
-			std::string		css2;
+			// Get numerical columns and make them right aligned.
+			std::string						css2;
 			for( std::size_t c{}; c<col_types.size(); ++c )
 				if( col_types[ c ].is_numeric() )
 					css2+= std20::format( "\ttd:nth-of-type({}) {{ text-align:right; }}\n", c+1 );
@@ -92,9 +104,6 @@ namespace pax {
 				"<title>{}</title>\n"
 				"<meta http-equiv=Content-Type content=\"text/html; charset=utf-8\">\n"
 				"<style>\n"
-				"	:root {{\n"
-				"		--bcolor: #70AD47;\n"
-				"	}}\n"
 				"	body {{\n"
 				"		margin: 0;\n"
 				"	}}\n"
@@ -130,7 +139,9 @@ namespace pax {
 				"<body>\n"
 				"<table class=\"sortable\">\n"
 				"<thead>\n"
-				"	{}\n"
+				"	<tr>\n"
+				"{}"
+				"	</tr>\n"
 				"</thead>\n"
 				"<tbody>\n"
 				"	{}\n"
@@ -138,7 +149,7 @@ namespace pax {
 				"</table>\n"
 				"</body>\n"
 				"</html>\n",
-				title_, css2, header, body 
+				title_, css2, process_header( header, col_types, meta.col_delimiter() ), body 
 			);
 		}
 	};
