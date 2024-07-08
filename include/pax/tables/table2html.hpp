@@ -11,10 +11,11 @@
 namespace pax { 
 	
 	class html_table {
-		static constexpr std::string_view	td	  = "\t\t<td>";
-		static constexpr std::string_view	td_	  = "</td>\n";
-		static constexpr std::string_view	tr	  = "<tr>\n";
-		static constexpr std::string_view	tr_	  = "\t</tr>";
+		static constexpr std::string_view	td0		= "\t\t<td></td>";
+		static constexpr std::string_view	td1		= "\t\t<td>{} </td>\n";
+		static constexpr std::string_view	td2		= "\t\t<td title=\"{}\">{} </td>\n";
+		static constexpr std::string_view	tr	  	= "<tr>\n";
+		static constexpr std::string_view	tr_	  	= "\t</tr>";
 
 		using pair						  = std::pair< std::string_view, std::string_view >;
 
@@ -29,10 +30,7 @@ namespace pax {
 			pair							heads{ {}, header_ };
 			while( heads.second.size() ) {
 				heads					  = split_by( heads.second, col_delimiter_ );
-				str						  = std20::format( 
-												"{}\t\t<td title=\"{}\">{}</td>\n", 
-												str, col_types_[ idx++ ].view(), heads.first 
-											);
+				str						 += std20::format( td2, col_types_[ idx++ ].view(), heads.first );
 			}
 			return str;
 		}
@@ -49,19 +47,16 @@ namespace pax {
 			pair							cols{ {}, row_ };
 			while( cols.second.size() ) {
 				cols					  = split_by( cols.second, col_delimiter_ );
-				str_ += td;
-				str_ += cols.first;
-				str_ += td_;
-				if( num_col >= int( numeric_.size() ) )
-					numeric_.resize( numeric_.size() + 1 );
-				numeric_[ num_col ]+= String_numeric( cols.first );
+				const auto tooltips		  = split_by( cols.first, '|' );
+				str_					 += tooltips.second.empty()
+												? std20::format( td1, tooltips.first )
+												: std20::format( td2, tooltips.second, tooltips.first );
+				if( num_col < int( numeric_.size() ) )
+											numeric_[ num_col ]+= String_numeric( cols.first );
 				++num_col;
 			}
 			num_col-= num_col_;
-			while( ++num_col <= 0 ) {
-				str_ += td;
-				str_ += td_;
-			}
+			while( ++num_col <= 0 ) 		str_ += td0;
 			str_ += tr_;
 		}
 		
@@ -80,7 +75,7 @@ namespace pax {
 			std::string						body{};
 			body.reserve( 
 				+ table_.size() 
-				+ meta.rows()*( tr.size() + tr_.size() + meta.cols_in_first()*( td.size() + td_.size() ) )
+				+ meta.rows()*( tr.size() + tr_.size() + meta.cols_in_first()*td2.size() )
 				- meta.counts()[ meta.col_delimiter() ]
 			);
 			std::vector< String_numeric >	col_types( meta.cols_in_first() );
