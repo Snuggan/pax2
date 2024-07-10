@@ -33,6 +33,31 @@ namespace pax {
 	static_assert( String_numeric( "123.9e8" )		.is_floating_point() );
 	static_assert( String_numeric( "+123.9e+8" )	.is_floating_point() );
 	static_assert( String_numeric( "-123.9e-8" )	.is_floating_point() );
+	static_assert(!String_numeric( "-123.9e-8" )	.is_floating_point_xtra() );
+
+	static_assert( String_numeric( "inf" )			.is_floating_point() );
+	static_assert( String_numeric( "+inf" )			.is_floating_point() );
+	static_assert( String_numeric( "-inf" )			.is_floating_point() );
+	static_assert( String_numeric( "INF" )			.is_floating_point() );
+	static_assert( String_numeric( "+INF" )			.is_floating_point() );
+	static_assert( String_numeric( "-INF" )			.is_floating_point() );
+	static_assert( String_numeric( "INFINITY" )		.is_floating_point() );
+	static_assert( String_numeric( "+INFINITY" )	.is_floating_point() );
+	static_assert( String_numeric( "-INFINITY" )	.is_floating_point() );
+	static_assert( String_numeric( "inf" )			.is_floating_point_xtra() );
+	static_assert( String_numeric( "+inf" )			.is_floating_point_xtra() );
+	static_assert( String_numeric( "-inf" )			.is_floating_point_xtra() );
+
+	static_assert( String_numeric( "nan" )			.is_floating_point() );
+	static_assert( String_numeric( "NaN" )			.is_floating_point() );
+	static_assert( String_numeric( "NAN" )			.is_floating_point() );
+	static_assert(!String_numeric( "nan " )			.is_floating_point() );
+	static_assert(!String_numeric( "+nan" )			.is_floating_point() );
+	static_assert(!String_numeric( "-nan" )			.is_floating_point() );
+	static_assert( String_numeric( "nan" )			.is_floating_point_xtra() );
+	static_assert(!String_numeric( "+nan" )			.is_floating_point_xtra() );
+	static_assert(!String_numeric( "-nan" )			.is_floating_point_xtra() );
+
 	static_assert( String_numeric( "123.9e8x" )		.is_nonnumeric() );
 	static_assert( String_numeric( "+123.9e+8x" )	.is_nonnumeric() );
 	static_assert( String_numeric( "-123.9e-8x" )	.is_nonnumeric() );

@@ -6,6 +6,7 @@
 
 #include "../std/algorithm.hpp"			// pax::split
 #include "../reporting/error_message.hpp"
+#include <pax/reporting/debug.hpp>
 
 #include <span>
 #include <vector>
@@ -20,11 +21,13 @@ namespace pax {
 			uinteger, 
 			integer, 
 			floating_point, 
-			other
+			floating_point_xtra,	// Includes nan, inf, etc.
+			non_numeric
 		};
 		Contents	m_contents;
 		
-		static constexpr std::string_view ids[ 5 ] = { "undetermined", "unsigned integer", "integer", "floating point", "textual" };
+		static constexpr std::string_view ids[ int( Contents::non_numeric ) + 1 ] = 
+			{ "undetermined", "unsigned integer", "integer", "floating point", "floating point (inf/NaN)", "textual" };
 
 		template< typename Itr >
 		static constexpr bool is_negative( 
@@ -54,50 +57,78 @@ namespace pax {
 			
 			// Most strings are not numeric, so start with a quick check...
 			// Retyrn, unless first character is any of +,-./0123456789.
-			if( str_.empty() || ( str_.front() < '+' ) || ( str_.front() > '9' ) )
-									return Contents::other;
+			if( str_.empty() || ( str_.front() < '+' ) || ( str_.front() > '9' ) ) {
+				if( str_.empty() )	return Contents::non_numeric;
+				switch( str_.front() ) {
+					case 'n': 		return ( str_ == "nan" )
+										? Contents::floating_point_xtra : Contents::non_numeric;
+					case 'N': 		return ( ( str_ == "NAN" ) || ( str_ == "NaN" ) )
+										? Contents::floating_point_xtra : Contents::non_numeric;
+					case 'i': 		return ( ( str_ == "inf" ) || ( str_ == "infinity" ) )
+										? Contents::floating_point_xtra : Contents::non_numeric;
+					case 'I': 		return ( ( str_ == "INF" ) || ( str_ == "INFINITY" ) )
+										? Contents::floating_point_xtra : Contents::non_numeric;
+					default: 		return Contents::non_numeric;
+				}
+			}
 
 			auto					itr  = str_.begin();
 			const auto				end  = str_.end();
 
 			// Is it an integer?
 			const bool				negative = is_negative( itr, end );
-			if( itr == end )		return Contents::other;
+			if( itr == end )		return Contents::non_numeric;
 			const bool 				pre_integer = is_digits( itr, end );
 			if( pre_integer && ( itr == end ) )
 									return negative ? Contents::integer : Contents::uinteger;
 	
 			// Is it a floating point?
-			if( *itr != '.' )		return Contents::other;
+			if( *itr != '.' ) {
+				const auto			rest = std::basic_string_view< Char, Traits >{ itr, end };
+				switch( *itr ) {
+					case 'i': 		return ( ( rest == "inf" ) || ( rest == "infinity" ) )
+										? Contents::floating_point_xtra : Contents::non_numeric;
+					case 'I': 		return ( ( rest == "INF" ) || ( rest == "INFINITY" ) )
+										? Contents::floating_point_xtra : Contents::non_numeric;
+					default: 		return Contents::non_numeric;
+				}
+			}
 			++itr;
 			if( !is_digits( itr, end ) && !pre_integer ) 				// A single '.' is not a floating point.
-									return Contents::other;
+									return Contents::non_numeric;
 			if( itr == end )		return Contents::floating_point;	// Either "d.d", "d.", or ".d".
 	
 			// Is it a floating point with exponent?
 			if( ( *itr != 'e' ) && ( *itr != 'E' ) )					// An ending 'e' is not a floating point.
-									return Contents::other;
+									return Contents::non_numeric;
 			++itr;
 			is_negative( itr, end );
-			if( itr == end )		return Contents::other;				// An ending 'e' and a sign is not a floating point.
+			if( itr == end )		return Contents::non_numeric;		// An ending 'e' and a sign is not a floating point.
 
 			if( !is_digits( itr, end ) )								// ... and some garbage.
-									return Contents::other;
+									return Contents::non_numeric;
 			if( itr == end )		return Contents::floating_point;
-			return Contents::other;										// A floating point + garbage.
+			return Contents::non_numeric;								// A floating point + garbage.
 		}
 	
 	public:
 		constexpr String_numeric() noexcept : m_contents{ Contents::undetermined } {};
 		constexpr String_numeric( const std::string_view str_ ) noexcept : m_contents{ contents( str_ ) } {};
 	
-		constexpr auto view()					noexcept {	return ids[ unsigned( m_contents ) ];									}
-		constexpr bool is_determined()			noexcept {	return ( m_contents != Contents::undetermined );						}
-		constexpr bool is_unsigned_integer()	noexcept {	return ( m_contents == Contents::uinteger );							}
-		constexpr bool is_integer()				noexcept {	return is_determined() && ( m_contents <= Contents::integer );			}
-		constexpr bool is_floating_point()		noexcept {	return ( m_contents == Contents::floating_point );						}
-		constexpr bool is_numeric()				noexcept {	return is_determined() && ( m_contents <= Contents::floating_point );	}
-		constexpr bool is_nonnumeric()			noexcept {	return ( m_contents == Contents::other );								}
+		constexpr auto view()					const noexcept {	return ids[ unsigned( m_contents ) ];								}
+		constexpr bool is_determined()			const noexcept {	return ( m_contents != Contents::undetermined );					}
+		constexpr bool is_unsigned_integer()	const noexcept {	return ( m_contents == Contents::uinteger );						}
+		constexpr bool is_integer()				const noexcept {	return is_determined() && ( m_contents <= Contents::integer );		}
+		
+		/// Floating point number, including inf and nan.
+		constexpr bool is_floating_point()		const noexcept {	return ( m_contents == Contents::floating_point )
+																	|| ( m_contents == Contents::floating_point_xtra );					}
+		
+		/// Floating point number, doeas contain inf and/or nan.
+		constexpr bool is_floating_point_xtra()	const noexcept {	return ( m_contents == Contents::floating_point_xtra );				}
+
+		constexpr bool is_numeric()				const noexcept {	return is_determined() && ( m_contents < Contents::non_numeric );	}
+		constexpr bool is_nonnumeric()			const noexcept {	return ( m_contents == Contents::non_numeric );						}
 
 		constexpr String_numeric & operator+=( const String_numeric other_ ) noexcept {
 			m_contents = ( m_contents >= other_.m_contents ) ? m_contents : other_.m_contents;
@@ -109,6 +140,14 @@ namespace pax {
 			const String_numeric	b_
 		) noexcept {
 			return a_ += b_;
+		}
+
+		template< typename Stream >
+		constexpr friend Stream & operator<<( 
+			Stream				  & stream_, 
+			const String_numeric	sn_
+		) noexcept {
+			return stream_ << sn_.view();
 		}
 	};
 
