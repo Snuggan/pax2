@@ -51,8 +51,8 @@ namespace pax {
 				str_					 += tooltips.second.empty()
 												? std20::format( td1, tooltips.first )
 												: std20::format( td2, tooltips.second, tooltips.first );
-				if( num_col < int( numeric_.size() ) )
-											numeric_[ num_col ]+= String_numeric( cols.first );
+				if( num_col < int( numeric_.size() ) )	// Check for numeric before title marker '|'.
+											numeric_[ num_col ]+= String_numeric( split_by( cols.first, '|' ).first );
 				++num_col;
 			}
 			num_col-= num_col_;
