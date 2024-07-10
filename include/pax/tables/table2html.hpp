@@ -42,20 +42,20 @@ namespace pax {
 			const std::size_t	 			num_col_, 
 			std::vector< String_numeric > & numeric_
 		) noexcept {
-			std::size_t						num_col{};
+			std::size_t						idx{};
 			pair							cols{ {}, row_ };
 			str_ += tr;
 			while( cols.second.size() ) {
 				cols					  = split_by( cols.second, col_delimiter_ );
-				const auto tooltips		  = split_by( cols.first, '|' );
+				const auto tooltips		  = split_by( cols.first, '|' );	// "<first/cell-contents>|<second/cell-tooltip>"
 				str_					 += tooltips.second.empty()
 												? std20::format( td1, tooltips.first )
 												: std20::format( td2, tooltips.second, tooltips.first );
-				if( num_col < numeric_.size() )	// Check for numeric before title marker '|'.
-											numeric_[ num_col ]+= String_numeric( split_by( cols.first, '|' ).first );
-				++num_col;
+				if( idx < numeric_.size() )	numeric_[ idx ]+= String_numeric( tooltips.first );
+				++idx;
 			}
-			while( ++num_col <= num_col_ ) 	str_ += td0;
+			// Give all rows at least as many columns as in the header.
+			while( ++idx <= num_col_ ) 	str_ += td0;
 			str_ += tr_;
 		}
 		
