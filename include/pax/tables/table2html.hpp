@@ -39,24 +39,23 @@ namespace pax {
 			const std::string_view			row_, 
 			std::string					  & str_, 
 			const char						col_delimiter_, 
-			const int			 			num_col_, 
+			const std::size_t	 			num_col_, 
 			std::vector< String_numeric > & numeric_
 		) noexcept {
-			int								num_col{};
-			str_ += tr;
+			std::size_t						num_col{};
 			pair							cols{ {}, row_ };
+			str_ += tr;
 			while( cols.second.size() ) {
 				cols					  = split_by( cols.second, col_delimiter_ );
 				const auto tooltips		  = split_by( cols.first, '|' );
 				str_					 += tooltips.second.empty()
 												? std20::format( td1, tooltips.first )
 												: std20::format( td2, tooltips.second, tooltips.first );
-				if( num_col < int( numeric_.size() ) )	// Check for numeric before title marker '|'.
+				if( num_col < numeric_.size() )	// Check for numeric before title marker '|'.
 											numeric_[ num_col ]+= String_numeric( split_by( cols.first, '|' ).first );
 				++num_col;
 			}
-			num_col-= num_col_;
-			while( ++num_col <= 0 ) 		str_ += td0;
+			while( ++num_col <= num_col_ ) 	str_ += td0;
 			str_ += tr_;
 		}
 		
