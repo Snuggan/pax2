@@ -35,6 +35,7 @@ namespace pax {
 			return str;
 		}
 
+		// Inner part of main loop.
 		static void process_row(
 			const std::string_view			row_, 
 			std::string					  & str_, 
@@ -51,7 +52,8 @@ namespace pax {
 				str_					 += tooltips.second.empty()
 												? std20::format( td1, tooltips.first )
 												: std20::format( td2, tooltips.second, tooltips.first );
-				if( idx < numeric_.size() )	numeric_[ idx ]+= String_numeric( tooltips.first );
+				if( ( idx < numeric_.size() ) && !numeric_[ idx ].is_nonnumeric() )
+					numeric_[ idx ]+= String_numeric( tooltips.first );
 				++idx;
 			}
 			// Give all rows at least as many columns as in the header.
@@ -78,6 +80,8 @@ namespace pax {
 				- meta.counts()[ meta.col_delimiter() ]
 			);
 			std::vector< String_numeric >	col_types( meta.cols_in_first() );
+
+			// Main loop:
 			while( rows.second.size() ) {
 				rows					  = split_by( rows.second, Newline{} );
 				if( rows.first.size() ) 	// Skip empty rows
