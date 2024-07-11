@@ -947,5 +947,17 @@ namespace pax {
 			}
 		}
 	}
+	DOCTEST_TEST_CASE( "String_splitter" ) { 
+		// for( auto s : String_splitter( "ett två tre", ' ' ) )	Debug{} << s;
+
+		constexpr String_splitter	split( "ett två tre", ' ' );
+		auto						itr = split.begin();
+		DOCTEST_FAST_CHECK_EQ( *    itr,   "ett" );
+		DOCTEST_FAST_CHECK_EQ( *( ++itr ), "två" );
+		DOCTEST_FAST_CHECK_EQ( *( ++itr ), "tre" );
+		DOCTEST_FAST_CHECK_NE(   itr, split.end() );
+		DOCTEST_FAST_CHECK_EQ( ++itr, split.end() );
+		DOCTEST_FAST_CHECK_EQ( ++itr, split.end() );
+	}
 
 }	// namespace pax
