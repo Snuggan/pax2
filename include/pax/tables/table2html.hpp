@@ -18,31 +18,30 @@ namespace pax {
 		static constexpr std::string_view	tr_	  	= "\t</tr>";
 
 		using pair						  = std::pair< std::string_view, std::string_view >;
+		using splitter					  = String_splitter< const char, char >;
 
 		static std::string process_header(
-			const std::string_view				header_, 
-			const std::span< String_numeric >	col_types_, 
-			const char							col_delimiter_
+			const splitter						header_splitter_, 
+			const std::span< String_numeric >	col_types_
 		) noexcept {
 			std::size_t						idx{};
 			std::string						str;
 			str.reserve( col_types_.size()*64 );
-			for( const auto cell : String_splitter( header_, col_delimiter_ ) ) 
+			for( const auto cell : header_splitter_ ) 	// Iterate cell by cell along the header row.
 				str						 += std20::format( td2, col_types_[ idx++ ].view(), cell );
 			return str;
 		}
 
 		// Inner part of main loop.
 		static void process_row(
-			const std::string_view			row_, 
+			const splitter					row_splitter_, 
 			std::string					  & str_, 
-			const char						col_delimiter_, 
 			const std::size_t	 			num_col_, 
 			std::vector< String_numeric > & numeric_
 		) noexcept {
 			std::size_t						idx{};
 			str_ += tr;
-			for( const auto cell : String_splitter( row_, col_delimiter_ ) ) {
+			for( const auto cell : row_splitter_ ) {	// Iterate cell by cell along one row.
 				const auto tooltips		  = split_by( cell, '|' );	// "<first/cell-contents>|<second/cell-tooltip>"
 				str_					 += tooltips.second.empty()
 												? std20::format( td1, tooltips.first )
@@ -72,9 +71,9 @@ namespace pax {
 			);
 			std::vector< String_numeric >	col_types( meta.cols_in_first() );
 
-			for( const auto row : String_splitter( rows, Newline{} ) ) 
+			for( const auto row : String_splitter( rows, Newline{} ) ) // Iterate row by row.
 				if( row.size() ) 	// Skip empty rows
-					process_row( row, body, meta.col_delimiter(), meta.cols_in_first(), col_types );
+					process_row( String_splitter( row, meta.col_delimiter() ), body, meta.cols_in_first(), col_types );
 
 			// Make numerical columns right aligned.
 			std::string						css2;
@@ -135,7 +134,7 @@ namespace pax {
 				"</table>\n"
 				"</body>\n"
 				"</html>\n",
-				title_, css2, process_header( header, col_types, meta.col_delimiter() ), body 
+				title_, css2, process_header( String_splitter( header, meta.col_delimiter() ), col_types ), body 
 			);
 		}
 	};
