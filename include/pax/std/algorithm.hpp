@@ -942,73 +942,52 @@ namespace pax {
 
 
 
-	template< typename Char, typename Divider, typename Traits = std::char_traits< Char > >
+	/// A class to simplify iterating using ´split_by´. It uses views, so the original string must remain static.
+	/// - Example usage: ´for( const auto view : String_splitter( "A\nNumber\nof\nRows", Newline{} ) ) { ... }´. 
+	/// - The Divider type may be any that is accepted by ´split_by( ..., Divider )´. 
+	/// - String_splitter is constexpr [and never throws]. 
+	template< typename Char, typename Divider, typename Traits = std::char_traits< std::remove_const_t< Char > > >
 	class String_splitter {
-		using value_type			  = basic_string_view2< Char, Traits >;
-		value_type						m_str;
+		using Value					  = std::basic_string_view< std::remove_const_t< Char >, Traits >;
+		Value							m_str;
 		Divider							m_divider;
 
 		class iterator {
-			using pair				  = std::pair< value_type, value_type >;
-			pair						m_parts;
+			std::pair< Value, Value >	m_parts;
 			Divider						m_divider;
-			
-			static constexpr bool identic( const value_type l_, const value_type r_ ) noexcept {
-				return ( l_.data() == r_.data() ) && ( l_.size() == r_.size() );
-			}
-		
-		public:
-			constexpr iterator( 
-				const value_type 		str_,
-				const Divider			divider_
-			) noexcept : m_parts{ split_by( str_, divider_ ) }, m_divider{ divider_ } {}
 
-			iterator & operator++()		noexcept	{
+		public:
+			constexpr iterator( const Value str_, const Divider divider_ )				noexcept 
+				: m_parts( split_by( str_, divider_ ) ), m_divider( divider_ ) {}
+
+			iterator & operator++()		noexcept		{
 				m_parts = split_by( m_parts.second, m_divider );
 				return *this;
 			}
 
-			constexpr value_type operator*()	const noexcept	{	return m_parts.first;							}
-		
-			friend constexpr bool operator==( const iterator l_, const iterator r_ ) noexcept {	
-				return identic( l_.m_parts.first, r_.m_parts.first ) && identic( l_.m_parts.second, r_.m_parts.second );
+			constexpr Value operator*()	const noexcept	{	return m_parts.first;	}
+
+			friend constexpr bool operator==( const iterator l_, const iterator r_ )	noexcept {	
+				return	identic( l_.m_parts.first,  r_.m_parts.first  ) 
+					&&	identic( l_.m_parts.second, r_.m_parts.second );
 			}
-		
-			friend constexpr bool operator!=( const iterator l_, const iterator r_ ) noexcept
-				{	return !( l_ == r_ );																			}
-		
-			template< typename Stream >
-			friend constexpr Stream & operator<<(
-				Stream				  & stream_,
-				const iterator 			itr_
-			) noexcept {
-				return stream_ << "{\"" << itr_.m_parts.first << "\", \"" << itr_.m_parts.second << "\"}";
+
+			template< typename Out >
+			friend constexpr Out & operator<<( Out & out_, const iterator itr_ )		noexcept {
+				return	out_ << "{\"" << itr_.m_parts.first << "\", \"" << itr_.m_parts.second << "\"}";
 			}
 		};
-		
+
 	public:
-		constexpr String_splitter( 
-			const value_type 			str_,
-			const Divider				divider_
-		) noexcept : m_str{ str_ }, m_divider{ divider_ } {}
-
-		constexpr iterator begin()		const noexcept {
-			return iterator( m_str, m_divider );
-		}
-
-		constexpr iterator end()		const noexcept {
-			return iterator( value_type( m_str.end(), 0 ), m_divider );
-		}
+		constexpr String_splitter( const Value str_, const Divider divider_ ) noexcept : m_str( str_ ), m_divider( divider_ ) {}
+		constexpr iterator begin()		const noexcept	{	return iterator( m_str, m_divider );						}
+		constexpr iterator end()		const noexcept	{	return iterator( Value( m_str.end(), 0 ), m_divider );		}
 	};
 
-	template< String S, typename Divider >
-	String_splitter( S &&, Divider )
-		-> String_splitter< Value_type_t< S >, Divider, typename std::remove_cvref_t< S >::traits_type >;
+	template< String S, typename D >
+	String_splitter( S &&, D ) -> String_splitter< Value_type_t< S >, D, typename std::remove_cvref_t< S >::traits_type >;
 
-	template< Character Ch, std::size_t N, typename Divider >
-	String_splitter( Ch( & c_ )[ N ], Divider )	-> String_splitter< std::remove_reference_t< Ch >, Divider >;
-
-	template< Character Ch, typename Divider >
-	String_splitter( Ch * const & c_, Divider )	-> String_splitter< std::remove_reference_t< Ch >, Divider >;
+	template< Character Ch, typename D >
+	String_splitter( Ch *, D ) -> String_splitter< std::remove_reference_t< Ch >, D >;
 
 }	// namespace pax

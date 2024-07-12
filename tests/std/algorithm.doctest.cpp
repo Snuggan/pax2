@@ -948,7 +948,7 @@ namespace pax {
 		}
 	}
 	DOCTEST_TEST_CASE( "String_splitter" ) { 
-		// for( auto s : String_splitter( "ett två tre", ' ' ) )	Debug{} << s;
+		// for( const auto s : String_splitter( "ett två tre", ' ' ) )	Debug{} << s;
 
 		constexpr String_splitter	split( "ett två tre", ' ' );
 		auto						itr = split.begin();

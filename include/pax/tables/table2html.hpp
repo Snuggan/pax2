@@ -27,11 +27,8 @@ namespace pax {
 			std::size_t						idx{};
 			std::string						str;
 			str.reserve( col_types_.size()*64 );
-			pair							heads{ {}, header_ };
-			while( heads.second.size() ) {
-				heads					  = split_by( heads.second, col_delimiter_ );
-				str						 += std20::format( td2, col_types_[ idx++ ].view(), heads.first );
-			}
+			for( const auto cell : String_splitter( header_, col_delimiter_ ) ) 
+				str						 += std20::format( td2, col_types_[ idx++ ].view(), cell );
 			return str;
 		}
 
@@ -44,11 +41,9 @@ namespace pax {
 			std::vector< String_numeric > & numeric_
 		) noexcept {
 			std::size_t						idx{};
-			pair							cols{ {}, row_ };
 			str_ += tr;
-			while( cols.second.size() ) {
-				cols					  = split_by( cols.second, col_delimiter_ );
-				const auto tooltips		  = split_by( cols.first, '|' );	// "<first/cell-contents>|<second/cell-tooltip>"
+			for( const auto cell : String_splitter( row_, col_delimiter_ ) ) {
+				const auto tooltips		  = split_by( cell, '|' );	// "<first/cell-contents>|<second/cell-tooltip>"
 				str_					 += tooltips.second.empty()
 												? std20::format( td1, tooltips.first )
 												: std20::format( td2, tooltips.second, tooltips.first );
@@ -56,8 +51,7 @@ namespace pax {
 					numeric_[ idx ]+= String_numeric( tooltips.first );
 				++idx;
 			}
-			// Give all rows at least as many columns as in the header.
-			while( ++idx <= num_col_ ) 	str_ += td0;
+			while( ++idx <= num_col_ )		str_ += td0;
 			str_ += tr_;
 		}
 		
@@ -67,11 +61,8 @@ namespace pax {
 			const std::string_view			title_
 		) noexcept {
 			const auto 						meta = String_meta( table_ );
-			pair							rows = split_by( table_, Newline{} );
+			const auto 						[ header, rows ] = split_by( table_, Newline{} );
 			
-			// Save the header for later processing.
-			const auto						header = rows.first;
-		
 			// Process the body. 
 			std::string						body{};
 			body.reserve( 
@@ -81,14 +72,11 @@ namespace pax {
 			);
 			std::vector< String_numeric >	col_types( meta.cols_in_first() );
 
-			// Main loop:
-			while( rows.second.size() ) {
-				rows					  = split_by( rows.second, Newline{} );
-				if( rows.first.size() ) 	// Skip empty rows
-					process_row( rows.first, body, meta.col_delimiter(), meta.cols_in_first(), col_types );
-			}
+			for( const auto row : String_splitter( rows, Newline{} ) ) 
+				if( row.size() ) 	// Skip empty rows
+					process_row( row, body, meta.col_delimiter(), meta.cols_in_first(), col_types );
 
-			// Get numerical columns and make them right aligned.
+			// Make numerical columns right aligned.
 			std::string						css2;
 			for( std::size_t c{}; c<col_types.size(); ++c )
 				if( col_types[ c ].is_numeric() )
