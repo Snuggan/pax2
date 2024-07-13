@@ -67,7 +67,7 @@ namespace pax {
 			body.reserve( 
 				+ table_.size() 
 				+ meta.rows()*( tr.size() + tr_.size() + meta.cols_in_first()*td2.size() )
-				- meta.counts()[ meta.col_delimiter() ]
+				- meta[ meta.col_delimiter() ]
 			);
 			std::vector< String_numeric >	col_types( meta.cols_in_first() );
 

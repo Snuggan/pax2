@@ -155,12 +155,63 @@ namespace pax {
 
 	/// Check a string for a number of mainly table related properties. 
 	class String_meta {
-		using Count				  = std::size_t;
+		/// Counter that counts totel number and min/max in rows.
+		class Count_by_row {
+			using Size = std::size_t;
+			Size 		m_row{}, m_total{}, 
+						m_row_min{ std::numeric_limits< Size >::max() }, 
+						m_row_max{ std::numeric_limits< Size >::lowest() };
+	
+		public:
+			constexpr Count_by_row()				noexcept		{};
 
-		Count						m_count[ 128 ]={};
-		Count		 				m_rows{}, m_glyphs{}, m_non_ascii{}, m_cols_in_first_row{};
+			/// The total count (all rows).
+			[[nodiscard]] constexpr Size total()	const noexcept	{				return m_total;						}
+
+			/// The minimum count in one row (all rows).
+			[[nodiscard]] constexpr Size row_min()	const noexcept	{				return m_row_min;					}
+
+			/// The maximum count in one row (all rows).
+			[[nodiscard]] constexpr Size row_max()	const noexcept	{				return m_row_max;					}
+
+			/// Increase count by one. 
+			constexpr Count_by_row & operator++()	noexcept		{	++m_row;	return *this;						}
+
+			/// Set all counters to zero. 
+			constexpr void zero()					noexcept		{	m_row_min = m_row_max = m_total = m_row = {};	}
+
+			/// Update row statistics. 
+			constexpr void row_end()				noexcept		{
+				( m_row < m_row_min ) ? ( m_row_min = m_row ) : m_row;
+				( m_row > m_row_max ) ? ( m_row_max = m_row ) : m_row;
+				m_total		 += m_row;
+				m_row		  = {};
+			}
+
+			/// Output the counter. 
+			template< typename Out >
+			friend constexpr Out & operator<<( Out & out_, const Count_by_row counter_ ) {
+				return out_ << "{" << counter_.total() << " (" << counter_.row_min() << '-' << counter_.row_max() << ")}";
+			}
+
+			/// Return metadata of result. 
+			template< typename Json >
+			[[nodiscard]] friend Json json( const Count_by_row counter_ ) {
+				return Json{
+					{	"total",	counter_.total()		},
+					{	"row min",	counter_.row_min()		},
+					{	"row max",	counter_.row_max()		}
+				};
+			}
+		};
+
+		using Count				  = std::size_t;
+		static constexpr Count		Asciis = 128;
+		static constexpr Count		Non_ascii = Asciis;
+
+		Count_by_row				m_count_by_row[ Non_ascii + 1 ]={};
+		Count		 				m_rows{}, m_non_empty_rows{}, m_glyphs{}, m_cols_in_first_row{};
 		char						m_col_delimit = ';';
-		bool						m_final_newline{};
 		
 		template< typename Ch >
 		static constexpr Count count(
@@ -178,64 +229,66 @@ namespace pax {
 		constexpr String_meta( const String_meta & )				= default;
 		constexpr String_meta & operator=( const String_meta & )	= default;
 		
-		template< typename Ch >
-		constexpr String_meta( const std::basic_string_view< Ch > str_ ) noexcept;
-		
-		/// Returns a span to the total counts of all ascii characters (code<128).
-		constexpr auto counts()			const noexcept	{
-			return std::span< const Count, 128 >( m_count, 128 );
-		}
+		template< typename Ch, typename Traits >
+		constexpr String_meta( const std::basic_string_view< Ch, Traits > str_ ) noexcept;
 		
 		/// The total number of glyphs.
-		constexpr auto size()			const noexcept	{	return m_glyphs;					}
+		constexpr auto size()						const noexcept	{	return m_glyphs;								}
+
+		/// Count_by_row for glyph c. Returns an empty Count_by_row if c > 127.
+		constexpr auto statistics( const Count c )	const noexcept	{
+			return ( c < Asciis ) ? m_count_by_row[ c ] : Count_by_row{};
+		}
+
+		/// The total number of glyph c. Returns zero if c > 127.
+		constexpr auto operator[]( const Count c )	const noexcept	{	return statistics( c ).total();						}
 
 		/// The total number of non-ascii characters (code > 127). 
-		constexpr auto non_ascii()		const noexcept	{	return m_non_ascii;					}
+		constexpr auto non_ascii()					const noexcept	{	return m_count_by_row[ Non_ascii ].total();			}
 
 		/// The total number of ascii characters (<128). 
-		constexpr auto ascii()			const noexcept	{	return size() - non_ascii();		}
-
-		/// Was the last character of the last string a newline character (LF or CR)?
-		constexpr bool final_newline()	const noexcept	{	return m_final_newline;				}
+		constexpr auto ascii()						const noexcept	{	return size() - non_ascii();						}
 		
-		/// The total number of newlines plus !has_final_newline().
-		constexpr auto rows()			const noexcept	{	return m_rows + !final_newline();	}
+		/// The total number of rows.
+		constexpr auto rows()						const noexcept	{	return m_rows;										}
+		
+		/// The total number of empty rows.
+		constexpr auto non_empty_rows()				const noexcept	{	return m_non_empty_rows;							}
 
 		/// The [probable] column delimiter (the most frequent of "\t!#$%@,;.:"). 
-		constexpr auto col_delimiter()	const noexcept	{	return m_col_delimit;				}
+		constexpr auto col_delimiter()				const noexcept	{	return m_col_delimit;								}
 		
 		/// The number of columns in first row. Note: an empty row has one [empty] column!
-		constexpr auto cols_in_first()	const noexcept	{	return m_cols_in_first_row;			}
+		constexpr auto cols_in_first()				const noexcept	{	return m_cols_in_first_row;							}
+		
+		/// The minimum number of columns in a row.
+		constexpr auto minimum_cols()				const noexcept	{	return 1 + statistics( col_delimiter() ).row_min();	}
+		
+		/// The maximum number of columns in a row.
+		constexpr auto maximum_cols()				const noexcept	{	return 1 + statistics( col_delimiter() ).row_max();	}
 	};
 
 
-	template< typename Ch >
-	constexpr String_meta::String_meta( const std::basic_string_view< Ch > str_ ) noexcept	{
-		using View			  = std::basic_string_view< Ch >;
-		
-		for( const unsigned c : str_ )		( c < 128 )	? ++m_count[ c ] : ++m_non_ascii;
-
-		// Find the number of lines.
-		if     ( m_count[ unsigned( '\r' ) ] == 0 )		m_rows = m_count[ unsigned( '\n' ) ];
-		else if( m_count[ unsigned( '\n' ) ] == 0 )		m_rows = m_count[ unsigned( '\r' ) ];
-		else {
-			View							row;
-			View							remaining = str_;
-
-			while( remaining.size() ) {
-				++m_rows;
-				std::tie( row, remaining )	  = split_by( remaining, Newline{} );
+	template< typename Ch, typename Traits >
+	constexpr String_meta::String_meta( const std::basic_string_view< Ch, Traits > str_ ) noexcept	{
+		for( auto row : String_splitter( str_, Newline{} ) ) {	// Iterate str_ row by row.
+			if( row.size() ) {									// Ignore empty rows.
+				for( const unsigned c : row )			++m_count_by_row[ ( c < Asciis ) ? c : Non_ascii ];
+				for( auto & cnt : m_count_by_row )		cnt.row_end();
+				++m_non_empty_rows;
 			}
+			++m_rows;
 		}
+		if( m_non_empty_rows == 0 ) 
+			for( auto & cnt : m_count_by_row )			cnt.zero();
 
 		// Find the probable column delimiter.
 		constexpr const std::string_view	candidates = "\t!#$%@,;.:";
 		for( const short c : candidates )
-			m_col_delimit = ( m_count[ c ] > m_count[ unsigned( m_col_delimit ) ] ) ? c : m_col_delimit;
+			m_col_delimit = ( statistics( c ).total() > statistics( m_col_delimit ).total() ) ? c : m_col_delimit;
 
 		m_glyphs						  = str_.size();
-		m_final_newline					  = str_.size() && ends_with( str_, Newline{} );
-		m_cols_in_first_row				  = count( until( str_, Newline{} ), col_delimiter() ) + 1;
+		m_cols_in_first_row				  = maximum_cols() ? count( until( str_, Newline{} ), col_delimiter() ) + 1 : 0;
 	}
 
 

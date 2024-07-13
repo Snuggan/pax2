@@ -960,7 +960,7 @@ namespace pax {
 			constexpr iterator( const Value str_, const Divider divider_ )				noexcept 
 				: m_parts( split_by( str_, divider_ ) ), m_divider( divider_ ) {}
 
-			iterator & operator++()		noexcept		{
+			constexpr iterator & operator++()		noexcept		{
 				m_parts = split_by( m_parts.second, m_divider );
 				return *this;
 			}
