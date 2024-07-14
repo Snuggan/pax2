@@ -17,7 +17,7 @@ namespace pax {
 
 	class String_numeric {
 		enum class Contents {
-			undetermined, 		// Default value, not yet checked.
+			undetermined, 			// Default value, not yet checked.
 			uinteger, 
 			integer, 
 			floating_point, 
@@ -26,21 +26,7 @@ namespace pax {
 		};
 		Contents	m_contents;
 		
-		static constexpr std::string_view ids[ int( Contents::non_numeric ) + 1 ] = 
-			{ "undetermined", "unsigned integer", "integer", "floating point", "floating point (inf/NaN)", "textual" };
-
-		template< typename Itr >
-		static constexpr bool is_negative( 
-			Itr					  & itr_, 
-			const Itr				end_
-		) noexcept {
-			if( itr_ != end_ ) {
-				const bool			negative = ( *itr_ == '-' );
-				if( negative || ( *itr_ == '+' ) )	++itr_;
-				return negative;
-			}
-			return false;
-		}
+		static constexpr bool is_digit( const auto c_ )	noexcept	{	return ( c_ >= '0' ) && ( c_ <= '9' );		}
 
 		template< typename Itr >
 		static constexpr bool is_digits( 
@@ -48,81 +34,76 @@ namespace pax {
 			const Itr				end_
 		) noexcept {
 			const auto				start = itr_;
-			while( ( itr_ != end_ ) && ( *itr_ >= '0' ) && ( *itr_ <= '9' ) )	++itr_;
+			while( ( itr_ != end_ ) && is_digit( *itr_ ) )		++itr_;
 			return itr_ != start;	// At least one digit.
 		}
 
 		template< typename Char, typename Traits >
 		static constexpr Contents contents( const std::basic_string_view< Char, Traits > str_ ) noexcept {
-			
-			// Most strings are not numeric, so start with a quick check...
-			// Retyrn, unless first character is any of +,-./0123456789.
-			if( str_.empty() || ( str_.front() < '+' ) || ( str_.front() > '9' ) ) {
-				if( str_.empty() )	return Contents::non_numeric;
-				switch( str_.front() ) {
-					case 'n': 		return ( str_ == "nan" )
-										? Contents::floating_point_xtra : Contents::non_numeric;
-					case 'N': 		return ( ( str_ == "NAN" ) || ( str_ == "NaN" ) )
-										? Contents::floating_point_xtra : Contents::non_numeric;
-					case 'i': 		return ( ( str_ == "inf" ) || ( str_ == "infinity" ) )
-										? Contents::floating_point_xtra : Contents::non_numeric;
-					case 'I': 		return ( ( str_ == "INF" ) || ( str_ == "INFINITY" ) )
-										? Contents::floating_point_xtra : Contents::non_numeric;
-					default: 		return Contents::non_numeric;
-				}
-			}
+			static constexpr Contents	float_xtra_or_not[ 2 ] = { Contents::non_numeric, Contents::floating_point_xtra };
 
-			auto					itr  = str_.begin();
-			const auto				end  = str_.end();
+			if( str_.empty() )	return Contents::non_numeric;
+			auto				itr{ str_.begin() };
+			const auto			end{ str_.end() };
+			bool				negative{ false };
+			bool 				pre_integer{ true };
+			switch( str_.front() ) {
+				case '.': 		pre_integer = false;
+								break;	// Possibly a float. 
 
-			// Is it an integer?
-			const bool				negative = is_negative( itr, end );
-			if( itr == end )		return Contents::non_numeric;
-			const bool 				pre_integer = is_digits( itr, end );
-			if( pre_integer && ( itr == end ) )
+				case '-': 		negative = true;
+				case '+': 		if( ++itr == end )	return Contents::non_numeric;
+								{
+									const auto		rest{ std::basic_string_view< Char, Traits >{ itr, end } };
+									switch( *itr ) {
+										case 'i': 	return float_xtra_or_not[ ( rest == "inf" ) || ( rest == "infinity" ) ];
+										case 'I': 	return float_xtra_or_not[ ( rest == "INF" ) || ( rest == "INFINITY" ) ];
+										case '.': 	pre_integer = false;		break;
+										default:	if( !is_digit( *itr ) )		return Contents::non_numeric;
+									}
+								}
+				case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': 
+								if( is_digits( itr, end ) && ( itr == end ) )
 									return negative ? Contents::integer : Contents::uinteger;
-	
-			// Is it a floating point?
-			if( *itr != '.' ) {
-				const auto			rest = std::basic_string_view< Char, Traits >{ itr, end };
-				switch( *itr ) {
-					case 'i': 		return ( ( rest == "inf" ) || ( rest == "infinity" ) )
-										? Contents::floating_point_xtra : Contents::non_numeric;
-					case 'I': 		return ( ( rest == "INF" ) || ( rest == "INFINITY" ) )
-										? Contents::floating_point_xtra : Contents::non_numeric;
-					default: 		return Contents::non_numeric;
-				}
-			}
-			++itr;
-			if( !is_digits( itr, end ) && !pre_integer ) 				// A single '.' is not a floating point.
-									return Contents::non_numeric;
-			if( itr == end )		return Contents::floating_point;	// Either "d.d", "d.", or ".d".
-	
-			// Is it a floating point with exponent?
-			if( ( *itr != 'e' ) && ( *itr != 'E' ) )					// An ending 'e' is not a floating point.
-									return Contents::non_numeric;
-			++itr;
-			is_negative( itr, end );
-			if( itr == end )		return Contents::non_numeric;		// An ending 'e' and a sign is not a floating point.
+								break;
 
-			if( !is_digits( itr, end ) )								// ... and some garbage.
-									return Contents::non_numeric;
-			if( itr == end )		return Contents::floating_point;
-			return Contents::non_numeric;								// A floating point + garbage.
+				case 'n': 		return float_xtra_or_not[   str_ == "nan"   ];
+				case 'N': 		return float_xtra_or_not[ ( str_ == "NAN" ) || ( str_ == "NaN"      ) ];
+				case 'i': 		return float_xtra_or_not[ ( str_ == "inf" ) || ( str_ == "infinity" ) ];
+				case 'I': 		return float_xtra_or_not[ ( str_ == "INF" ) || ( str_ == "INFINITY" ) ];
+				default: 		return Contents::non_numeric;
+			}
+
+			// itr now points at '.' -- might be a float.
+			++itr;
+			if( !is_digits( itr, end ) && !pre_integer ) 	return Contents::non_numeric;		// A single '.' is not a float.
+			if( itr == end )								return Contents::floating_point;	// Either "d.d", "d.", or ".d".
+	
+			// Might be a float with exponent.
+			if( ( *itr != 'e' ) && ( *itr != 'E' ) )		return Contents::non_numeric;
+			if( ++itr == end )								return Contents::non_numeric;		// Ending 'e' is not a float.
+			if( ( *itr == '-' ) || ( *itr == '+' ) )											// Move past exponent sign, if any.
+				if( ++itr == end )							return Contents::non_numeric;		// Ending 'e' and sign is not a float.
+			if( !is_digits( itr, end ) )					return Contents::non_numeric;		// Trailing garbage.
+			return ( itr == end ) ? Contents::floating_point : Contents::non_numeric;
 		}
 	
 	public:
 		constexpr String_numeric() noexcept : m_contents{ Contents::undetermined } {};
 		constexpr String_numeric( const std::string_view str_ ) noexcept : m_contents{ contents( str_ ) } {};
 	
-		constexpr auto view()					const noexcept {	return ids[ unsigned( m_contents ) ];								}
+		constexpr auto view()					const noexcept {
+			static constexpr std::string_view ids[ int( Contents::non_numeric ) + 1 ] = 
+				{ "undetermined", "unsigned integer", "integer", "floating point", "floating point (inf/NaN)", "textual" };
+			return ids[ unsigned( m_contents ) ];
+		}
 		constexpr bool is_determined()			const noexcept {	return ( m_contents != Contents::undetermined );					}
 		constexpr bool is_unsigned_integer()	const noexcept {	return ( m_contents == Contents::uinteger );						}
 		constexpr bool is_integer()				const noexcept {	return is_determined() && ( m_contents <= Contents::integer );		}
 		
 		/// Floating point number, including inf and nan.
 		constexpr bool is_floating_point()		const noexcept {	return ( m_contents == Contents::floating_point )
-																	|| ( m_contents == Contents::floating_point_xtra );					}
+																		|| ( m_contents == Contents::floating_point_xtra );				}
 		
 		/// Floating point number, doeas contain inf and/or nan.
 		constexpr bool is_floating_point_xtra()	const noexcept {	return ( m_contents == Contents::floating_point_xtra );				}

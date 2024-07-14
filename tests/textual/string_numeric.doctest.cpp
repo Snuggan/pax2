@@ -21,9 +21,15 @@ namespace pax {
 	static_assert( String_numeric( "0." )			.is_floating_point() );
 	static_assert( String_numeric( "+0." )			.is_floating_point() );
 	static_assert( String_numeric( "-0." )			.is_floating_point() );
+	static_assert( String_numeric( "0.a" )			.is_nonnumeric() );
+	static_assert( String_numeric( "+0.a" )			.is_nonnumeric() );
+	static_assert( String_numeric( "-0.a" )			.is_nonnumeric() );
 	static_assert( String_numeric( ".9" )			.is_floating_point() );
 	static_assert( String_numeric( "+.9" )			.is_floating_point() );
 	static_assert( String_numeric( "-.9" )			.is_floating_point() );
+	static_assert( String_numeric( ".a" )			.is_nonnumeric() );
+	static_assert( String_numeric( "+.a" )			.is_nonnumeric() );
+	static_assert( String_numeric( "-.a" )			.is_nonnumeric() );
 	static_assert( String_numeric( "123.9" )		.is_floating_point() );
 	static_assert( String_numeric( "+123.9" )		.is_floating_point() );
 	static_assert( String_numeric( "-123.9" )		.is_floating_point() );
