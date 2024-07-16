@@ -15,110 +15,117 @@
 
 namespace pax {
 
-	class String_numeric {
-		enum class Contents {
-			undetermined, 			// Default value, not yet checked.
-			uinteger, 
-			integer, 
-			floating_point, 
-			floating_point_xtra,	// Includes nan, inf, etc.
-			non_numeric
+	/// Scans a string and determines if it could be interpreted as a numeric.
+	/** Recognises the following forms:
+		- undetermined 			Default value, no string scanned yet.
+		- uinteger 				The string contains only digits.
+		- integer 				The string contains '-' followed by only digits.
+		- floating_point 		The string is in either form: "d.d", "d.", or ".d", possibly after a leading sign.
+		- floating_point_xtra	Same as floating_point, but also includes nan, inf, etc.
+		- non_numeric			Can not be interpreted as a numeric. 
+	**/
+	class Strtype {
+		enum class Type {
+			undetermined, 			// Default value, no string scanned yet.
+			uinteger, 				// The string contains only digits.
+			integer, 				// The string contains '-' followed by only digits.
+			floating_point, 		// The string is in either form: "d.d", "d.", or ".d", possibly after a leading sign.
+			floating_point_xtra,	// Same as floating_point, but also includes nan, inf, etc.
+			non_numeric,			// Can not be interpreted as a numeric. 
 		};
-		Contents	m_contents;
-		
-		static constexpr bool is_digit( const auto c_ )	noexcept	{	return ( c_ >= '0' ) && ( c_ <= '9' );		}
+		Type	m_type{ Type::undetermined };
 
+		// Scan through digits and return true if there was at least one. 
 		template< typename Itr >
-		static constexpr bool is_digits( 
-			Itr					  & itr_, 
-			const Itr				end_
-		) noexcept {
-			const auto				start = itr_;
-			while( ( itr_ != end_ ) && is_digit( *itr_ ) )		++itr_;
-			return itr_ != start;	// At least one digit.
+		static constexpr bool digits( Itr & itr_, const Itr end_ ) noexcept {
+			if(    (   itr_ == end_ ) || ( *itr_ <  '0' ) || ( *itr_ >  '9' ) )	return false;	// No digit.
+			while( ( ++itr_ != end_ ) && ( *itr_ >= '0' ) && ( *itr_ <= '9' ) );				// Scan all digits.
+			return true;																		// At least one digit.
 		}
 
 		template< typename Char, typename Traits >
-		static constexpr Contents contents( const std::basic_string_view< Char, Traits > str_ ) noexcept {
-			static constexpr Contents	float_xtra_or_not[ 2 ] = { Contents::non_numeric, Contents::floating_point_xtra };
+		static constexpr Type scan( const std::basic_string_view< Char, Traits > str_ ) noexcept {
+			static constexpr Type	float_or_not[ 2 ]      = { Type::non_numeric, Type::floating_point };
+			static constexpr Type	float_xtra_or_not[ 2 ] = { Type::non_numeric, Type::floating_point_xtra };
 
-			if( str_.empty() )	return Contents::non_numeric;
+			if( str_.empty() )	return Type::non_numeric;
 			auto				itr{ str_.begin() };
 			const auto			end{ str_.end() };
 			bool				negative{ false };
 			bool 				predigit{ true };
-			switch( str_.front() ) {
+			switch( *itr ) {
 				case '.': 		predigit = false;
 								break;	// Possibly a float. 
 
 				case '-': 		negative = true;
 								[[fallthrough]];
-				case '+': 		if( ++itr == end )	return Contents::non_numeric;
+				case '+': 		if( ++itr == end )	return Type::non_numeric;
 								{
 									const auto		rest{ std::basic_string_view< Char, Traits >{ itr, end } };
 									switch( *itr ) {
 										case 'i': 	return float_xtra_or_not[ ( rest == "inf" ) || ( rest == "infinity" ) ];
 										case 'I': 	return float_xtra_or_not[ ( rest == "INF" ) || ( rest == "INFINITY" ) ];
-										case '.': 	predigit = false;			break;
-										default:	if( !is_digit( *itr ) )		return Contents::non_numeric;
+										case '.': 	predigit = false;						break;
+										default:	if( ( *itr < '0' ) || ( *itr > '9' ) )	return Type::non_numeric;
 									}
 								}
 								[[fallthrough]];
 				case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': 
-								if( is_digits( itr, end ) && ( itr == end ) )
-									return negative ? Contents::integer : Contents::uinteger;
+								if( digits( itr, end ) && ( itr == end ) )
+									return negative ? Type::integer : Type::uinteger;
 								break;
 
 				case 'n': 		return float_xtra_or_not[   str_ == "nan"   ];
 				case 'N': 		return float_xtra_or_not[ ( str_ == "NAN" ) || ( str_ == "NaN"      ) ];
 				case 'i': 		return float_xtra_or_not[ ( str_ == "inf" ) || ( str_ == "infinity" ) ];
 				case 'I': 		return float_xtra_or_not[ ( str_ == "INF" ) || ( str_ == "INFINITY" ) ];
-				default: 		return Contents::non_numeric;
+				default: 		return Type::non_numeric;
 			}
 
-			// itr now points at '.' -- might be a float.
+			// itr now points at '.' -- is str_ a float?
 			++itr;
-			return	( !is_digits( itr, end ) && !predigit ) ? Contents::non_numeric		// A single '.' is not a float.
-				:	( itr == end )							? Contents::floating_point	// Float: either "d.d", "d.", or ".d".
-				:		( ( *itr != 'e' ) && ( *itr != 'E' ) )							// Must have exponent but hasn't.
-					||	( ++itr == end )												// Ending 'e' is not a float.
-					||	( ( ( *itr == '-' ) || ( *itr == '+' ) ) && ( ++itr == end ) )	// Ending 'e' and sign is not a float.
-					||	( !is_digits( itr, end ) )										// Non-digits after 'e'.
-					||	( itr != end ) 						? Contents::non_numeric 	// Garbage after digits.
-				:											  Contents::floating_point;	// Float with exponent.
+			return float_or_not[
+					(  ( digits( itr, end ) || predigit        ) && (   itr == end ) )	// Float: either "d.d", "d.", or ".d" maybe...
+				||	(	( ( ( *itr == 'e' ) || ( *itr == 'E' ) ) && ( ++itr != end ) )	// ...with an exponent: an 'e' followed by...
+					&&	( ( ( *itr != '-' ) && ( *itr != '+' ) ) || ( ++itr != end ) )	// ...an optional sign...
+					&&	( digits( itr, end )                     && (   itr == end ) )	// ...and digits and nothing else.
+					)
+			];
 		}
 	
 	public:
-		constexpr String_numeric() noexcept : m_contents{ Contents::undetermined } {};
-		constexpr String_numeric( const std::string_view str_ ) noexcept : m_contents{ contents( str_ ) } {};
+		constexpr Strtype()									noexcept = default;
+		constexpr Strtype( const Strtype & )				noexcept = default;
+		constexpr Strtype & operator=( const Strtype & )	noexcept = default;
+		constexpr Strtype( const std::string_view str_ )	noexcept : m_type{ scan( str_ ) } {};
 	
 		constexpr auto view()					const noexcept {
-			static constexpr std::string_view ids[ int( Contents::non_numeric ) + 1 ] = 
+			static constexpr std::string_view ids[ int( Type::non_numeric ) + 1 ] = 
 				{ "undetermined", "unsigned integer", "integer", "floating point", "floating point (inf/NaN)", "textual" };
-			return ids[ unsigned( m_contents ) ];
+			return ids[ unsigned( m_type ) ];
 		}
-		constexpr bool is_determined()			const noexcept {	return ( m_contents != Contents::undetermined );					}
-		constexpr bool is_unsigned_integer()	const noexcept {	return ( m_contents == Contents::uinteger );						}
-		constexpr bool is_integer()				const noexcept {	return is_determined() && ( m_contents <= Contents::integer );		}
+		constexpr bool is_determined()			const noexcept {	return ( m_type != Type::undetermined );					}
+		constexpr bool is_unsigned_integer()	const noexcept {	return ( m_type == Type::uinteger );						}
+		constexpr bool is_integer()				const noexcept {	return is_determined() && ( m_type <= Type::integer );		}
 		
 		/// Floating point number, including inf and nan.
-		constexpr bool is_floating_point()		const noexcept {	return ( m_contents == Contents::floating_point )
-																		|| ( m_contents == Contents::floating_point_xtra );				}
+		constexpr bool is_floating_point()		const noexcept {	return ( m_type == Type::floating_point )
+																		|| ( m_type == Type::floating_point_xtra );				}
 		
 		/// Floating point number, doeas contain inf and/or nan.
-		constexpr bool is_floating_point_xtra()	const noexcept {	return ( m_contents == Contents::floating_point_xtra );				}
+		constexpr bool is_floating_point_xtra()	const noexcept {	return ( m_type == Type::floating_point_xtra );				}
 
-		constexpr bool is_numeric()				const noexcept {	return is_determined() && ( m_contents < Contents::non_numeric );	}
-		constexpr bool is_nonnumeric()			const noexcept {	return ( m_contents == Contents::non_numeric );						}
+		constexpr bool is_numeric()				const noexcept {	return is_determined() && ( m_type < Type::non_numeric );	}
+		constexpr bool is_nonnumeric()			const noexcept {	return ( m_type == Type::non_numeric );						}
 
-		constexpr String_numeric & operator+=( const String_numeric other_ ) noexcept {
-			m_contents = ( m_contents >= other_.m_contents ) ? m_contents : other_.m_contents;
+		constexpr Strtype & operator+=( const Strtype other_ ) noexcept {
+			m_type = ( m_type >= other_.m_type ) ? m_type : other_.m_type;
 			return *this;
 		}
 
-		constexpr friend String_numeric operator+( 
-			String_numeric			a_, 
-			const String_numeric	b_
+		constexpr friend Strtype operator+( 
+			Strtype			a_, 
+			const Strtype	b_
 		) noexcept {
 			return a_ += b_;
 		}
@@ -126,7 +133,7 @@ namespace pax {
 		template< typename Stream >
 		constexpr friend Stream & operator<<( 
 			Stream				  & stream_, 
-			const String_numeric	sn_
+			const Strtype	sn_
 		) noexcept {
 			return stream_ << sn_.view();
 		}

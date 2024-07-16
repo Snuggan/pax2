@@ -21,8 +21,8 @@ namespace pax {
 		using splitter					  = String_splitter< const char, char >;
 
 		static std::string process_header(
-			const splitter						header_splitter_, 
-			const std::span< String_numeric >	col_types_
+			const splitter					header_splitter_, 
+			const std::span< Strtype >		col_types_
 		) noexcept {
 			std::size_t						idx{};
 			std::string						str;
@@ -37,7 +37,7 @@ namespace pax {
 			const splitter					row_splitter_, 
 			std::string					  & str_, 
 			const std::size_t	 			num_col_, 
-			std::vector< String_numeric > & numeric_
+			std::vector< Strtype >		  & numeric_
 		) noexcept {
 			std::size_t						idx{};
 			str_ += tr;
@@ -47,7 +47,7 @@ namespace pax {
 												? std20::format( td1, tooltips.first )
 												: std20::format( td2, tooltips.second, tooltips.first );
 				if( ( idx < numeric_.size() ) && !numeric_[ idx ].is_nonnumeric() )
-					numeric_[ idx ]+= String_numeric( tooltips.first );
+					numeric_[ idx ]+= Strtype( tooltips.first );
 				++idx;
 			}
 			while( ++idx <= num_col_ )		str_ += td0;
@@ -69,7 +69,7 @@ namespace pax {
 				+ meta.rows()*( tr.size() + tr_.size() + meta.cols_in_first()*td2.size() )
 				- meta[ meta.col_delimiter() ]
 			);
-			std::vector< String_numeric >	col_types( meta.cols_in_first() );
+			std::vector< Strtype >			col_types( meta.cols_in_first() );
 
 			for( const auto row : String_splitter( rows, Newline{} ) ) // Iterate row by row.
 				if( row.size() ) 	// Skip empty rows
