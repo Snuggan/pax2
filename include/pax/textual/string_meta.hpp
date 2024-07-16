@@ -46,22 +46,24 @@ namespace pax {
 			auto				itr{ str_.begin() };
 			const auto			end{ str_.end() };
 			bool				negative{ false };
-			bool 				pre_integer{ true };
+			bool 				predigit{ true };
 			switch( str_.front() ) {
-				case '.': 		pre_integer = false;
+				case '.': 		predigit = false;
 								break;	// Possibly a float. 
 
 				case '-': 		negative = true;
+								[[fallthrough]];
 				case '+': 		if( ++itr == end )	return Contents::non_numeric;
 								{
 									const auto		rest{ std::basic_string_view< Char, Traits >{ itr, end } };
 									switch( *itr ) {
 										case 'i': 	return float_xtra_or_not[ ( rest == "inf" ) || ( rest == "infinity" ) ];
 										case 'I': 	return float_xtra_or_not[ ( rest == "INF" ) || ( rest == "INFINITY" ) ];
-										case '.': 	pre_integer = false;		break;
+										case '.': 	predigit = false;			break;
 										default:	if( !is_digit( *itr ) )		return Contents::non_numeric;
 									}
 								}
+								[[fallthrough]];
 				case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': 
 								if( is_digits( itr, end ) && ( itr == end ) )
 									return negative ? Contents::integer : Contents::uinteger;
@@ -76,16 +78,14 @@ namespace pax {
 
 			// itr now points at '.' -- might be a float.
 			++itr;
-			if( !is_digits( itr, end ) && !pre_integer ) 	return Contents::non_numeric;		// A single '.' is not a float.
-			if( itr == end )								return Contents::floating_point;	// Either "d.d", "d.", or ".d".
-	
-			// Might be a float with exponent.
-			if( ( *itr != 'e' ) && ( *itr != 'E' ) )		return Contents::non_numeric;
-			if( ++itr == end )								return Contents::non_numeric;		// Ending 'e' is not a float.
-			if( ( *itr == '-' ) || ( *itr == '+' ) )											// Move past exponent sign, if any.
-				if( ++itr == end )							return Contents::non_numeric;		// Ending 'e' and sign is not a float.
-			if( !is_digits( itr, end ) )					return Contents::non_numeric;		// Trailing garbage.
-			return ( itr == end ) ? Contents::floating_point : Contents::non_numeric;
+			return	( !is_digits( itr, end ) && !predigit ) ? Contents::non_numeric		// A single '.' is not a float.
+				:	( itr == end )							? Contents::floating_point	// Float: either "d.d", "d.", or ".d".
+				:		( ( *itr != 'e' ) && ( *itr != 'E' ) )							// Must have exponent but hasn't.
+					||	( ++itr == end )												// Ending 'e' is not a float.
+					||	( ( ( *itr == '-' ) || ( *itr == '+' ) ) && ( ++itr == end ) )	// Ending 'e' and sign is not a float.
+					||	( !is_digits( itr, end ) )										// Non-digits after 'e'.
+					||	( itr != end ) 						? Contents::non_numeric 	// Garbage after digits.
+				:											  Contents::floating_point;	// Float with exponent.
 		}
 	
 	public:
