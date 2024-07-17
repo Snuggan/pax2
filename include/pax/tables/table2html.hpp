@@ -85,7 +85,6 @@ namespace pax {
 
 			// Output metadata for the table, if required.
 			if( metadata2cout_ ) {
-				
 				std::cerr << std20::format( 
 					"\nTable: \"{}\"\n"
 					"  Column separator: {:?}\n"
@@ -106,10 +105,7 @@ namespace pax {
 				);
 				std::size_t 	i{};
 				for( const auto col : String_splitter( header, meta.col_delimiter() ) ) 
-					std::cerr << std20::format( "    {:15} {}\n", 
-						std20::format( "\"{}\":", col ), 
-						col_types[ i++ ].view() 
-					);
+					std::cerr << std20::format( "    {:15?} {}\n", col, col_types[ i++ ].view() );
 			}
 
 			// Collect the result.
