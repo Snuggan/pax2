@@ -12,9 +12,12 @@ namespace pax {
 	static_assert( Strtype( "" )			.is_nonnumeric() );
 	static_assert( Strtype( "+" )			.is_nonnumeric() );
 	static_assert( Strtype( "-" )			.is_nonnumeric() );
+	static_assert( Strtype( "123" )			.is_integer() );
+	static_assert( Strtype( "+123" )		.is_integer() );
+	static_assert( Strtype( "-123" )		.is_integer() );
 	static_assert( Strtype( "123" )			.is_unsigned_integer() );
 	static_assert( Strtype( "+123" )		.is_unsigned_integer() );
-	static_assert( Strtype( "-123" )		.is_integer() );
+	static_assert(!Strtype( "-123" )		.is_unsigned_integer() );
 	static_assert( Strtype( "." )			.is_nonnumeric() );
 	static_assert( Strtype( "+." )			.is_nonnumeric() );
 	static_assert( Strtype( "-." )			.is_nonnumeric() );
@@ -40,6 +43,9 @@ namespace pax {
 	static_assert( Strtype( "+123.9e+8" )	.is_floating_point() );
 	static_assert( Strtype( "-123.9e-8" )	.is_floating_point() );
 	static_assert(!Strtype( "-123.9e-8" )	.is_floating_point_xtra() );
+
+	static_assert( Strtype( "123456-1234" )	.is_nonnumeric() );
+	static_assert(!Strtype( "123456-1234" )	.is_floating_point() );
 
 	static_assert( Strtype( "inf" )			.is_floating_point() );
 	static_assert( Strtype( "+inf" )		.is_floating_point() );

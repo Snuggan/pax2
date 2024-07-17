@@ -51,6 +51,7 @@ namespace pax {
 				( 	'd', "dest",		ANSI_BOLD"Destination path." ANSI_RESET" Path of the resulting html file.", 
 																			cmd_args::Default_value( "" )	)
 				( 	"title",			"Title of html page.",				cmd_args::Default_value( "" )	)
+				(	'm', "meta", 		"Output some metadata.", 			cmd_args::Parameter_type::on_flag()	)
 				;
 
 			const auto args			  = parameters.parse( argc, argv );
@@ -62,7 +63,8 @@ namespace pax {
 
 			const std::string html	  = table2html( 
 				read_string( source_path ), 
-				title.empty()		  ? source_path.stem().native() : title
+				title.empty()		  ? source_path.stem().native() : title,
+				args( "meta" )[ 0 ] == "true"
 			);
 
 			if( dest_path.empty() )	dest_path = source_path.parent_path() / ( source_path.stem().native() + ".html" );

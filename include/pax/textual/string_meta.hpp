@@ -45,44 +45,43 @@ namespace pax {
 
 		template< typename Char, typename Traits >
 		static constexpr Type scan( const std::basic_string_view< Char, Traits > str_ ) noexcept {
-			static constexpr Type	float_or_not[ 2 ]      = { Type::non_numeric, Type::floating_point };
-			static constexpr Type	float_xtra_or_not[ 2 ] = { Type::non_numeric, Type::floating_point_xtra };
+			static constexpr Type	uint_or_not[ 2 ]		= { Type::integer,     Type::uinteger };
+			static constexpr Type	float_or_not[ 2 ]		= { Type::non_numeric, Type::floating_point };
+			static constexpr Type	float_xtra_or_not[ 2 ]	= { Type::non_numeric, Type::floating_point_xtra };
 
 			if( str_.empty() )	return Type::non_numeric;
 			auto				itr{ str_.begin() };
 			const auto			end{ str_.end() };
-			bool				negative{ false };
-			bool 				predigit{ true };
+			bool				positive{ true  };	// Will be false if the first character is '-'.
+			bool				predigit{ true  };	// Will be false if a '.' does nog have a preceding digit.
 			switch( *itr ) {
-				case '.': 		predigit = false;
-								break;	// Possibly a float. 
-
-				case '-': 		negative = true;
-								[[fallthrough]];
+				case '-': 		positive = false;
+				[[fallthrough]];
 				case '+': 		if( ++itr == end )	return Type::non_numeric;
 								{
 									const auto		rest{ std::basic_string_view< Char, Traits >{ itr, end } };
 									switch( *itr ) {
 										case 'i': 	return float_xtra_or_not[ ( rest == "inf" ) || ( rest == "infinity" ) ];
 										case 'I': 	return float_xtra_or_not[ ( rest == "INF" ) || ( rest == "INFINITY" ) ];
-										case '.': 	predigit = false;						break;
+										case '.': 	predigit = false;			break;	// Possibly the beginning of a float.
 										default:	if( ( *itr < '0' ) || ( *itr > '9' ) )	return Type::non_numeric;
 									}
 								}
-								[[fallthrough]];
+				[[fallthrough]];
 				case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': 
-								if( digits( itr, end ) && ( itr == end ) )
-									return negative ? Type::integer : Type::uinteger;
+								if( digits( itr, end ) && ( itr == end ) )		return uint_or_not[ positive ];	// An integer.
 								break;
 
 				case 'n': 		return float_xtra_or_not[   str_ == "nan"   ];
 				case 'N': 		return float_xtra_or_not[ ( str_ == "NAN" ) || ( str_ == "NaN"      ) ];
 				case 'i': 		return float_xtra_or_not[ ( str_ == "inf" ) || ( str_ == "infinity" ) ];
 				case 'I': 		return float_xtra_or_not[ ( str_ == "INF" ) || ( str_ == "INFINITY" ) ];
+				case '.': 		predigit = false;		break;	// Possibly the beginning of a float. 
 				default: 		return Type::non_numeric;
 			}
 
-			// itr now points at '.' -- is str_ a float?
+			// Is str_ a float?
+			if( *itr != '.' )	return Type::non_numeric;
 			++itr;
 			return float_or_not[
 					(  ( digits( itr, end ) || predigit        ) && (   itr == end ) )	// Float: either "d.d", "d.", or ".d" maybe...

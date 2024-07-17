@@ -57,7 +57,8 @@ namespace pax {
 	public:
 		static std::string table2html( 
 			const std::string_view			table_,
-			const std::string_view			title_
+			const std::string_view			title_,
+			const bool						metadata2cout_
 		) noexcept {
 			const auto 						meta = String_meta( table_ );
 			const auto 						[ header, rows ] = split_by( table_, Newline{} );
@@ -77,9 +78,39 @@ namespace pax {
 
 			// Make numerical columns right aligned.
 			std::string						css2;
-			for( std::size_t c{}; c<col_types.size(); ++c )
+			for( std::size_t c{}; c<col_types.size(); ++c ) {
 				if( col_types[ c ].is_numeric() )
 					css2+= std20::format( "\ttd:nth-of-type({}) {{ text-align:right; }}\n", c+1 );
+			}
+
+			// Output metadata for the table, if required.
+			if( metadata2cout_ ) {
+				
+				std::cerr << std20::format( 
+					"\nTable: \"{}\"\n"
+					"  Column separator: {:?}\n"
+					"  Rows:             {}\n"
+					"  Columns:          {}\n",
+					title_, 
+					meta.col_delimiter(), 
+					( meta.rows() == meta.non_empty_rows() )
+						? std20::format( "{}", meta.rows() )
+						: std20::format( "{} ({} non-empty)", meta.rows(), meta.non_empty_rows() ), 
+					( ( meta.minimum_cols() == meta.maximum_cols() )
+						? std20::format( "{}", meta.minimum_cols() )
+						: std20::format( "min {}, max {}", meta.minimum_cols(), meta.maximum_cols() )
+					) + ( ( ( meta.cols_in_first() == meta.maximum_cols() ) && ( meta.cols_in_first() == meta.maximum_cols() ) )
+						? std::string{}
+						: std20::format( " ({} in header)", meta.cols_in_first() )
+					)
+				);
+				std::size_t 	i{};
+				for( const auto col : String_splitter( header, meta.col_delimiter() ) ) 
+					std::cerr << std20::format( "    {:15} {}\n", 
+						std20::format( "\"{}\":", col ), 
+						col_types[ i++ ].view() 
+					);
+			}
 
 			// Collect the result.
 			return std20::format( 
@@ -144,9 +175,10 @@ namespace pax {
 	/** If y_ == 0, 0 is returned.																	**/
 	inline std::string table2html( 
 		const std::string_view			table_,
-		const std::string_view			title_
+		const std::string_view			title_,
+		const bool						metadata2cout_ = true
 	) noexcept {
-		return html_table::table2html( table_, title_ );
+		return html_table::table2html( table_, title_, metadata2cout_ );
 	}
 
 }	// namespace pax
