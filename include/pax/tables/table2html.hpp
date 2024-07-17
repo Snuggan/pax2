@@ -88,20 +88,16 @@ namespace pax {
 				std::cerr << std20::format( 
 					"\nTable: \"{}\"\n"
 					"  Column separator: {:?}\n"
-					"  Rows:             {}\n"
+					"  Rows:             {}{}\n"
 					"  Columns:          {}\n",
 					title_, 
 					meta.col_delimiter(), 
-					( meta.rows() == meta.non_empty_rows() )
-						? std20::format( "{}", meta.rows() )
-						: std20::format( "{} ({} non-empty)", meta.rows(), meta.non_empty_rows() ), 
+					meta.rows(), ( meta.rows() == meta.non_empty_rows() ) 
+						? std::string{} : std20::format( " ({} non-empty)", meta.non_empty_rows() ), 
 					( ( meta.minimum_cols() == meta.maximum_cols() )
 						? std20::format( "{}", meta.minimum_cols() )
-						: std20::format( "min {}, max {}", meta.minimum_cols(), meta.maximum_cols() )
-					) + ( ( ( meta.cols_in_first() == meta.maximum_cols() ) && ( meta.cols_in_first() == meta.maximum_cols() ) )
-						? std::string{}
-						: std20::format( " ({} in header)", meta.cols_in_first() )
-					)
+						: std20::format( "min {}, max {} ({} in header)", 
+							meta.minimum_cols(), meta.maximum_cols(), meta.cols_in_first() ) )
 				);
 				std::size_t 	i{};
 				for( const auto col : String_splitter( header, meta.col_delimiter() ) ) 

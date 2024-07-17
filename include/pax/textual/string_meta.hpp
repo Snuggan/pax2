@@ -220,12 +220,11 @@ namespace pax {
 		constexpr String_meta( const std::basic_string_view< Ch, Traits > str_ ) noexcept;
 		
 		/// The total number of glyphs.
-		constexpr auto size()						const noexcept	{	return m_glyphs;								}
+		constexpr auto size()						const noexcept	{	return m_glyphs;									}
 
 		/// Count_by_row for glyph c. Returns an empty Count_by_row if c > 127.
 		constexpr auto statistics( const Count c )	const noexcept	{
-			return ( c < Asciis ) ? m_count_by_row[ c ] : Count_by_row{};
-		}
+													return ( c < Asciis ) ? m_count_by_row[ c ] : Count_by_row{};			}
 
 		/// The total number of glyph c. Returns zero if c > 127.
 		constexpr auto operator[]( const Count c )	const noexcept	{	return statistics( c ).total();						}
