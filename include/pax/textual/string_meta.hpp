@@ -144,33 +144,34 @@ namespace pax {
 	class String_meta {
 		/// Counter that counts totel number and min/max in rows.
 		class Count_by_row {
-			using Size = std::size_t;
-			Size 		m_row{}, m_total{}, 
-						m_row_min{ std::numeric_limits< Size >::max() }, 
-						m_row_max{ std::numeric_limits< Size >::lowest() };
+			using			 Size = std::size_t;
+			static constexpr Size	maxsz = std::numeric_limits< Size >::max();
+			Size 					m_row{}, m_total{}, m_min{ maxsz }, m_max{};
 	
 		public:
-			constexpr Count_by_row()				noexcept		{};
+			constexpr Count_by_row()									noexcept {};
+			constexpr Count_by_row( const Count_by_row & )				noexcept = default;
+			constexpr Count_by_row & operator=( const Count_by_row & )	noexcept = default;
+
+			/// Has the instance recieved at least one value?
+			[[nodiscard]] constexpr bool valid()	const noexcept	{	return m_min != maxsz;					}
 
 			/// The total count (all rows).
-			[[nodiscard]] constexpr Size total()	const noexcept	{				return m_total;						}
+			[[nodiscard]] constexpr Size total()	const noexcept	{	return m_total;							}
 
 			/// The minimum count in one row (all rows).
-			[[nodiscard]] constexpr Size row_min()	const noexcept	{				return m_row_min;					}
+			[[nodiscard]] constexpr Size min()		const noexcept	{	return valid() ? m_min : Size{};		}
 
 			/// The maximum count in one row (all rows).
-			[[nodiscard]] constexpr Size row_max()	const noexcept	{				return m_row_max;					}
+			[[nodiscard]] constexpr Size max()		const noexcept	{	return m_max;							}
 
 			/// Increase count by one. 
-			constexpr Count_by_row & operator++()	noexcept		{	++m_row;	return *this;						}
-
-			/// Set all counters to zero. 
-			constexpr void zero()					noexcept		{	m_row_min = m_row_max = m_total = m_row = {};	}
+			constexpr Count_by_row & operator++()	noexcept		{	++m_row;	return *this;				}
 
 			/// Update row statistics. 
 			constexpr void row_end()				noexcept		{
-				( m_row < m_row_min ) ? ( m_row_min = m_row ) : m_row;
-				( m_row > m_row_max ) ? ( m_row_max = m_row ) : m_row;
+				( m_row < m_min ) ? ( m_min = m_row ) : m_row;
+				( m_row > m_max ) ? ( m_max = m_row ) : m_row;
 				m_total		 += m_row;
 				m_row		  = {};
 			}
@@ -178,16 +179,16 @@ namespace pax {
 			/// Output the counter. 
 			template< typename Out >
 			friend constexpr Out & operator<<( Out & out_, const Count_by_row counter_ ) {
-				return out_ << "{" << counter_.total() << " (" << counter_.row_min() << '-' << counter_.row_max() << ")}";
+				return out_ << "{" << counter_.total() << " (" << counter_.min() << '-' << counter_.max() << ")}";
 			}
 
 			/// Return metadata of result. 
 			template< typename Json >
 			[[nodiscard]] friend Json json( const Count_by_row counter_ ) {
 				return Json{
-					{	"total",	counter_.total()		},
-					{	"row min",	counter_.row_min()		},
-					{	"row max",	counter_.row_max()		}
+					{	"total",	counter_.total()	},
+					{	"row min",	counter_.min()		},
+					{	"row max",	counter_.max()		}
 				};
 			}
 		};
@@ -196,148 +197,275 @@ namespace pax {
 		static constexpr Count		Asciis = 128;
 		static constexpr Count		Non_ascii = Asciis;
 
-		Count_by_row				m_count_by_row[ Non_ascii + 1 ]={};
+		Count_by_row				m_count_by_row[ Non_ascii + 1 ] = {};
 		Count		 				m_rows{}, m_non_empty_rows{}, m_glyphs{}, m_cols_in_first_row{};
 		char						m_col_delimit = ';';
 		
-		template< typename Ch >
-		static constexpr Count count(
-			const std::basic_string_view< Ch >	str_, 
-			const Ch							c_
-		) noexcept {
-			Count		 			count{};
-			for( const Ch c : str_ )
-				if( c == c_ )		++count;
-			return count;
-		}
-		
 	public:
-		constexpr String_meta()										= default;
-		constexpr String_meta( const String_meta & )				= default;
-		constexpr String_meta & operator=( const String_meta & )	= default;
+		constexpr String_meta()													= default;
+		constexpr String_meta( const String_meta & )							= default;
+		constexpr String_meta & operator=( const String_meta & )				= default;
+		constexpr String_meta( String_meta && )						noexcept	= default;
+		constexpr String_meta & operator=( String_meta && )			noexcept	= default;
 		
 		template< typename Ch, typename Traits >
-		constexpr String_meta( const std::basic_string_view< Ch, Traits > str_ ) noexcept;
+		constexpr String_meta( const std::basic_string_view< Ch, Traits > str_ ) noexcept
+			: m_glyphs{ str_.size() }
+		{
+			for( auto row : String_splitter( str_, Newline{} ) ) {	// Iterate str_ row by row.
+				if( row.size() ) {									// Ignore empty rows.
+					for( const unsigned c : row )			++m_count_by_row[ ( c < Asciis ) ? c : Non_ascii ];
+					for( auto & cnt : m_count_by_row )		cnt.row_end();
+					++m_non_empty_rows;
+				}
+				++m_rows;
+			}
+
+			// Find the probable column delimiter among the candidates.
+			for( const short c : "\t!#$%@,;.:" )
+				m_col_delimit = ( m_count_by_row[ c ].total() > m_count_by_row[ unsigned( m_col_delimit ) ].total() ) 
+					? c : m_col_delimit;
+
+			// Count columns in first row. (There is at least one column.) 
+			++m_cols_in_first_row;
+			for( const Ch c : until( str_, Newline{} ) )
+				if( c == m_col_delimit )			++m_cols_in_first_row;
+		}
 		
 		/// The total number of glyphs.
-		constexpr auto size()						const noexcept	{	return m_glyphs;									}
+		constexpr auto size()						const noexcept	{	return m_glyphs;								}
 
 		/// Count_by_row for glyph c. Returns an empty Count_by_row if c > 127.
 		constexpr auto statistics( const Count c )	const noexcept	{
-													return ( c < Asciis ) ? m_count_by_row[ c ] : Count_by_row{};			}
+													return ( c < Asciis ) ? m_count_by_row[ c ] : Count_by_row{};		}
 
 		/// The total number of glyph c. Returns zero if c > 127.
-		constexpr auto operator[]( const Count c )	const noexcept	{	return statistics( c ).total();						}
+		constexpr auto operator[]( const Count c )	const noexcept	{	return statistics( c ).total();					}
 
 		/// The total number of non-ascii characters (code > 127). 
-		constexpr auto non_ascii()					const noexcept	{	return m_count_by_row[ Non_ascii ].total();			}
+		constexpr auto non_ascii()					const noexcept	{	return m_count_by_row[ Non_ascii ].total();		}
 
 		/// The total number of ascii characters (<128). 
-		constexpr auto ascii()						const noexcept	{	return size() - non_ascii();						}
+		constexpr auto ascii()						const noexcept	{	return size() - non_ascii();					}
 		
 		/// The total number of rows.
-		constexpr auto rows()						const noexcept	{	return m_rows;										}
+		constexpr auto rows()						const noexcept	{	return m_rows;									}
 		
 		/// The total number of empty rows.
-		constexpr auto non_empty_rows()				const noexcept	{	return m_non_empty_rows;							}
+		constexpr auto non_empty_rows()				const noexcept	{	return m_non_empty_rows;						}
 
 		/// The [probable] column delimiter (the most frequent of "\t!#$%@,;.:"). 
-		constexpr auto col_delimiter()				const noexcept	{	return m_col_delimit;								}
+		constexpr auto col_delimiter()				const noexcept	{	return m_col_delimit;							}
 		
 		/// The number of columns in first row. Note: an empty row has one [empty] column!
-		constexpr auto cols_in_first()				const noexcept	{	return m_cols_in_first_row;							}
+		constexpr auto cols_in_first()				const noexcept	{	return m_cols_in_first_row;						}
 		
 		/// The minimum number of columns in a row.
-		constexpr auto minimum_cols()				const noexcept	{	return 1 + statistics( col_delimiter() ).row_min();	}
+		constexpr auto minimum_cols()				const noexcept	{	return 1 + statistics( col_delimiter() ).min();	}
 		
 		/// The maximum number of columns in a row.
-		constexpr auto maximum_cols()				const noexcept	{	return 1 + statistics( col_delimiter() ).row_max();	}
+		constexpr auto maximum_cols()				const noexcept	{	return 1 + statistics( col_delimiter() ).max();	}
 	};
 
 
+
+
+	/// Parse a string into a table. Throws, if not all rows have the same number of columns.
 	template< typename Ch, typename Traits >
-	constexpr String_meta::String_meta( const std::basic_string_view< Ch, Traits > str_ ) noexcept	{
-		for( auto row : String_splitter( str_, Newline{} ) ) {	// Iterate str_ row by row.
-			if( row.size() ) {									// Ignore empty rows.
-				for( const unsigned c : row )			++m_count_by_row[ ( c < Asciis ) ? c : Non_ascii ];
-				for( auto & cnt : m_count_by_row )		cnt.row_end();
-				++m_non_empty_rows;
-			}
-			++m_rows;
-		}
-		if( m_non_empty_rows == 0 ) 
-			for( auto & cnt : m_count_by_row )			cnt.zero();
-
-		// Find the probable column delimiter.
-		constexpr const std::string_view	candidates = "\t!#$%@,;.:";
-		for( const short c : candidates )
-			m_col_delimit = ( statistics( c ).total() > statistics( m_col_delimit ).total() ) ? c : m_col_delimit;
-
-		m_glyphs						  = str_.size();
-		m_cols_in_first_row				  = maximum_cols() ? count( until( str_, Newline{} ), col_delimiter() ) + 1 : 0;
-	}
-
-
-
-
-	/// Parse a string into a rectangular table (same number of columnbs in all rows). 
-	/// To use when you know the number of rows and columns as well as the column mark.
-	template< typename Ch >
-	std::vector< std::basic_string_view< Ch > > parse2table(
-		const std::basic_string_view< Ch >	str_,			///< String to parse.
-		const std::size_t 					rows_, 
-		const std::size_t 					cols_, 
-		const Ch 							column_delimiter_
-	) {
-		constexpr auto invisible		  = []( const unsigned c_ ){	return c_ <= ' ';	};
-		using View						  = std::basic_string_view< Ch >;
-		std::vector< View >					result;
-		result.reserve( rows_*cols_ );
-
-		View								cell;
-		View								row;
-		View								remaining = trim_last( str_, invisible );
-
-
-		while( remaining.size() ) {
-			std::tie( row, remaining )	  = split_by( remaining, Newline{} );
-			row							  = trim_first( row, invisible );
-
-			const std::size_t				cell_count{ result.size() };
-			while( row.size() ) {
-				std::tie( cell, row )	  = split_by( row, column_delimiter_ );
-				result.push_back( trim( cell, invisible ) );
-			}
-			if(	( result.size() - cell_count != cols_ ) 	// Check that all rows have the same number of columns, ...
-			&&	( result.size() != cell_count ) ) 			// ... empty rows excepted.
-				throw user_error_message( std20::format( 
-					"parse2table: Varying number of columns as row {} has {} column[s] and not as expected {}.", 
-					result.size() / cols_, 
-					result.size() - cell_count, 
-					cols_
-				) );
-		}
-		return result;
-	}
-
-
-	/// Parse a string into a rectangular table (same number of columnbs in all rows). 
-	/// Throws, if rows have not equal number of columns.
-	template< typename Ch >
 	std::tuple<
-		std::vector< std::basic_string_view< Ch > >,			///< All cells.
-		std::size_t, 											///< Number of columns.
-		Ch														///< Column mark useg, e.g. ';'.
-	> parse2table( const std::basic_string_view< Ch > str_ ) {
-		const String_meta					count( str_ );
-		const auto rows					  = count.rows();
-		const auto cols					  = count.cols_in_first();
-		const Ch   col_mark				  = count.col_delimiter();
+		std::vector< std::basic_string_view< Ch, Traits > >,	///< All cells.
+		std::size_t, 											///< Number of columns per row.
+		Ch														///< Column separator mark.
+	> parse2table( const std::basic_string_view< Ch, Traits > str_ ) {
+		const String_meta					count( str_ );		// Get the string metadata. 
+		
+		// Check if it is ok as a table.
+		if(	count.minimum_cols() != count.maximum_cols() )		// We have rows with varying number of cols...
+			throw user_error_message( std20::format( 
+				"parse2table: Varying number of columns (smallest {}, largest {}).", 
+				count.minimum_cols(), 
+				count.maximum_cols()
+			) );
+
+		// Read the columns, row by row.
+		std::vector< std::basic_string_view< Ch, Traits  > >	result;
+		result.reserve( count.non_empty_rows() * count.cols_in_first() );
+		for( const auto row : String_splitter( str_, Newline{} ) ) { 					// Iterate row by row.
+			if( row.size() ) {				 											// Skip empty rows
+				for( const auto cell : String_splitter( row, count.col_delimiter() ) )	// Iterate row cell by cell.
+					result.push_back( cell );
+			}
+		}
 		return { 
-			parse2table( str_, rows, cols, col_mark ), 
-			cols, 
-			col_mark
+			result, 
+			count.cols_in_first(), 
+			count.col_delimiter()
 		};
+	}
+
+
+	/// Tool to convert a text table to a html table.
+	class html_table {
+		static constexpr std::string_view	td0		= "\t\t<td></td>";
+		static constexpr std::string_view	td1		= "\t\t<td>{} </td>\n";
+		static constexpr std::string_view	td2		= "\t\t<td title=\"{}\">{} </td>\n";
+		static constexpr std::string_view	tr	  	= "<tr>\n";
+		static constexpr std::string_view	tr_	  	= "\t</tr>";
+
+		using pair						  = std::pair< std::string_view, std::string_view >;
+		using splitter					  = String_splitter< const char, char >;
+
+		static std::string process_header(
+			const splitter					header_splitter_, 
+			const std::span< Strtype >		col_types_
+		) noexcept {
+			std::size_t						idx{};
+			std::string						str;
+			str.reserve( col_types_.size()*64 );
+			for( const auto cell : header_splitter_ ) 	// Iterate cell by cell along the header row.
+				str						 += std20::format( td2, col_types_[ idx++ ].view(), cell );
+			return str;
+		}
+
+		// Inner part of main loop.
+		static void process_row(
+			const splitter					row_splitter_, 
+			std::string					  & str_, 
+			const std::size_t	 			num_col_, 
+			std::vector< Strtype >		  & numeric_
+		) noexcept {
+			std::size_t						idx{};
+			str_ += tr;
+			for( const auto cell : row_splitter_ ) {	// Iterate cell by cell along one row.
+				const auto tooltips		  = split_by( cell, '|' );	// "<first/cell-contents>|<second/cell-tooltip>"
+				str_					 += tooltips.second.empty()
+												? std20::format( td1, tooltips.first )
+												: std20::format( td2, tooltips.second, tooltips.first );
+				if( ( idx < numeric_.size() ) && !numeric_[ idx ].is_nonnumeric() )
+					numeric_[ idx ]+= Strtype( tooltips.first );
+				++idx;
+			}
+			while( ++idx <= num_col_ )		str_ += td0;
+			str_ += tr_;
+		}
+		
+	public:
+		static std::string table2html( 
+			const std::string_view			table_,
+			const std::string_view			title_,
+			const bool						metadata2cout_
+		) noexcept {
+			const auto 						meta = String_meta( table_ );
+			const auto 						[ header, rows ] = split_by( table_, Newline{} );
+			
+			// Process the body. 
+			std::string						body{};
+			body.reserve( 
+				+ table_.size() 
+				+ meta.rows()*( tr.size() + tr_.size() + meta.cols_in_first()*td2.size() )
+				- meta[ meta.col_delimiter() ]
+			);
+			std::vector< Strtype >			col_types( meta.cols_in_first() );
+
+			for( const auto row : String_splitter( rows, Newline{} ) ) // Iterate row by row.
+				if( row.size() ) 	// Skip empty rows
+					process_row( String_splitter( row, meta.col_delimiter() ), body, meta.cols_in_first(), col_types );
+
+			// Make numerical columns right aligned.
+			std::string						css2;
+			for( std::size_t c{}; c<col_types.size(); ++c ) {
+				if( col_types[ c ].is_numeric() )
+					css2+= std20::format( "\ttd:nth-of-type({}) {{ text-align:right; }}\n", c+1 );
+			}
+
+			// Output metadata for the table, if required.
+			if( metadata2cout_ ) {
+				std::cerr << std20::format( 
+					"\nTable: \"{}\"\n"
+					"  Column separator: {:?}\n"
+					"  Rows:             {}{}\n"
+					"  Columns:          {}\n",
+					title_, 
+					meta.col_delimiter(), 
+					meta.rows(), ( meta.rows() == meta.non_empty_rows() ) 
+						? std::string{} : std20::format( " ({} non-empty)", meta.non_empty_rows() ), 
+					( ( meta.minimum_cols() == meta.maximum_cols() )
+						? std20::format( "{}", meta.minimum_cols() )
+						: std20::format( "min {}, max {} ({} in header)", 
+							meta.minimum_cols(), meta.maximum_cols(), meta.cols_in_first() ) )
+				);
+				std::size_t 	i{};
+				for( const auto col : String_splitter( header, meta.col_delimiter() ) ) 
+					std::cerr << std20::format( "    {:15?} {}\n", col, col_types[ i++ ].view() );
+			}
+
+			// Collect the result.
+			return std20::format( 
+				"<!doctype html>\n"
+				"<html lang=\"se\">\n"
+				"<head>\n"
+				"<title>{}</title>\n"
+				"<meta http-equiv=Content-Type content=\"text/html; charset=utf-8\">\n"
+				"<style>\n"
+				"	body {{\n"
+				"		margin: 0;\n"
+				"	}}\n"
+				"	table {{\n"
+				"		position: relative;\n"
+				"		overflow-x: auto;\n"
+				"		border-spacing: 0;\n"
+				"		white-space: nowrap;\n"
+				"		text-align: left;\n"
+				"		font-family: ArialUnicodeMS, arial, sans-serif;\n"
+				"		font-variant-numeric: lining-nums tabular-nums;\n"
+				"	}}\n"
+				"	thead tr td {{\n"
+				"		background-color: #70AD47;\n"
+				"		font-weight: bold;\n"
+				"		position: sticky;\n"
+				"		top: 0;\n"
+				"	}}\n"
+				"	tr {{\n"
+				"		background-color: #D2DFCA;\n"
+				"	}}\n"
+				"	tr:nth-of-type(odd) {{\n"
+				"		background-color: #E2EFDA;\n"
+				"	}}\n"
+				"	td {{\n"
+				"		padding: 6px;\n"
+				"		font-variant-numeric: tabular-nums;\n"
+				"	}}\n"
+				"{}"
+				"</style>\n"
+				"<script src=\"https://www.kryogenix.org/code/browser/sorttable/sorttable.js\"></script>\n"
+				"</head>\n"
+				"<body>\n"
+				"<table class=\"sortable\">\n"
+				"<thead>\n"
+				"	<tr>\n"
+				"{}"
+				"	</tr>\n"
+				"</thead>\n"
+				"<tbody>\n"
+				"	{}\n"
+				"</tbody>\n"
+				"</table>\n"
+				"</body>\n"
+				"</html>\n",
+				title_, css2, process_header( String_splitter( header, meta.col_delimiter() ), col_types ), body 
+			);
+		}
 	};
+	
+	
+	/// Returns the modulo of x_ and y_ (floating point or integer).
+	/** If y_ == 0, 0 is returned.																	**/
+	inline std::string table2html( 
+		const std::string_view			table_,
+		const std::string_view			title_,
+		const bool						metadata2cout_ = true
+	) noexcept {
+		return html_table::table2html( table_, title_, metadata2cout_ );
+	}
 
 }	// namespace pax

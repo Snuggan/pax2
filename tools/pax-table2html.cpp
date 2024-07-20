@@ -28,7 +28,7 @@
 
 #define DOCTEST_CONFIG_DISABLE		// "remove" everything pertaining to doctest.
 
-#include <pax/tables/table2html.hpp>
+#include <pax/textual/string_meta.hpp>	// html_table
 #include <pax/std/file.hpp>
 #include <pax/meta/meta.hpp>
 #include <pax/meta/cmd-arguments.hpp>

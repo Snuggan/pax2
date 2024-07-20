@@ -93,10 +93,10 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( count.cols_in_first(),	2 );
 			DOCTEST_FAST_CHECK_EQ( count.minimum_cols(),	1 );
 			DOCTEST_FAST_CHECK_EQ( count.maximum_cols(),	2 );
-			DOCTEST_FAST_CHECK_EQ( count.statistics( 'a' ).row_max(),	3 );
-			DOCTEST_FAST_CHECK_EQ( count.statistics( 'q' ).row_max(),	0 );
-			DOCTEST_FAST_CHECK_EQ( count.statistics( 'a' ).row_min(),	0 );
-			DOCTEST_FAST_CHECK_EQ( count.statistics( 'q' ).row_min(),	0 );
+			DOCTEST_FAST_CHECK_EQ( count.statistics( 'a' ).max(),	3 );
+			DOCTEST_FAST_CHECK_EQ( count.statistics( 'q' ).max(),	0 );
+			DOCTEST_FAST_CHECK_EQ( count.statistics( 'a' ).min(),	0 );
+			DOCTEST_FAST_CHECK_EQ( count.statistics( 'q' ).min(),	0 );
 		}
 	}
 	DOCTEST_TEST_CASE( "parse2table" ) { 
@@ -137,7 +137,7 @@ namespace pax {
 		{	// One row with fewer cols
 			DOCTEST_CHECK_THROWS_WITH_AS(
 				parse2table( std::string_view( "a1,a2\nb1,b2\nc1\n" ) ), 
-				"parse2table: Varying number of columns as row 2 has 1 column[s] and not as expected 2.\n", 
+				"parse2table: Varying number of columns (smallest 1, largest 2).\n", 
 				Runtime_exception
 			);
 		}
