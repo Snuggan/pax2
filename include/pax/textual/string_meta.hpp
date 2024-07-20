@@ -6,7 +6,6 @@
 
 #include "../std/algorithm.hpp"			// pax::split
 #include "../reporting/error_message.hpp"
-#include <pax/reporting/debug.hpp>
 
 #include <span>
 #include <vector>
@@ -269,7 +268,6 @@ namespace pax {
 
 
 
-
 	/// Parse a string into a table. Throws, if not all rows have the same number of columns.
 	template< typename Ch, typename Traits >
 	std::tuple<
@@ -302,6 +300,7 @@ namespace pax {
 			count.col_delimiter()
 		};
 	}
+
 
 
 	/// Tool to convert a text table to a html table.
@@ -358,7 +357,6 @@ namespace pax {
 			const auto 						meta = String_meta( table_ );
 			const auto 						[ header, rows ] = split_by( table_, Newline{} );
 			
-			// Process the body. 
 			std::string						body{};
 			body.reserve( 
 				+ table_.size() 
@@ -367,6 +365,7 @@ namespace pax {
 			);
 			std::vector< Strtype >			col_types( meta.cols_in_first() );
 
+			// Process the body. 
 			for( const auto row : String_splitter( rows, Newline{} ) ) // Iterate row by row.
 				if( row.size() ) 	// Skip empty rows
 					process_row( String_splitter( row, meta.col_delimiter() ), body, meta.cols_in_first(), col_types );
@@ -456,8 +455,7 @@ namespace pax {
 			);
 		}
 	};
-	
-	
+
 	/// Returns the modulo of x_ and y_ (floating point or integer).
 	/** If y_ == 0, 0 is returned.																	**/
 	inline std::string table2html( 
