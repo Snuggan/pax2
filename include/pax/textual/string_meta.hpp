@@ -288,12 +288,11 @@ namespace pax {
 		// Read the columns, row by row.
 		std::vector< std::basic_string_view< Ch, Traits  > >	result;
 		result.reserve( count.non_empty_rows() * count.cols_in_first() );
-		for( const auto row : String_splitter( str_, Newline{} ) ) { 					// Iterate row by row.
-			if( row.size() ) {				 											// Skip empty rows
+		for( const auto row : String_splitter( str_, Newline{} ) )  					// Iterate row by row.
+			if( row.size() ) 				 											// Skip empty rows
 				for( const auto cell : String_splitter( row, count.col_delimiter() ) )	// Iterate row cell by cell.
 					result.push_back( cell );
-			}
-		}
+
 		return { 
 			result, 
 			count.cols_in_first(), 
