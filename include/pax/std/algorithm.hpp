@@ -611,7 +611,7 @@ namespace pax {
 
 
 
-	/// Split v_ into two parts: before and after (but not including) the `at_`:th element.
+	/// Split v_ into two parts: before and after (but not including) the `at_` element.
 	/// - If `at_ >= size( v_ )`, then `{ v_, last( v_, 0 ) }` is returned.
 	/// Returns a pair of [non-owning] string views into v_.
 	template< Contiguous_elements V >
@@ -624,6 +624,17 @@ namespace pax {
 		return std::pair{ first( v_, i ), not_first( v_, i + ( i < size( v_ ) ) ) };
 	}
 
+	/// Split `view_` into two parts: before and after the first `x_`, not including it.
+	///	- `X` may be anything that works with `find( view_, x_ )`.
+	/// Returns a pair of [non-owning] string views into v_.
+	template< Contiguous_elements V >
+	[[nodiscard]] constexpr auto split_by( 
+		const V							  & v_, 
+		const Value_type_t< V >				item_ 
+	) noexcept {
+		return split_at( v_, find( v_, item_ ) );
+	}
+
 	/// Split the v_ into two parts: before and after (but not including) `by_`.
 	/// - If `begin( by_ ) <= begin( v_ )`, the first string view returned is `first( v_, 0 )`.
 	///	- If `end( by_ )   >= end( v_ )`,   the second string view returned is `last( v_, 0 )`.
@@ -633,23 +644,9 @@ namespace pax {
 		const V							  & v_, 
 		By								 && by_
 	) noexcept {
-		using std::data, std::size;
 		const std::size_t 					i  = find( v_, by_ );
-		const std::size_t 					sz = ( i >= size( view( v_ ) ) ) ? 0 : size( view( by_ ) );
+		const std::size_t 					sz = ( i >= view( v_ ).size() ) ? 0 : view( by_ ).size();
 		return std::pair{ first( v_, i ), not_first( v_, i + sz ) };
-	}
-
-	/// Split `view_` into two parts: before and after the first `x_`, not including it.
-	///	- `X` may be anything that works with `find( view_, x_ )`.
-	/// Returns a pair of [non-owning] string views into v_.
-	template< Contiguous_elements V >
-	[[nodiscard]] constexpr auto split_by( 
-		const V							  & v_, 
-		const Value_type_t< V >				item_ 
-	) noexcept {
-		using std::size;
-		const auto		frst = first( v_, find( v_, item_ ) );
-		return std::pair{ frst, not_first( v_, size( frst ) + ( size( frst ) != size( v_ ) ) ) };
 	}
 
 	/// Split into two parts: before and after the first newline (`'\n'`, `'\r'`, `"\n\r"`, or `"\r\n"`), but not including it.
@@ -659,9 +656,9 @@ namespace pax {
 		const V							  & v_, 
 		Newline 
 	) noexcept {
-		const std::size_t 	i = find( v_, detail::is_newline );
-		const auto			scnd = not_first( v_, i );
-		return std::pair{ first( v_, i ), not_first( scnd, starts_with( scnd, Newline{} ) ) };
+		const std::size_t 					i  = find( v_, detail::is_newline );
+		const auto							vw = not_first( v_, i );
+		return std::pair{ first( v_, i ), not_first( vw, starts_with( vw, Newline{} ) ) };
 	}
 
 

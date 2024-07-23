@@ -660,7 +660,31 @@ namespace pax {
 				DOCTEST_ASCII_CHECK_EQ( div.first , abc );
 				DOCTEST_ASCII_CHECK_EQ( div.second, last( abc, 0 ) );
 			}
-			{	// by std::string_view
+			{	// by value
+				constexpr auto base = subview( abc, 3, 4 );
+				DOCTEST_FAST_CHECK_EQ( base, "defg" );
+				
+				auto div = split_by( "abcdefghijkl", 'e' );
+				DOCTEST_ASCII_CHECK_EQ( div.first , view( "abcd" ) );
+				DOCTEST_ASCII_CHECK_EQ( div.second, view( "fghijkl" ) );
+
+				div = split_by( base, 'a' );					// None
+				DOCTEST_ASCII_CHECK_EQ( div.first , base );
+				DOCTEST_ASCII_CHECK_EQ( div.second, last( base, 0 ) );
+
+				div = split_by( base, 'd' );					// First
+				DOCTEST_ASCII_CHECK_EQ( div.first , first( base, 0 ) );
+				DOCTEST_ASCII_CHECK_EQ( div.second, not_first( base, 1 ) );
+
+				div = split_by( base, 'f' );					// Middle
+				DOCTEST_ASCII_CHECK_EQ( div.first , first( base, 2 ) );
+				DOCTEST_ASCII_CHECK_EQ( div.second, not_first( base, 3 ) );
+
+				div = split_by( base, 'g' );					// Last
+				DOCTEST_ASCII_CHECK_EQ( div.first , first( base, 3 ) );
+				DOCTEST_ASCII_CHECK_EQ( div.second, not_first( base, 4 ) );
+			}
+			{	// by string_view
 				constexpr auto base = subview( abc, 3, 4 );
 				DOCTEST_FAST_CHECK_EQ( base, "defg" );
 				
@@ -686,30 +710,6 @@ namespace pax {
 				div = split_by( str, "aaa" );					// None
 				DOCTEST_ASCII_CHECK_EQ( div.first , str );
 				DOCTEST_ASCII_CHECK_EQ( div.second, last( str, 0 ) );
-			}
-			{	// by value
-				constexpr auto base = subview( abc, 3, 4 );
-				DOCTEST_FAST_CHECK_EQ( base, "defg" );
-				
-				auto div = split_by( "abcdefghijkl", 'e' );
-				DOCTEST_ASCII_CHECK_EQ( div.first , view( "abcd" ) );
-				DOCTEST_ASCII_CHECK_EQ( div.second, view( "fghijkl" ) );
-
-				div = split_by( base, 'a' );					// None
-				DOCTEST_ASCII_CHECK_EQ( div.first , base );
-				DOCTEST_ASCII_CHECK_EQ( div.second, last( base, 0 ) );
-
-				div = split_by( base, 'd' );					// First
-				DOCTEST_ASCII_CHECK_EQ( div.first , first( base, 0 ) );
-				DOCTEST_ASCII_CHECK_EQ( div.second, not_first( base, 1 ) );
-
-				div = split_by( base, 'f' );					// Middle
-				DOCTEST_ASCII_CHECK_EQ( div.first , first( base, 2 ) );
-				DOCTEST_ASCII_CHECK_EQ( div.second, not_first( base, 3 ) );
-
-				div = split_by( base, 'g' );					// Last
-				DOCTEST_ASCII_CHECK_EQ( div.first , first( base, 3 ) );
-				DOCTEST_ASCII_CHECK_EQ( div.second, not_first( base, 4 ) );
 			}
 			{	// by Newline
 				// None
