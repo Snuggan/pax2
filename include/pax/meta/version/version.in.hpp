@@ -63,9 +63,8 @@ namespace pax {
 
 		struct doctest {		//	https://github.com/doctest/doctest
 			static constexpr const char * name				=	"doctest";
-			static constexpr const char * named_version		=	"doctest @DOCTEST_VERSION@";
-			static constexpr unsigned     version[]			=	{ @DOCTEST_VERSION_ARRAY@ };
-			static constexpr const char * include_dir		=	"@DOCTEST@";
+			static constexpr const char * named_version		=	"doctest @doctest_VERSION@";
+			static constexpr unsigned     version[]			=	{ @doctest_VERSION_ARRAY@ };
 		};
 
 		struct fmt {			//	https://github.com/fmtlib/fmt

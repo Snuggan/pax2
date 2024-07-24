@@ -206,20 +206,17 @@ endif()
 
 
 ### Doctest metadata
-set( DOCTEST "${PAX_DIRECTORY}/external/doctest/doctest.h" )
-file( READ ${DOCTEST} doctest_h )
-if( doctest_h MATCHES "DOCTEST_VERSION_MAJOR ([0-9]+)" )
-	list( APPEND DOCTEST_VERSION_ARRAY ${CMAKE_MATCH_1} )
-	if( doctest_h MATCHES "DOCTEST_VERSION_MINOR ([0-9]+)" )
-		list( APPEND DOCTEST_VERSION_ARRAY ${CMAKE_MATCH_1} )
-		if( doctest_h MATCHES "DOCTEST_VERSION_PATCH ([0-9]+)" )
-			list( APPEND DOCTEST_VERSION_ARRAY ${CMAKE_MATCH_1} )
-		endif()
+find_package( doctest 2.2 REQUIRED )	# For all targets
+if( ${doctest_FOUND} )
+	include_directories( ${doctest_INCLUDE_DIR} )
+	message( STATUS "doctest:        ${doctest_VERSION}" )
+	if( ${doctest_VERSION} MATCHES "([0-9]+)(\.([0-9]+)(\.([0-9]+)))" )
+		list( APPEND doctest_VERSION_ARRAY ${CMAKE_MATCH_1} ${CMAKE_MATCH_3} ${CMAKE_MATCH_5} )
+		list( JOIN doctest_VERSION_ARRAY ", " doctest_VERSION_ARRAY )
 	endif()
+else()
+	message( FATAL_ERROR "The doctest library is not found [in the required version]." )
 endif()
-list( JOIN DOCTEST_VERSION_ARRAY "."  DOCTEST_VERSION )
-list( JOIN DOCTEST_VERSION_ARRAY ", " DOCTEST_VERSION_ARRAY )
-message( STATUS "doctest:        ${DOCTEST_VERSION}" )
 
 
 ### fmt metadata
