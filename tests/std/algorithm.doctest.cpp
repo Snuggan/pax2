@@ -4,7 +4,7 @@
 
 #include <pax/std/format.hpp>
 #include <pax/std/algorithm.hpp>
-#include <pax/external/doctest/doctest-pax.hpp>
+#include <pax/doctest.hpp>
 
 #include <pax/reporting/as_ascii.hpp>
 #include <pax/reporting/debug.hpp>
@@ -684,6 +684,29 @@ namespace pax {
 				DOCTEST_ASCII_CHECK_EQ( div.first , first( base, 3 ) );
 				DOCTEST_ASCII_CHECK_EQ( div.second, not_first( base, 4 ) );
 			}
+			{	// by value and trim spaces
+				constexpr auto base = view( " abc ;  def;g h i;jkl  " );
+				
+				auto div = split_by_trim( base, ';' );
+				DOCTEST_ASCII_CHECK_EQ( div.first , "abc" );
+				DOCTEST_ASCII_CHECK_EQ( div.second, "  def;g h i;jkl  " );
+
+				div = split_by_trim( div.second, ';' );
+				DOCTEST_ASCII_CHECK_EQ( div.first , "def" );
+				DOCTEST_ASCII_CHECK_EQ( div.second, "g h i;jkl  " );
+
+				div = split_by_trim( div.second, ';' );
+				DOCTEST_ASCII_CHECK_EQ( div.first , "g h i" );
+				DOCTEST_ASCII_CHECK_EQ( div.second, "jkl  " );
+
+				div = split_by_trim( div.second, ';' );
+				DOCTEST_ASCII_CHECK_EQ( div.first , "jkl" );
+				DOCTEST_ASCII_CHECK_EQ( div.second, "" );
+
+				div = split_by_trim( div.second, ';' );
+				DOCTEST_ASCII_CHECK_EQ( div.first , "" );
+				DOCTEST_ASCII_CHECK_EQ( div.second, "" );
+			}
 			{	// by string_view
 				constexpr auto base = subview( abc, 3, 4 );
 				DOCTEST_FAST_CHECK_EQ( base, "defg" );
@@ -947,11 +970,11 @@ namespace pax {
 			}
 		}
 	}
-	DOCTEST_TEST_CASE( "String_splitter" ) { 
-		// for( const auto s : String_splitter( "ett två tre", ' ' ) )	Debug{} << s;
+	DOCTEST_TEST_CASE( "String_view_splitter" ) { 
+		// for( const auto s : String_view_splitter( "ett två tre", ' ' ) )	Debug{} << s;
 
-		constexpr String_splitter	split( "ett två tre", ' ' );
-		auto						itr = split.begin();
+		constexpr String_view_splitter	split( "ett två tre", ' ' );
+		auto							itr = split.begin();
 		DOCTEST_FAST_CHECK_EQ( *    itr,   "ett" );
 		DOCTEST_FAST_CHECK_EQ( *( ++itr ), "två" );
 		DOCTEST_FAST_CHECK_EQ( *( ++itr ), "tre" );

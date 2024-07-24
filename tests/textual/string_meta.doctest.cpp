@@ -4,7 +4,7 @@
 
 #include <pax/textual/string_meta.hpp>
 
-#include <pax/external/doctest/doctest-pax.hpp>
+#include <pax/doctest.hpp>
 
 
 namespace pax {

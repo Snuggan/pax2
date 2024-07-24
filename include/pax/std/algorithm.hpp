@@ -547,16 +547,14 @@ namespace pax {
 		const V							  & v_, 
 		Newline 
 	) noexcept {
-		if( size( v_ ) ) {
-			if constexpr( extent_v< V > == 1 ) {
-				return ( v_[ 0 ] == '\n' ) || ( v_[ 0 ] == '\r' );
-			} else if constexpr( extent_v< V > > 1 ) {
+		if constexpr( extent_v< V > == 1 ) 
+			return ( v_[ 0 ] == '\n' ) || ( v_[ 0 ] == '\r' );
+		else if constexpr( extent_v< V > > 1 ) 
+			if( size( v_ ) ) 
 				switch( front( v_ ) ) {
 					case '\n': return 1 + ( ( size( v_ ) > 1 ) && ( v_[ 1 ] == '\r' ) );
 					case '\r': return 1 + ( ( size( v_ ) > 1 ) && ( v_[ 1 ] == '\n' ) );
 				}
-			}
-		}
 		return 0;
 	}
 
@@ -593,18 +591,16 @@ namespace pax {
 		const V							  & v_, 
 		Newline 
 	) noexcept {
-		if( size( v_ ) ) {
-			if constexpr( Character_array< V > ) 
-				return ends_with( view_type_t< V, true >( v_ ), Newline{} );	// To remove possible trailing '\0'.
-			else if constexpr( extent_v< V > == 1 ) {
-				return ( v_[ 0 ] == '\n' ) || ( v_[ 0 ] == '\r' );
-			} else if constexpr( extent_v< V > > 1 ) {
+		if constexpr( Character_array< V > ) 
+			return ends_with( view_type_t< V, true >( v_ ), Newline{} );	// To remove possible trailing '\0'.
+		else if constexpr( extent_v< V > == 1 ) 
+			return ( v_[ 0 ] == '\n' ) || ( v_[ 0 ] == '\r' );
+		else if constexpr( extent_v< V > > 1 ) 
+			if( size( v_ ) ) 
 				switch( back( v_ ) ) {
 					case '\n': return 1 + ( ( size( v_ ) > 1 ) && ( v_[ size( v_ ) - 2u ] == '\r' ) );
 					case '\r': return 1 + ( ( size( v_ ) > 1 ) && ( v_[ size( v_ ) - 2u ] == '\n' ) );
 				}
-			}
-		}
 		return 0;
 	}
 
@@ -625,7 +621,6 @@ namespace pax {
 	}
 
 	/// Split `view_` into two parts: before and after the first `x_`, not including it.
-	///	- `X` may be anything that works with `find( view_, x_ )`.
 	/// Returns a pair of [non-owning] string views into v_.
 	template< Contiguous_elements V >
 	[[nodiscard]] constexpr auto split_by( 
@@ -633,6 +628,29 @@ namespace pax {
 		const Value_type_t< V >				item_ 
 	) noexcept {
 		return split_at( v_, find( v_, item_ ) );
+	}
+
+	/// Split `view_` into two parts: before and after the first `x_`, not including it. 
+	/// - Trims leading and trailing spaces.
+	/// Returns a pair of [non-owning] string views into v_.
+	template< Contiguous_elements V >
+	[[nodiscard]] constexpr auto split_by_trim( 
+		const V							  & v_, 
+		const Value_type_t< V >				item_ 
+	) noexcept {
+		using std::begin, std::end;
+		auto		itr		= begin( v_ );
+		const auto	stop	= end  ( v_ );
+		while( ( itr != stop ) && ( *itr != item_ ) && ( *itr == ' ' ) )		++itr;	// Ignore leading spaces.
+		const auto	first	= itr;
+		auto		last	= stop;
+		while( ( itr != stop ) && ( *itr != item_ ) ) {
+			while( ( itr != stop ) && ( *itr != item_ ) && ( *itr != ' ' ) )	++itr;	// Scan non-spaces.
+			last = itr;
+			while( ( itr != stop ) && ( *itr != item_ ) && ( *itr == ' ' ) )	++itr;	// Ignore trailing spaces.
+		}
+		using View = view_type_t< V, true >;
+		return std::pair{ View( first, last ), View( itr + ( *itr == item_ ), stop ) };
 	}
 
 	/// Split the v_ into two parts: before and after (but not including) `by_`.
@@ -940,11 +958,11 @@ namespace pax {
 
 
 	/// A class to simplify iterating using ´split_by´. It uses views, so the original string must remain static.
-	/// - Example usage: ´for( const auto view : String_splitter( "A\nNumber\nof\nRows", Newline{} ) ) { ... }´. 
+	/// - Example usage: ´for( const auto item : String_view_splitter( "A\nNumber\nof\nRows", Newline{} ) ) { ... }´. 
 	/// - The Divider type may be any that is accepted by ´split_by( ..., Divider )´. 
-	/// - String_splitter is constexpr [and never throws]. 
+	/// - String_view_splitter is constexpr [and never throws]. 
 	template< typename Char, typename Divider, typename Traits = std::char_traits< std::remove_const_t< Char > > >
-	class String_splitter {
+	class String_view_splitter {
 		using Value					  = std::basic_string_view< std::remove_const_t< Char >, Traits >;
 		Value							m_str;
 		Divider							m_divider;
@@ -954,37 +972,37 @@ namespace pax {
 			Divider						m_divider;
 
 		public:
-			constexpr iterator( const Value str_, const Divider divider_ )				noexcept 
-				: m_parts( split_by( str_, divider_ ) ), m_divider( divider_ ) {}
+			constexpr iterator( const Value str_, const Divider divider_ )					noexcept :
+				m_parts( split_by( str_, divider_ ) ), m_divider( divider_ ) {}
 
-			constexpr iterator & operator++()		noexcept		{
+			constexpr iterator & operator++()												noexcept {
 				m_parts = split_by( m_parts.second, m_divider );
 				return *this;
 			}
 
-			constexpr Value operator*()	const noexcept	{	return m_parts.first;	}
+			constexpr Value operator*()					const noexcept	{	return m_parts.first;	}
 
-			friend constexpr bool operator==( const iterator l_, const iterator r_ )	noexcept {	
-				return	identic( l_.m_parts.first,  r_.m_parts.first  ) 
-					&&	identic( l_.m_parts.second, r_.m_parts.second );
-			}
-
-			template< typename Out >
-			friend constexpr Out & operator<<( Out & out_, const iterator itr_ )		noexcept {
-				return	out_ << "{\"" << itr_.m_parts.first << "\", \"" << itr_.m_parts.second << "\"}";
+			friend constexpr bool operator==( const iterator & l_, const iterator & r_ )	noexcept {	
+				return	( l_.m_parts.first .data()	==  r_.m_parts.first .data() ) 
+					&&	( l_.m_parts.second.data()	==  r_.m_parts.second.data() ) 
+					&&	( l_.m_parts.first .size()	==  r_.m_parts.first .size() ) 
+					&&	( l_.m_parts.second.size()	==  r_.m_parts.second.size() );
 			}
 		};
 
 	public:
-		constexpr String_splitter( const Value str_, const Divider divider_ ) noexcept : m_str( str_ ), m_divider( divider_ ) {}
-		constexpr iterator begin()		const noexcept	{	return iterator( m_str, m_divider );						}
-		constexpr iterator end()		const noexcept	{	return iterator( Value( m_str.end(), 0 ), m_divider );		}
+		constexpr String_view_splitter( const Value str_, const Divider divider_ ) 			noexcept :
+			m_str( str_ ), m_divider( divider_ ) {}
+
+		constexpr iterator begin()	const noexcept	{	return iterator( m_str, m_divider );						}
+		constexpr iterator end()	const noexcept	{	return iterator( Value( m_str.end(), 0 ), m_divider );		}
 	};
 
 	template< String S, typename D >
-	String_splitter( S &&, D ) -> String_splitter< Value_type_t< S >, D, typename std::remove_cvref_t< S >::traits_type >;
+	String_view_splitter( S &&, D ) 
+		-> String_view_splitter< Value_type_t< S >, D, typename std::remove_cvref_t< S >::traits_type >;
 
 	template< Character Ch, typename D >
-	String_splitter( Ch *, D ) -> String_splitter< std::remove_reference_t< Ch >, D >;
+	String_view_splitter( Ch *, D ) -> String_view_splitter< std::remove_reference_t< Ch >, D >;
 
 }	// namespace pax

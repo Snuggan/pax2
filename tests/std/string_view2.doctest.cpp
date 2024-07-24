@@ -6,7 +6,7 @@
 
 #include <pax/std/string_view2.hpp>
 #include <pax/reporting/as_ascii.hpp>
-#include <pax/external/doctest/doctest-pax.hpp>
+#include <pax/doctest.hpp>
 
 	
 namespace pax {

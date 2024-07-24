@@ -3,7 +3,7 @@
 
 
 #include <pax/pdal/utilities/bbox_indexer.hpp>
-#include <pax/external/doctest/doctest-pax.hpp>
+#include <pax/doctest.hpp>
 
 
 namespace pax {

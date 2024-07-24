@@ -6,7 +6,7 @@
 
 #include <pax/textual/json.hpp>
 #include <pax/meta/meta.hpp>
-#include <pax/external/doctest/doctest-pax.hpp>
+#include <pax/doctest.hpp>
 #include <pax/reporting/debug.hpp>
 
 

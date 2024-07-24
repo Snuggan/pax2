@@ -17,6 +17,7 @@ RUN		echo "\n\n--- Main stuff ---" \
 				build-essential \
 				gcc-14 \
 				g++-14 \
+				doctest-dev \
 				libgdal-dev \
 				gdb \
 				# gfortran is used by some R modules:

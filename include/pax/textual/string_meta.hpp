@@ -211,8 +211,8 @@ namespace pax {
 		constexpr String_meta( const std::basic_string_view< Ch, Traits > str_ ) noexcept
 			: m_glyphs{ str_.size() }
 		{
-			for( auto row : String_splitter( str_, Newline{} ) ) {	// Iterate str_ row by row.
-				if( row.size() ) {									// Ignore empty rows.
+			for( auto row : String_view_splitter( str_, Newline{} ) ) {	// Iterate str_ row by row.
+				if( row.size() ) {										// Ignore empty rows.
 					for( const unsigned c : row )			++m_count_by_row[ ( c < Asciis ) ? c : Non_ascii ];
 					for( auto & cnt : m_count_by_row )		cnt.row_end();
 					++m_non_empty_rows;
@@ -288,9 +288,9 @@ namespace pax {
 		// Read the columns, row by row.
 		std::vector< std::basic_string_view< Ch, Traits  > >	result;
 		result.reserve( count.non_empty_rows() * count.cols_in_first() );
-		for( const auto row : String_splitter( str_, Newline{} ) )  					// Iterate row by row.
-			if( row.size() ) 				 											// Skip empty rows
-				for( const auto cell : String_splitter( row, count.col_delimiter() ) )	// Iterate row cell by cell.
+		for( const auto row : String_view_splitter( str_, Newline{} ) )  					// Iterate row by row.
+			if( row.size() ) 				 												// Skip empty rows
+				for( const auto cell : String_view_splitter( row, count.col_delimiter() ) )	// Iterate row cell by cell.
 					result.push_back( cell );
 
 		return { 
@@ -311,7 +311,7 @@ namespace pax {
 		static constexpr std::string_view	tr_	  	= "\t</tr>";
 
 		using pair						  = std::pair< std::string_view, std::string_view >;
-		using splitter					  = String_splitter< const char, char >;
+		using splitter					  = String_view_splitter< const char, char >;
 
 		static std::string process_header(
 			const splitter					header_splitter_, 
@@ -365,9 +365,9 @@ namespace pax {
 			std::vector< Strtype >			col_types( meta.cols_in_first() );
 
 			// Process the body. 
-			for( const auto row : String_splitter( rows, Newline{} ) ) // Iterate row by row.
+			for( const auto row : String_view_splitter( rows, Newline{} ) ) // Iterate row by row.
 				if( row.size() ) 	// Skip empty rows
-					process_row( String_splitter( row, meta.col_delimiter() ), body, meta.cols_in_first(), col_types );
+					process_row( String_view_splitter( row, meta.col_delimiter() ), body, meta.cols_in_first(), col_types );
 
 			// Make numerical columns right aligned.
 			std::string						css2;
@@ -393,7 +393,7 @@ namespace pax {
 							meta.minimum_cols(), meta.maximum_cols(), meta.cols_in_first() ) )
 				);
 				std::size_t 	i{};
-				for( const auto col : String_splitter( header, meta.col_delimiter() ) ) 
+				for( const auto col : String_view_splitter( header, meta.col_delimiter() ) ) 
 					std::cerr << std20::format( "    {:15?} {}\n", col, col_types[ i++ ].view() );
 			}
 
@@ -450,7 +450,7 @@ namespace pax {
 				"</table>\n"
 				"</body>\n"
 				"</html>\n",
-				title_, css2, process_header( String_splitter( header, meta.col_delimiter() ), col_types ), body 
+				title_, css2, process_header( String_view_splitter( header, meta.col_delimiter() ), col_types ), body 
 			);
 		}
 	};

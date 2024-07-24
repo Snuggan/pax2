@@ -4,7 +4,7 @@
 
 #include <pax/reporting/as_ascii.hpp>
 
-#include <pax/external/doctest/doctest-pax.hpp>
+#include <pax/doctest.hpp>
 
 
 DOCTEST_TEST_CASE( "as_ascii" ) {

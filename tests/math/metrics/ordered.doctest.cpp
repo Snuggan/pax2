@@ -5,7 +5,7 @@
 #include "_metrics-key.hpp"
 #include <pax/math/metrics/ordered.hpp>
 
-#include <pax/external/doctest/doctest-pax.hpp>
+#include <pax/doctest.hpp>
 #include <vector>
 
 

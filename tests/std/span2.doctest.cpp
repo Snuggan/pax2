@@ -4,7 +4,7 @@
 
 #include <pax/std/span2.hpp>
 #include <pax/reporting/as_ascii.hpp>
-#include <pax/external/doctest/doctest-pax.hpp>
+#include <pax/doctest.hpp>
 
 #include <sstream>
 #include <vector>

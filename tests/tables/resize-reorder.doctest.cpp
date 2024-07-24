@@ -4,7 +4,7 @@
 
 #include <pax/tables/resize-reorder.hpp>
 
-#include <pax/external/doctest/doctest-pax.hpp>
+#include <pax/doctest.hpp>
 #include <pax/std/span2.hpp>		// Needed for more flexible comparison. 
 
 

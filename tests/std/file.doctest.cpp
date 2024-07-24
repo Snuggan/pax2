@@ -27,7 +27,7 @@
 #include <pax/std/file.hpp>
 #include <pax/std/span2.hpp>
 
-#include <pax/external/doctest/doctest-pax.hpp>
+#include <pax/doctest.hpp>
 
 
 namespace pax {

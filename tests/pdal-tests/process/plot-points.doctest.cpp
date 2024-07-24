@@ -4,7 +4,7 @@
 
 #include <pax/pdal/process/plot-points.hpp>
 
-#include <pax/external/doctest/doctest-pax.hpp>
+#include <pax/doctest.hpp>
 
 #include <pdal/io/LasReader.hpp>
 #include <pdal/io/LasHeader.hpp>

@@ -6,7 +6,7 @@
 #include <pax/pdal/metrics-infrastructure/_general.hpp>
 #include <pax/pdal/metrics-infrastructure/function.hpp>
 
-#include <pax/external/doctest/doctest-pax.hpp>
+#include <pax/doctest.hpp>
 #include <vector>
 
 

@@ -6,7 +6,7 @@
 #define DOCTEST_CONFIG_SUPER_FAST_ASSERTS
 
 
-#include <pax/external/doctest/doctest-pax.hpp>
+#include <pax/doctest.hpp>
 
 
 int main( const int argc, const char** argv ) {
