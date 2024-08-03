@@ -987,7 +987,7 @@ namespace pax {
 			constexpr Value operator*()				const noexcept	{	return m_parts.first;									}
 
 			/// Does *not* check equality! Only checks if we are done iterating... 
-			constexpr bool operator==( end_mark )	const noexcept {	return m_parts.first.data() == m_parts.second.data();	}
+			constexpr bool operator==( end_mark )	const noexcept	{	return m_parts.first.data() == m_parts.second.data();	}
 		};
 		
 	public:
