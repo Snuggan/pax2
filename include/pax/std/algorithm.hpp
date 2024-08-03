@@ -966,36 +966,39 @@ namespace pax {
 		using Value					  = std::basic_string_view< std::remove_const_t< Char >, Traits >;
 		Value							m_str;
 		Divider							m_divider;
+		
+		class end_mark {};
 
 		class iterator {
 			std::pair< Value, Value >	m_parts;
 			Divider						m_divider;
 
+			/// We have iterated through all items.
+			constexpr bool empty()		const noexcept	{	return m_parts.first.data() == m_parts.second.data();		}
+
 		public:
-			constexpr iterator( const Value str_, const Divider divider_ )					noexcept :
+			constexpr iterator( const Value str_, const Divider divider_ )			noexcept :
 				m_parts( split_by( str_, divider_ ) ), m_divider( divider_ ) {}
 
-			constexpr iterator & operator++()												noexcept {
+			/// Iterate to next item. 
+			constexpr iterator & operator++()										noexcept {
 				m_parts = split_by( m_parts.second, m_divider );
 				return *this;
 			}
 
-			constexpr Value operator*()					const noexcept	{	return m_parts.first;	}
+			/// Get the string_view of the present element. 
+			constexpr Value operator*()	const noexcept	{	return m_parts.first;										}
 
-			friend constexpr bool operator==( const iterator & l_, const iterator & r_ )	noexcept {	
-				return	( l_.m_parts.first .data()	==  r_.m_parts.first .data() ) 
-					&&	( l_.m_parts.second.data()	==  r_.m_parts.second.data() ) 
-					&&	( l_.m_parts.first .size()	==  r_.m_parts.first .size() ) 
-					&&	( l_.m_parts.second.size()	==  r_.m_parts.second.size() );
-			}
+			/// Does *not* check equality! Only checks if we are done iterating... 
+			friend constexpr bool operator==( const iterator & l_, const end_mark )	noexcept {	return l_.empty();		}
 		};
-
+		
 	public:
-		constexpr String_view_splitter( const Value str_, const Divider divider_ ) 			noexcept :
+		constexpr String_view_splitter( const Value str_, const Divider divider_ ) 	noexcept :
 			m_str( str_ ), m_divider( divider_ ) {}
 
-		constexpr iterator begin()	const noexcept	{	return iterator( m_str, m_divider );						}
-		constexpr iterator end()	const noexcept	{	return iterator( Value( m_str.end(), 0 ), m_divider );		}
+		constexpr iterator begin()		const noexcept	{	return { m_str, m_divider };								}
+		constexpr end_mark end()		const noexcept	{	return {};													}
 	};
 
 	template< String S, typename D >
