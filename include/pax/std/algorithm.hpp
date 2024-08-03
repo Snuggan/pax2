@@ -975,10 +975,10 @@ namespace pax {
 
 		public:
 			constexpr iterator( const Value str_, const Divider divider_ )	noexcept :
-				m_parts( split_by( str_, divider_ ) ), m_divider( divider_ ) {}
+				m_parts{ split_by( str_, divider_ ) }, m_divider{ divider_ } {}
 
 			/// Iterate to next item. 
-			constexpr iterator & operator++()								noexcept {
+			constexpr iterator & operator++()		noexcept		{
 				m_parts = split_by( m_parts.second, m_divider );
 				return *this;
 			}
@@ -992,7 +992,7 @@ namespace pax {
 		
 	public:
 		constexpr String_view_splitter( const Value str_, const Divider divider_ ) 	noexcept :
-			m_str( str_ ), m_divider( divider_ ) {}
+			m_str{ str_ }, m_divider{ divider_ } {}
 
 		constexpr iterator begin()					const noexcept	{	return { m_str, m_divider };							}
 		constexpr end_mark end()					const noexcept	{	return {};												}
