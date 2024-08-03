@@ -973,32 +973,29 @@ namespace pax {
 			std::pair< Value, Value >	m_parts;
 			Divider						m_divider;
 
-			/// We have iterated through all items.
-			constexpr bool empty()		const noexcept	{	return m_parts.first.data() == m_parts.second.data();		}
-
 		public:
-			constexpr iterator( const Value str_, const Divider divider_ )			noexcept :
+			constexpr iterator( const Value str_, const Divider divider_ )	noexcept :
 				m_parts( split_by( str_, divider_ ) ), m_divider( divider_ ) {}
 
 			/// Iterate to next item. 
-			constexpr iterator & operator++()										noexcept {
+			constexpr iterator & operator++()								noexcept {
 				m_parts = split_by( m_parts.second, m_divider );
 				return *this;
 			}
 
 			/// Get the string_view of the present element. 
-			constexpr Value operator*()	const noexcept	{	return m_parts.first;										}
+			constexpr Value operator*()				const noexcept	{	return m_parts.first;									}
 
 			/// Does *not* check equality! Only checks if we are done iterating... 
-			friend constexpr bool operator==( const iterator & l_, const end_mark )	noexcept {	return l_.empty();		}
+			constexpr bool operator==( end_mark )	const noexcept {	return m_parts.first.data() == m_parts.second.data();	}
 		};
 		
 	public:
 		constexpr String_view_splitter( const Value str_, const Divider divider_ ) 	noexcept :
 			m_str( str_ ), m_divider( divider_ ) {}
 
-		constexpr iterator begin()		const noexcept	{	return { m_str, m_divider };								}
-		constexpr end_mark end()		const noexcept	{	return {};													}
+		constexpr iterator begin()					const noexcept	{	return { m_str, m_divider };							}
+		constexpr end_mark end()					const noexcept	{	return {};												}
 	};
 
 	template< String S, typename D >
