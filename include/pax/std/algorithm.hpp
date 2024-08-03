@@ -963,11 +963,11 @@ namespace pax {
 	/// - String_view_splitter is constexpr [and never throws]. 
 	template< typename Char, typename Divider, typename Traits = std::char_traits< std::remove_const_t< Char > > >
 	class String_view_splitter {
+		class End						{};
 		using Value					  = std::basic_string_view< std::remove_const_t< Char >, Traits >;
 		Value							m_str;
 		Divider							m_divider;
 		
-		class end_mark {};
 
 		class iterator {
 			std::pair< Value, Value >	m_parts;
@@ -978,24 +978,24 @@ namespace pax {
 				m_parts{ split_by( str_, divider_ ) }, m_divider{ divider_ } {}
 
 			/// Iterate to next item. 
-			constexpr iterator & operator++()		noexcept		{
+			constexpr iterator & operator++()	noexcept		{
 				m_parts = split_by( m_parts.second, m_divider );
 				return *this;
 			}
 
 			/// Get the string_view of the present element. 
-			constexpr Value operator*()				const noexcept	{	return m_parts.first;									}
+			constexpr Value operator*()			const noexcept	{	return m_parts.first;									}
 
-			/// Does *not* check equality! Only checks if we are done iterating... 
-			constexpr bool operator==( end_mark )	const noexcept	{	return m_parts.first.data() == m_parts.second.data();	}
+			/// Does *not* check equality! Only checks if we are done iterating. 
+			constexpr bool operator==( End )	const noexcept	{	return m_parts.first.data() == m_parts.second.data();	}
 		};
 		
 	public:
 		constexpr String_view_splitter( const Value str_, const Divider divider_ ) 	noexcept :
 			m_str{ str_ }, m_divider{ divider_ } {}
 
-		constexpr iterator begin()					const noexcept	{	return { m_str, m_divider };							}
-		constexpr end_mark end()					const noexcept	{	return {};												}
+		constexpr iterator begin()				const noexcept	{	return { m_str, m_divider };							}
+		constexpr End end()						const noexcept	{	return {};												}
 	};
 
 	template< String S, typename D >
