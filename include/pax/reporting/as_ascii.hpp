@@ -20,8 +20,7 @@ namespace pax {
 	template< Character Ch >
 	class Ascii_t {
 		static constexpr Ch specials[ 67 ] = {
-			"\\0^A^B^C^D^E^F\\a\\b\\t\\n\\v\\f\\r^N^O" 
-			"^P^Q^R^S^T^U^V^W^X^Y^Z\\e^\\^]^^^_"
+			R"(\0^A^B^C^D^E^F\a\b\t\n\v\f\r^N^O^P^Q^R^S^T^U^V^W^X^Y^Z\e^\^]^^^_)"
 		};
 
 		Ch					  * m_begin;

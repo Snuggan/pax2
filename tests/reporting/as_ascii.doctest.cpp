@@ -14,7 +14,6 @@ DOCTEST_TEST_CASE( "as_ascii" ) {
 		20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 
 		30, 31, 32, '\'', '"', '\\', 60
 	};
-	constexpr auto vr	  = "^?\\0^A^B^C^D^E^F\\a\\b\\t\\n\\v\\f\\r^N^O" 
-							"^P^Q^R^S^T^U^V^W^X^Y^Z\\e^\\^]^^^_ '\\\"\\\\<";
+	constexpr auto vr	  = R"(^?\0^A^B^C^D^E^F\a\b\t\n\v\f\r^N^O^P^Q^R^S^T^U^V^W^X^Y^Z\e^\^]^^^_ '\"\\<)";
 	DOCTEST_ASCII_CHECK_EQ( pax::ascii( v0 ), vr );
 }
