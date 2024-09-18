@@ -113,14 +113,14 @@ namespace pax {
 			{	// with text technical
 				std::ostringstream		os;
 				constexpr auto			v0 = string_view2( ">\a\b\t\n\v\f\r\"'\x18\x7f <" );
-				constexpr auto			vr = string_view2( ">\\a\\b\\t\\n\\v\\f\\r\\\"\\'^X^?\u00B7<" );
+				constexpr auto			vr = string_view2( ">\\a\\b\\t\\n\\v\\f\\r\\\"'^X^? <" );
 
 				os << as_ascii( v0 );
 				const auto 				res0{ os.str() };
 				const string_view2	 			res{ res0.data(), res0.size() };
 		
 				DOCTEST_FAST_CHECK_EQ( v0.size(),   14 );
-				DOCTEST_FAST_CHECK_EQ( vr.size(),   26 );
+				DOCTEST_FAST_CHECK_EQ( vr.size(),   24 );
 				DOCTEST_FAST_CHECK_EQ( res0.size(), vr.size() );
 				DOCTEST_FAST_CHECK_EQ( res.size(),  vr.size() );
 				DOCTEST_FAST_CHECK_EQ( res, vr );

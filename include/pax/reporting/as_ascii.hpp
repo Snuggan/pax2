@@ -19,30 +19,35 @@ namespace pax {
 
 	template< Character Ch >
 	class Ascii_t {
+		static constexpr Ch specials[ 67 ] = {
+			"\\0^A^B^C^D^E^F\\a\\b\\t\\n\\v\\f\\r^N^O" 
+			"^P^Q^R^S^T^U^V^W^X^Y^Z\\e^\\^]^^^_"
+		};
+
 		Ch					  * m_begin;
 		Ch					  * m_end;
 		
 	public:
 		constexpr Ascii_t( Ch * data_, std::size_t sz_ ) noexcept : m_begin{ data_ }, m_end{ data_ + sz_ }	{}
+		
+		constexpr auto begin()	const	{	return m_begin;		}
+		constexpr auto end()	const	{	return m_end;		}
 
 		template< typename Dest >
 		friend constexpr Dest & operator<<(
 			Dest			  & dest_,
 			const Ascii_t		v_
 		) {
-			constexpr Ch specials[ 67 ] = {
-				"\\0^A^B^C^D^E^F\\a\\b\\t\\n\\v\\f\\r^N^O" 
-				"^P^Q^R^S^T^U^V^W^X^Y^Z\\e^\\^]^^^_\u00B7"	// mid dot for space
-			};
-
-			for( auto c=v_.m_begin; c<v_.m_end; ++c ) 
-				( *c <= 0x20 )	? ( dest_ << specials[ 2*(int)*c ] << specials[ 2*(int)*c + 1 ] )	: 
-				( *c == '\'' )	? ( dest_ << '\\' << '\'' )		: 
-				( *c == '"'  )	? ( dest_ << '\\' << '"' )		: 
-				( *c == '\\' )	? ( dest_ << '\\' << '\\' )		: 
-				( *c == 0x7f )	? ( dest_ << '^' << '?' )		: 
-				( *c == 0xa0 )	? ( dest_ << '^' << '!' )		: 
-								  ( dest_ << *c );
+			for( const auto c : v_ ) 
+				switch( c ) {
+					case '"' :
+					case '\\':		dest_ << '\\' << c;			break;
+					case 0x7f:		dest_ << '^'  << '?';		break;
+					case 0xa0:		dest_ << '^'  << '!';		break;
+					default: 		
+						( c <  0x20 )	? ( dest_ << specials[ 2*(int)c ] << specials[ 2*(int)c + 1 ] )
+										: ( dest_ << c );
+				}
 			return dest_;
 		}
 

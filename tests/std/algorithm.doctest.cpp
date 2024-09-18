@@ -16,7 +16,7 @@
 
 namespace pax {
 	
-	constexpr const string_view2				str		= view( "abcdefghijkl" );
+	constexpr auto								str		= "abcdefghijkl";
 	const auto 									strN	= span2( "abcdefghijkl" );
 	constexpr const string_view2				e		= view( "" );
 
@@ -24,7 +24,7 @@ namespace pax {
 	constexpr const int							ints0[ N ] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 	constexpr const std::span< const int >		ints	= dview( ints0 );
 	constexpr const std::span< const int, N >	intsN	=  view( ints0 );
-	constexpr const std::span					abc( str );
+	constexpr const auto						abc		= std::span< const char >{ str, 12 };
 	
 	template< typename T >
 	constexpr bool is_value_const = std::is_const_v< std::remove_reference_t< Value_type_t< T > > >;
@@ -92,6 +92,15 @@ namespace pax {
 
 
 	DOCTEST_TEST_CASE( "textual" ) {
+		{	// Newline::is_newline2
+			static_assert( Newline::is_newline2( '\n', '\r' ) == 2 );
+			static_assert( Newline::is_newline2( '\r', '\n' ) == 2 );
+			static_assert( Newline::is_newline2( '\n', '\t' ) == 1 );
+			static_assert( Newline::is_newline2( '\r', '\t' ) == 1 );
+			static_assert( Newline::is_newline2( '\t', '\n' ) == 0 );
+			static_assert( Newline::is_newline2( '\t', '\r' ) == 0 );
+			static_assert( Newline::is_newline2( 'a',  'a'  ) == 0 );
+		}
 		{	// std::format output
 			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", std::string_view( "abc" ) ),	"abc" );
 			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", pax::string_view2( "abc" ) ),	"abc" );
@@ -280,9 +289,10 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( valid( intsN ),					true );
 		}
 		{	// empty
+			using std::empty;
 			DOCTEST_FAST_CHECK_EQ( empty( std::string_view{} ),		true );
 			DOCTEST_FAST_CHECK_EQ( empty( e ),						true );
-			DOCTEST_FAST_CHECK_EQ( empty( str ),					false );
+			DOCTEST_FAST_CHECK_EQ( empty( view( str ) ),			false );
 
 			DOCTEST_FAST_CHECK_EQ( empty( std::span< int >{} ),		true );
 			DOCTEST_FAST_CHECK_EQ( empty( ints ),					false );
@@ -309,9 +319,10 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( intsN.extent,								N );
 		}
 		{	// identic
+			constexpr auto	str2 = view( str );
 			DOCTEST_FAST_CHECK_UNARY(  identic( str, str ) );
-			DOCTEST_FAST_CHECK_UNARY( !identic( str, str.first( 2 ) ) );
-			DOCTEST_FAST_CHECK_UNARY(  identic( str, str.first( str.size() ) ) );
+			DOCTEST_FAST_CHECK_UNARY( !identic( str2, str2.first( 2 ) ) );
+			DOCTEST_FAST_CHECK_UNARY(  identic( str2, str2.first( str2.size() ) ) );
 
 			DOCTEST_FAST_CHECK_UNARY(  identic( ints, ints ) );
 			DOCTEST_FAST_CHECK_UNARY(  identic( ints, intsN ) );
@@ -360,7 +371,7 @@ namespace pax {
 		{	// as_bytes, as_writable_bytes
 			// DOCTEST_FAST_CHECK_EQ( as_bytes( std::string_view{} ),			0 );
 			// DOCTEST_FAST_CHECK_EQ( as_bytes( e ),							0 );
-			// DOCTEST_FAST_CHECK_EQ( as_bytes( str ),							str.size() );
+			// DOCTEST_FAST_CHECK_EQ( as_bytes( str ),							view( str ).size() );
 			//
 			// DOCTEST_FAST_CHECK_EQ( as_bytes( std::span< int >{} ),			0 );
 			// DOCTEST_FAST_CHECK_EQ( as_bytes( ints ),						3*sizeof( int ) );
@@ -368,7 +379,7 @@ namespace pax {
 			//
 			// DOCTEST_FAST_CHECK_EQ( as_writable_bytes( std::string_view{} ),	0 );
 			// DOCTEST_FAST_CHECK_EQ( as_writable_bytes( e ),					0 );
-			// DOCTEST_FAST_CHECK_EQ( as_writable_bytes( str ),				str.size() );
+			// DOCTEST_FAST_CHECK_EQ( as_writable_bytes( str ),				view( str ).size() );
 			//
 			// DOCTEST_FAST_CHECK_EQ( as_writable_bytes( std::span< int >{} ),	0 );
 			// DOCTEST_FAST_CHECK_EQ( as_writable_bytes( ints ),				3*sizeof( int ) );
@@ -376,10 +387,10 @@ namespace pax {
 		}
 	}
 	DOCTEST_TEST_CASE( "parts" ) {
-		constexpr const string_view2				first_	= view( "abcde" );
-		constexpr const string_view2				last_	= view( "jkl" );
-		constexpr const string_view2				null_{};
-		constexpr const string_view2				empty_	= view( "" );
+		constexpr auto						first_	= "abcde";
+		constexpr auto						last_	= "jkl";
+		constexpr const string_view2		null_{};
+		constexpr auto						empty_	= "";
 		
 		{	// front, back
 			char			str[ 10 ] = { '1','2','3','4','5','6','7','8','9','0' };
@@ -401,7 +412,7 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( first( str,  0 ), 				empty_ );
 			DOCTEST_FAST_CHECK_EQ( first( str,  5 ), 				first_ );
 			DOCTEST_FAST_CHECK_EQ( first( str, 22 ),  				str );
-			DOCTEST_FAST_CHECK_EQ( first( str, 22 ).data(),  		str.data() );
+			DOCTEST_FAST_CHECK_EQ( first( str, 22 ).data(),  		view( str ).data() );
 			DOCTEST_FAST_CHECK_EQ( first( null_, 22 ),  			empty_ );
 			DOCTEST_FAST_CHECK_EQ( first( null_, 22 ).data(),  		nullptr );
 			DOCTEST_FAST_CHECK_EQ( first<  5 >( str ), 				first_ );
@@ -419,7 +430,7 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( last( str,  0 ), 				empty_ );
 			DOCTEST_FAST_CHECK_EQ( last( str,  3 ), 				last_ );
 			DOCTEST_FAST_CHECK_EQ( last( str, 22 ), 				str );
-			DOCTEST_FAST_CHECK_EQ( last( str, 22 ).data(), 			str.data() );
+			DOCTEST_FAST_CHECK_EQ( last( str, 22 ).data(), 			view( str ).data() );
 			DOCTEST_FAST_CHECK_EQ( last( null_, 22 ),  				empty_ );
 			DOCTEST_FAST_CHECK_EQ( last( null_, 22 ).data(),  		nullptr );
 			DOCTEST_FAST_CHECK_EQ( last < 3 >( str ), 				last_ );
@@ -435,7 +446,7 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( not_first( str,  0 ), 			str );
 			DOCTEST_FAST_CHECK_EQ( not_first( str,  9 ), 			last_ );
 			DOCTEST_FAST_CHECK_EQ( not_first( str, 22 ), 			empty_ );
-			DOCTEST_FAST_CHECK_EQ( not_first( str, 22 ).data(), 	str.data() + str.size() );
+			DOCTEST_FAST_CHECK_EQ( not_first( str, 22 ).data(), 	view( str ).data() + view( str ).size() );
 			DOCTEST_FAST_CHECK_EQ( not_first( null_, 22 ),  		empty_ );
 			DOCTEST_FAST_CHECK_EQ( not_first( null_, 22 ).data(),  	nullptr );
 			DOCTEST_FAST_CHECK_EQ( not_first<  0 >( strN ),			str );
@@ -448,7 +459,7 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( not_last( str,  0 ), 			str );
 			DOCTEST_FAST_CHECK_EQ( not_last( str,  7 ), 			first_ );
 			DOCTEST_FAST_CHECK_EQ( not_last( str, 22 ), 			empty_ );
-			DOCTEST_FAST_CHECK_EQ( not_last( str, 22 ).data(), 		str.data() );
+			DOCTEST_FAST_CHECK_EQ( not_last( str, 22 ).data(), 		view( str ).data() );
 			DOCTEST_FAST_CHECK_EQ( not_last( null_, 22 ),  			empty_ );
 			DOCTEST_FAST_CHECK_EQ( not_last( null_, 22 ).data(),  	nullptr );
 			DOCTEST_FAST_CHECK_EQ( not_last <  0 >( strN ),			str );
@@ -474,11 +485,11 @@ namespace pax {
 			DOCTEST_ASCII_CHECK_EQ((subview( str,   3,  2 )), 			"de" );
 			DOCTEST_ASCII_CHECK_EQ((subview( str,   7, 22 )), 			not_first( str, 7 ) );
 			DOCTEST_ASCII_CHECK_EQ((subview( str,  22,  0 )), 			empty_ );
-			DOCTEST_FAST_CHECK_EQ ( subview( str,  22,  0 ).data(), 	str.data() + str.size() );
+			DOCTEST_FAST_CHECK_EQ ( subview( str,  22,  0 ).data(), 	view( str ).data() + view( str ).size() );
 			DOCTEST_ASCII_CHECK_EQ((subview( str,  -7, 22 )), 			last( str, 7 ) );
 			DOCTEST_ASCII_CHECK_EQ((subview( str,  -9,  2 )), 			"de" );
 			DOCTEST_ASCII_CHECK_EQ((subview( str, -22,  0 )), 			empty_ );
-			DOCTEST_FAST_CHECK_EQ ( subview( str, -22,  0 ).data(), 	str.data() );
+			DOCTEST_FAST_CHECK_EQ ( subview( str, -22,  0 ).data(), 	view( str ).data() );
 			DOCTEST_ASCII_CHECK_EQ((subview( str, -22, 22 )), 			str );
 
 			DOCTEST_ASCII_CHECK_EQ((subview<   2 >( "abcde", -2 )),		"de" );
@@ -498,7 +509,7 @@ namespace pax {
 			// Should assert:	    subview<   7, 22 >( str  )
 			DOCTEST_ASCII_CHECK_EQ((subview<   7, 22 >( strN )), 		not_first( str, 7 ) );
 			DOCTEST_ASCII_CHECK_EQ((subview<  22,  0 >( str  )), 		empty_ );
-			DOCTEST_FAST_CHECK_EQ ( subview<  22,  0 >( str  ).data(), 	str.data() + strN.size() );
+			DOCTEST_FAST_CHECK_EQ ( subview<  22,  0 >( str  ).data(), 	view( str ).data() + strN.size() );
 			DOCTEST_ASCII_CHECK_EQ((subview<  22,  0 >( strN )), 		empty_ );
 			DOCTEST_FAST_CHECK_EQ ( subview<  22,  0 >( strN ).data(), 	strN.data() + strN.size() );
 			// Should assert:	    subview<  22, 22 >( str  )
@@ -509,15 +520,15 @@ namespace pax {
 			DOCTEST_ASCII_CHECK_EQ((subview<  -9,  2 >( strN )), 		"de" );
 			DOCTEST_ASCII_CHECK_EQ((subview<  -9,  2 >( str  )), 		"de" );
 			DOCTEST_ASCII_CHECK_EQ((subview< -22,  0 >( str  )),		empty_ );
-			DOCTEST_FAST_CHECK_EQ ( subview< -22,  0 >( str  ).data(), 	str.data() );
+			DOCTEST_FAST_CHECK_EQ ( subview< -22,  0 >( str  ).data(), 	view( str ).data() );
 			DOCTEST_ASCII_CHECK_EQ((subview< -22,  0 >( strN )), 		empty_ );
 			DOCTEST_FAST_CHECK_EQ ( subview< -22,  0 >( strN ).data(), 	strN.data() );
 			DOCTEST_ASCII_CHECK_EQ((subview< -22, 22 >( strN )), 		str );
 		}
 	}
 	DOCTEST_TEST_CASE( "searching-related" ) {
-		constexpr const string_view2				null_{};
-		constexpr const std::span					abd( view( "abddefffijkl" ) );
+		constexpr auto						null_ = "";
+		constexpr auto						abd = "abddefffijkl";
 		constexpr auto f = []( auto c ){ return c == 'f'; };
 		constexpr auto x = []( auto c ){ return c == 'x'; };
 
@@ -526,14 +537,15 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( find( null_, f ),					0 );
 			DOCTEST_FAST_CHECK_EQ( find( abd,  f  ),					5 );
 			DOCTEST_FAST_CHECK_EQ( find( abd, 'f' ),					5 );
-			DOCTEST_FAST_CHECK_EQ( find( abd,  x  ),					abd.size() );
-			DOCTEST_FAST_CHECK_EQ( find( abd, 'x' ),					abd.size() );
+			DOCTEST_FAST_CHECK_EQ( find( abd,  x  ),					12 );
+			DOCTEST_FAST_CHECK_EQ( find( abd, 'x' ),					12 );
 
 			DOCTEST_FAST_CHECK_EQ( find( null_, str ),					0 );
 			DOCTEST_FAST_CHECK_EQ( find( str, null_ ),					0 );
 			DOCTEST_FAST_CHECK_EQ( find( null_, null_ ),				0 );
 
 			DOCTEST_FAST_CHECK_EQ( find( str, "cde" ), 					2 );
+			DOCTEST_FAST_CHECK_EQ( find( str, "cdf" ), 					view( str ).size() );
 			DOCTEST_FAST_CHECK_EQ( find( "abcdefghijkl", "cde" ), 		2 );
 			DOCTEST_FAST_CHECK_EQ( find( str, first( str, 5 ) ), 		0 );
 			DOCTEST_FAST_CHECK_EQ( find( str, last ( str, 7 ) ), 		5 );
@@ -547,8 +559,8 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( rfind( abd, 'a' ),					0 );
 			DOCTEST_FAST_CHECK_EQ( rfind( null_, 'f' ),					0 );
 			DOCTEST_FAST_CHECK_EQ( rfind( abd, 'f' ),					7 );
-			DOCTEST_FAST_CHECK_EQ( rfind( abd,  x  ),					abd.size() );
-			DOCTEST_FAST_CHECK_EQ( rfind( abd, 'x' ),					abd.size() );
+			DOCTEST_FAST_CHECK_EQ( rfind( abd,  x  ),					12 );
+			DOCTEST_FAST_CHECK_EQ( rfind( abd, 'x' ),					12 );
 			// DOCTEST_FAST_CHECK_EQ( rfind( null_, str ),					0 );
 			// DOCTEST_FAST_CHECK_EQ( rfind( str, first( str, 5 ) ), 		0 );
 			// DOCTEST_FAST_CHECK_EQ( rfind( str, last ( str, 7 ) ), 		5 );
@@ -597,6 +609,15 @@ namespace pax {
 			DOCTEST_ASCII_CHECK_EQ( until( "abcdefgh\r"		, Newline{} ),	"abcdefgh" );
 			DOCTEST_ASCII_CHECK_EQ( until( "abcdefgh\r\n"	, Newline{} ),	"abcdefgh" );
 		}
+		{	// equal
+			DOCTEST_FAST_CHECK_UNARY(  equal( "", "" ) );
+			DOCTEST_FAST_CHECK_UNARY(  equal( str, str ) );
+			DOCTEST_FAST_CHECK_UNARY(  equal( "abcdefghijkl", "abcdefghijkl" ) );
+			DOCTEST_FAST_CHECK_UNARY(  equal( str, "abcdefghijkl" ) );
+			DOCTEST_FAST_CHECK_UNARY(  equal( "abcdefghijkl", str ) );
+			DOCTEST_FAST_CHECK_UNARY( !equal( "abcdef", "abc" ) );
+			DOCTEST_FAST_CHECK_UNARY( !equal( "abc", "abcdef" ) );
+		}
 		{	// starts_with
 			DOCTEST_FAST_CHECK_EQ( starts_with( "abcdef", "abc" ),				3 );
 			DOCTEST_FAST_CHECK_EQ( starts_with( "abcdef", "abd" ),				0 );
@@ -636,7 +657,15 @@ namespace pax {
 		}
 		{	// split_at, spolit_by
 			{	// at index
-				auto div = split_at( "abcdefghijkl", 4 );
+				auto div = split_at( "abcdefghijkl", 24 );
+				DOCTEST_ASCII_CHECK_EQ( div.first , view( "abcdefghijkl" ) );
+				DOCTEST_ASCII_CHECK_EQ( div.second, view( "" ) );
+
+				div = split_at( "abcdefghijkl", 12 );
+				DOCTEST_ASCII_CHECK_EQ( div.first , view( "abcdefghijkl" ) );
+				DOCTEST_ASCII_CHECK_EQ( div.second, view( "" ) );
+
+				div = split_at( "abcdefghijkl", 4 );
 				DOCTEST_ASCII_CHECK_EQ( div.first , view( "abcd" ) );
 				DOCTEST_ASCII_CHECK_EQ( div.second, view( "fghijkl" ) );
 
@@ -684,29 +713,6 @@ namespace pax {
 				DOCTEST_ASCII_CHECK_EQ( div.first , first( base, 3 ) );
 				DOCTEST_ASCII_CHECK_EQ( div.second, not_first( base, 4 ) );
 			}
-			{	// by value and trim spaces
-				constexpr auto base = view( " abc ;  def;g h i;jkl  " );
-				
-				auto div = split_by_trim( base, ';' );
-				DOCTEST_ASCII_CHECK_EQ( div.first , "abc" );
-				DOCTEST_ASCII_CHECK_EQ( div.second, "  def;g h i;jkl  " );
-
-				div = split_by_trim( div.second, ';' );
-				DOCTEST_ASCII_CHECK_EQ( div.first , "def" );
-				DOCTEST_ASCII_CHECK_EQ( div.second, "g h i;jkl  " );
-
-				div = split_by_trim( div.second, ';' );
-				DOCTEST_ASCII_CHECK_EQ( div.first , "g h i" );
-				DOCTEST_ASCII_CHECK_EQ( div.second, "jkl  " );
-
-				div = split_by_trim( div.second, ';' );
-				DOCTEST_ASCII_CHECK_EQ( div.first , "jkl" );
-				DOCTEST_ASCII_CHECK_EQ( div.second, "" );
-
-				div = split_by_trim( div.second, ';' );
-				DOCTEST_ASCII_CHECK_EQ( div.first , "" );
-				DOCTEST_ASCII_CHECK_EQ( div.second, "" );
-			}
 			{	// by string_view
 				constexpr auto base = subview( abc, 3, 4 );
 				DOCTEST_FAST_CHECK_EQ( base, "defg" );
@@ -719,7 +725,7 @@ namespace pax {
 				DOCTEST_FAST_CHECK_EQ ( find( str, first( str, 2 ) ), 0 );
 				DOCTEST_ASCII_CHECK_EQ( div.first , first( str,  0 ) );
 				DOCTEST_ASCII_CHECK_EQ( div.second, last ( str, 10 ) );
-				DOCTEST_FAST_CHECK_EQ ( div.first.data() , str.data() );
+				DOCTEST_FAST_CHECK_EQ ( div.first.data() , view( str ).data() );
 
 				div = split_by( str, subview( str, 4, 2 ) );	// Middle
 				DOCTEST_ASCII_CHECK_EQ( div.first , first( str,  4 ) );
@@ -728,7 +734,7 @@ namespace pax {
 				div = split_by( str, last( str, 2 ) );			// End
 				DOCTEST_ASCII_CHECK_EQ( div.first , first( str, 10 ) );
 				DOCTEST_ASCII_CHECK_EQ( div.second, last ( str,  0 ) );
-				DOCTEST_FAST_CHECK_EQ ( div.second.data(), str.data() + str.size() );
+				DOCTEST_FAST_CHECK_EQ ( div.second.data(), view( str ).data() + view( str ).size() );
 
 				div = split_by( str, "aaa" );					// None
 				DOCTEST_ASCII_CHECK_EQ( div.first , str );
@@ -798,7 +804,7 @@ namespace pax {
 			}
 		}
 		{	// trim
-			constexpr std::string_view		text{ "++++abcdef++" };
+			constexpr auto					text = "++++abcdef++";
 			constexpr auto					pred = []( char c ) { return c <= 'b'; };
 			constexpr auto 					is_plus = []( auto x_ ){	return x_ == '+'; };
 
@@ -813,28 +819,42 @@ namespace pax {
 				DOCTEST_ASCII_CHECK_EQ( trim_back( text, '-' ),			text );
 			}
 			{	// trim_first
-				DOCTEST_ASCII_CHECK_EQ( trim_first( text, is_plus ),	not_first( text, 4 ) );
-				DOCTEST_ASCII_CHECK_EQ( trim_first( text, pred ),		not_first( text, 6 ) );
-
-				DOCTEST_ASCII_CHECK_EQ( trim_first( "",					Newline{} ),	"" );
-				DOCTEST_ASCII_CHECK_EQ( trim_first( "\n\r",				Newline{} ),	"" );
-				DOCTEST_ASCII_CHECK_EQ( trim_first( "abcdefgh\n\r",		Newline{} ),	"abcdefgh\n\r" );
-				DOCTEST_ASCII_CHECK_EQ( trim_first( "\nabcdefgh\n\r",	Newline{} ),	"abcdefgh\n\r" );
-				DOCTEST_ASCII_CHECK_EQ( trim_first( "\n\rabcdefgh\n\r",	Newline{} ),	"abcdefgh\n\r" );
-				DOCTEST_ASCII_CHECK_EQ( trim_first( "\rabcdefgh\n\r",	Newline{} ),	"abcdefgh\n\r" );
-				DOCTEST_ASCII_CHECK_EQ( trim_first( "\r\nabcdefgh\n\r",	Newline{} ),	"abcdefgh\n\r" );
+				{	// Character
+					DOCTEST_ASCII_CHECK_EQ( trim_first( "abc", '+' ),		"abc" );
+					DOCTEST_ASCII_CHECK_EQ( trim_first( text, '+' ),		not_first( text, 4 ) );
+				}
+				{	// Predicate
+					DOCTEST_ASCII_CHECK_EQ( trim_first( text, is_plus ),	not_first( text, 4 ) );
+					DOCTEST_ASCII_CHECK_EQ( trim_first( text, pred ),		not_first( text, 6 ) );
+				}
+				{	// Newline
+					DOCTEST_ASCII_CHECK_EQ( trim_first( "",					Newline{} ),	"" );
+					DOCTEST_ASCII_CHECK_EQ( trim_first( "\n\r",				Newline{} ),	"" );
+					DOCTEST_ASCII_CHECK_EQ( trim_first( "abcdefgh\n\r",		Newline{} ),	"abcdefgh\n\r" );
+					DOCTEST_ASCII_CHECK_EQ( trim_first( "\nabcdefgh\n\r",	Newline{} ),	"abcdefgh\n\r" );
+					DOCTEST_ASCII_CHECK_EQ( trim_first( "\n\rabcdefgh\n\r",	Newline{} ),	"abcdefgh\n\r" );
+					DOCTEST_ASCII_CHECK_EQ( trim_first( "\rabcdefgh\n\r",	Newline{} ),	"abcdefgh\n\r" );
+					DOCTEST_ASCII_CHECK_EQ( trim_first( "\r\nabcdefgh\n\r",	Newline{} ),	"abcdefgh\n\r" );
+				}
 			}
 			{	// trim_last
-				DOCTEST_ASCII_CHECK_EQ( trim_last( text, is_plus ),		not_last( text, 2 ) );
-				DOCTEST_ASCII_CHECK_EQ( trim_last( text, pred ),		not_last( text, 2 ) );
-
-				DOCTEST_ASCII_CHECK_EQ( trim_last( "",					Newline{} ),	"" );
-				DOCTEST_ASCII_CHECK_EQ( trim_last( "\n\r",				Newline{} ),	"" );
-				DOCTEST_ASCII_CHECK_EQ( trim_last( "\n\rabcdefgh",		Newline{} ),	"\n\rabcdefgh" );
-				DOCTEST_ASCII_CHECK_EQ( trim_last( "\n\rabcdefgh\n",	Newline{} ),	"\n\rabcdefgh" );
-				DOCTEST_ASCII_CHECK_EQ( trim_last( "\n\rabcdefgh\n\r",	Newline{} ),	"\n\rabcdefgh" );
-				DOCTEST_ASCII_CHECK_EQ( trim_last( "\n\rabcdefgh\r",	Newline{} ),	"\n\rabcdefgh" );
-				DOCTEST_ASCII_CHECK_EQ( trim_last( "\n\rabcdefgh\r\n",	Newline{} ),	"\n\rabcdefgh" );
+				{	// Character
+					DOCTEST_ASCII_CHECK_EQ( trim_last( "abc", '+' ),		"abc" );
+					DOCTEST_ASCII_CHECK_EQ( trim_last( text, '+' ),			not_last( text, 2 ) );
+				}
+				{	// Predicate
+					DOCTEST_ASCII_CHECK_EQ( trim_last( text, is_plus ),		not_last( text, 2 ) );
+					DOCTEST_ASCII_CHECK_EQ( trim_last( text, pred ),		not_last( text, 2 ) );
+				}
+				{	// Newline
+					DOCTEST_ASCII_CHECK_EQ( trim_last( "",					Newline{} ),	"" );
+					DOCTEST_ASCII_CHECK_EQ( trim_last( "\n\r",				Newline{} ),	"" );
+					DOCTEST_ASCII_CHECK_EQ( trim_last( "\n\rabcdefgh",		Newline{} ),	"\n\rabcdefgh" );
+					DOCTEST_ASCII_CHECK_EQ( trim_last( "\n\rabcdefgh\n",	Newline{} ),	"\n\rabcdefgh" );
+					DOCTEST_ASCII_CHECK_EQ( trim_last( "\n\rabcdefgh\n\r",	Newline{} ),	"\n\rabcdefgh" );
+					DOCTEST_ASCII_CHECK_EQ( trim_last( "\n\rabcdefgh\r",	Newline{} ),	"\n\rabcdefgh" );
+					DOCTEST_ASCII_CHECK_EQ( trim_last( "\n\rabcdefgh\r\n",	Newline{} ),	"\n\rabcdefgh" );
+				}
 			}
 			{	// trim
 				DOCTEST_ASCII_CHECK_EQ( trim( text, is_plus ),	subview( text, 4, 6 ) );
@@ -843,7 +863,7 @@ namespace pax {
 		}
 	}
 	DOCTEST_TEST_CASE( "other..." ) {
-		constexpr const std::span					abd( view( "abddefffijkl" ) );
+		constexpr auto						abd = "abddefffijkl";
 
 		{	// sort
 			
@@ -956,14 +976,14 @@ namespace pax {
 			{	// with text technical
 				std::ostringstream		os;
 				constexpr auto			v0 = view( ">\0\a\b\t\n\v\f\r\"'\x18\x7f <" );
-				constexpr auto			vr = view( ">\\0\\a\\b\\t\\n\\v\\f\\r\\\"\\'^X^?\u00B7<" );
+				constexpr auto			vr = view( ">\\0\\a\\b\\t\\n\\v\\f\\r\\\"'^X^? <" );
 
 				os << as_ascii( v0 );
 				const auto 				res0{ os.str() };
 				const std::span 		res{ res0.data(), res0.size() };
 
 				DOCTEST_FAST_CHECK_EQ( v0.size(),   15 );
-				DOCTEST_FAST_CHECK_EQ( vr.size(),   28 );
+				DOCTEST_FAST_CHECK_EQ( vr.size(),   26 );
 				DOCTEST_FAST_CHECK_EQ( res0.size(), vr.size() );
 				DOCTEST_FAST_CHECK_EQ( res.size(),  vr.size() );
 				DOCTEST_FAST_CHECK_EQ( res, vr );
