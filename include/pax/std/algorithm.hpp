@@ -11,6 +11,20 @@
 #include <algorithm>			// min, find, find_if, search, ...
 
 
+// From https://lemire.me/blog/2024/07/26/safer-code-in-c-with-lifetime-bounds/
+#ifndef __has_cpp_attribute
+	#define ada_lifetime_bound
+#elif __has_cpp_attribute(msvc::lifetimebound)
+	#define ada_lifetime_bound [[msvc::lifetimebound]]
+#elif __has_cpp_attribute(clang::lifetimebound)
+	#define ada_lifetime_bound [[clang::lifetimebound]]
+#elif __has_cpp_attribute(lifetimebound)
+	#define ada_lifetime_bound [[lifetimebound]]
+#else
+	#define ada_lifetime_bound
+#endif
+
+
 namespace pax {
 
 	/// What span2 or string_view2 is suitable for a type?
@@ -94,7 +108,7 @@ namespace pax {
 			const span2< T, N >				sp_,
 			Itr 							dst_ 
 		) noexcept {
-			constexpr bool same = std::is_same_v< std::remove_cvref_t< T >, std::remove_cvref_t< Value_type_t< Itr > > >;
+			static constexpr bool same = std::is_same_v< std::remove_cvref_t< T >, std::remove_cvref_t< Value_type_t< Itr > > >;
 			if constexpr( same )	return ( dst_ >= sp_.begin() ) && ( dst_ < sp_.end() );
 			else					return false;
 		}
@@ -110,21 +124,45 @@ namespace pax {
 			using std::size;
 			assert( size( v0_ ) == size( v1_ ) && "v0_ and v1_ must have same size." );
 		}
-
-		constexpr auto is_newline = []( const unsigned c ) noexcept {	return ( c == '\n' ) || ( c == '\r' );	};
 	}	// namespace detail
 
 
-	struct Newline {};
+	struct Newline {
+		using value_type = unsigned;
+		enum : value_type {
+			BEL	= 0x07,		// Bell, \a
+			BS	= 0x08,		// Back space, \b
+			HT	= 0x09,		// Horizontal tab, \t
+			LF	= 0x0a,		// Linde feed, \n
+			VT	= 0x0b,		// Vertical tab, \v
+			FF	= 0x0c,		// Form fgeed, new page, \f
+			CR	= 0x0d,		// Carige return, \r
+		};
 
+		/// Returns true iff c is any ao the linebreak characters LF or CR.
+		static constexpr auto is_newline  = []( const value_type c )					noexcept {
+			// The first part of the test is redundant, but is thought to quicken up the test in most cases.
+			return ( c <= CR ) && ( ( c == LF ) || ( c == CR ) );
+		};
+		
+		/// Returns 2 if { LF, CR } or { CR, LF }, returns 1 if c is LF or CR, and returns 0 otherwise.
+		static constexpr auto is_newline2( const value_type c, const value_type c2 )	noexcept {
+			// ( c^c2 ) == 0x7 signifies either { LF, CR } or { CR, LF }:
+			return is_newline( c ) ? 1u + ( ( c^c2 ) == 0x7 ) : 0u;
+		}
+	};
 
 
 
 	/// Returns sp_.data() != nullptr. 
 	template< Contiguous_elements V >
 	[[nodiscard]] constexpr bool valid( const V & v_ ) noexcept {
-		using std::data;
-		return data( v_ ) != nullptr;
+		if constexpr( Character_array< V > ) {
+			return data( view( v_ ) ) != nullptr;
+		} else {
+			using std::data;
+			return data( v_ ) != nullptr;
+		}
 	}
 
 	/// Returns a span2 with const elements.
@@ -137,18 +175,19 @@ namespace pax {
 	/// Returns a view with const elements.
 	template< Contiguous_elements V >
 	[[nodiscard]] constexpr auto as_const( V && v_ ) noexcept {
-		using std::data, std::size;
-		if constexpr( std::is_const_v< Value_type_t< V > > )
+		if constexpr( std::is_const_v< Value_type_t< V > > ) {
 			return view( v_ );
-		else
+		} else {
+			using std::data, std::size;
 			return span2< const Value_type_t< V >, extent_v< V > >( data( v_ ), size( v_ ) );
+		}
 	}
 
 	/// Returns a dynamically sized span2.
 	template< typename T, std::size_t N >
 	[[nodiscard]] constexpr auto as_dynamic( const span2< T, N > sp_ ) noexcept {
-		if constexpr( N == dynamic_extent )			return sp_;
-		else										return span2( sp_.data(), N );
+		if constexpr( N == dynamic_extent )		return sp_;
+		else									return span2( sp_.data(), N );
 	}
 
 	/// Returns a dynamically sized span2.
@@ -163,9 +202,13 @@ namespace pax {
 		const V0						  & v0_, 
 		const V1						  & v1_ 
 	) noexcept {
-		using std::data, std::size;
-		return ( data( v0_ ) == data( v1_ ) )
-			&& ( size( v0_ ) == size( v1_ ) );
+		if constexpr( Character_array< V0 > || Character_array< V1 > ) {
+			return identic( view( v0_ ), view( v1_ ) );
+		} else {
+			using std::data, std::size;
+			return ( data( v0_ ) == data( v1_ ) )
+				&& ( size( v0_ ) == size( v1_ ) );
+		}
 	}
 
 	/// Return true iff any element in v1_ by address is also an element in v2_.
@@ -175,10 +218,14 @@ namespace pax {
 		const V0						  & v0_, 
 		const V1						  & v1_ 
 	) noexcept {
-		using std::data, std::size;
-		return	( ( data( v0_ ) > data( v1_ ) )	? ( data( v1_ ) + size( v1_ ) > data( v0_ ) ) 
-												: ( data( v0_ ) + size( v0_ ) > data( v1_ ) )	)
-			&&	size( v0_ ) && size( v1_ );	// An empty view cannot overlap.
+		if constexpr( Character_array< V0 > || Character_array< V1 > ) {
+			return overlap( view( v0_ ), view( v1_ ) );
+		} else {
+			using std::data, std::size;
+			return	( ( data( v0_ ) > data( v1_ ) )	? ( data( v1_ ) + size( v1_ ) > data( v0_ ) ) 
+													: ( data( v0_ ) + size( v0_ ) > data( v1_ ) )	)
+				&&	size( v0_ ) && size( v1_ );	// An empty view cannot overlap.
+		}
 	}
 
 
@@ -188,10 +235,10 @@ namespace pax {
 	/// UB, if v_ has a dynamic size that is zero.
 	template< typename V >
 	[[nodiscard]] constexpr auto & front( const V & v_ ) noexcept {
-		using std::data, std::size;
-		if constexpr( Character_array< V > )
-			return front( view( v_ ) );
-		else {
+		if constexpr( Character_array< V > ) {
+			return front( view( v_ ) );		// To remove possible trailing '\0'.
+		} else {
+			using std::data, std::size;
 			static_assert( extent_v< V > != 0 );
 			if constexpr ( extent_v< V > == dynamic_extent )
 				assert( size( v_ ) && "front( v_ ) requires size( v_ ) > 0" );
@@ -203,10 +250,10 @@ namespace pax {
 	/// UB, if v_ has a dynamic size that is zero.
 	template< typename V >
 	[[nodiscard]] constexpr auto & back( const V & v_ ) noexcept {
-		using std::data, std::size;
-		if constexpr( Character_array< V > )
-			return back( view( v_ ) );
-		else {
+		if constexpr( Character_array< V > ) {
+			return back( view( v_ ) );		// To remove possible trailing '\0'.
+		} else {
+			using std::data, std::size;
 			static_assert( extent_v< V > != 0 );
 			if constexpr ( extent_v< V > == dynamic_extent )
 				assert( size( v_ ) && "back( v_ ) requires size( v_ ) > 0" );
@@ -222,10 +269,12 @@ namespace pax {
 		V								 && v_, 
 		const std::size_t 					i_ = 1 
 	) noexcept {
-		using std::size;
-		if constexpr( Character_array< V > )
-				return first( view( v_ ), i_ );
-		else	return view_type_t< V, true >( data( v_ ), std::min( i_, size( v_ ) ) );
+		if constexpr( Character_array< V > ) {
+			return first( view( v_ ), i_ );		// To remove possible trailing '\0'.
+		} else {
+			using std::data, std::size;
+			return view_type_t< V, true >( data( v_ ), std::min( i_, size( v_ ) ) );
+		}
 	}
 
 	/// Returns a statically sized span of the first I elements of v_.
@@ -233,11 +282,13 @@ namespace pax {
 	template< std::size_t I, Contiguous_elements V >
 		requires( ( I != dynamic_extent ) && ( extent_v< V > != dynamic_extent ) )
 	[[nodiscard]] constexpr auto first( V && v_ ) noexcept {
-		using std::data;
-		static constexpr std::size_t 	sz = std::min( I, extent_v< V > );
-		if constexpr( Character_array< V > )
-				return first< I >( view( v_ ) );
-		else	return span2< Value_type_t< V >, sz >( data( v_ ), sz );
+		if constexpr( Character_array< V > ) {
+			return first< I >( view( v_ ) );	// To remove possible trailing '\0'.
+		} else {
+			using std::data;
+			static constexpr std::size_t	sz = std::min( I, extent_v< V > );
+			return span2< Value_type_t< V >, sz >( data( v_ ), sz );
+		}
 	}
 
 	/// Returns a statically sized span of the first I elements of v_.
@@ -245,11 +296,13 @@ namespace pax {
 	template< std::size_t I, Contiguous_elements V >
 		requires( ( I != dynamic_extent ) && ( extent_v< V > == dynamic_extent ) )
 	[[nodiscard]] constexpr auto first( V && v_ ) noexcept {
-		using std::data, std::size;
-		assert( I <= size( v_ ) && "first< I >( v_ ) requires I <= size( v_ )." );
-		if constexpr( Character_array< V > )
-				return first< I >( view( v_ ) );
-		else	return span2< Value_type_t< V >, I >( data( v_ ), I );
+		if constexpr( Character_array< V > ) {
+			return first< I >( view( v_ ) );	// To remove possible trailing '\0'.
+		} else {
+			using std::data, std::size;
+			assert( I <= size( v_ ) && "first< I >( v_ ) requires I <= size( v_ )." );
+			return span2< Value_type_t< V >, I >( data( v_ ), I );
+		}
 	}
 
 
@@ -260,11 +313,13 @@ namespace pax {
 		V								 && v_, 
 		const std::size_t 					i_ = 1 
 	) noexcept {
-		using std::data, std::size;
-		if constexpr( Character_array< V > )
-				return last( view( v_ ), i_ );
-		else	return ( i_ < size( v_ ) )	? view_type_t< V, true >( data( v_ ) + size( v_ ) - i_, i_ )
-											: view_type_t< V, true >( v_ );
+		if constexpr( Character_array< V > ) {
+			return last( view( v_ ), i_ );		// To remove possible trailing '\0'.
+		} else {
+			using std::data, std::size;
+			return ( i_ < size( v_ ) )	? view_type_t< V, true >( data( v_ ) + size( v_ ) - i_, i_ )
+										: view_type_t< V, true >( v_ );
+		}
 	}
 
 	/// Returns a statically sized span of the last I elements of v_.
@@ -272,12 +327,14 @@ namespace pax {
 	template< std::size_t I, Contiguous_elements V >
 		requires( ( I != dynamic_extent ) && ( extent_v< V > != dynamic_extent ) )
 	[[nodiscard]] constexpr auto last( V && v_ ) noexcept {
-		using std::data;
-		static constexpr std::size_t	sz = extent_v< V >;
-		static constexpr std::size_t	offset = ( I < sz ) ? sz - I : 0u;
-		if constexpr( Character_array< V > )
-				return last< I >( view( v_ ) );
-		else	return span2< Value_type_t< V >, sz - offset >( data( v_ ) + offset, sz - offset );
+		if constexpr( Character_array< V > ) {
+			return last< I >( view( v_ ) );		// To remove possible trailing '\0'.
+		} else {
+			using std::data;
+			static constexpr std::size_t	sz = extent_v< V >;
+			static constexpr std::size_t	offset = ( I < sz ) ? sz - I : 0u;
+			return span2< Value_type_t< V >, sz - offset >( data( v_ ) + offset, sz - offset );
+		}
 	}
 
 	/// Returns a statically sized span of the last I elements of v_.
@@ -285,11 +342,13 @@ namespace pax {
 	template< std::size_t I, Contiguous_elements V >
 		requires( ( I != dynamic_extent ) && ( extent_v< V > == dynamic_extent ) )
 	[[nodiscard]] constexpr auto last( V && v_ ) noexcept {
-		using std::data, std::size;
-		assert( I <= size( v_ ) && "last< I >( v_ ) requires I <= size( v_ )." );
-		if constexpr( Character_array< V > )
-				return last< I >( view( v_ ) );
-		else	return span2< Value_type_t< V >, I >( data( v_ ) + size( v_ ) - I, I );
+		if constexpr( Character_array< V > ) {
+			return last< I >( view( v_ ) );		// To remove possible trailing '\0'.
+		} else {
+			using std::data, std::size;
+			assert( I <= size( v_ ) && "last< I >( v_ ) requires I <= size( v_ )." );
+			return span2< Value_type_t< V >, I >( data( v_ ) + size( v_ ) - I, I );
+		}
 	}
 
 
@@ -300,11 +359,13 @@ namespace pax {
 		V								 && v_, 
 		const std::size_t 					i_ = 1 
 	) noexcept {
-		using std::data, std::size, std::end;
-		if constexpr( Character_array< V > )
-				return not_first( view( v_ ), i_ );
-		else	return ( i_ < size( v_ ) )	? view_type_t< V, true >( data( v_ ) + i_, size( v_ ) - i_ )
-											: view_type_t< V, true >( data( v_ ) + size( v_ ), 0 );
+		if constexpr( Character_array< V > ) {
+			return not_first( view( v_ ), i_ );	// To remove possible trailing '\0'.
+		} else {
+			using std::data, std::size;
+			return ( i_ < size( v_ ) )	? view_type_t< V, true >( data( v_ ) + i_, size( v_ ) - i_ )
+										: view_type_t< V, true >( data( v_ ) + size( v_ ), 0 );
+		}
 	}
 
 	/// Returns a statically sized span of all elements of v_ except the first I.
@@ -312,12 +373,14 @@ namespace pax {
 	template< std::size_t I, Contiguous_elements V >
 		requires( ( I != dynamic_extent ) && ( extent_v< V > != dynamic_extent ) )
 	[[nodiscard]] constexpr auto not_first( V && v_ ) noexcept {
-		using std::data;
-		static constexpr std::size_t		offset = ( I < extent_v< V > ) ? I : extent_v< V >;
-		static constexpr std::size_t		sz = extent_v< V > - offset;
-		if constexpr( Character_array< V > )
-				return not_first< I >( view( v_ ) );
-		else	return span2< Value_type_t< V >, sz >( data( v_ ) + offset, sz );
+		if constexpr( Character_array< V > ) {
+			return not_first< I >( view( v_ ) );	// To remove possible trailing '\0'.
+		} else {
+			using std::data;
+			static constexpr std::size_t	offset = ( I < extent_v< V > ) ? I : extent_v< V >;
+			static constexpr std::size_t	sz = extent_v< V > - offset;
+			return span2< Value_type_t< V >, sz >( data( v_ ) + offset, sz );
+		}
 	}
 
 
@@ -328,10 +391,12 @@ namespace pax {
 		V								 && v_, 
 		const std::size_t 					i_ = 1 
 	) noexcept {
-		using std::data, std::size;
-		if constexpr( Character_array< V > )
-				return not_last( view( v_ ), i_ );
-		else	return view_type_t< V, true >( data( v_ ), ( i_ < size( v_ ) ) ? size( v_ ) - i_ : 0u );
+		if constexpr( Character_array< V > ) {
+			return not_last( view( v_ ), i_ );		// To remove possible trailing '\0'.
+		} else {
+			using std::data, std::size;
+			return view_type_t< V, true >( data( v_ ), ( i_ < size( v_ ) ) ? size( v_ ) - i_ : 0u );
+		}
 	}
 
 	/// Returns a statically sized span of all elements of v_ except the first I.
@@ -339,11 +404,13 @@ namespace pax {
 	template< std::size_t I, Contiguous_elements V >
 		requires( ( I != dynamic_extent ) && ( extent_v< V > != dynamic_extent ) )
 	[[nodiscard]] constexpr auto not_last( V && v_ ) noexcept {
-		using std::data;
-		static constexpr std::size_t		sz = ( extent_v< V > > I ) ? extent_v< V > - I : 0;
-		if constexpr( Character_array< V > )
-				return not_last< I >( view( v_ ) );
-		else	return span2< Value_type_t< V >, sz >( data( v_ ), sz );
+		if constexpr( Character_array< V > ) {
+			return not_last< I >( view( v_ ) );		// To remove possible trailing '\0'.
+		} else {
+			using std::data;
+			static constexpr std::size_t	sz = ( extent_v< V > > I ) ? extent_v< V > - I : 0;
+			return span2< Value_type_t< V >, sz >( data( v_ ), sz );
+		}
 	}
 
 
@@ -356,10 +423,10 @@ namespace pax {
 		const std::ptrdiff_t 				offset_, 
 		const std::size_t 					size_ 
 	) noexcept {
-		using std::data, std::size;
-		if constexpr( Character_array< V > )
-			return subview( view( v_ ), offset_, size_ );
-		else {
+		if constexpr( Character_array< V > ) {
+			return subview( view( v_ ), offset_, size_ );	// To remove possible trailing '\0'.
+		} else {
+			using std::data, std::size;
 			const auto 						offset = detail::subview_offset( offset_, size( v_ ) );
 			return view_type_t< V, true >( data( v_ ) + offset, std::min( size( v_ ) - offset, size_ ) );
 		}
@@ -374,11 +441,11 @@ namespace pax {
 		V								 && v_, 
 		const std::ptrdiff_t 				offset_ 
 	) noexcept	{
-		using std::size, std::data;
-		if constexpr( Character_array< V > )
-			return subview< Len >( view( v_ ), offset_ );
-		else {
-			const auto 							offset = detail::subview_offset( offset_, size( v_ ) );
+		if constexpr( Character_array< V > ) {
+			return subview< Len >( view( v_ ), offset_ );	// To remove possible trailing '\0'.
+		} else {
+			using std::size, std::data;
+			const auto 						offset = detail::subview_offset( offset_, size( v_ ) );
 			assert( offset + Len <= size( v_ )  && "subview< Len >( v_, offset_ ) requires offset_ + Len <= size( v_ )." );
 			return span2< Value_type_t< V >, Len >( data( v_ ) + offset, Len );
 		}
@@ -390,12 +457,14 @@ namespace pax {
 	template< std::ptrdiff_t Offset, std::size_t Len, Contiguous_elements V >	
 		requires( ( Len != dynamic_extent ) && ( extent_v< V > != dynamic_extent ) )
 	[[nodiscard]] constexpr auto subview( V && v_ ) noexcept {
-		using std::data;
-		constexpr auto 						offset = detail::subview_offset( Offset, extent_v< V > );
-		constexpr std::size_t 				sz = std::min( extent_v< V > - offset, Len );
-		if constexpr( Character_array< V > )
-				return subview< Offset, Len >( view( v_ ) );
-		else	return span2< Value_type_t< V >, sz >( data( v_ ) + offset, sz );
+		if constexpr( Character_array< V > ) {
+			return subview< Offset, Len >( view( v_ ) );	// To remove possible trailing '\0'.
+		} else {
+			using std::data;
+			static constexpr auto 			offset = detail::subview_offset( Offset, extent_v< V > );
+			static constexpr std::size_t 	sz = std::min( extent_v< V > - offset, Len );
+			return span2< Value_type_t< V >, sz >( data( v_ ) + offset, sz );
+		}
 	}
 
 	/// Returns a statically sized span of Len elements of v_ starting with Offset.
@@ -404,10 +473,10 @@ namespace pax {
 	template< std::ptrdiff_t Offset, std::size_t Len, Contiguous_elements V >
 		requires( ( Len != dynamic_extent ) && ( extent_v< V > == dynamic_extent ) )
 	[[nodiscard]] constexpr auto subview( V && v_ ) noexcept {
-		using std::data;
-		if constexpr( Character_array< V > )
-			return subview< Offset, Len >( view( v_ ) );
-		else {
+		if constexpr( Character_array< V > ) {
+			return subview< Offset, Len >( view( v_ ) );	// To remove possible trailing '\0'.
+		} else {
+			using std::data, std::size;
 			const auto 						offset = detail::subview_offset( Offset, size( v_ ) );
 			assert( offset + Len <= size( v_ ) && "subview< Offset, Len >( v_ ) requires Offset + Len <= size( v_ )." );
 			return span2< Value_type_t< V >, Len >( data( v_ ) + offset, Len );
@@ -424,10 +493,14 @@ namespace pax {
 		const V0						  & v0_, 
 		const V1						  & v1_
 	) noexcept {
-		using std::begin, std::end;
-		if constexpr( Character_array< V1 > )
-				return find( v0_, string_view2( v1_ ) );
-		else	return std::search( begin( v0_ ), end( v0_ ), begin( v1_ ), end( v1_ ) ) - begin( v0_ );
+		if constexpr( Character_array< V0 > ) {
+			return find( view( v0_ ), v1_ );			// To remove possible trailing '\0'.
+		} else if constexpr( Character_array< V1 > ) {
+			return find( v0_, view( v1_ ) );			// To remove possible trailing '\0'.
+		} else {
+			using std::begin, std::end;
+			return std::search( begin( v0_ ), end( v0_ ), begin( v1_ ), end( v1_ ) ) - begin( v0_ );
+		}
 	}
 
 	/// Returns the offset to the first occurence of t_ in v_.
@@ -437,8 +510,12 @@ namespace pax {
 		const V							  & v_, 
 		const Value_type_t< V >			  & t_ 
 	) noexcept {
-		using std::begin, std::end;
-		return std::find( begin( v_ ), end( v_ ), t_ ) - begin( v_ );
+		if constexpr( Character_array< V > ) {
+			return find( view( v_ ), t_ );				// To remove possible trailing '\0'.
+		} else {
+			using std::begin, std::end;
+			return std::find( begin( v_ ), end( v_ ), t_ ) - begin( v_ );
+		}
 	}
 
 	/// Returns the offset to v for the first true occurence of pred_( v ) in v_.
@@ -449,8 +526,12 @@ namespace pax {
 		const V							  & v_, 
 		Pred							 && pred_ 
 	) noexcept {
-		using std::begin, std::end;
-		return std::find_if( begin( v_ ), end( v_ ), pred_ ) - begin( v_ );
+		if constexpr( Character_array< V > ) {
+			return find( view( v_ ), pred_ );			// To remove possible trailing '\0'.
+		} else {
+			using std::begin, std::end;
+			return std::find_if( begin( v_ ), end( v_ ), pred_ ) - begin( v_ );
+		}
 	}
 	
 	/// Returns the offset to the first occurence of either `'\n'` or `'\r'` in `view_`.
@@ -460,7 +541,7 @@ namespace pax {
 		const V							  & v_, 
 		Newline	
 	) noexcept {
-		return find( v_, detail::is_newline );
+		return find( v_, Newline::is_newline );
 	}
 
 
@@ -471,9 +552,13 @@ namespace pax {
 		const V							  & v_, 
 		const Value_type_t< V >			  & t_ 
 	) noexcept {
-		using std::size, std::rbegin, std::rend;
-		const auto res = std::find( rbegin( v_ ), rend( v_ ), t_ );
-		return ( res == rend( v_ ) ) ? size( v_ ) : rend( v_ ) - res - 1;
+		if constexpr( Character_array< V > ) {
+			return rfind( view( v_ ), t_ );				// To remove possible trailing '\0'.
+		} else {
+			using std::size, std::rbegin, std::rend;
+			const auto res = std::find( rbegin( v_ ), rend( v_ ), t_ );
+			return ( res == rend( v_ ) ) ? size( v_ ) : rend( v_ ) - res - 1;
+		}
 	}
 
 	/// Returns the offset for the last true occurence of pred_( ... ).
@@ -484,9 +569,13 @@ namespace pax {
 		const V							  & v_, 
 		Pred							 && pred_ 
 	) noexcept {
-		using std::size, std::rbegin, std::rend;
-		const auto res = std::find_if( rbegin( v_ ), rend( v_ ), pred_ );
-		return ( res == rend( v_ ) ) ? size( v_ ) : rend( v_ ) - res - 1;
+		if constexpr( Character_array< V > ) {
+			return rfind( view( v_ ), pred_ );			// To remove possible trailing '\0'.
+		} else {
+			using std::size, std::rbegin, std::rend;
+			const auto res = std::find_if( rbegin( v_ ), rend( v_ ), pred_ );
+			return ( res == rend( v_ ) ) ? size( v_ ) : rend( v_ ) - res - 1;
+		}
 	}
 
 
@@ -496,8 +585,12 @@ namespace pax {
 		const V							  & v_, 
 		X								 && x_ 
 	) noexcept {
-		using std::size;
-		return find( v_, x_ ) < size( v_ );
+		if constexpr( Character_array< V > ) {
+			return find( v_, x_ ) < size( view( v_ ) );	// To remove possible trailing '\0'.
+		} else {
+			using std::size;
+			return find( v_, x_ ) < size( v_ );
+		}
 	}
 
 
@@ -508,28 +601,31 @@ namespace pax {
 		V								 && v_, 
 		U								 && until_this_ 
 	) noexcept {
-		using std::data;
-		if constexpr( Character_array< V > )
-				return view_type_t< V, true >( data( v_ ), find( view( v_ ), until_this_ ) );
-		else	return view_type_t< V, true >( data( v_ ), find( v_, until_this_ ) );
+		if constexpr( Character_array< V > ) {			// To remove possible trailing '\0'.
+			return view_type_t< V, true >( data( v_ ), find( view( v_ ), until_this_ ) );
+		} else {
+			using std::data;
+			return view_type_t< V, true >( data( v_ ), find( v_, until_this_ ) );
+		}
 	}
 
 
 
 
-	/// Returns the size of `v_` if the beginning of `view_` is lexicographical equal to `v_` and 0 otherwise.
+	/// Returns true iff v_ and u_ are equal.
 	template< Contiguous_elements V, Contiguous_elements U >
-	[[nodiscard]] constexpr std::size_t starts_with(  
+	[[nodiscard]] constexpr bool equal(  
 		const V							  & v_, 
 		U								 && u_
 	) noexcept {
-		using std::begin, std::end;
-		if constexpr( Character_array< U > ) 
-				return starts_with( v_, view_type_t< U, true >( u_  ) );	// To remove possible trailing '\0'.
-		else	return ( size( v_ ) < size( u_ ) )
-					?	0 : std::equal( begin( v_ ), begin( v_ ) + size( u_ ), begin( u_ ), end( u_ ) )
-					?	size( u_ ) : 0u;
+		if constexpr( Character_array< V > || Character_array< U > ) {
+			return equal( view( v_  ), view( u_  ) );	// To remove possible trailing '\0'.
+		} else {
+			using std::begin, std::end;
+			return std::equal( begin( v_ ), end( v_ ), begin( u_ ), end( u_ ) );
+		}
 	}
+
 
 	/// Returns 1, if the beginning of `view_` is `t_` and 0 otherwise.
 	template< Contiguous_elements V >
@@ -537,42 +633,12 @@ namespace pax {
 		const V							  & v_, 
 		const Value_type_t< V >				t_ 
 	) noexcept {
-		using std::size;
-		return size( v_ ) && ( front( v_ ) == t_ );
-	}
-
-	/// Returns 2 if `view_` starts with `"\n\r"` or `"\r\n"`; 1 if `'\n'` or `'\r'`; and 0 otherwise.
-	template< String V >
-	[[nodiscard]] constexpr std::size_t starts_with(  
-		const V							  & v_, 
-		Newline 
-	) noexcept {
-		if constexpr( extent_v< V > == 1 ) 
-			return ( v_[ 0 ] == '\n' ) || ( v_[ 0 ] == '\r' );
-		else if constexpr( extent_v< V > > 1 ) 
-			if( size( v_ ) ) 
-				switch( front( v_ ) ) {
-					case '\n': return 1 + ( ( size( v_ ) > 1 ) && ( v_[ 1 ] == '\r' ) );
-					case '\r': return 1 + ( ( size( v_ ) > 1 ) && ( v_[ 1 ] == '\n' ) );
-				}
-		return 0;
-	}
-
-
-	/// Returns the size of `v_`, if the end of `view_` is lexicographical equal to `v_` and 0 otherwise.
-	template< Contiguous_elements V, Contiguous_elements U >
-	[[nodiscard]] constexpr std::size_t ends_with( 
-		const V							  & v_, 
-		U								 && u_
-	) noexcept {
-		using std::begin, std::end;
-		if constexpr( Character_array< V > ) 
-				return ends_with( view_type_t< V, true >( v_ ), u_ );	// To remove possible trailing '\0'.
-		else if constexpr( Character_array< U > ) 
-				return ends_with( v_, view_type_t< U, true >( u_ ) );	// To remove possible trailing '\0'.
-		else	return ( size( v_ ) < size( u_ ) )
-				?	0 : std::equal( end( v_ ) - size( u_ ), end( v_ ), begin( u_ ), end( u_ ) )
-				?	size( u_ ) : 0u;
+		if constexpr( Character_array< V > ) {
+			return starts_with( view( v_ ), t_ );		// To remove possible trailing '\0'.
+		} else {
+			using std::size;
+			return size( v_ ) && ( v_[ 0 ] == t_ );
+		}
 	}
 
 	/// Returns 1, if the end of `view_` is `t_` and 0 otherwise.
@@ -581,102 +647,79 @@ namespace pax {
 		const V							  & v_, 
 		const Value_type_t< V >				t_ 
 	) noexcept {
-		using std::size;
-		return size( v_ ) && ( back( v_ ) == t_ );
+		if constexpr( Character_array< V > ) {
+			return ends_with( view( v_ ), t_ );			// To remove possible trailing '\0'.
+		} else {
+			using std::size;
+			return size( v_ ) && ( back( v_ ) == t_ );
+		}
+	}
+
+	/// Returns the size of `v_` if the beginning of `view_` is lexicographical equal to `v_` and 0 otherwise.
+	template< Contiguous_elements V, Contiguous_elements U >
+	[[nodiscard]] constexpr std::size_t starts_with(  
+		const V							  & v_, 
+		U								 && u_
+	) noexcept {
+		if constexpr( Character_array< V > || Character_array< U > ) {
+			return starts_with( view( v_ ), view( u_ ) );	// To remove possible trailing '\0'.
+		} else {
+			using std::size;
+			return equal( first( v_, size( u_ ) ), u_ ) ? size( u_ ) : 0u;
+		}
+	}
+
+	/// Returns the size of `v_`, if the end of `view_` is lexicographical equal to `v_` and 0 otherwise.
+	template< Contiguous_elements V, Contiguous_elements U >
+	[[nodiscard]] constexpr std::size_t ends_with( 
+		const V							  & v_, 
+		U								 && u_
+	) noexcept {
+		if constexpr( Character_array< V > || Character_array< U > ) {
+			return ends_with( view( v_ ), view( u_ ) );		// To remove possible trailing '\0'.
+		} else {
+			using std::size;
+			return equal( last( v_, size( u_ ) ), u_ ) ? size( u_ ) : 0u;
+		}
+	}
+
+	/// Returns 2 if `view_` starts with `"\n\r"` or `"\r\n"`; 1 if `'\n'` or `'\r'`; and 0 otherwise.
+	template< String V >
+	[[nodiscard]] constexpr std::size_t starts_with(  
+		const V							& v_, 
+		Newline 
+	) noexcept {
+		if constexpr( extent_v< V > > 1 ) {
+			using std::data, std::size;
+			return	( size( v_ ) > 1 )	? Newline::is_newline2( v_[ 0 ], v_[ 1 ] )
+				:	  size( v_ )		? Newline::is_newline ( v_[ 0 ] )
+				:						  0;
+		} else if constexpr( extent_v< V > == 1 ) {
+			return Newline::is_newline( v_[ 0 ] );
+		} else {
+			return 0;
+		}
 	}
 
 	/// Returns 2 if `view_` ends with `"\n\r"` or `"\r\n"`; 1 if `'\n'` or `'\r'`; and 0 otherwise.
 	template< String V >
 	[[nodiscard]] constexpr std::size_t ends_with(  
-		const V							  & v_, 
+		const V							& v_, 
 		Newline 
 	) noexcept {
-		if constexpr( Character_array< V > ) 
-			return ends_with( view_type_t< V, true >( v_ ), Newline{} );	// To remove possible trailing '\0'.
-		else if constexpr( extent_v< V > == 1 ) 
-			return ( v_[ 0 ] == '\n' ) || ( v_[ 0 ] == '\r' );
-		else if constexpr( extent_v< V > > 1 ) 
-			if( size( v_ ) ) 
-				switch( back( v_ ) ) {
-					case '\n': return 1 + ( ( size( v_ ) > 1 ) && ( v_[ size( v_ ) - 2u ] == '\r' ) );
-					case '\r': return 1 + ( ( size( v_ ) > 1 ) && ( v_[ size( v_ ) - 2u ] == '\n' ) );
-				}
-		return 0;
-	}
-
-
-
-
-	/// Split v_ into two parts: before and after (but not including) the `at_` element.
-	/// - If `at_ >= size( v_ )`, then `{ v_, last( v_, 0 ) }` is returned.
-	/// Returns a pair of [non-owning] string views into v_.
-	template< Contiguous_elements V >
-	[[nodiscard]] constexpr auto split_at( 
-		const V							  & v_, 
-		const std::size_t 					at_ 
-	) noexcept {
-		using std::size;
-		const auto	i = std::min( at_, size( v_ ) );
-		return std::pair{ first( v_, i ), not_first( v_, i + ( i < size( v_ ) ) ) };
-	}
-
-	/// Split `view_` into two parts: before and after the first `x_`, not including it.
-	/// Returns a pair of [non-owning] string views into v_.
-	template< Contiguous_elements V >
-	[[nodiscard]] constexpr auto split_by( 
-		const V							  & v_, 
-		const Value_type_t< V >				item_ 
-	) noexcept {
-		return split_at( v_, find( v_, item_ ) );
-	}
-
-	/// Split `view_` into two parts: before and after the first `x_`, not including it. 
-	/// - Trims leading and trailing spaces.
-	/// Returns a pair of [non-owning] string views into v_.
-	template< Contiguous_elements V >
-	[[nodiscard]] constexpr auto split_by_trim( 
-		const V							  & v_, 
-		const Value_type_t< V >				item_ 
-	) noexcept {
-		using std::begin, std::end;
-		auto		itr		= begin( v_ );
-		const auto	stop	= end  ( v_ );
-		while( ( itr != stop ) && ( *itr != item_ ) && ( *itr == ' ' ) )		++itr;	// Ignore leading spaces.
-		const auto	first	= itr;
-		auto		last	= stop;
-		while( ( itr != stop ) && ( *itr != item_ ) ) {
-			while( ( itr != stop ) && ( *itr != item_ ) && ( *itr != ' ' ) )	++itr;	// Scan non-spaces.
-			last = itr;
-			while( ( itr != stop ) && ( *itr != item_ ) && ( *itr == ' ' ) )	++itr;	// Ignore trailing spaces.
+		if constexpr( Character_array< V > ) {
+			return ends_with( view_type_t< V, true >( v_ ), Newline{} );	// To remove trailing '\0'.
+		} else if constexpr( extent_v< V > > 1 ) {
+			using std::data, std::size;
+			const auto last = data( v_ ) + size( v_ ) - 1;
+			return	( size( v_ ) > 1 )	? Newline::is_newline2( *last, *( last - 1 ) )
+				:	  size( v_ )		? Newline::is_newline ( v_[ 0 ] )
+				:						  0;
+		} else if constexpr( extent_v< V > == 1 ) {
+			return Newline::is_newline( v_[ 0 ] );
+		} else {
+			return 0;
 		}
-		using View = view_type_t< V, true >;
-		return std::pair{ View( first, last ), View( itr + ( *itr == item_ ), stop ) };
-	}
-
-	/// Split the v_ into two parts: before and after (but not including) `by_`.
-	/// - If `begin( by_ ) <= begin( v_ )`, the first string view returned is `first( v_, 0 )`.
-	///	- If `end( by_ )   >= end( v_ )`,   the second string view returned is `last( v_, 0 )`.
-	/// Returns a pair of [non-owning] string views into v_.
-	template< Contiguous_elements V, Contiguous_elements By >
-	[[nodiscard]] constexpr auto split_by(
-		const V							  & v_, 
-		By								 && by_
-	) noexcept {
-		const std::size_t 					i  = find( v_, by_ );
-		const std::size_t 					sz = ( i >= view( v_ ).size() ) ? 0 : view( by_ ).size();
-		return std::pair{ first( v_, i ), not_first( v_, i + sz ) };
-	}
-
-	/// Split into two parts: before and after the first newline (`'\n'`, `'\r'`, `"\n\r"`, or `"\r\n"`), but not including it.
-	/// Returns a pair of [non-owning] string views into v_.
-	template< String V >
-	[[nodiscard]] constexpr auto split_by(
-		const V							  & v_, 
-		Newline 
-	) noexcept {
-		const std::size_t 					i  = find( v_, detail::is_newline );
-		const auto							vw = not_first( v_, i );
-		return std::pair{ first( v_, i ), not_first( vw, starts_with( vw, Newline{} ) ) };
 	}
 
 
@@ -689,7 +732,11 @@ namespace pax {
 		const V							  & v_, 
 		const Value_type_t< V >				t_ 
 	) noexcept {
-		return not_first( v_, starts_with( v_, t_ ) );
+		if constexpr( Character_array< V > ) {
+			return trim_front( view_type_t< V, true >( v_ ), t_ );	// To remove trailing '\0'.
+		} else {
+			return not_first( v_, starts_with( v_, t_ ) );
+		}
 	}
 
 	/// Returns `v_` possibly excluding a trailing `t_`. 
@@ -699,9 +746,30 @@ namespace pax {
 		const V							  & v_, 
 		const Value_type_t< V >				t_ 
 	) noexcept {
-		return not_last( v_, ends_with( v_, t_ ) );
+		if constexpr( Character_array< V > ) {
+			return trim_back( view_type_t< V, true >( v_ ), t_ );	// To remove trailing '\0'.
+		} else {
+			return not_last( v_, ends_with( v_, t_ ) );
+		}
 	}
 
+
+	/// Returns `v_`, but excluding all leading `t_`, if any.
+	/// Returns a [non-owning] string view into v_.
+	template< Contiguous_elements V >
+	[[nodiscard]] constexpr auto trim_first( 
+		const V							  & v_, 
+		const Value_type_t< V >				t_ 
+	) noexcept {
+		if constexpr( Character_array< V > ) {
+			return trim_first( view_type_t< V, true >( v_ ), t_ );	// To remove trailing '\0'.
+		} else {
+			using std::begin, std::end;
+			auto							itr = begin( v_ );
+			while( ( itr != end( v_ ) ) && ( *itr == t_ ) )		++itr;
+			return view_type_t< V, true >{ itr, end( v_ ) };
+		}
+	}
 
 	/// Returns `v_`, but excluding any leading elements `v` that satisfy `p_( v )`.
 	/// Returns a [non-owning] string view into v_.
@@ -711,10 +779,14 @@ namespace pax {
 		const V							  & v_, 
 		Pred							 && p_ 
 	) noexcept {
-		using std::begin, std::end;
-		auto								itr = begin( v_ );
-		while( ( itr != end( v_ ) ) && p_( *itr ) )		++itr;
-		return view_type_t< V, true >{ itr, end( v_ ) };
+		if constexpr( Character_array< V > ) {
+			return trim_first( view_type_t< V, true >( v_ ), p_ );	// To remove trailing '\0'.
+		} else {
+			using std::begin, std::end;
+			auto							itr = begin( v_ );
+			while( ( itr != end( v_ ) ) && p_( *itr ) )		++itr;
+			return view_type_t< V, true >{ itr, end( v_ ) };
+		}
 	}
 
 	/// Returns `v_`, but excluding a leading `'\n'`, `'\r'`, `"\n\r"`, or `"\r\n"`. 
@@ -724,9 +796,30 @@ namespace pax {
 		const V							  & v_, 
 		Newline 
 	) noexcept {
-		return not_first( v_, starts_with( v_, Newline{} ) );
+		if constexpr( Character_array< V > ) {
+			return trim_first( view_type_t< V, true >( v_ ), Newline{} );	// To remove trailing '\0'.
+		} else {
+			return not_first( v_, starts_with( v_, Newline{} ) );
+		}
 	}
 
+
+	/// Returns `v_`, but excluding all trailing `t_`, if any.
+	/// Returns a [non-owning] string view into v_.
+	template< Contiguous_elements V >
+	[[nodiscard]] constexpr auto trim_last( 
+		const V							  & v_, 
+		const Value_type_t< V >				t_ 
+	) noexcept {
+		if constexpr( Character_array< V > ) {
+			return trim_last( view_type_t< V, true >( v_ ), t_ );				// To remove trailing '\0'.
+		} else {
+			auto							itr  = end( v_ );
+			const auto						end_ = begin( v_ ) - 1;
+			while( ( --itr != end_ ) && ( *itr == t_ ) );
+			return view_type_t< V, true >{ begin( v_ ), itr + 1 };
+		}
+	}
 
 	/// Returns `v_`, but excluding any trailing elements `v` that satisfy `p_( v )`.
 	/// Returns a [non-owning] string view into v_.
@@ -736,11 +829,15 @@ namespace pax {
 		const V							  & v_, 
 		Pred							 && p_ 
 	) noexcept {
-		using std::begin, std::end;
-		auto								itr  = end( v_ );
-		const auto							end_ = begin( v_ ) - 1;
-		while( ( --itr != end_ ) && p_( *itr ) );
-		return view_type_t< V, true >{ begin( v_ ), itr + 1 };
+		if constexpr( Character_array< V > ) {
+			return trim_last( view_type_t< V, true >( v_ ), p_ );				// To remove trailing '\0'.
+		} else {
+			using std::begin, std::end;
+			auto							itr  = end( v_ );
+			const auto						end_ = begin( v_ ) - 1;
+			while( ( --itr != end_ ) && p_( *itr ) );
+			return view_type_t< V, true >{ begin( v_ ), itr + 1 };
+		}
 	}
 
 	/// Returns `v_`, but excluding a trailing `'\n'`, `'\r'`, `"\n\r"`, or `"\r\n"`. 
@@ -750,17 +847,20 @@ namespace pax {
 		const V							  & v_, 
 		Newline 
 	) noexcept {
-		return not_last( v_, ends_with( v_, Newline{} ) );
+		if constexpr( Character_array< V > ) {
+			return trim_last( view_type_t< V, true >( v_ ), Newline{} );	// To remove trailing '\0'.
+		} else {
+			return not_last( v_, ends_with( v_, Newline{} ) );
+		}
 	}
 
 
 	/// Returns `v_`, but without any leading or trailing values `v` that satisfy `p_( v )`.
 	/// Returns a [non-owning] string view into v_.
-	template< typename Pred, Contiguous_elements V >
-		requires( std::predicate< Pred, Value_type_t< V > > )
+	template< Contiguous_elements V, typename T >
 	[[nodiscard]] constexpr auto trim( 
 		const V							  & v_, 
-		Pred							 && p_ 
+		T								 && p_ 
 	) noexcept {
 		return trim_last( trim_first( v_, p_ ), p_ );
 	}
@@ -773,10 +873,12 @@ namespace pax {
 	/// - https://en.cppreference.com/w/cpp/algorithm/sort
 	template< Contiguous_elements V >
 	constexpr void sort( V & v_ ) {
-		using std::begin, std::end;
-		if constexpr( Character_array< V > )
-				sort( view( v_ ) );
-		else	std::sort( begin( v_ ), end( v_ ) );
+		if constexpr( Character_array< V > ) {
+			sort( view( v_ ) );		// To remove possible trailing '\0'.
+		} else {
+			using std::begin, std::end;
+			std::sort( begin( v_ ), end( v_ ) );
+		}
 	}
 
 
@@ -791,12 +893,12 @@ namespace pax {
 		const V1						  & v1_,
 		Binary							 && binary_
 	) noexcept {
-		using std::begin;
-		if constexpr( Character_array< V0 > ) 
+		if constexpr( Character_array< V0 > ) {			// To remove possible trailing '\0'.
 			return on_each_pair( view_type_t< V0, true >( v0_ ), v1_, binary_ );
-		else if constexpr( Character_array< V1 > ) 
+		} else if constexpr( Character_array< V1 > ) {	// To remove possible trailing '\0'.
 			return on_each_pair( v0_, view_type_t< V1, true >( v1_ ), binary_ );
-		else {
+		} else {
+			using std::begin;
 			detail::assert_equal_extent( v0_, v1_ );
 			auto							i1 = begin( v1_ );
 			for( auto & item : v0_ ) 		binary_( item, *( i1++ ) );
@@ -815,12 +917,12 @@ namespace pax {
 		const V1						  & v1_,
 		Binary							 && binary_
 	) noexcept {
-		using std::begin, std::end;
-		if constexpr( Character_array< V0 > ) 
+		if constexpr( Character_array< V0 > ) {			// To remove possible trailing '\0'.
 			return on_each_pair_while( view_type_t< V0, true >( v0_ ), v1_, binary_ );
-		else if constexpr( Character_array< V1 > ) 
+		} else if constexpr( Character_array< V1 > ) {	// To remove possible trailing '\0'.
 			return on_each_pair_while( v0_, view_type_t< V1, true >( v1_ ), binary_ );
-		else {
+		} else {
+			using std::begin, std::end;
 			detail::assert_equal_extent( v0_, v1_ );
 			auto 							itr0 = begin( v0_ );
 			const auto 						end0 = end( v0_ );
@@ -838,9 +940,11 @@ namespace pax {
 		const V							  & v_, 
 		Pred							 && p_
 	) {
-		if constexpr( Character_array< V > ) 
-				return std::ranges::all_of( view_type_t< V, true >( v_ ), p_ );
-		else	return std::ranges::all_of( v_, p_ );
+		if constexpr( Character_array< V > ) {	// To remove possible trailing '\0'.
+			return std::ranges::all_of( view_type_t< V, true >( v_ ), p_ );
+		} else {
+			return std::ranges::all_of( v_, p_ );
+		}
 	}
 
 	/// Checks if binary_( v0_[i], v1_[i] ) is true for all i.
@@ -869,9 +973,11 @@ namespace pax {
 		const V							  & v_, 
 		Pred							 && p_
 	) {
-		if constexpr( Character_array< V > ) 
-				return std::ranges::any_of( view_type_t< V, true >( v_ ), p_ );
-		else	return std::ranges::any_of( v_, p_ );
+		if constexpr( Character_array< V > ) {	// To remove possible trailing '\0'.
+			return std::ranges::any_of( view_type_t< V, true >( v_ ), p_ );
+		} else {
+			return std::ranges::any_of( v_, p_ );
+		}
 	}
 
 	/// Checks if binary_( v0_[i], v1_[i] ) is true for any i.
@@ -900,10 +1006,11 @@ namespace pax {
 		const V							  & v_, 
 		Pred							 && p_
 	) {
-		if constexpr( Character_array< V > ) 
+		if constexpr( Character_array< V > ) {	// To remove possible trailing '\0'.
 			return std::ranges::none_of( view_type_t< V, true >( v_ ), p_ );
-		else
+		} else {
 			return std::ranges::none_of( v_, p_ );
+		}
 	}
 
 	/// Checks if binary_( v0_[i], v1_[i] ) is true for no i.
@@ -931,28 +1038,79 @@ namespace pax {
 	template< String V >
 	[[nodiscard]] auto identify_newline( const V & str_ ) noexcept {
 		static constexpr const Value_type_t< V > 	res[] = { '\n', '\r', '\n' };
-		if constexpr( Character_array< V > )
-			return identify_newline( view( str_ ) );
-		else {
-			auto 							temp = not_first( str_, find( str_, Newline{} ) );
-			temp						  = first( temp, starts_with( temp, Newline{} ) );
-			return	temp.empty() ? first( res, 1 ) : subview( res, temp.front() == '\r', size( temp ) );
-		}
+		const auto 									temp = not_first( str_, find( str_, Newline{} ) );
+		const std::size_t 							sz = starts_with( temp, Newline{} );
+		return	sz ? subview( res, temp.front() == '\r', sz ) : first( res, 1 );
 	}
 
 	/// Calculate the Luhn sum (a control sum).
+	/// – UB if any character is outside ['0', '9'].
 	/// - https://en.wikipedia.org/wiki/Luhn_algorithm
 	template< String V >
-	[[nodiscard]] constexpr int luhn_sum( const V & str_ ) noexcept {
-		const auto							v = dview( str_ );
-		int									sum{};
-		int									m{ 2 };
-		for( const auto c : v ) {
-			const int mul				  = m*( c - '0' );
-			m							  = 3 - m;
-			sum							 += ( mul / 10 ) + ( mul % 10 );
+	[[nodiscard]] constexpr std::size_t luhn_sum( const V & str_ ) noexcept {
+		if constexpr( Character_array< V > ) {
+			return luhn_sum( view( str_ ) );	// To remove possible trailing '\0'.
+		} else {
+			static constexpr std::uint8_t 	twice[] = { 0, 2, 4, 6, 8, 1, 3, 5, 7, 9 };
+			std::size_t						sum{};
+			bool							one{ true };
+			for( const auto c : str_ )		sum += ( one = !one ) ? ( c - '0' ) : twice[ c - '0' ];
+			return sum;
 		}
-		return sum;
+	}
+
+
+
+
+	/// Split v_ into two parts: before `at_` and after (but not including) `at_ + n_`.
+	/// - If `at_ >= size( v_ )`, then `{ v_, last( v_, 0 ) }` is returned.
+	/// Returns a pair of [non-owning] string views into v_.
+	template< Contiguous_elements V >
+	[[nodiscard]] constexpr auto split_at( 
+		const V							  & v_, 
+		const std::size_t 					at_, 
+		const std::size_t 					n_ = 1 
+	) noexcept {
+		// first() and not_first() handle the case if at_ + n_ >= size( v_ ).
+		return std::pair{ first( v_, at_ ), not_first( v_, at_ + n_ ) };
+	}
+
+	/// Split `view_` into two parts: before and after the first `x_`, not including it.
+	/// Returns a pair of [non-owning] string views into v_.
+	template< Contiguous_elements V >
+	[[nodiscard]] constexpr auto split_by( 
+		const V							  & v_, 
+		const Value_type_t< V >				item_ 
+	) noexcept {
+		return split_at( v_, find( v_, item_ ) );
+	}
+
+	/// Split the v_ into two parts: before and after (but not including) `by_`.
+	/// - If `begin( by_ ) <= begin( v_ )`, the first string view returned is `first( v_, 0 )`.
+	///	- If `end( by_ )   >= end( v_ )`,   the second string view returned is `last( v_, 0 )`.
+	/// Returns a pair of [non-owning] string views into v_.
+	template< Contiguous_elements V, Contiguous_elements By >
+	[[nodiscard]] constexpr auto split_by(
+		const V							  & v_, 
+		By								 && by_
+	) noexcept {
+		if constexpr( Character_array< By > ) {	// To remove possible trailing '\0'.
+			return split_by( v_, view( by_ ) );
+		} else {
+			using std::size;
+			return split_at( v_, find( v_, by_ ), size( by_ ) );
+		}
+	}
+
+	/// Split into two parts: before and after the first newline (`'\n'`, `'\r'`, `"\n\r"`, or `"\r\n"`), but not including it.
+	/// Returns a pair of [non-owning] string views into v_.
+	template< String V >
+	[[nodiscard]] constexpr auto split_by(
+		const V							  & v_, 
+		Newline 
+	) noexcept {
+		const std::size_t 					i  = find( v_, Newline::is_newline );
+		return split_at( v_, i, starts_with( not_first( v_, i ), Newline{} ) );
 	}
 
 
@@ -961,7 +1119,7 @@ namespace pax {
 	/// - Example usage: ´for( const auto item : String_view_splitter( "A\nNumber\nof\nRows", Newline{} ) ) { ... }´. 
 	/// - The Divider type may be any that is accepted by ´split_by( ..., Divider )´. 
 	/// - String_view_splitter is constexpr [and never throws]. 
-	template< typename Char, typename Divider, typename Traits = std::char_traits< std::remove_const_t< Char > > >
+	template< Character Char, typename Divider, typename Traits = std::char_traits< std::remove_const_t< Char > > >
 	class String_view_splitter {
 		class End						{};
 		using Value					  = std::basic_string_view< std::remove_const_t< Char >, Traits >;
