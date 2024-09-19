@@ -10,7 +10,7 @@
 namespace pax {
 	
 	DOCTEST_TEST_CASE( "quote_it" ) { 
-		// DOCTEST_FAST_CHECK_EQ( std20::format( "{}", Quote_it< char >( R"(With "double" quotes)" ) ), "\"(With \"double\" quotes)\"" );
+		DOCTEST_FAST_CHECK_EQ( std20::format( "{}", Quote_it< char >( R"(With "double" quotes)" ) ), R"("With \"double\" quotes")" );
 	}
 
 }	// namespace pax
