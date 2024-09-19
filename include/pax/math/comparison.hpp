@@ -6,6 +6,7 @@
 
 #include <cmath>
 #include <utility>		// std::forward
+#include <type_traits>	// std::is_invocable_r_v
 
 
 // For unit tests

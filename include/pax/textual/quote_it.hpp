@@ -27,12 +27,10 @@ namespace std20 {
 	template< pax::Character Ch >
 	struct formatter< pax::Quote_it< Ch > > {
 	private:
-		using size_type = pax::Quote_it< Ch >::size_type;
+		using Quote_it	  = pax::Quote_it< Ch >;
+		using size_type	  = Quote_it::size_type;
 
-		static constexpr Ch specials[ 67 ] = {
-			"\\0^A^B^C^D^E^F\\a\\b\\t\\n\\v\\f\\r^N^O" 
-			"^P^Q^R^S^T^U^V^W^X^Y^Z\\e^\\^]^^^_"
-		};
+		static constexpr Ch specials[ 67 ] = R"(\0^A^B^C^D^E^F\a\b\t\n\v\f\r^N^O^P^Q^R^S^T^U^V^W^X^Y^Z\e^\^]^^^_)";
 
 		char			m_quote	  = '"';
 		char			m_esc	  = '\\';
@@ -41,7 +39,7 @@ namespace std20 {
 		template< typename Dest >
 		friend constexpr Dest & operator<<(
 			Dest			  & dest_,
-			const pax::Quote_it< Ch >		v_
+			const Quote_it		v_
 		) {
 			for( auto c : v_.m_sv ) switch( c ) {
 				case '"' :
@@ -75,7 +73,7 @@ namespace std20 {
 			return iter;
 		}
 
-		auto format( const pax::Quote_it< Ch > & qi_, format_context & format_ctx_ ) const {
+		constexpr auto format( const Quote_it & qi_, format_context & format_ctx_ ) const {
 			size_type		pos	  = 0;
 			const size_type	end	  = qi_.m_sv.length();
 			auto			out	  = format_ctx_.out();
