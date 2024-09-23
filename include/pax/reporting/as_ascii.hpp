@@ -40,11 +40,11 @@ namespace pax {
 			for( const auto c : v_ ) 
 				switch( c ) {
 					case '"' :
-					case '\\':		dest_ << '\\' << c;			break;
-					case 0x7f:		dest_ << '^'  << '?';		break;
-					case 0xa0:		dest_ << '^'  << '!';		break;
+					case '\\':			dest_ << '\\' << c;		break;
+					case 0x7f:			dest_ << '^'  << '?';	break;
+					case Ch( 0xa0 ):	dest_ << '^'  << '!';	break;
 					default: 		
-						( c <  0x20 )	? ( dest_ << specials[ 2*(int)c ] << specials[ 2*(int)c + 1 ] )
+						( c <  0x20 )	? ( dest_ << specials[ 2*c ] << specials[ 2*c + 1 ] )
 										: ( dest_ << c );
 				}
 			return dest_;

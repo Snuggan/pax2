@@ -40,7 +40,7 @@ namespace pax {
 		static constexpr Inclusion		inclusion{ Inclusion::contained };
 		static constexpr const char *	inclusion_id_[ 2 ] =	{	"overlapped", "contained"	};
 
-		static_assert( sizeof( pdal::PointRef ) == 40 );	// Originally 32, changed to 40 in an update to pdal.
+		static_assert( sizeof( pdal::PointRef ) == 40 || sizeof( pdal::PointRef ) == 32 );	// Originally 32, changed to 40 in an update to pdal.
 
 		static constexpr coord_type square( const coord_type v_ )	noexcept		{	return v_*v_;	}
 	

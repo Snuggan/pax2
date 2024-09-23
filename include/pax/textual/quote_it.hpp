@@ -3,88 +3,88 @@
 #include "../concepts.hpp"
 #include "../std/format.hpp"
 
-#include <iostream>
-#include <string>
 #include <string_view>
+
+
+#define DOCTEST_QUOTED_CHECK_EQ( __1__, __2__ )	DOCTEST_FAST_CHECK_EQ( pax::Quote_it( __1__ ), pax::Quote_it( __2__ ) )
+#define DOCTEST_QUOTED_CHECK_NE( __1__, __2__ )	DOCTEST_FAST_CHECK_NE( pax::Quote_it( __1__ ), pax::Quote_it( __2__ ) )
+
+#define DOCTEST_QUOTED_WARN_EQ( __1__, __2__ )	DOCTEST_FAST_WARN_EQ(  pax::Quote_it( __1__ ), pax::Quote_it( __2__ ) )
+#define DOCTEST_QUOTED_WARN_NE( __1__, __2__ )	DOCTEST_FAST_WARN_NE(  pax::Quote_it( __1__ ), pax::Quote_it( __2__ ) )
 
 
 namespace pax {
 
-	template< Character Ch >
-	struct Quote_it {
-		using string_view	  = std::basic_string_view< Ch >;
-		using size_type		  = string_view::size_type;
+	template< Character Ch, typename Traits = std::char_traits< std::remove_cvref_t< Ch > > >
+	struct Quote_it : public std::basic_string_view< std::remove_cvref_t< Ch >, Traits > {
+		using string_view  = std::basic_string_view< std::remove_cvref_t< Ch >, Traits >;
 
-		constexpr Quote_it( const string_view str_ ) : m_sv( str_ ) {}
-		string_view				m_sv;
+		using string_view::string_view;
+		constexpr Quote_it( const string_view sv_ ) : string_view{ sv_ } {};
+
+		template< typename Dest >
+		friend constexpr Dest & operator<<(
+			Dest			  & dest_,
+			const Quote_it		qi_
+		) {
+			return dest_ << std20::format( "{}", qi_ );
+		}
 	};
+
+
+	template< typename It, typename EndOrSize >
+	Quote_it( It, EndOrSize )
+		-> Quote_it< std::remove_reference_t< std::iter_reference_t< It > > >;
+
+	template< String S >
+	Quote_it( S && )
+		-> Quote_it< Value_type_t< S >, typename std::remove_cvref_t< S >::traits_type >;
+
+	template< Character Ch, std::size_t N >
+	Quote_it( Ch( & c_ )[ N ] )	-> Quote_it< std::remove_reference_t< Ch > >;
+
+	template< Character Ch >
+	Quote_it( Ch * const & c_ )	-> Quote_it< std::remove_reference_t< Ch > >;
 
 }	// namespace pax
 
 
 namespace std20 {
 
-	template< pax::Character Ch >
-	struct formatter< pax::Quote_it< Ch > > {
+	template< pax::Character Ch, typename Traits >
+	struct formatter< pax::Quote_it< Ch, Traits > > {
 	private:
-		using Quote_it	  = pax::Quote_it< Ch >;
-		using size_type	  = Quote_it::size_type;
-
-		static constexpr Ch specials[ 67 ] = R"(\0^A^B^C^D^E^F\a\b\t\n\v\f\r^N^O^P^Q^R^S^T^U^V^W^X^Y^Z\e^\^]^^^_)";
-
-		char			m_quote	  = '"';
-		char			m_esc	  = '\\';
+		using 				Quote_it		  = pax::Quote_it< Ch, Traits >;
+		static constexpr	Ch specials[ 67 ] = R"(\0^A^B^C^D^E^F\a\b\t\n\v\f\r^N^O^P^Q^R^S^T^U^V^W^X^Y^Z\e^\^]^^^_)";
 
 	public:
-		template< typename Dest >
-		friend constexpr Dest & operator<<(
-			Dest			  & dest_,
-			const Quote_it		v_
-		) {
-			for( auto c : v_.m_sv ) switch( c ) {
-				case '"' :
-				case '\\':		dest_ << '\\' << c;			break;
-				case 0x7f:		dest_ << '^'  << '?';		break;
-				case 0xa0:		dest_ << '^'  << '!';		break;
-				default: 		
-					( c <  0x20 )	? ( dest_ << specials[ 2*(int)c ] << specials[ 2*(int)c + 1 ] )
-									: ( dest_ << c );
-			}
-			return dest_;
-		}
-
 		constexpr auto parse( format_parse_context & parse_ctx_ ) {
-			auto		iter	  = parse_ctx_.begin();
-			auto		get_char  = [&]() { return iter != parse_ctx_.end() ? *iter : 0; };
-			char		c		  = get_char();
-			if( c == 0 || c == '}' )
-				return iter;
-
-			m_quote = c;
-			++iter;
-
-			if( ( c = get_char() ) != 0 && c != '}' ) {
-				m_esc = c;
-				++iter;
-			}
-
-			if( (c = get_char() ) != 0 && c != '}' )
+			const auto	iter	  = parse_ctx_.begin();
+			const char	c		  = iter != parse_ctx_.end() ? *iter : 0;
+			if( ( c != 0 ) && ( c != '}' ) )
 				throw format_error( "Invalid Quote_it format specification" );
 			return iter;
 		}
 
-		constexpr auto format( const Quote_it & qi_, format_context & format_ctx_ ) const {
-			size_type		pos	  = 0;
-			const size_type	end	  = qi_.m_sv.length();
-			auto			out	  = format_ctx_.out();
-			*out++ = m_quote;
-			while( pos < end ) {
-				auto c = qi_.m_sv[ pos++ ];
-				if( c == m_quote || c == m_esc )
-					*out++ = m_esc;
-				*out++ = c;
+		constexpr auto format( const Quote_it qi_, format_context & format_ctx_ ) const {
+			auto				out	  = format_ctx_.out();
+			*out					  = '"';
+			for( const auto c : qi_ ) {
+				switch( c ) {
+					case '"' :
+					case '\\':			*++out = '\\';	*++out = c;		break;
+					case 0x7f:			*++out = '^';	*++out = '?';	break;
+					case Ch( 0xa0 ):	*++out = '^';	*++out = '!';	break;
+					default:
+						if( c >= 0x20 )	*++out = c;
+						else {
+							*++out = specials[ 2*c ];
+							*++out = specials[ 2*c + 1 ];
+						}
+						break;
+				}
 			}
-			*out++ = m_quote;
+			*++out					  = '"';
 			return out;
 		}
 

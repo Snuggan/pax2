@@ -1051,7 +1051,7 @@ namespace pax {
 		if constexpr( Character_array< V > ) {
 			return luhn_sum( view( str_ ) );	// To remove possible trailing '\0'.
 		} else {
-			static constexpr std::uint8_t 	twice[] = { 0, 2, 4, 6, 8, 1, 3, 5, 7, 9 };
+			static constexpr char		 	twice[] = { 0, 2, 4, 6, 8, 1, 3, 5, 7, 9 };
 			std::size_t						sum{};
 			bool							one{ true };
 			for( const auto c : str_ )		sum += ( one = !one ) ? ( c - '0' ) : twice[ c - '0' ];
