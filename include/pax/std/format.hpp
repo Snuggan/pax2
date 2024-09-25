@@ -41,7 +41,7 @@ namespace std20 {
 		template< typename Ch, typename Traits >
 		struct detail::is_std_string_like< pax::basic_string_view2< Ch, Traits > > : std::true_type {};
 
-		/// When the formatter is not known at compile time, std::format may not be used as usual.
+		/// When the format string is not known at compile time, std::format may not be used as usual.
 		/** Instead the format argument signals this case by having a specific type.		**/
 		inline auto runtime_format( const std::string_view fmt_ ) {
 			return fmt::runtime( fmt_ );
