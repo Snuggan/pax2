@@ -3,7 +3,7 @@
 
 
 #include <pax/std/span2.hpp>
-#include <pax/reporting/as_ascii.hpp>
+#include <pax/textual/as_ascii.hpp>
 #include <pax/doctest.hpp>
 
 #include <sstream>

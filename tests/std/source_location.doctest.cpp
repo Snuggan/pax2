@@ -7,7 +7,7 @@
 #include <pax/reporting/error_message.hpp>
 #include <pax/reporting/debug.hpp>
 #include <pax/doctest.hpp>
-#include <pax/reporting/as_ascii.hpp>
+#include <pax/textual/as_ascii.hpp>
 
 namespace pax {
 
