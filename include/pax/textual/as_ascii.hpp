@@ -114,6 +114,7 @@ namespace std20 {
 	};
 	
 }	// namespace std20
+
 namespace pax {
 
 	template< Character Ch >
@@ -126,11 +127,5 @@ namespace pax {
 	constexpr auto as_ascii( const Str & str_ )					noexcept	{
 		return std20::format( "{}", Ascii{ str_ } );
 	}
-
-	// template< typename T >
-	// constexpr auto as_ascii( T && t_ )							noexcept	{
-	// 	using std::data, std::size;
-	// 	return as_ascii( std::basic_string_view( data( t_ ), size( t_ ) ) );
-	// }
 
 }	// namespace pax
