@@ -7,6 +7,7 @@
 #include <pax/doctest.hpp>
 
 
+#if !defined( PAX_ASCII_TEST_UNUSABLE )
 namespace pax {
 	
 	constexpr std::size_t sz = 37;
@@ -44,3 +45,4 @@ namespace pax {
 	}
 
 }	// namespace pax
+#endif

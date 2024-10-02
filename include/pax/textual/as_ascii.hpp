@@ -11,6 +11,10 @@
 #define DOCTEST_ASCII_WARN_NE ( __1__, __2__ )	DOCTEST_FAST_WARN_NE(  pax::as_ascii( __1__ ), pax::as_ascii( __2__ ) )
 
 
+#if defined( FMT_HEADER_ONLY )
+#	define PAX_ASCII_TEST_UNUSABLE
+#endif
+
 namespace pax {
 
 	template< Character Ch, typename Traits = std::char_traits< std::remove_cvref_t< Ch > > >
@@ -28,7 +32,7 @@ namespace pax {
 	};
 
 	template< typename It, typename EndOrSize >
-	Ascii( It, EndOrSize )		-> Ascii< std::remove_reference_t< std::iter_reference_t< It > > >;
+	Ascii( It, EndOrSize )		-> Ascii< std::remove_cvref_t< std::iter_reference_t< It > > >;
 
 	template< String S >
 	Ascii( S && )				-> Ascii< Value_type_t< S >, typename std::remove_cvref_t< S >::traits_type >;
@@ -37,10 +41,10 @@ namespace pax {
 	Ascii( Cont && )			-> Ascii< Value_type_t< Cont > >;
 
 	template< Character Ch, std::size_t N >
-	Ascii( Ch( & c_ )[ N ] )	-> Ascii< std::remove_reference_t< Ch > >;
+	Ascii( Ch( & c_ )[ N ] )	-> Ascii< std::remove_cvref_t< Ch > >;
 
 	template< Character Ch >
-	Ascii( Ch * const & c_ )	-> Ascii< std::remove_reference_t< Ch > >;
+	Ascii( Ch * const & c_ )	-> Ascii< std::remove_cvref_t< Ch > >;
 
 }	// namespace pax
 

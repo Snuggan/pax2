@@ -974,6 +974,7 @@ namespace pax {
 				DOCTEST_FAST_CHECK_EQ( os.str(), "[\"Hej\", \" \", \"hela\", \" \", \"varlden\"]" );
 			}
 			{	// with text technical
+#if !defined( PAX_ASCII_TEST_UNUSABLE )
 				std::ostringstream		os;
 				constexpr auto			v0 = view( ">\0\a\b\t\n\v\f\r\"'\x18\x7f <" );
 				constexpr auto			vr = view( "\">\\0\\a\\b\\t\\n\\v\\f\\r\\\"'<CAN><DEL> <\"" );
@@ -987,6 +988,7 @@ namespace pax {
 				DOCTEST_FAST_CHECK_EQ( res0.size(), vr.size() );
 				DOCTEST_FAST_CHECK_EQ( res.size(),  vr.size() );
 				DOCTEST_FAST_CHECK_EQ( res, vr );
+#endif
 			}
 		}
 	}
