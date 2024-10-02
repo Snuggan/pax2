@@ -25,7 +25,6 @@
 
 
 #include <pax/std/file.hpp>
-#include <pax/std/span2.hpp>
 
 #include <pax/doctest.hpp>
 

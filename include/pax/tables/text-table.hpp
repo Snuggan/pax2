@@ -10,10 +10,10 @@
 #include "../textual/string_meta.hpp"
 #include "../textual/from_string.hpp"
 #include "../std/file.hpp"
-#include "../std/span2.hpp"
 #include "../reporting/error_message.hpp"
 #include "../external/type_name_rt.hpp"		// type_name_rt
 
+#include <span>
 #include <sstream>
 
 

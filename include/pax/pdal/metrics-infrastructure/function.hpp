@@ -8,7 +8,6 @@
 #include <pax/math/metrics/summary.hpp>
 #include <pax/reporting/error_message.hpp>
 #include <pax/textual/from_string.hpp>
-#include <pax/std/span2.hpp>		// std::cout << std::span{}.
 
 #include <string_view>
 

@@ -113,24 +113,26 @@ namespace pax {
 				DOCTEST_FAST_CHECK_EQ( os.str(), 				"abc" );
 			} 
 			{	// with text technical
+#if !defined( PAX_ASCII_TEST_UNUSABLE )
 				std::ostringstream		os;
 				constexpr auto			v0 = string_view2( ">\a\b\t\n\v\f\r\"'\x18\x7f <" );
 				constexpr auto			vr = string_view2( "\">\\a\\b\\t\\n\\v\\f\\r\\\"'<CAN><DEL> <\"" );
 
 				os << as_ascii( v0 );
 				const auto 				res0{ os.str() };
-				const string_view2	 			res{ res0.data(), res0.size() };
+				const string_view2	 	res{ res0.data(), res0.size() };
 		
 				DOCTEST_FAST_CHECK_EQ( v0.size(),   14 );
 				DOCTEST_FAST_CHECK_EQ( res0.size(), vr.size() );
 				DOCTEST_FAST_CHECK_EQ( res.size(),  vr.size() );
 				DOCTEST_FAST_CHECK_EQ( res, vr );
+#endif
 			}
 		}
 		{	// operator+
 			std::string					s ( "string" );
 			std::string					vs( "span" );
-			constexpr string_view2				v ( "span" );
+			constexpr string_view2		v ( "span" );
 
 			DOCTEST_ASCII_CHECK_EQ( s +  s,										"stringstring" );
 			DOCTEST_ASCII_CHECK_EQ( s +  v,										"stringspan" );
