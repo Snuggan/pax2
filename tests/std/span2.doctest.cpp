@@ -72,6 +72,8 @@ namespace pax {
 			char			str[ 10 ] = { '1','2','3','4','5','6','7','8','9','0' };
 			const span2		v( str );
 			
+			DOCTEST_FAST_CHECK_EQ( std::size( str ), 10 );
+			DOCTEST_FAST_CHECK_EQ( std::size( "1234567890" ), 11 );
 			v[ 0 ]			= 'a';		DOCTEST_FAST_CHECK_EQ( v.front(), 'a' );
 			v.front()		= 'c';		DOCTEST_FAST_CHECK_EQ( v.front(), 'c' );
 			v.back ()		= 'd';		DOCTEST_FAST_CHECK_EQ( v.back (), 'd' );

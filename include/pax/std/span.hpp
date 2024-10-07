@@ -11,35 +11,6 @@
 
 namespace std {
 
-	template< pax::Character Ch, std::size_t N >
-	[[nodiscard]] constexpr Ch * data( Ch( & c_ )[ N ] )	noexcept	{	return c_;											}
-
-	template< pax::Character Ch, std::size_t N >			// In char arrays the null character is counted. 
-	[[nodiscard]] constexpr size_t size( Ch( & )[ N ] )		noexcept	{	return ( N == 0 ) ? 0u : N-1u;						}
-
-	template< pax::Character Ch, std::size_t N >
-	[[nodiscard]] constexpr Ch * begin( Ch( & c_ )[ N ] )	noexcept	{	return data( c_ );									}
-
-	template< pax::Character Ch, std::size_t N >			// In char arrays the null character is counted. 
-	[[nodiscard]] constexpr Ch * end( Ch( & c_ )[ N ] )		noexcept	{	return begin( c_ ) + ( ( N == 0 ) ? 0u : N-1u );	}
-
-	template< pax::Character Ch >
-	[[nodiscard]] constexpr Ch * data( Ch * const & c_ )	noexcept	{	return c_;											}
-
-	template< pax::Character Ch >
-	[[nodiscard]] constexpr size_t size( Ch * const & c_ )	noexcept	{
-		Ch *				itr = c_;
-		if( c_ && *c_ )		while( *( ++itr ) );
-		return itr - c_;
-	}
-
-	template< pax::Character Ch >
-	[[nodiscard]] constexpr Ch * begin( Ch * const & c_ )	noexcept	{	return data( c_ );									}
-
-	template< pax::Character Ch >
-	[[nodiscard]] constexpr Ch * end( Ch * const & c_ )		noexcept	{	return begin( c_ ) + size( c_ );					}
-
-
 	/// Stream the contents of `sp_` to `dest_` in the form `[i0, i1, ...]`.
 	/// - If T is a string type, each item is surrounded by '"'.
 	template< typename Dest, typename T, std::size_t N >

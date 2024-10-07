@@ -17,7 +17,7 @@
 namespace pax {
 	
 	constexpr auto								str		= "abcdefghijkl";
-	const auto 									strN	= span2( "abcdefghijkl" );
+	constexpr span2	 							strN	= "abcdefghijkl";
 	constexpr const string_view2				e		= view( "" );
 
 	constexpr const std::size_t 				N = 12;

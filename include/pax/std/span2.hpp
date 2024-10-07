@@ -36,10 +36,10 @@ namespace pax {
 			}
 		}
 
-		[[nodiscard]] static constexpr std::size_t charlen( T * c_ ) noexcept {
-			auto					itr = c_;
-			if( itr && *itr )		while( *( ++itr ) );
-			return itr - c_;
+		template< typename TT >
+		[[nodiscard]] static constexpr std::size_t size0( TT && c_ )	noexcept	{
+			using std::size;
+			return size( std::forward< TT >( c_ ) );
 		}
 
 		template< std::size_t I = base::extent >
@@ -69,11 +69,11 @@ namespace pax {
 
 		/// Turns an array of characters into a dynamic `span2`. Does not include a final `'\0'`.
 		constexpr span2( T * & c_ )			noexcept requires ( is_dynamic<> && Character< T > )
-			: base( c_, std::size( c_ ) ) {}
+			: base( c_, size0( c_ ) ) {}
 
 		/// Turns an array of const characters into a dynamic `span2`. Does not include a final `'\0'`.
 		constexpr span2( T * const & c_ )	noexcept requires ( is_dynamic<> && Character< T > )
-			: base( c_, std::size( c_ ) ) {}
+			: base( c_, size0( c_ ) ) {}
 
 
 		/// Returns `data() != nullptr`.

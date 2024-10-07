@@ -168,3 +168,35 @@ namespace pax {
 
 
 }	// namespace pax
+
+namespace std {
+
+	template< pax::Character Ch >
+	[[nodiscard]] constexpr Ch * begin( Ch * const & c_ )	noexcept	{	return c_;							}
+
+	template< pax::Character Ch >
+	[[nodiscard]] constexpr Ch * end( Ch * const & c_ )		noexcept	{
+		Ch *				itr = c_;
+		if( c_ && *c_ )		while( *( ++itr ) );
+		return itr;
+	}
+
+	template< pax::Character Ch >
+	[[nodiscard]] constexpr size_t size( Ch * const & c_ )	noexcept	{	return end( c_ ) - c_;				}
+	
+	
+
+
+	template< std::size_t N, pax::Character Ch >			// In char arrays the null character is counted. 
+	[[nodiscard]] constexpr size_t size( Ch * c_ )			noexcept	{
+		return ( N == 0 ) ? 0u : N - ( c_[ N-1 ] == 0 );
+	}
+
+	template< pax::Character Ch, std::size_t N >			// In char arrays the null character is counted. 
+	[[nodiscard]] constexpr size_t size( Ch( & c_ )[ N ] )	noexcept	{	return size< N >( c_ );				}
+
+	template< pax::Character Ch, std::size_t N >			// In char arrays the null character is counted. 
+	[[nodiscard]] constexpr Ch * end( Ch( & c_ )[ N ] )		noexcept	{	return c_ + size< N >( c_ );		}
+
+}	// namespace std
+
