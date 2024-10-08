@@ -17,7 +17,7 @@
 namespace pax {
 	
 	constexpr auto								str		= "abcdefghijkl";
-	constexpr span2	 							strN	= "abcdefghijkl";
+	constexpr auto	 							strN	= make_span( "abcdefghijkl" );
 	constexpr const string_view2				e		= view( "" );
 
 	constexpr const std::size_t 				N = 12;
@@ -107,7 +107,7 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", first( abc, 3 ) ),				"abc" );
 			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", view( first( abc, 3 ) ) ),		"abc" );
 
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", span2( first( abc, 3 ) ) ),	"['a', 'b', 'c']" );
+			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", make_span( first( abc, 3 ) ) ),	"['a', 'b', 'c']" );
 			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", first( ints, 0 ) ),	"[]" );
 			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", first( ints, 1 ) ),	"[0]" );
 			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", first( ints, 3 ) ),	"[0, 1, 2]" );
@@ -118,26 +118,26 @@ namespace pax {
 			static_assert( std::is_same_v< view_type_t< string_view2 >,					string_view2 > );
 			static_assert( std::is_same_v< view_type_t< std::string_view >,				string_view2 > );
 			static_assert( std::is_same_v< view_type_t< std::string >,					string_view2 > );
-			static_assert( std::is_same_v< view_type_t< span2< int > >,					span2< int > > );
-			static_assert( std::is_same_v< view_type_t< span2< int, 4 > >,				span2< int, 4 > > );
-			static_assert( std::is_same_v< view_type_t< std::vector< int > >,			span2< int > > );
-			static_assert( std::is_same_v< view_type_t< std::array < int, 4 > >,		span2< int, 4 > > );
+			static_assert( std::is_same_v< view_type_t< std::span< int > >,				std::span< int > > );
+			static_assert( std::is_same_v< view_type_t< std::span< int, 4 > >,			std::span< int, 4 > > );
+			static_assert( std::is_same_v< view_type_t< std::vector< int > >,			std::span< int > > );
+			static_assert( std::is_same_v< view_type_t< std::array < int, 4 > >,		std::span< int, 4 > > );
 
 			static_assert( std::is_same_v< view_type_t< string_view2, true >,			string_view2 > );
 			static_assert( std::is_same_v< view_type_t< std::string_view, true >,		string_view2 > );
 			static_assert( std::is_same_v< view_type_t< std::string, true >,			string_view2 > );
-			static_assert( std::is_same_v< view_type_t< span2< int >, true >,			span2< int > > );
-			static_assert( std::is_same_v< view_type_t< span2< int, 4 >, true >,		span2< int > > );
-			static_assert( std::is_same_v< view_type_t< std::vector< int >, true >,		span2< int > > );
-			static_assert( std::is_same_v< view_type_t< std::array < int, 4 >, true >,	span2< int > > );
+			static_assert( std::is_same_v< view_type_t< std::span< int >, true >,		std::span< int > > );
+			static_assert( std::is_same_v< view_type_t< std::span< int, 4 >, true >,	std::span< int > > );
+			static_assert( std::is_same_v< view_type_t< std::vector< int >, true >,		std::span< int > > );
+			static_assert( std::is_same_v< view_type_t< std::array < int, 4 >, true >,	std::span< int > > );
 
-			DOCTEST_ASCII_CHECK_EQ( span2( "abcde" ),			"abcde" );
+			DOCTEST_ASCII_CHECK_EQ( make_span( "abcde" ),		"abcde" );
 			DOCTEST_ASCII_CHECK_EQ( string_view2( "abcde" ),	"abcde" );
 
-			DOCTEST_FAST_CHECK_LE ( span2( "abcde" ),			"abcde" );
+			DOCTEST_FAST_CHECK_LE ( make_span( "abcde" ),		"abcde" );
 			DOCTEST_FAST_CHECK_LE ( string_view2( "abcde" ),	"abcde" );
 
-			DOCTEST_FAST_CHECK_GE ( span2( "abcde" ),			"abcde" );
+			DOCTEST_FAST_CHECK_GE ( make_span( "abcde" ),		"abcde" );
 			DOCTEST_FAST_CHECK_GE ( string_view2( "abcde" ),	"abcde" );
 
 			{
@@ -151,23 +151,23 @@ namespace pax {
 				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		string_view2 > );
 				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	string_view2 > );
 			} {
-				const auto								v  = view( span2< int >{} );
-				const auto								dv = dview( span2< int >{} );
+				const auto								v  = view( std::span< int >{} );
+				const auto								dv = dview( std::span< int >{} );
 				DOCTEST_FAST_CHECK_EQ( size( v ),		0 );
 				DOCTEST_FAST_CHECK_EQ( v.extent,		dynamic_extent );
 				DOCTEST_FAST_CHECK_EQ( size( dv ),		0 );
 				DOCTEST_FAST_CHECK_EQ( dv.extent,		dynamic_extent );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		span2< int > > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	span2< int > > );
+				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::span< int > > );
+				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::span< int > > );
 			} {
-				const auto								v  = view( span2< int, 0 >{} );
-				const auto								dv = dview( span2< int, 0 >{} );
+				const auto								v  = view( std::span< int, 0 >{} );
+				const auto								dv = dview( std::span< int, 0 >{} );
 				DOCTEST_FAST_CHECK_EQ( size( v ),		0 );
 				DOCTEST_FAST_CHECK_EQ( v.extent,		0 );
 				DOCTEST_FAST_CHECK_EQ( size( dv ),		0 );
 				DOCTEST_FAST_CHECK_EQ( dv.extent,		dynamic_extent );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		span2< int, 0 > > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	span2< int > > );
+				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::span< int, 0 > > );
+				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::span< int > > );
 			} {
 				const auto								v  = view( string_view2{} );
 				const auto								dv = dview( string_view2{} );
@@ -191,22 +191,22 @@ namespace pax {
 				const auto								v  = view( arr );
 				const auto								dv = dview( arr );
 				DOCTEST_FAST_CHECK_EQ( size( v ),		3 );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		span2< const int > > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	span2< const int > > );
+				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::span< const int > > );
+				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::span< const int > > );
 			} {
 				const std::array< int, 3 >				arr{ 1, 2, 3 };
 				const auto								v  = view( arr );
 				const auto								dv = dview( arr );
 				DOCTEST_FAST_CHECK_EQ( size( v ),		3 );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		span2< const int, 3 > > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	span2< const int > > );
+				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::span< const int, 3 > > );
+				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::span< const int > > );
 			} {
 				const int								arr[ 3 ] = { 1, 2, 3 };
 				const auto								v  = view( arr );
 				const auto								dv = dview( arr );
 				DOCTEST_FAST_CHECK_EQ( size( v ),		3 );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		span2< const int, 3 > > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	span2< const int > > );
+				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::span< const int, 3 > > );
+				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::span< const int > > );
 			} {
 				const std::string						arr = "abc";
 				const auto								v  = view( arr );
@@ -236,43 +236,43 @@ namespace pax {
 				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	string_view2 > );
 			}
 		}
-		{	// span2
+		{	// std::span
 			{
 				const std::vector< int >				arr{ 1, 2, 3 };
-				const auto								sp = span2( arr );
+				const auto								sp = make_span( arr );
 				DOCTEST_FAST_CHECK_EQ( size( sp ),		3 );
 				DOCTEST_FAST_CHECK_EQ( sp.extent,		std::dynamic_extent );
 			} {
 				const std::array< int, 3 >				arr{ 1, 2, 3 };
-				const auto								sp = span2( arr );
+				const auto								sp = make_span( arr );
 				DOCTEST_FAST_CHECK_EQ( size( sp ),		3 );
 				DOCTEST_FAST_CHECK_EQ( sp.extent,		3 );
 			} {
 				const int								arr[ 3 ] = { 1, 2, 3 };
-				const auto								sp = span2( arr );
+				const auto								sp = make_span( arr );
 				DOCTEST_FAST_CHECK_EQ( size( sp ),		3 );
 				DOCTEST_FAST_CHECK_EQ( sp.extent,		3 );
 			} {
-				const auto								sp = span2( "abc" );
+				const auto								sp = make_span( "abc" );
 				DOCTEST_FAST_CHECK_EQ( size( sp ),		3 );	// Includes the final '\0'!!!!
 				DOCTEST_FAST_CHECK_EQ( sp.extent,		3 );	// Includes the final '\0'!!!!
 			} {
 				const char								arr[ 4 ] = "abc";
-				const auto								sp = span2( arr );
+				const auto								sp = make_span( arr );
 				DOCTEST_FAST_CHECK_EQ( size( sp ),		3 );	// Includes the final '\0'!!!!
 				DOCTEST_FAST_CHECK_EQ( sp.extent,		3 );	// Includes the final '\0'!!!!
 			} {
 				// const char							  * arr = "abc";
-				// const auto								sp = span2( arr );
+				// const auto								sp = make_span( arr );
 				// DOCTEST_FAST_CHECK_EQ( size( sp ),		3 );
 				// DOCTEST_FAST_CHECK_EQ( sp.extent,		std::dynamic_extent );
 			} {
 				const char								arr[ 4 ] = "abc";
-				const auto								sp = span2( arr );
+				const auto								sp = make_span( arr );
 				DOCTEST_FAST_CHECK_EQ( size( sp ),		3 );
 				DOCTEST_FAST_CHECK_EQ( sp.extent,		3 );
 			} {
-				const auto								sp = span2( "abc" );
+				const auto								sp = make_span( "abc" );
 				DOCTEST_FAST_CHECK_EQ( size( sp ),		3 );
 				DOCTEST_FAST_CHECK_EQ( sp.extent,		3 );
 			}

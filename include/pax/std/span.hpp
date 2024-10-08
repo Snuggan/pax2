@@ -9,6 +9,38 @@
 #include <algorithm>		// std::equal, std::lexicographical_compare_three_way
 
 
+namespace pax {
+
+	template< Contiguous_elements A >
+	constexpr auto make_span( A && a_ ) noexcept {
+		using span = std::span< Value_type_t< A >, extent_v< A > >;
+		using std::begin, std::end;
+		return span{ begin( a_ ), end( a_ ) };
+	}
+
+	template< typename T, std::size_t N >
+	constexpr auto make_span( T( & c_ )[ N ] ) noexcept {
+		using span = std::span< std::remove_reference_t< T >, N >;
+		return span{ c_, N };
+	}
+
+	template< Character Ch, std::size_t N >
+	constexpr auto make_span( Ch( & c_ )[ N ] ) noexcept {
+		using span = std::span< std::remove_reference_t< Ch >, ( N == 0 ) ? 0u : N-1u >;
+		return span{ c_, ( N == 0 ) ? 0u : N-1u };
+	}
+
+	template< Character Ch, std::size_t N >
+	constexpr auto make_span( Ch * & c_ ) noexcept {
+		using span = std::span< std::remove_reference_t< Ch >, N >;
+		using std::size;
+		return span{ c_, size( c_ ) };
+	}
+
+}	// namespace pax
+
+
+
 namespace std {
 
 	/// Stream the contents of `sp_` to `dest_` in the form `[i0, i1, ...]`.

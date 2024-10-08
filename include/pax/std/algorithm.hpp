@@ -6,9 +6,10 @@
 
 #pragma once
 
-#include "span2.hpp"
+#include "span.hpp"
 #include "string_view2.hpp"
-#include <algorithm>			// min, find, find_if, search, ...
+#include <algorithm>	// min, find, find_if, search, ...
+#include <cassert>		// assert
 
 
 // From https://lemire.me/blog/2024/07/26/safer-code-in-c-with-lifetime-bounds/
@@ -27,16 +28,16 @@
 
 namespace pax {
 
-	/// What span2 or string_view2 is suitable for a type?
-	/// Candidates are span2< T >, span2< T, N >, or string_view2< T >.
+	/// What std::span or string_view2 is suitable for a type?
+	/// Candidates are std::span< T >, std::span< T, N >, or string_view2< T >.
 	template< Contiguous_elements C, bool Dynamic = false >
 	struct view_type {
-		using type = span2< Value_type_t< C >, Dynamic ? std::dynamic_extent : extent_v< C > >;
+		using type = std::span< Value_type_t< C >, Dynamic ? std::dynamic_extent : extent_v< C > >;
 	};
 
 	template< typename T, std::size_t N, bool Dynamic >
-	struct view_type< span2< T, N >, Dynamic > {
-		using type = span2< T, Dynamic ? std::dynamic_extent : N >;
+	struct view_type< std::span< T, N >, Dynamic > {
+		using type = std::span< T, Dynamic ? std::dynamic_extent : N >;
 	};
 
 	template< String S, bool Dynamic >
@@ -105,7 +106,7 @@ namespace pax {
 		// Return true iff copying to dest_ requires backward copy.
 		template< typename T, std::size_t N, typename Itr >
 		[[nodiscard]] constexpr bool requires_backward( 
-			const span2< T, N >				sp_,
+			const std::span< T, N >				sp_,
 			Itr 							dst_ 
 		) noexcept {
 			static constexpr bool same = std::is_same_v< std::remove_cvref_t< T >, std::remove_cvref_t< Value_type_t< Itr > > >;
@@ -165,11 +166,11 @@ namespace pax {
 		}
 	}
 
-	/// Returns a span2 with const elements.
+	/// Returns a std::span with const elements.
 	template< typename T, std::size_t N >
-	[[nodiscard]] constexpr auto as_const( const span2< T, N > sp_ ) noexcept {
+	[[nodiscard]] constexpr auto as_const( const std::span< T, N > sp_ ) noexcept {
 		if constexpr( std::is_const_v< T > )	return sp_;
-		else									return span2< const T, N >( sp_.data(), sp_.size() );
+		else									return std::span< const T, N >( sp_.data(), sp_.size() );
 	}
 
 	/// Returns a view with const elements.
@@ -179,24 +180,24 @@ namespace pax {
 			return view( v_ );
 		} else {
 			using std::data, std::size;
-			return span2< const Value_type_t< V >, extent_v< V > >( data( v_ ), size( v_ ) );
+			return std::span< const Value_type_t< V >, extent_v< V > >( data( v_ ), size( v_ ) );
 		}
 	}
 
-	/// Returns a dynamically sized span2.
+	/// Returns a dynamically sized std::span.
 	template< typename T, std::size_t N >
-	[[nodiscard]] constexpr auto as_dynamic( const span2< T, N > sp_ ) noexcept {
+	[[nodiscard]] constexpr auto as_dynamic( const std::span< T, N > sp_ ) noexcept {
 		if constexpr( N == dynamic_extent )		return sp_;
-		else									return span2( sp_.data(), N );
+		else									return std::span( sp_.data(), N );
 	}
 
-	/// Returns a dynamically sized span2.
+	/// Returns a dynamically sized std::span.
 	template< Contiguous_elements V >
 	[[nodiscard]] constexpr auto as_dynamic( V && v_ ) noexcept {
-		return as_dynamic( span2( v_ ) );
+		return as_dynamic( make_span( v_ ) );
 	}
 
-	/// Return true iff both data() and size() are equal between the two span2s.
+	/// Return true iff both data() and size() are equal between the two std::spans.
 	template< Contiguous_elements V0, Contiguous_elements V1 >
 	[[nodiscard]] constexpr bool identic(
 		const V0						  & v0_, 
@@ -287,7 +288,7 @@ namespace pax {
 		} else {
 			using std::data;
 			static constexpr std::size_t	sz = std::min( I, extent_v< V > );
-			return span2< Value_type_t< V >, sz >( data( v_ ), sz );
+			return std::span< Value_type_t< V >, sz >( data( v_ ), sz );
 		}
 	}
 
@@ -301,7 +302,7 @@ namespace pax {
 		} else {
 			using std::data, std::size;
 			assert( I <= size( v_ ) && "first< I >( v_ ) requires I <= size( v_ )." );
-			return span2< Value_type_t< V >, I >( data( v_ ), I );
+			return std::span< Value_type_t< V >, I >( data( v_ ), I );
 		}
 	}
 
@@ -333,7 +334,7 @@ namespace pax {
 			using std::data;
 			static constexpr std::size_t	sz = extent_v< V >;
 			static constexpr std::size_t	offset = ( I < sz ) ? sz - I : 0u;
-			return span2< Value_type_t< V >, sz - offset >( data( v_ ) + offset, sz - offset );
+			return std::span< Value_type_t< V >, sz - offset >( data( v_ ) + offset, sz - offset );
 		}
 	}
 
@@ -347,7 +348,7 @@ namespace pax {
 		} else {
 			using std::data, std::size;
 			assert( I <= size( v_ ) && "last< I >( v_ ) requires I <= size( v_ )." );
-			return span2< Value_type_t< V >, I >( data( v_ ) + size( v_ ) - I, I );
+			return std::span< Value_type_t< V >, I >( data( v_ ) + size( v_ ) - I, I );
 		}
 	}
 
@@ -379,7 +380,7 @@ namespace pax {
 			using std::data;
 			static constexpr std::size_t	offset = ( I < extent_v< V > ) ? I : extent_v< V >;
 			static constexpr std::size_t	sz = extent_v< V > - offset;
-			return span2< Value_type_t< V >, sz >( data( v_ ) + offset, sz );
+			return std::span< Value_type_t< V >, sz >( data( v_ ) + offset, sz );
 		}
 	}
 
@@ -409,7 +410,7 @@ namespace pax {
 		} else {
 			using std::data;
 			static constexpr std::size_t	sz = ( extent_v< V > > I ) ? extent_v< V > - I : 0;
-			return span2< Value_type_t< V >, sz >( data( v_ ), sz );
+			return std::span< Value_type_t< V >, sz >( data( v_ ), sz );
 		}
 	}
 
@@ -447,7 +448,7 @@ namespace pax {
 			using std::size, std::data;
 			const auto 						offset = detail::subview_offset( offset_, size( v_ ) );
 			assert( offset + Len <= size( v_ )  && "subview< Len >( v_, offset_ ) requires offset_ + Len <= size( v_ )." );
-			return span2< Value_type_t< V >, Len >( data( v_ ) + offset, Len );
+			return std::span< Value_type_t< V >, Len >( data( v_ ) + offset, Len );
 		}
 	}
 
@@ -463,7 +464,7 @@ namespace pax {
 			using std::data;
 			static constexpr auto 			offset = detail::subview_offset( Offset, extent_v< V > );
 			static constexpr std::size_t 	sz = std::min( extent_v< V > - offset, Len );
-			return span2< Value_type_t< V >, sz >( data( v_ ) + offset, sz );
+			return std::span< Value_type_t< V >, sz >( data( v_ ) + offset, sz );
 		}
 	}
 
@@ -479,7 +480,7 @@ namespace pax {
 			using std::data, std::size;
 			const auto 						offset = detail::subview_offset( Offset, size( v_ ) );
 			assert( offset + Len <= size( v_ ) && "subview< Offset, Len >( v_ ) requires Offset + Len <= size( v_ )." );
-			return span2< Value_type_t< V >, Len >( data( v_ ) + offset, Len );
+			return std::span< Value_type_t< V >, Len >( data( v_ ) + offset, Len );
 		}
 	}
 
