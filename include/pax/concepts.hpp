@@ -88,6 +88,8 @@ namespace pax {
 		- 0: for all other objects.
 	**/
 	template< typename T >	struct extent : size_constant< extent_default< T >() > {};
+	template< typename T >	struct extent< T * >		: size_constant< dynamic_extent > {};
+	template< typename T >	struct extent< T[] >		: size_constant< dynamic_extent > {};
 	template< typename T >	struct extent< T & >		: extent< T > {};
 	template< typename T >	struct extent< T && >		: extent< T > {};
 	template< typename T >	struct extent< const T >	: extent< T > {};
@@ -172,31 +174,30 @@ namespace pax {
 namespace std {
 
 	template< pax::Character Ch >
-	[[nodiscard]] constexpr Ch * begin( Ch * const & c_ )	noexcept	{	return c_;							}
+	[[nodiscard]] constexpr Ch * begin( Ch * const & c_ )		noexcept	{	return c_;							}
 
 	template< pax::Character Ch >
-	[[nodiscard]] constexpr Ch * end( Ch * const & c_ )		noexcept	{
+	[[nodiscard]] constexpr Ch * end( Ch * const & c_ )			noexcept	{
 		Ch *				itr = c_;
 		if( c_ && *c_ )		while( *( ++itr ) );
 		return itr;
 	}
 
 	template< pax::Character Ch >
-	[[nodiscard]] constexpr size_t size( Ch * const & c_ )	noexcept	{	return end( c_ ) - c_;				}
-	
-	
+	[[nodiscard]] constexpr Ch * data( Ch * const & c_ )		noexcept	{	return c_;							}
 
 
-	template< std::size_t N, pax::Character Ch >			// In char arrays the null character is counted. 
-	[[nodiscard]] constexpr size_t size( Ch * c_ )			noexcept	{
+
+	template< pax::Character Ch >
+	[[nodiscard]] constexpr std::size_t size( Ch * const & c_ )	noexcept	{	return end( c_ ) - c_;				}
+
+	template< pax::Character Ch, std::size_t N >				// In char arrays the null character is counted. 
+	[[nodiscard]] constexpr std::size_t size( Ch( & c_ )[ N ] )	noexcept	{
 		return ( N == 0 ) ? 0u : N - ( c_[ N-1 ] == 0 );
 	}
 
-	template< pax::Character Ch, std::size_t N >			// In char arrays the null character is counted. 
-	[[nodiscard]] constexpr size_t size( Ch( & c_ )[ N ] )	noexcept	{	return size< N >( c_ );				}
-
-	template< pax::Character Ch, std::size_t N >			// In char arrays the null character is counted. 
-	[[nodiscard]] constexpr Ch * end( Ch( & c_ )[ N ] )		noexcept	{	return c_ + size< N >( c_ );		}
+	template< pax::Character Ch, std::size_t N >				// In char arrays the null character is counted. 
+	[[nodiscard]] constexpr Ch * end( Ch( & c_ )[ N ] )			noexcept	{	return c_ + size( c_ );		}
 
 }	// namespace std
 
