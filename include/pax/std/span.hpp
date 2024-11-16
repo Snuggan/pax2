@@ -26,13 +26,14 @@ namespace pax {
 
 	template< Character Ch, std::size_t N >
 	constexpr auto make_span( Ch( & c_ )[ N ] ) noexcept {
-		using span = std::span< std::remove_reference_t< Ch >, ( N == 0 ) ? 0u : N-1u >;
-		return span{ c_, ( N == 0 ) ? 0u : N-1u };
+		constexpr std::size_t 	sz = ( N == 0 ) ? 0u : N-1u;
+		using span = std::span< std::remove_reference_t< Ch >, sz >;
+		return span{ c_, sz };
 	}
 
-	template< Character Ch, std::size_t N >
-	constexpr auto make_span( Ch * & c_ ) noexcept {
-		using span = std::span< std::remove_reference_t< Ch >, N >;
+	template< Character Ch >
+	constexpr auto make_span( Ch * const & c_ ) noexcept {
+		using span = std::span< std::remove_reference_t< Ch > >;
 		using std::size;
 		return span{ c_, size( c_ ) };
 	}
