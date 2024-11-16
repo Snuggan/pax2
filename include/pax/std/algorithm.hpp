@@ -7,7 +7,7 @@
 #pragma once
 
 #include "span.hpp"
-#include "string_view2.hpp"
+#include "string_view.hpp"
 #include <algorithm>	// min, find, find_if, search, ...
 #include <cassert>		// assert
 
@@ -28,8 +28,8 @@
 
 namespace pax {
 
-	/// What std::span or string_view2 is suitable for a type?
-	/// Candidates are std::span< T >, std::span< T, N >, or string_view2< T >.
+	/// What std::span or std::string_view is suitable for a type?
+	/// Candidates are std::span< T >, std::span< T, N >, or std::string_view< T >.
 	template< Contiguous_elements C, bool Dynamic = false >
 	struct view_type {
 		using type = std::span< Value_type_t< C >, Dynamic ? std::dynamic_extent : extent_v< C > >;
@@ -42,7 +42,7 @@ namespace pax {
 
 	template< String S, bool Dynamic >
 	struct view_type< S, Dynamic > {
-		using type = basic_string_view2< std::remove_cvref_t< Value_type_t< S > > >;
+		using type = std::basic_string_view< std::remove_cvref_t< Value_type_t< S > > >;
 	};
 
 	template< String S, bool Dynamic >
@@ -50,7 +50,7 @@ namespace pax {
 	struct view_type< S, Dynamic > {
 		using Ch = std::remove_cvref_t< Value_type_t< S > >;
 		using Tr = typename std::remove_cvref_t< S >::traits_type;
-		using type = basic_string_view2< Ch, Tr >;
+		using type = std::basic_string_view< Ch, Tr >;
 	};
 
 	template< typename T, bool Dynamic >
@@ -158,12 +158,8 @@ namespace pax {
 	/// Returns sp_.data() != nullptr. 
 	template< Contiguous_elements V >
 	[[nodiscard]] constexpr bool valid( const V & v_ ) noexcept {
-		if constexpr( Character_array< V > ) {
-			return data( view( v_ ) ) != nullptr;
-		} else {
-			using std::data;
-			return data( v_ ) != nullptr;
-		}
+		using std::data;
+		return data( v_ ) != nullptr;
 	}
 
 	/// Returns a std::span with const elements.
@@ -177,7 +173,7 @@ namespace pax {
 	template< Contiguous_elements V >
 	[[nodiscard]] constexpr auto as_const( V && v_ ) noexcept {
 		if constexpr( std::is_const_v< Value_type_t< V > > ) {
-			return view( v_ );
+			return std::basic_string_view( v_ );
 		} else {
 			using std::data, std::size;
 			return std::span< const Value_type_t< V >, extent_v< V > >( data( v_ ), size( v_ ) );
@@ -204,7 +200,7 @@ namespace pax {
 		const V1						  & v1_ 
 	) noexcept {
 		if constexpr( Character_array< V0 > || Character_array< V1 > ) {
-			return identic( view( v0_ ), view( v1_ ) );
+			return identic( std::basic_string_view( v0_ ), std::basic_string_view( v1_ ) );
 		} else {
 			using std::data, std::size;
 			return ( data( v0_ ) == data( v1_ ) )
@@ -220,7 +216,7 @@ namespace pax {
 		const V1						  & v1_ 
 	) noexcept {
 		if constexpr( Character_array< V0 > || Character_array< V1 > ) {
-			return overlap( view( v0_ ), view( v1_ ) );
+			return overlap( std::basic_string_view( v0_ ), std::basic_string_view( v1_ ) );
 		} else {
 			using std::data, std::size;
 			return	( ( data( v0_ ) > data( v1_ ) )	? ( data( v1_ ) + size( v1_ ) > data( v0_ ) ) 
@@ -236,11 +232,11 @@ namespace pax {
 	/// UB, if v_ has a dynamic size that is zero.
 	template< typename V >
 	[[nodiscard]] constexpr auto & front( const V & v_ ) noexcept {
+		using std::data, std::size;
+		static_assert( extent_v< V > != 0 );
 		if constexpr( Character_array< V > ) {
-			return front( view( v_ ) );		// To remove possible trailing '\0'.
+			return front( std::basic_string_view( v_ ) );		// To remove possible trailing '\0'.
 		} else {
-			using std::data, std::size;
-			static_assert( extent_v< V > != 0 );
 			if constexpr ( extent_v< V > == dynamic_extent )
 				assert( size( v_ ) && "front( v_ ) requires size( v_ ) > 0" );
 			return *data( v_ );
@@ -251,14 +247,16 @@ namespace pax {
 	/// UB, if v_ has a dynamic size that is zero.
 	template< typename V >
 	[[nodiscard]] constexpr auto & back( const V & v_ ) noexcept {
+		using std::data, std::size;
+		static_assert( extent_v< V > != 0 );
 		if constexpr( Character_array< V > ) {
-			return back( view( v_ ) );		// To remove possible trailing '\0'.
+			return back( std::basic_string_view( v_ ) );		// To remove possible trailing '\0'.
 		} else {
-			using std::data, std::size;
-			static_assert( extent_v< V > != 0 );
-			if constexpr ( extent_v< V > == dynamic_extent )
+			if constexpr ( extent_v< V > == dynamic_extent ) {
 				assert( size( v_ ) && "back( v_ ) requires size( v_ ) > 0" );
-			return *( data( v_ ) + size( v_ ) - 1 );
+				return *( data( v_ ) + size( v_ ) - 1 );
+			}
+			return *( data( v_ ) + extent_v< V > - 1 );
 		}
 	}
 
@@ -271,23 +269,25 @@ namespace pax {
 		const std::size_t 					i_ = 1 
 	) noexcept {
 		if constexpr( Character_array< V > ) {
-			return first( view( v_ ), i_ );		// To remove possible trailing '\0'.
+			return first( std::basic_string_view( v_ ), i_ );	// To remove possible trailing '\0'.
 		} else {
 			using std::data, std::size;
 			return view_type_t< V, true >( data( v_ ), std::min( i_, size( v_ ) ) );
 		}
 	}
+	
+	
 
 	/// Returns a statically sized span of the first I elements of v_.
 	///	- If I > size( v_ ), a span of all v_ is returned.
 	template< std::size_t I, Contiguous_elements V >
 		requires( ( I != dynamic_extent ) && ( extent_v< V > != dynamic_extent ) )
-	[[nodiscard]] constexpr auto first( V && v_ ) noexcept {
+	[[nodiscard]] constexpr auto first( V const & v_ ) noexcept {
 		if constexpr( Character_array< V > ) {
-			return first< I >( view( v_ ) );	// To remove possible trailing '\0'.
+			return first( std::basic_string_view( v_ ), I );		// To remove possible trailing '\0'.
 		} else {
 			using std::data;
-			static constexpr std::size_t	sz = std::min( I, extent_v< V > );
+			static constexpr std::size_t	sz  = std::min( I, extent_v< V > );
 			return std::span< Value_type_t< V >, sz >( data( v_ ), sz );
 		}
 	}
@@ -296,14 +296,10 @@ namespace pax {
 	///	- There is an assert( I <= size( v_ ) ).
 	template< std::size_t I, Contiguous_elements V >
 		requires( ( I != dynamic_extent ) && ( extent_v< V > == dynamic_extent ) )
-	[[nodiscard]] constexpr auto first( V && v_ ) noexcept {
-		if constexpr( Character_array< V > ) {
-			return first< I >( view( v_ ) );	// To remove possible trailing '\0'.
-		} else {
-			using std::data, std::size;
-			assert( I <= size( v_ ) && "first< I >( v_ ) requires I <= size( v_ )." );
-			return std::span< Value_type_t< V >, I >( data( v_ ), I );
-		}
+	[[nodiscard]] constexpr auto first( V const & v_ ) noexcept {
+		using std::data, std::size;
+		assert( I <= size( v_ ) && "first< I >( v_ ) requires I <= size( v_ )." );
+		return std::span< Value_type_t< V >, I >( data( v_ ), I );
 	}
 
 
@@ -311,16 +307,12 @@ namespace pax {
 	///	- If i_ > size( v_ ), dview( v_ ) is returned.
 	template< Contiguous_elements V >
 	[[nodiscard]] constexpr auto last( 
-		V								 && v_, 
+		V								 const & v_, 
 		const std::size_t 					i_ = 1 
 	) noexcept {
-		if constexpr( Character_array< V > ) {
-			return last( view( v_ ), i_ );		// To remove possible trailing '\0'.
-		} else {
-			using std::data, std::size;
-			return ( i_ < size( v_ ) )	? view_type_t< V, true >( data( v_ ) + size( v_ ) - i_, i_ )
-										: view_type_t< V, true >( v_ );
-		}
+		using std::data, std::size;
+		return ( i_ < size( v_ ) )	? view_type_t< V, true >( data( v_ ) + size( v_ ) - i_, i_ )
+									: view_type_t< V, true >( v_ );
 	}
 
 	/// Returns a statically sized span of the last I elements of v_.
@@ -329,7 +321,7 @@ namespace pax {
 		requires( ( I != dynamic_extent ) && ( extent_v< V > != dynamic_extent ) )
 	[[nodiscard]] constexpr auto last( V && v_ ) noexcept {
 		if constexpr( Character_array< V > ) {
-			return last< I >( view( v_ ) );		// To remove possible trailing '\0'.
+			return last( std::basic_string_view( v_ ), I );		// To remove possible trailing '\0'.
 		} else {
 			using std::data;
 			static constexpr std::size_t	sz = extent_v< V >;
@@ -343,13 +335,9 @@ namespace pax {
 	template< std::size_t I, Contiguous_elements V >
 		requires( ( I != dynamic_extent ) && ( extent_v< V > == dynamic_extent ) )
 	[[nodiscard]] constexpr auto last( V && v_ ) noexcept {
-		if constexpr( Character_array< V > ) {
-			return last< I >( view( v_ ) );		// To remove possible trailing '\0'.
-		} else {
-			using std::data, std::size;
-			assert( I <= size( v_ ) && "last< I >( v_ ) requires I <= size( v_ )." );
-			return std::span< Value_type_t< V >, I >( data( v_ ) + size( v_ ) - I, I );
-		}
+		using std::data, std::size;
+		assert( I <= size( v_ ) && "last< I >( v_ ) requires I <= size( v_ )." );
+		return std::span< Value_type_t< V >, I >( data( v_ ) + size( v_ ) - I, I );
 	}
 
 
@@ -361,7 +349,7 @@ namespace pax {
 		const std::size_t 					i_ = 1 
 	) noexcept {
 		if constexpr( Character_array< V > ) {
-			return not_first( view( v_ ), i_ );	// To remove possible trailing '\0'.
+			return not_first( std::basic_string_view( v_ ), i_ );	// To remove possible trailing '\0'.
 		} else {
 			using std::data, std::size;
 			return ( i_ < size( v_ ) )	? view_type_t< V, true >( data( v_ ) + i_, size( v_ ) - i_ )
@@ -375,7 +363,7 @@ namespace pax {
 		requires( ( I != dynamic_extent ) && ( extent_v< V > != dynamic_extent ) )
 	[[nodiscard]] constexpr auto not_first( V && v_ ) noexcept {
 		if constexpr( Character_array< V > ) {
-			return not_first< I >( view( v_ ) );	// To remove possible trailing '\0'.
+			return not_first( std::basic_string_view( v_ ), I );		// To remove possible trailing '\0'.
 		} else {
 			using std::data;
 			static constexpr std::size_t	offset = ( I < extent_v< V > ) ? I : extent_v< V >;
@@ -393,7 +381,7 @@ namespace pax {
 		const std::size_t 					i_ = 1 
 	) noexcept {
 		if constexpr( Character_array< V > ) {
-			return not_last( view( v_ ), i_ );		// To remove possible trailing '\0'.
+			return not_last( std::basic_string_view( v_ ), i_ );		// To remove possible trailing '\0'.
 		} else {
 			using std::data, std::size;
 			return view_type_t< V, true >( data( v_ ), ( i_ < size( v_ ) ) ? size( v_ ) - i_ : 0u );
@@ -406,7 +394,7 @@ namespace pax {
 		requires( ( I != dynamic_extent ) && ( extent_v< V > != dynamic_extent ) )
 	[[nodiscard]] constexpr auto not_last( V && v_ ) noexcept {
 		if constexpr( Character_array< V > ) {
-			return not_last< I >( view( v_ ) );		// To remove possible trailing '\0'.
+			return not_last( std::basic_string_view( v_ ), I );	// To remove possible trailing '\0'.
 		} else {
 			using std::data;
 			static constexpr std::size_t	sz = ( extent_v< V > > I ) ? extent_v< V > - I : 0;
@@ -425,7 +413,7 @@ namespace pax {
 		const std::size_t 					size_ 
 	) noexcept {
 		if constexpr( Character_array< V > ) {
-			return subview( view( v_ ), offset_, size_ );	// To remove possible trailing '\0'.
+			return subview( std::basic_string_view( v_ ), offset_, size_ );	// To remove possible trailing '\0'.
 		} else {
 			using std::data, std::size;
 			const auto 						offset = detail::subview_offset( offset_, size( v_ ) );
@@ -443,7 +431,7 @@ namespace pax {
 		const std::ptrdiff_t 				offset_ 
 	) noexcept	{
 		if constexpr( Character_array< V > ) {
-			return subview< Len >( view( v_ ), offset_ );	// To remove possible trailing '\0'.
+			return subview< Len >( std::basic_string_view( v_ ), offset_ );	// To remove possible trailing '\0'.
 		} else {
 			using std::size, std::data;
 			const auto 						offset = detail::subview_offset( offset_, size( v_ ) );
@@ -459,7 +447,7 @@ namespace pax {
 		requires( ( Len != dynamic_extent ) && ( extent_v< V > != dynamic_extent ) )
 	[[nodiscard]] constexpr auto subview( V && v_ ) noexcept {
 		if constexpr( Character_array< V > ) {
-			return subview< Offset, Len >( view( v_ ) );	// To remove possible trailing '\0'.
+			return subview( std::basic_string_view( v_ ), Offset, Len );	// To remove possible trailing '\0'.
 		} else {
 			using std::data;
 			static constexpr auto 			offset = detail::subview_offset( Offset, extent_v< V > );
@@ -475,7 +463,7 @@ namespace pax {
 		requires( ( Len != dynamic_extent ) && ( extent_v< V > == dynamic_extent ) )
 	[[nodiscard]] constexpr auto subview( V && v_ ) noexcept {
 		if constexpr( Character_array< V > ) {
-			return subview< Offset, Len >( view( v_ ) );	// To remove possible trailing '\0'.
+			return subview< Offset, Len >( std::basic_string_view( v_ ) );	// To remove possible trailing '\0'.
 		} else {
 			using std::data, std::size;
 			const auto 						offset = detail::subview_offset( Offset, size( v_ ) );
@@ -495,9 +483,9 @@ namespace pax {
 		const V1						  & v1_
 	) noexcept {
 		if constexpr( Character_array< V0 > ) {
-			return find( view( v0_ ), v1_ );			// To remove possible trailing '\0'.
+			return find( std::basic_string_view( v0_ ), v1_ );			// To remove possible trailing '\0'.
 		} else if constexpr( Character_array< V1 > ) {
-			return find( v0_, view( v1_ ) );			// To remove possible trailing '\0'.
+			return find( v0_, std::basic_string_view( v1_ ) );			// To remove possible trailing '\0'.
 		} else {
 			using std::begin, std::end;
 			return std::search( begin( v0_ ), end( v0_ ), begin( v1_ ), end( v1_ ) ) - begin( v0_ );
@@ -512,7 +500,7 @@ namespace pax {
 		const Value_type_t< V >			  & t_ 
 	) noexcept {
 		if constexpr( Character_array< V > ) {
-			return find( view( v_ ), t_ );				// To remove possible trailing '\0'.
+			return find( std::basic_string_view( v_ ), t_ );				// To remove possible trailing '\0'.
 		} else {
 			using std::begin, std::end;
 			return std::find( begin( v_ ), end( v_ ), t_ ) - begin( v_ );
@@ -528,7 +516,7 @@ namespace pax {
 		Pred							 && pred_ 
 	) noexcept {
 		if constexpr( Character_array< V > ) {
-			return find( view( v_ ), pred_ );			// To remove possible trailing '\0'.
+			return find( std::basic_string_view( v_ ), pred_ );			// To remove possible trailing '\0'.
 		} else {
 			using std::begin, std::end;
 			return std::find_if( begin( v_ ), end( v_ ), pred_ ) - begin( v_ );
@@ -554,7 +542,7 @@ namespace pax {
 		const Value_type_t< V >			  & t_ 
 	) noexcept {
 		if constexpr( Character_array< V > ) {
-			return rfind( view( v_ ), t_ );				// To remove possible trailing '\0'.
+			return rfind( std::basic_string_view( v_ ), t_ );				// To remove possible trailing '\0'.
 		} else {
 			using std::size, std::rbegin, std::rend;
 			const auto res = std::find( rbegin( v_ ), rend( v_ ), t_ );
@@ -571,7 +559,7 @@ namespace pax {
 		Pred							 && pred_ 
 	) noexcept {
 		if constexpr( Character_array< V > ) {
-			return rfind( view( v_ ), pred_ );			// To remove possible trailing '\0'.
+			return rfind( std::basic_string_view( v_ ), pred_ );			// To remove possible trailing '\0'.
 		} else {
 			using std::size, std::rbegin, std::rend;
 			const auto res = std::find_if( rbegin( v_ ), rend( v_ ), pred_ );
@@ -587,7 +575,7 @@ namespace pax {
 		X								 && x_ 
 	) noexcept {
 		if constexpr( Character_array< V > ) {
-			return find( v_, x_ ) < size( view( v_ ) );	// To remove possible trailing '\0'.
+			return find( v_, x_ ) < size( std::basic_string_view( v_ ) );	// To remove possible trailing '\0'.
 		} else {
 			using std::size;
 			return find( v_, x_ ) < size( v_ );
@@ -603,7 +591,7 @@ namespace pax {
 		U								 && until_this_ 
 	) noexcept {
 		if constexpr( Character_array< V > ) {			// To remove possible trailing '\0'.
-			return view_type_t< V, true >( data( v_ ), find( view( v_ ), until_this_ ) );
+			return view_type_t< V, true >( data( v_ ), find( std::basic_string_view( v_ ), until_this_ ) );
 		} else {
 			using std::data;
 			return view_type_t< V, true >( data( v_ ), find( v_, until_this_ ) );
@@ -620,7 +608,7 @@ namespace pax {
 		U								 && u_
 	) noexcept {
 		if constexpr( Character_array< V > || Character_array< U > ) {
-			return equal( view( v_  ), view( u_  ) );	// To remove possible trailing '\0'.
+			return equal( std::basic_string_view( v_  ), std::basic_string_view( u_  ) );	// To remove possible trailing '\0'.
 		} else {
 			using std::begin, std::end;
 			return std::equal( begin( v_ ), end( v_ ), begin( u_ ), end( u_ ) );
@@ -635,7 +623,7 @@ namespace pax {
 		const Value_type_t< V >				t_ 
 	) noexcept {
 		if constexpr( Character_array< V > ) {
-			return starts_with( view( v_ ), t_ );		// To remove possible trailing '\0'.
+			return starts_with( std::basic_string_view( v_ ), t_ );		// To remove possible trailing '\0'.
 		} else {
 			using std::size;
 			return size( v_ ) && ( v_[ 0 ] == t_ );
@@ -649,7 +637,7 @@ namespace pax {
 		const Value_type_t< V >				t_ 
 	) noexcept {
 		if constexpr( Character_array< V > ) {
-			return ends_with( view( v_ ), t_ );			// To remove possible trailing '\0'.
+			return ends_with( std::basic_string_view( v_ ), t_ );			// To remove possible trailing '\0'.
 		} else {
 			using std::size;
 			return size( v_ ) && ( back( v_ ) == t_ );
@@ -663,7 +651,7 @@ namespace pax {
 		U								 && u_
 	) noexcept {
 		if constexpr( Character_array< V > || Character_array< U > ) {
-			return starts_with( view( v_ ), view( u_ ) );	// To remove possible trailing '\0'.
+			return starts_with( std::basic_string_view( v_ ), std::basic_string_view( u_ ) );	// To remove possible trailing '\0'.
 		} else {
 			using std::size;
 			return equal( first( v_, size( u_ ) ), u_ ) ? size( u_ ) : 0u;
@@ -677,7 +665,7 @@ namespace pax {
 		U								 && u_
 	) noexcept {
 		if constexpr( Character_array< V > || Character_array< U > ) {
-			return ends_with( view( v_ ), view( u_ ) );		// To remove possible trailing '\0'.
+			return ends_with( std::basic_string_view( v_ ), std::basic_string_view( u_ ) );		// To remove possible trailing '\0'.
 		} else {
 			using std::size;
 			return equal( last( v_, size( u_ ) ), u_ ) ? size( u_ ) : 0u;
@@ -875,7 +863,7 @@ namespace pax {
 	template< Contiguous_elements V >
 	constexpr void sort( V & v_ ) {
 		if constexpr( Character_array< V > ) {
-			sort( view( v_ ) );		// To remove possible trailing '\0'.
+			sort( std::basic_string_view( v_ ) );		// To remove possible trailing '\0'.
 		} else {
 			using std::begin, std::end;
 			std::sort( begin( v_ ), end( v_ ) );
@@ -1050,7 +1038,7 @@ namespace pax {
 	template< String V >
 	[[nodiscard]] constexpr std::size_t luhn_sum( const V & str_ ) noexcept {
 		if constexpr( Character_array< V > ) {
-			return luhn_sum( view( str_ ) );	// To remove possible trailing '\0'.
+			return luhn_sum( std::basic_string_view( str_ ) );	// To remove possible trailing '\0'.
 		} else {
 			static constexpr char		 	twice[] = { 0, 2, 4, 6, 8, 1, 3, 5, 7, 9 };
 			std::size_t						sum{};
@@ -1096,7 +1084,7 @@ namespace pax {
 		By								 && by_
 	) noexcept {
 		if constexpr( Character_array< By > ) {	// To remove possible trailing '\0'.
-			return split_by( v_, view( by_ ) );
+			return split_by( v_, std::basic_string_view( by_ ) );
 		} else {
 			using std::size;
 			return split_at( v_, find( v_, by_ ), size( by_ ) );

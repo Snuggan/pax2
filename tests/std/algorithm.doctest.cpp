@@ -18,7 +18,7 @@ namespace pax {
 	
 	constexpr auto								str		= "abcdefghijkl";
 	constexpr auto	 							strN	= make_span( "abcdefghijkl" );
-	constexpr const string_view2				e		= view( "" );
+	constexpr const std::string_view			e		= view( "" );
 
 	constexpr const std::size_t 				N = 12;
 	constexpr const int							ints0[ N ] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
@@ -69,15 +69,14 @@ namespace pax {
 			static_assert( std::is_nothrow_move_assignable_v< Span3 > );
 			static_assert( std::is_trivially_move_assignable_v< Span3 > );
 			static_assert( std::is_nothrow_swappable_v< Span3 > );
-		// string_view2
-			using View = string_view2;
+		// std::string_view
+			using View = std::string_view;
 			static_assert(!std::is_aggregate_v< View > );
 			static_assert( std::is_standard_layout_v< View > );
 			static_assert( std::is_trivially_copyable_v< View > );
 			static_assert(!std::has_virtual_destructor_v< View > );
 			static_assert( std::is_nothrow_destructible_v< View > );
 			static_assert( std::is_trivially_destructible_v< View > );
-			static_assert( std::is_nothrow_default_constructible_v< View > == ( View::extent == std::dynamic_extent ) );
 			static_assert(!std::is_trivially_default_constructible_v< View > );
 			static_assert( std::is_nothrow_copy_constructible_v< View > );
 			static_assert( std::is_trivially_copy_constructible_v< View > );
@@ -103,7 +102,6 @@ namespace pax {
 		}
 		{	// std::format output
 			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", std::string_view( "abc" ) ),	"abc" );
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", pax::string_view2( "abc" ) ),	"abc" );
 			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", first( abc, 3 ) ),				"abc" );
 			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", view( first( abc, 3 ) ) ),		"abc" );
 
@@ -115,41 +113,38 @@ namespace pax {
 	}
 	DOCTEST_TEST_CASE( "view_type, view" ) {
 		{	// view, dview, view_type, view_type
-			static_assert( std::is_same_v< view_type_t< string_view2 >,					string_view2 > );
-			static_assert( std::is_same_v< view_type_t< std::string_view >,				string_view2 > );
-			static_assert( std::is_same_v< view_type_t< std::string >,					string_view2 > );
+			static_assert( std::is_same_v< view_type_t< std::string_view >,				std::string_view > );
+			static_assert( std::is_same_v< view_type_t< std::string_view >,				std::string_view > );
+			static_assert( std::is_same_v< view_type_t< std::string >,					std::string_view > );
 			static_assert( std::is_same_v< view_type_t< std::span< int > >,				std::span< int > > );
 			static_assert( std::is_same_v< view_type_t< std::span< int, 4 > >,			std::span< int, 4 > > );
 			static_assert( std::is_same_v< view_type_t< std::vector< int > >,			std::span< int > > );
 			static_assert( std::is_same_v< view_type_t< std::array < int, 4 > >,		std::span< int, 4 > > );
 
-			static_assert( std::is_same_v< view_type_t< string_view2, true >,			string_view2 > );
-			static_assert( std::is_same_v< view_type_t< std::string_view, true >,		string_view2 > );
-			static_assert( std::is_same_v< view_type_t< std::string, true >,			string_view2 > );
+			static_assert( std::is_same_v< view_type_t< std::string_view, true >,		std::string_view > );
+			static_assert( std::is_same_v< view_type_t< std::string_view, true >,		std::string_view > );
+			static_assert( std::is_same_v< view_type_t< std::string, true >,			std::string_view > );
 			static_assert( std::is_same_v< view_type_t< std::span< int >, true >,		std::span< int > > );
 			static_assert( std::is_same_v< view_type_t< std::span< int, 4 >, true >,	std::span< int > > );
 			static_assert( std::is_same_v< view_type_t< std::vector< int >, true >,		std::span< int > > );
 			static_assert( std::is_same_v< view_type_t< std::array < int, 4 >, true >,	std::span< int > > );
 
-			DOCTEST_ASCII_CHECK_EQ( make_span( "abcde" ),		"abcde" );
-			DOCTEST_ASCII_CHECK_EQ( string_view2( "abcde" ),	"abcde" );
-
-			DOCTEST_FAST_CHECK_LE ( make_span( "abcde" ),		"abcde" );
-			DOCTEST_FAST_CHECK_LE ( string_view2( "abcde" ),	"abcde" );
-
-			DOCTEST_FAST_CHECK_GE ( make_span( "abcde" ),		"abcde" );
-			DOCTEST_FAST_CHECK_GE ( string_view2( "abcde" ),	"abcde" );
-
 			{
+				auto constexpr abcde = make_span( "abcde" );
+				DOCTEST_FAST_CHECK_EQ( std::string_view( "abcde" ),	"abcde" );
+				DOCTEST_FAST_CHECK_EQ( abcde.size(),				5 );
+				DOCTEST_FAST_CHECK_EQ( abcde.back(),				'e' );
+				DOCTEST_FAST_CHECK_EQ( abcde,						std::string_view( "abcde" ) );
+				DOCTEST_FAST_CHECK_LE( abcde,						std::string_view( "abcde" ) );
+				DOCTEST_FAST_CHECK_GE( abcde,						std::string_view( "abcde" ) );
+			} {
 				static constexpr const char			 	res[] = { '\n', '\r', '\n' };
 				const auto								v  = view( res );
 				const auto								dv = dview( res );
 				DOCTEST_FAST_CHECK_EQ( size( v ),		3 );
-				DOCTEST_FAST_CHECK_EQ( v.extent,		dynamic_extent );
 				DOCTEST_FAST_CHECK_EQ( size( dv ),		3 );
-				DOCTEST_FAST_CHECK_EQ( dv.extent,		dynamic_extent );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		string_view2 > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	string_view2 > );
+				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::string_view > );
+				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::string_view > );
 			} {
 				const auto								v  = view( std::span< int >{} );
 				const auto								dv = dview( std::span< int >{} );
@@ -169,23 +164,19 @@ namespace pax {
 				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::span< int, 0 > > );
 				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::span< int > > );
 			} {
-				const auto								v  = view( string_view2{} );
-				const auto								dv = dview( string_view2{} );
+				const auto								v  = view( std::string_view{} );
+				const auto								dv = dview( std::string_view{} );
 				DOCTEST_FAST_CHECK_EQ( size( v ),		0 );
-				DOCTEST_FAST_CHECK_EQ( v.extent,		dynamic_extent );
 				DOCTEST_FAST_CHECK_EQ( size( dv ),		0 );
-				DOCTEST_FAST_CHECK_EQ( dv.extent,		dynamic_extent );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		string_view2 > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	string_view2 > );
+				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::string_view > );
+				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::string_view > );
 			} {
 				const auto								v  = view( "" );
 				const auto								dv = dview( "" );
 				DOCTEST_FAST_CHECK_EQ( size( v ),		0 );
-				DOCTEST_FAST_CHECK_EQ( v.extent,		dynamic_extent );
 				DOCTEST_FAST_CHECK_EQ( size( dv ),		0 );
-				DOCTEST_FAST_CHECK_EQ( dv.extent,		dynamic_extent );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		string_view2 > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	string_view2 > );
+				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::string_view > );
+				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::string_view > );
 			} {
 				const std::vector< int >				arr{ 1, 2, 3 };
 				const auto								v  = view( arr );
@@ -212,28 +203,28 @@ namespace pax {
 				const auto								v  = view( arr );
 				const auto								dv = dview( arr );
 				DOCTEST_FAST_CHECK_EQ( size( v ),		3 );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		string_view2 > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	string_view2 > );
+				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::string_view > );
+				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::string_view > );
 			} {
 				const char							  * arr = "abc";
 				const auto								v  = view( arr );
 				const auto								dv = dview( arr );
 				DOCTEST_FAST_CHECK_EQ( size( v ),		3 );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		string_view2 > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	string_view2 > );
+				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::string_view > );
+				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::string_view > );
 			} {
 				const char								arr[ 4 ] = "abc";
 				const auto								v  = view( arr );
 				const auto								dv = dview( arr );
 				DOCTEST_FAST_CHECK_EQ( size( v ),		3 );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		string_view2 > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	string_view2 > );
+				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::string_view > );
+				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::string_view > );
 			} {
 				const auto								v = view( "abc" );
 				const auto								dv = dview( "abc" );
 				DOCTEST_FAST_CHECK_EQ( size( v ),		3 );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		string_view2 > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	string_view2 > );
+				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::string_view > );
+				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::string_view > );
 			}
 		}
 		{	// std::span
@@ -321,8 +312,8 @@ namespace pax {
 		{	// identic
 			constexpr auto	str2 = view( str );
 			DOCTEST_FAST_CHECK_UNARY(  identic( str, str ) );
-			DOCTEST_FAST_CHECK_UNARY( !identic( str2, str2.first( 2 ) ) );
-			DOCTEST_FAST_CHECK_UNARY(  identic( str2, str2.first( str2.size() ) ) );
+			DOCTEST_FAST_CHECK_UNARY( !identic( str2, first( str2, 2 ) ) );
+			DOCTEST_FAST_CHECK_UNARY(  identic( str2, first( str2, str2.size() ) ) );
 
 			DOCTEST_FAST_CHECK_UNARY(  identic( ints, ints ) );
 			DOCTEST_FAST_CHECK_UNARY(  identic( ints, intsN ) );
@@ -389,12 +380,12 @@ namespace pax {
 	DOCTEST_TEST_CASE( "parts" ) {
 		constexpr auto						first_	= "abcde";
 		constexpr auto						last_	= "jkl";
-		constexpr const string_view2		null_{};
+		constexpr const std::string_view	null_{};
 		constexpr auto						empty_	= "";
 		
 		{	// front, back
-			char			str[ 10 ] = { '1','2','3','4','5','6','7','8','9','0' };
-			const std::span	v( str );
+			char			str2[ 10 ] = { '1','2','3','4','5','6','7','8','9','0' };
+			const std::span	v( str2 );
 			
 			DOCTEST_FAST_CHECK_EQ( front( "abc" ),  'a' );
 			DOCTEST_FAST_CHECK_EQ( back ( "abc" ),  'c' );
@@ -406,124 +397,139 @@ namespace pax {
 			*v.rbegin()		= 'f';		DOCTEST_FAST_CHECK_EQ( back( v ),  'f' );
 		}
 		{	// first
-			DOCTEST_ASCII_CHECK_EQ( first( "abcdefghijkl", 22 ),  	str );
+			DOCTEST_FAST_CHECK_EQ( first( "abcdefghijkl", 22 ),  		str );
 			// Should assert:	    first< 13 >( "abcdefghijkl" )
 
-			DOCTEST_FAST_CHECK_EQ( first( str,  0 ), 				empty_ );
-			DOCTEST_FAST_CHECK_EQ( first( str,  5 ), 				first_ );
-			DOCTEST_FAST_CHECK_EQ( first( str, 22 ),  				str );
-			DOCTEST_FAST_CHECK_EQ( first( str, 22 ).data(),  		view( str ).data() );
-			DOCTEST_FAST_CHECK_EQ( first( null_, 22 ),  			empty_ );
-			DOCTEST_FAST_CHECK_EQ( first( null_, 22 ).data(),  		nullptr );
-			DOCTEST_FAST_CHECK_EQ( first<  5 >( str ), 				first_ );
-			DOCTEST_FAST_CHECK_EQ( first<  5 >( strN ), 			first_ );
-			DOCTEST_FAST_CHECK_EQ( first< 22 >( strN ),				str );
-			DOCTEST_FAST_CHECK_EQ( first< 22 >( strN ).data(),		strN.data() );
-			DOCTEST_FAST_CHECK_EQ( first<  0 >( null_ ), 			empty_ );
-			DOCTEST_FAST_CHECK_EQ( first<  0 >( null_ ).data(), 	nullptr );
+			DOCTEST_FAST_CHECK_EQ( first( str,  0 ), 					empty_ );
+			DOCTEST_FAST_CHECK_EQ( first( str,  5 ), 					first_ );
+			DOCTEST_FAST_CHECK_EQ( first( str, 22 ),  					str );
+			DOCTEST_FAST_CHECK_EQ( first( str, 22 ).data(),  			view( str ).data() );
+			DOCTEST_FAST_CHECK_EQ( first( null_, 22 ),  				empty_ );
+			DOCTEST_FAST_CHECK_EQ( first( null_, 22 ).data(),  			nullptr );
+
+			DOCTEST_FAST_CHECK_EQ( first< 12 >( "abcdefghijkl" ),		str );
+			DOCTEST_FAST_CHECK_EQ( first<  5 >( "abcdefghijkl" ), 		first_ );
+			DOCTEST_FAST_CHECK_EQ( first<  5 >( str ), 					first_ );
+			// Should assert:	   first< 25 >( str )               	
+			DOCTEST_FAST_CHECK_EQ( first<  5 >( strN ), 				first_ );
+			DOCTEST_FAST_CHECK_EQ( first< 22 >( strN ),					str );
+			DOCTEST_FAST_CHECK_EQ( first< 22 >( strN ).data(),			strN.data() );
+			DOCTEST_FAST_CHECK_EQ( first<  0 >( null_ ), 				empty_ );
+			DOCTEST_FAST_CHECK_EQ( first<  0 >( null_ ).data(), 		nullptr );
 			// Should assert:	   first< 22 >( empty_ )
 		}
 		{	// last
-			DOCTEST_ASCII_CHECK_EQ( last( "abcdefghijkl", 22 ),  	str );
-			DOCTEST_ASCII_CHECK_EQ( last< 12 >( "abcdefghijkl" ),	str );
+			DOCTEST_FAST_CHECK_EQ( last( "abcdefghijkl", 22 ),  		str );
 
-			DOCTEST_FAST_CHECK_EQ( last( str,  0 ), 				empty_ );
-			DOCTEST_FAST_CHECK_EQ( last( str,  3 ), 				last_ );
-			DOCTEST_FAST_CHECK_EQ( last( str, 22 ), 				str );
-			DOCTEST_FAST_CHECK_EQ( last( str, 22 ).data(), 			view( str ).data() );
-			DOCTEST_FAST_CHECK_EQ( last( null_, 22 ),  				empty_ );
-			DOCTEST_FAST_CHECK_EQ( last( null_, 22 ).data(),  		nullptr );
-			DOCTEST_FAST_CHECK_EQ( last < 3 >( str ), 				last_ );
-			DOCTEST_FAST_CHECK_EQ( last < 3 >( strN ), 				last_ );
-			DOCTEST_FAST_CHECK_EQ( last< 22 >( strN ), 				str );
-			DOCTEST_FAST_CHECK_EQ( last< 22 >( strN ).data(), 		strN.data() );
-			DOCTEST_FAST_CHECK_EQ( last<  0 >( null_ ), 			empty_ );
-			DOCTEST_FAST_CHECK_EQ( last<  0 >( null_ ).data(), 		nullptr );
+			DOCTEST_FAST_CHECK_EQ( last( str,  0 ), 					empty_ );
+			DOCTEST_FAST_CHECK_EQ( last( str,  3 ), 					last_ );
+			DOCTEST_FAST_CHECK_EQ( last( str, 22 ), 					str );
+			DOCTEST_FAST_CHECK_EQ( last( str, 22 ).data(), 				view( str ).data() );
+			DOCTEST_FAST_CHECK_EQ( last( null_, 22 ),  					empty_ );
+			DOCTEST_FAST_CHECK_EQ( last( null_, 22 ).data(),  			nullptr );
+
+			DOCTEST_FAST_CHECK_EQ( last< 12 >( "abcdefghijkl" ),		str );
+			DOCTEST_FAST_CHECK_EQ( last<  3 >( "abcdefghijkl" ), 		last_ );
+			DOCTEST_FAST_CHECK_EQ( last < 3 >( str ), 					last_ );
+			DOCTEST_FAST_CHECK_EQ( last < 3 >( strN ), 					last_ );
+			DOCTEST_FAST_CHECK_EQ( last< 22 >( strN ), 					str );
+			DOCTEST_FAST_CHECK_EQ( last< 22 >( strN ).data(), 			strN.data() );
+			DOCTEST_FAST_CHECK_EQ( last<  0 >( null_ ), 				empty_ );
+			DOCTEST_FAST_CHECK_EQ( last<  0 >( null_ ).data(), 			nullptr );
 			// Should assert:	   last< 22 >( empty_ )
 		}
 		{	// not_first
-			DOCTEST_ASCII_CHECK_EQ( not_first( "abcdefghijkl", 0 ), str );
-			DOCTEST_FAST_CHECK_EQ( not_first( str,  0 ), 			str );
-			DOCTEST_FAST_CHECK_EQ( not_first( str,  9 ), 			last_ );
-			DOCTEST_FAST_CHECK_EQ( not_first( str, 22 ), 			empty_ );
-			DOCTEST_FAST_CHECK_EQ( not_first( str, 22 ).data(), 	view( str ).data() + view( str ).size() );
-			DOCTEST_FAST_CHECK_EQ( not_first( null_, 22 ),  		empty_ );
-			DOCTEST_FAST_CHECK_EQ( not_first( null_, 22 ).data(),  	nullptr );
-			DOCTEST_FAST_CHECK_EQ( not_first<  0 >( strN ),			str );
-			DOCTEST_FAST_CHECK_EQ( not_first<  9 >( strN ), 		last_ );
-			DOCTEST_FAST_CHECK_EQ( not_first< 22 >( strN ), 		empty_ );
-			DOCTEST_FAST_CHECK_EQ( not_first< 22 >( strN ).data(), 	strN.data() + strN.size() );
+			DOCTEST_FAST_CHECK_EQ( not_first( "abcdefghijkl", 0 ), 		str );
+			DOCTEST_FAST_CHECK_EQ( not_first( str,  0 ), 				str );
+			DOCTEST_FAST_CHECK_EQ( not_first( str,  9 ), 				last_ );
+			DOCTEST_FAST_CHECK_EQ( not_first( str, 22 ), 				empty_ );
+			DOCTEST_FAST_CHECK_EQ( not_first( str, 22 ).data(), 		view( str ).data() + view( str ).size() );
+			DOCTEST_FAST_CHECK_EQ( not_first( null_, 22 ),  			empty_ );
+			DOCTEST_FAST_CHECK_EQ( not_first( null_, 22 ).data(),  		nullptr );
+
+			DOCTEST_FAST_CHECK_EQ( not_first< 12 >( "abcdefghijkl" ),	empty_ );
+			DOCTEST_FAST_CHECK_EQ( not_first<  9 >( "abcdefghijkl" ), 	last_ );
+			DOCTEST_FAST_CHECK_EQ( not_first<  0 >( strN ),				str );
+			DOCTEST_FAST_CHECK_EQ( not_first<  9 >( strN ), 			last_ );
+			DOCTEST_FAST_CHECK_EQ( not_first< 22 >( strN ), 			empty_ );
+			DOCTEST_FAST_CHECK_EQ( not_first< 22 >( strN ).data(), 		strN.data() + strN.size() );
 		}
 		{	// not_last
-			DOCTEST_ASCII_CHECK_EQ( not_last( "abcdefghijkl", 0 ), 	str );
-			DOCTEST_FAST_CHECK_EQ( not_last( str,  0 ), 			str );
-			DOCTEST_FAST_CHECK_EQ( not_last( str,  7 ), 			first_ );
-			DOCTEST_FAST_CHECK_EQ( not_last( str, 22 ), 			empty_ );
-			DOCTEST_FAST_CHECK_EQ( not_last( str, 22 ).data(), 		view( str ).data() );
-			DOCTEST_FAST_CHECK_EQ( not_last( null_, 22 ),  			empty_ );
-			DOCTEST_FAST_CHECK_EQ( not_last( null_, 22 ).data(),  	nullptr );
-			DOCTEST_FAST_CHECK_EQ( not_last <  0 >( strN ),			str );
-			DOCTEST_FAST_CHECK_EQ( not_last <  7 >( strN ), 		first_ );
-			DOCTEST_FAST_CHECK_EQ( not_last < 22 >( strN ), 		empty_ );
-			DOCTEST_FAST_CHECK_EQ( not_last < 22 >( strN ).data(), 	strN.data() );
+			DOCTEST_FAST_CHECK_EQ( not_last( "abcdefghijkl", 0 ), 		str );
+			DOCTEST_FAST_CHECK_EQ( not_last( str,  0 ), 				str );
+			DOCTEST_FAST_CHECK_EQ( not_last( str,  7 ), 				first_ );
+			DOCTEST_FAST_CHECK_EQ( not_last( str, 22 ), 				empty_ );
+			DOCTEST_FAST_CHECK_EQ( not_last( str, 22 ).data(), 			view( str ).data() );
+			DOCTEST_FAST_CHECK_EQ( not_last( null_, 22 ),  				empty_ );
+			DOCTEST_FAST_CHECK_EQ( not_last( null_, 22 ).data(),  		nullptr );
+
+			DOCTEST_FAST_CHECK_EQ( not_last< 12 >( "abcdefghijkl" ),	empty_ );
+			DOCTEST_FAST_CHECK_EQ( not_last<  7 >( "abcdefghijkl" ),	first_ );
+			DOCTEST_FAST_CHECK_EQ( not_last<  0 >( strN ),				str );
+			DOCTEST_FAST_CHECK_EQ( not_last<  7 >( strN ), 				first_ );
+			DOCTEST_FAST_CHECK_EQ( not_last< 22 >( strN ), 				empty_ );
+			DOCTEST_FAST_CHECK_EQ( not_last< 22 >( strN ).data(), 		strN.data() );
 		}
 		{	// subview
-			DOCTEST_ASCII_CHECK_EQ( subview( "abcdefghijkl",   0, 22 ), str );
-			DOCTEST_ASCII_CHECK_EQ( subview( "abcdefghijkl", -22, 22 ), str );
+			constexpr std::string_view		cd = "cd";
 
-			DOCTEST_ASCII_CHECK_EQ((subview( null_, 0, 0 )),			empty_ );
-			DOCTEST_FAST_CHECK_EQ ( subview( null_, 0, 0 ).data(),		nullptr );
-			DOCTEST_ASCII_CHECK_EQ((subview( null_, 0, 2 )),			empty_ );
-			DOCTEST_FAST_CHECK_EQ ( subview( null_, 0, 2 ).data(),		nullptr );
-			DOCTEST_ASCII_CHECK_EQ((subview( null_, 2, 2 )),			empty_ );
-			DOCTEST_FAST_CHECK_EQ ( subview( null_, 2, 2 ).data(),		nullptr );
-			DOCTEST_ASCII_CHECK_EQ((subview( null_, 2, 0 )),			empty_ );
-			DOCTEST_FAST_CHECK_EQ ( subview( null_, 2, 0 ).data(),		nullptr );
+			DOCTEST_FAST_CHECK_EQ( subview( "abcdefghijkl",   0, 22 ),	str );
+			DOCTEST_FAST_CHECK_EQ( subview( "abcdefghijkl", -22, 22 ),	str );
 
-			DOCTEST_ASCII_CHECK_EQ((subview( str,   0, 22 )),			str );
-			DOCTEST_ASCII_CHECK_EQ((subview( str,   0,  5 )), 			first( str, 5 ) );
-			DOCTEST_ASCII_CHECK_EQ((subview( str,   3,  2 )), 			"de" );
-			DOCTEST_ASCII_CHECK_EQ((subview( str,   7, 22 )), 			not_first( str, 7 ) );
-			DOCTEST_ASCII_CHECK_EQ((subview( str,  22,  0 )), 			empty_ );
-			DOCTEST_FAST_CHECK_EQ ( subview( str,  22,  0 ).data(), 	view( str ).data() + view( str ).size() );
-			DOCTEST_ASCII_CHECK_EQ((subview( str,  -7, 22 )), 			last( str, 7 ) );
-			DOCTEST_ASCII_CHECK_EQ((subview( str,  -9,  2 )), 			"de" );
-			DOCTEST_ASCII_CHECK_EQ((subview( str, -22,  0 )), 			empty_ );
-			DOCTEST_FAST_CHECK_EQ ( subview( str, -22,  0 ).data(), 	view( str ).data() );
-			DOCTEST_ASCII_CHECK_EQ((subview( str, -22, 22 )), 			str );
+			DOCTEST_FAST_CHECK_EQ(subview( null_, 0, 0 ),				empty_ );
+			DOCTEST_FAST_CHECK_EQ(subview( null_, 0, 0 ).data(),		nullptr );
+			DOCTEST_FAST_CHECK_EQ(subview( null_, 0, 2 ),				empty_ );
+			DOCTEST_FAST_CHECK_EQ(subview( null_, 0, 2 ).data(),		nullptr );
+			DOCTEST_FAST_CHECK_EQ(subview( null_, 2, 2 ),				empty_ );
+			DOCTEST_FAST_CHECK_EQ(subview( null_, 2, 2 ).data(),		nullptr );
+			DOCTEST_FAST_CHECK_EQ(subview( null_, 2, 0 ),				empty_ );
+			DOCTEST_FAST_CHECK_EQ(subview( null_, 2, 0 ).data(),		nullptr );
 
-			DOCTEST_ASCII_CHECK_EQ((subview<   2 >( "abcde", -2 )),		"de" );
-			DOCTEST_ASCII_CHECK_EQ((subview<   2 >( str,   3 )), 		"de" );
-			DOCTEST_ASCII_CHECK_EQ((subview<   2 >( strN,  3 )), 		"de" );
-			DOCTEST_ASCII_CHECK_EQ((subview<   2 >( str,  -9 )), 		"de" );
-			DOCTEST_ASCII_CHECK_EQ((subview<   2 >( strN, -9 )), 		"de" );
-			DOCTEST_ASCII_CHECK_EQ((subview<  12 >( strN,  0 )),		str );
+			DOCTEST_FAST_CHECK_EQ(subview( str,   0, 22 ),				str );
+			DOCTEST_FAST_CHECK_EQ(subview( str,   0,  5 ), 				first( str, 5 ) );
+			DOCTEST_FAST_CHECK_EQ(subview( str,   3,  2 ), 				"de" );
+			DOCTEST_FAST_CHECK_EQ(subview( str,   7, 22 ), 				not_first( str, 7 ) );
+			DOCTEST_FAST_CHECK_EQ(subview( str,  22,  0 ), 				empty_ );
+			DOCTEST_FAST_CHECK_EQ(subview( str,  22,  0 ).data(), 		view( str ).data() + view( str ).size() );
+			DOCTEST_FAST_CHECK_EQ(subview( str,  -7, 22 ), 				last( str, 7 ) );
+			DOCTEST_FAST_CHECK_EQ(subview( str,  -9,  2 ), 				"de" );
+			DOCTEST_FAST_CHECK_EQ(subview( str, -22,  0 ), 				empty_ );
+			DOCTEST_FAST_CHECK_EQ(subview( str, -22,  0 ).data(), 		view( str ).data() );
+			DOCTEST_FAST_CHECK_EQ(subview( str, -22, 22 ), 				str );
 
-			DOCTEST_ASCII_CHECK_EQ((subview<  -2,  2 >( "abcde" )), 	"de" );
-			DOCTEST_ASCII_CHECK_EQ((subview<   0,  5 >( str  )), 		first( str, 5 ) );
-			DOCTEST_ASCII_CHECK_EQ((subview<   0,  5 >( strN )), 		first( str, 5 ) );
-			DOCTEST_ASCII_CHECK_EQ((subview<   0, 12 >( strN )),		str );
-			DOCTEST_ASCII_CHECK_EQ((subview<   0, 22 >( strN )),		str );
-			DOCTEST_ASCII_CHECK_EQ((subview<   3,  2 >( str  )), 		"de" );
-			DOCTEST_ASCII_CHECK_EQ((subview<   3,  2 >( strN )), 		"de" );
+			DOCTEST_FAST_CHECK_EQ(subview<   2 >( "abcde", -3 ),		cd );
+			DOCTEST_FAST_CHECK_EQ(subview<   2 >( str,   2 ), 			cd );
+			DOCTEST_FAST_CHECK_EQ(subview<   2 >( strN,  2 ), 			cd );
+			DOCTEST_FAST_CHECK_EQ(subview<   2 >( str, -10 ), 			cd );
+			DOCTEST_FAST_CHECK_EQ(subview<   2 >( strN,-10 ), 			cd );
+			DOCTEST_FAST_CHECK_EQ(subview<  12 >( strN,  0 ),			str );
+
+			DOCTEST_FAST_CHECK_EQ(subview<   2,  2 >( "abcde" ), 		cd );
+			DOCTEST_FAST_CHECK_EQ(subview<  -3,  2 >( "abcde" ), 		cd );
+			DOCTEST_FAST_CHECK_EQ(subview<   0,  5 >( str  ), 			first( str, 5 ) );
+			DOCTEST_FAST_CHECK_EQ(subview<   0,  5 >( strN ), 			first( str, 5 ) );
+			DOCTEST_FAST_CHECK_EQ(subview<   0, 12 >( strN ),			str );
+			DOCTEST_FAST_CHECK_EQ(subview<   0, 22 >( strN ),			str );
+			DOCTEST_FAST_CHECK_EQ(subview<   2,  2 >( str  ), 			cd );
+			DOCTEST_FAST_CHECK_EQ(subview<   2,  2 >( strN ), 			cd );
 			// Should assert:	    subview<   7, 22 >( str  )
-			DOCTEST_ASCII_CHECK_EQ((subview<   7, 22 >( strN )), 		not_first( str, 7 ) );
-			DOCTEST_ASCII_CHECK_EQ((subview<  22,  0 >( str  )), 		empty_ );
-			DOCTEST_FAST_CHECK_EQ ( subview<  22,  0 >( str  ).data(), 	view( str ).data() + strN.size() );
-			DOCTEST_ASCII_CHECK_EQ((subview<  22,  0 >( strN )), 		empty_ );
-			DOCTEST_FAST_CHECK_EQ ( subview<  22,  0 >( strN ).data(), 	strN.data() + strN.size() );
+			DOCTEST_FAST_CHECK_EQ( subview<   7, 22 >( strN ), 			not_first( str, 7 ) );
+			DOCTEST_FAST_CHECK_EQ( subview<  22,  0 >( str  ), 			empty_ );
+			DOCTEST_FAST_CHECK_EQ( subview<  22,  0 >( str  ).data(),	view( str ).data() + strN.size() );
+			DOCTEST_FAST_CHECK_EQ( subview<  22,  0 >( strN ), 			empty_ );
+			DOCTEST_FAST_CHECK_EQ( subview<  22,  0 >( strN ).data(),	strN.data() + strN.size() );
 			// Should assert:	    subview<  22, 22 >( str  )
-			DOCTEST_ASCII_CHECK_EQ((subview<  22, 22 >( strN )), 		empty_ );
-			DOCTEST_FAST_CHECK_EQ ( subview<  22, 22 >( strN ).data(), 	strN.data() + strN.size() );
+			DOCTEST_FAST_CHECK_EQ( subview<  22, 22 >( strN ), 			empty_ );
+			DOCTEST_FAST_CHECK_EQ( subview<  22, 22 >( strN ).data(),	strN.data() + strN.size() );
 			// Should assert:	   subview<  -7, 22 >( str  )
-			DOCTEST_ASCII_CHECK_EQ((subview<  -7, 22 >( strN )), 		last( str, 7 ) );
-			DOCTEST_ASCII_CHECK_EQ((subview<  -9,  2 >( strN )), 		"de" );
-			DOCTEST_ASCII_CHECK_EQ((subview<  -9,  2 >( str  )), 		"de" );
-			DOCTEST_ASCII_CHECK_EQ((subview< -22,  0 >( str  )),		empty_ );
-			DOCTEST_FAST_CHECK_EQ ( subview< -22,  0 >( str  ).data(), 	view( str ).data() );
-			DOCTEST_ASCII_CHECK_EQ((subview< -22,  0 >( strN )), 		empty_ );
-			DOCTEST_FAST_CHECK_EQ ( subview< -22,  0 >( strN ).data(), 	strN.data() );
-			DOCTEST_ASCII_CHECK_EQ((subview< -22, 22 >( strN )), 		str );
+			DOCTEST_FAST_CHECK_EQ( subview<  -7, 22 >( strN ), 			last( str, 7 ) );
+			DOCTEST_FAST_CHECK_EQ( subview< -10,  2 >( strN ), 			cd );
+			DOCTEST_FAST_CHECK_EQ( subview< -10,  2 >( str  ), 			cd );
+			DOCTEST_FAST_CHECK_EQ( subview< -22,  0 >( str  ),			empty_ );
+			DOCTEST_FAST_CHECK_EQ( subview< -22,  0 >( str  ).data(), 	view( str ).data() );
+			DOCTEST_FAST_CHECK_EQ( subview< -22,  0 >( strN ), 			empty_ );
+			DOCTEST_FAST_CHECK_EQ( subview< -22,  0 >( strN ).data(), 	strN.data() );
+			DOCTEST_FAST_CHECK_EQ( subview< -22, 22 >( strN ), 			str );
 		}
 	}
 	DOCTEST_TEST_CASE( "searching-related" ) {
