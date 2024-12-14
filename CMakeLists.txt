@@ -234,10 +234,20 @@ message( STATUS "fmt:            ${FMT_VERSION}" )
 
 
 ### fast_float metadata
-set( FAST_FLOAT "${PAX_DIRECTORY}/external/fast_float/fast_float.h" )
-file( READ ${FAST_FLOAT} FAST_FLOAT_version_h )
-set( FAST_FLOAT_VERSION "<not specified>" )
-set( FAST_FLOAT_VERSION_ARRAY "0" )
+set( FAST_FLOAT "${PAX_DIRECTORY}/external/fast_float" )
+set( FAST_FLOAT_VERSION "${FAST_FLOAT}/float_common.h" )
+file( READ ${FAST_FLOAT_VERSION} fast_float )
+if( fast_float MATCHES "FASTFLOAT_VERSION_MAJOR ([0-9]+)" )
+	list( APPEND FAST_FLOAT_VERSION_ARRAY ${CMAKE_MATCH_1} )
+	if( fast_float MATCHES "FASTFLOAT_VERSION_MINOR ([0-9]+)" )
+		list( APPEND FAST_FLOAT_VERSION_ARRAY ${CMAKE_MATCH_1} )
+		if( fast_float MATCHES "FASTFLOAT_VERSION_PATCH ([0-9]+)" )
+			list( APPEND FAST_FLOAT_VERSION_ARRAY ${CMAKE_MATCH_1} )
+		endif ()
+	endif ()
+	list( JOIN FAST_FLOAT_VERSION_ARRAY "."  FAST_FLOAT_VERSION )
+	list( JOIN FAST_FLOAT_VERSION_ARRAY ", " FAST_FLOAT_VERSION_ARRAY )
+endif ()
 message( STATUS "fast_float:     ${FAST_FLOAT_VERSION}" )
 
 
