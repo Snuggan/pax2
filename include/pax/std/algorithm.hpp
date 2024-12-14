@@ -1026,7 +1026,8 @@ namespace pax {
 	/// - If none is found, `"\n"` is returned.
 	template< String V >
 	[[nodiscard]] auto identify_newline( const V & str_ ) noexcept {
-		static constexpr const Value_type_t< V > 	res[] = { '\n', '\r', '\n' };
+		using my_view = std::basic_string_view< Value_type_t< V > >;
+		static constexpr const my_view			 	res = { "\n\r\n" };
 		const auto 									temp = not_first( str_, find( str_, Newline{} ) );
 		const std::size_t 							sz = starts_with( temp, Newline{} );
 		return	sz ? subview( res, temp.front() == '\r', sz ) : first( res, 1 );
