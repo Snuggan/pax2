@@ -24,9 +24,8 @@ list( APPEND PAX_FLAGS
 	-msse3								# i386 and x86-64 Options: use sse.
 	-Wpedantic -Wall -Wextra -Werror	# Maximum number of checks.
 	-Wno-unused-function				# What is unused in one target might be used in another...
-	-Wno-unknown-attributes				# Allow unknown attributes, such as [[likely]].
-	-Wno-ambiguous-reversed-operator
 	-Wuninitialized						# Warns about uninitialized variables.
+	-ftrivial-auto-var-init=pattern		# Initiate all base type variables.
 #	-Wconversion						# Warns about implicit conversions that may change a value.
 #	-Wsign-conversion					# Warns about implicit conversions between signed and unsigned types.
 #	-Wshadow							# Warns if a variable declaration shadows one from an outer scope.
@@ -70,7 +69,7 @@ if( ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang" )
 elseif( ${CMAKE_CXX_COMPILER_ID} MATCHES "GNU" )
 	add_definitions( -D__IS_GCC__=1 )
 	list( APPEND PAX_FLAGS
-		# No gcc-specific flags.
+		-Wno-maybe-uninitialized
 	)
 	list( REMOVE_ITEM PAX_SANITIZE
 		-fsanitize=nullability			# Not available in my gcc.

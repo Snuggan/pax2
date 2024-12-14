@@ -227,7 +227,8 @@ namespace pax {
 
 			// Count columns in first row. (There is at least one column.) 
 			++m_cols_in_first_row;
-			for( const Ch c : until( str_, Newline{} ) )
+			const auto row = until( str_, Newline{} );
+			for( const Ch c : row )
 				if( c == m_col_delimit )			++m_cols_in_first_row;
 		}
 		

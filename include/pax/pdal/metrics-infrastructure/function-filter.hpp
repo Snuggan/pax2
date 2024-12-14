@@ -134,7 +134,7 @@ namespace pax::metrics {
 				};
 
 			} else if( id_ == "extra-allt" ) {
-				std::vector< Function_filter >	collection;
+				std::vector< Function_filter >	collection{};
 
 				for( const Filter filter : {
 					Filter:: all_ge( 5 ), Filter:: all_ge( 10 ), Filter:: all_ge( 15 ),
