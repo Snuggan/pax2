@@ -28,11 +28,13 @@ namespace pax {
 			//	+ std20::format( "Author:     {}\n", metadata::author )
 			//	+ std20::format( "Maintainer: {}\n", metadata::maintainer )
 				+ std20::format( "Repository: {}\n", metadata::project::repository )
-				+ std20::format( "\nResources used:\n{}\n{}\n{}\n{}\n", 
+				+ std20::format( "\nResources used:\n{}\n{}\n{}\n{}\n{}\n{}\n", 
+					metadata::fast_float::named_version, 
 					metadata::fmt::named_version, 
 					metadata::gdal::named_version, 
-					metadata::pdal::named_version, 
-					metadata::json::named_version
+					metadata::json::named_version,
+					metadata::pdal::named_version,
+					metadata::type_name_rt::named_version
 				);
 		}
 
@@ -57,10 +59,12 @@ namespace pax {
 			static constexpr const std::string_view resources[] = {
 				metadata::cmake::named_version,
 				metadata::doctest::named_version,
+				metadata::fast_float::named_version, 
 				metadata::fmt::named_version,
 				metadata::gdal::named_version,
+				metadata::json::named_version,
 				metadata::pdal::named_version,
-				metadata::json::named_version
+				metadata::type_name_rt::named_version
 			};
 
 			j_ = {
