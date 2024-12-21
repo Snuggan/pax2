@@ -25,6 +25,7 @@ list( APPEND PAX_FLAGS
 	-Wpedantic -Wall -Wextra -Werror	# Maximum number of checks.
 	-Wno-unused-function				# What is unused in one target might be used in another...
 	-Wuninitialized						# Warns about uninitialized variables.
+	-Wstring-conversion					# Warns when a string literal is implicitly converted into a bool. 
 	-ftrivial-auto-var-init=pattern		# Initiate all base type variables.
 #	-Wconversion						# Warns about implicit conversions that may change a value.
 #	-Wsign-conversion					# Warns about implicit conversions between signed and unsigned types.
