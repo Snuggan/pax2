@@ -15,9 +15,6 @@
 
 
 namespace pax {
-	
-	
-
 
 	constexpr auto								str		= "abcdefghijkl";
 	constexpr auto	 							strN	= make_span( "abcdefghijkl" );
@@ -33,11 +30,26 @@ namespace pax {
 	constexpr bool is_value_const = std::is_const_v< std::remove_reference_t< Value_type_t< T > > >;
 	
 	template< typename T >
+	constexpr auto safe_first( T && t_, std::size_t sz_ ) {
+		using std::data, std::size;
+		return view_type_t< T, true >( data( t_ ), ( sz_ < size( t_ ) ? sz_ : size( t_ ) ) );
+	}
+	
+	template< typename T >
+	constexpr auto safe_last( T && t_, std::size_t sz_ ) {
+		using std::data, std::size;
+		if( sz_ > size( t_ ) )		sz_ = size( t_ );
+		return view_type_t< T, true >( data( t_ ) + size( t_ ) - sz_, sz_ );
+	}
+	
+	template< typename T >
 	constexpr auto safe_subview( T && t_, int i_, int sz_ ) {
-		using std::size;
-		if( i_ < 0 )	i_ += size( t_ );
-		if( i_ < 0 )	i_  = 0;
-		return first( not_first( t_, i_ ), sz_ );
+		using std::data, std::size;
+		if( i_ < 0 )							i_	+= size( t_ );
+		if( i_ < 0 )							i_	 = 0;
+		if( i_ > int( size( t_ ) ) )			i_	 = size( t_ );
+		if( sz_ + i_ > int( size( t_ ) ) )		sz_	 = size( t_ ) - i_;
+		return safe_first( safe_last( t_, size( t_ ) - i_ ), sz_ );
 	}
 	
 	
@@ -391,7 +403,6 @@ namespace pax {
 		constexpr auto						first_	= "abcde";
 		constexpr auto						last_	= "hijkl";
 		constexpr const std::string_view	null_{};
-		constexpr auto						empty_	= "";
 		
 		{	// front, back
 			static_assert( front( "abc" ) == 'a' );
@@ -412,46 +423,46 @@ namespace pax {
 			static_assert( first<  5 >( "abcdefghijkl" )	==	first_ );
 			static_assert( first< 12 >( "abcdefghijkl" )	==	str );
 
-			static_assert( first( str,  0 )					==	empty_ );
-			static_assert( first( str,  5 )					==	first_ );
-			static_assert( identic( first( str, 12 ), str ) );
-			static_assert( identic( first( str, 22 ), str ) );
+			static_assert( identic( first( str,   0 ), safe_first( str,   0 ) ) );
+			static_assert( identic( first( str,   5 ), safe_first( str,   5 ) ) );
+			static_assert( identic( first( str,  12 ), safe_first( str,  12 ) ) );
+			static_assert( identic( first( str,  22 ), safe_first( str,  22 ) ) );
 
-			static_assert( first( strN,  0 )				==	empty_ );
-			static_assert( first( strN,  5 )				==	first_ );
-			static_assert( identic( first( strN, 12 ), strN ) );
-			static_assert( identic( first( strN, 22 ), strN ) );
+			static_assert( identic( first( strN,  0 ), safe_first( strN,  0 ) ) );
+			static_assert( identic( first( strN,  5 ), safe_first( strN,  5 ) ) );
+			static_assert( identic( first( strN, 12 ), safe_first( strN, 12 ) ) );
+			static_assert( identic( first( strN, 22 ), safe_first( strN, 22 ) ) );
 
-			static_assert( first<  0 >( str )				==	null_ );
-			static_assert( first<  5 >( str )				==	first_ );
-			static_assert( identic( first< 12 >( str ), str ) );
+			static_assert( identic( first<  0 >( str  ), safe_first( str,   0 ) ) );
+			static_assert( identic( first<  5 >( str  ), safe_first( str,   5 ) ) );
+			static_assert( identic( first< 12 >( str  ), safe_first( str,  12 ) ) );
 
-			static_assert( first<  0 >( strN )				==	null_ );
-			static_assert( first<  5 >( strN )				==	first_ );
-			static_assert( identic( first< 12 >( strN ), strN ) );
-			static_assert( identic( first< 22 >( strN ), strN ) );
+			static_assert( identic( first<  0 >( strN ), safe_first( strN,  0 ) ) );
+			static_assert( identic( first<  5 >( strN ), safe_first( strN,  5 ) ) );
+			static_assert( identic( first< 12 >( strN ), safe_first( strN, 12 ) ) );
+			static_assert( identic( first< 22 >( strN ), safe_first( strN, 22 ) ) );
 		}
 		{	// first (int)
-			static_assert( first( ints,   0 ).size()	==	0 );
-			static_assert( first( ints,   5 ).back()	==	4 );
-			static_assert( identic( first( ints, 12 ), ints ) );
-			static_assert( identic( first( ints, 22 ), ints ) );
+			static_assert( identic( first( ints,   0 ), safe_first( ints,   0 ) ) );
+			static_assert( identic( first( ints,   5 ), safe_first( ints,   5 ) ) );
+			static_assert( identic( first( ints,  12 ), safe_first( ints,  12 ) ) );
+			static_assert( identic( first( ints,  22 ), safe_first( ints,  22 ) ) );
 
-			static_assert( first( intsN,  0 ).size()	==	0 );
-			static_assert( first( intsN,  5 ).back()	==	4 );
-			static_assert( identic( first( intsN, 12 ), intsN ) );
-			static_assert( identic( first( intsN, 22 ), intsN ) );
+			static_assert( identic( first( intsN,  0 ), safe_first( intsN,  0 ) ) );
+			static_assert( identic( first( intsN,  5 ), safe_first( intsN,  5 ) ) );
+			static_assert( identic( first( intsN, 12 ), safe_first( intsN, 12 ) ) );
+			static_assert( identic( first( intsN, 22 ), safe_first( intsN, 22 ) ) );
 
-			static_assert( first<  0 >( ints  ).extent	==	0 );
-			static_assert( first<  5 >( ints  ).back()	==	4 );
+			static_assert( identic( first<  0 >( ints  ), safe_first( ints,   0 ) ) );
+			static_assert( identic( first<  5 >( ints  ), safe_first( ints,   5 ) ) );
+			static_assert( identic( first< 12 >( ints  ), safe_first( ints,  12 ) ) );
 			static_assert( first<  5 >( ints  ).extent	==	5 );
-			static_assert( identic( first< 12 >( ints ), ints ) );
 
-			static_assert( first<  0 >( intsN ).extent	==	0 );
-			static_assert( first<  5 >( intsN ).back()	==	4 );
+			static_assert( identic( first<  0 >( intsN ), safe_first( intsN,  0 ) ) );
+			static_assert( identic( first<  5 >( intsN ), safe_first( intsN,  5 ) ) );
+			static_assert( identic( first< 12 >( intsN ), safe_first( intsN, 12 ) ) );
+			static_assert( identic( first< 22 >( intsN ), safe_first( intsN, 22 ) ) );
 			static_assert( first<  5 >( intsN ).extent	==	5 );
-			static_assert( identic( first< 12 >( intsN ), intsN ) );
-			static_assert( identic( first< 22 >( intsN ), intsN ) );
 		}
 		{	// last (character)
 			static_assert( last( "abcdefghijkl", 22 )		==	str );
@@ -460,46 +471,46 @@ namespace pax {
 			static_assert( last<  5 >( "abcdefghijkl" )		==	last_ );
 			static_assert( last< 12 >( "abcdefghijkl" )		==	str );
 
-			static_assert( last( str,  0 )					==	empty_ );
-			static_assert( last( str,  5 )					==	last_ );
-			static_assert( identic( last( str, 12 ), str ) );
-			static_assert( identic( last( str, 22 ), str ) );
+			static_assert( identic( last( str,   0 ), safe_last( str,   0 ) ) );
+			static_assert( identic( last( str,   5 ), safe_last( str,   5 ) ) );
+			static_assert( identic( last( str,  12 ), safe_last( str,  12 ) ) );
+			static_assert( identic( last( str,  22 ), safe_last( str,  22 ) ) );
 
-			static_assert( last( strN,  0 )					==	empty_ );
-			static_assert( last( strN,  5 )					==	last_ );
-			static_assert( identic( last( strN, 12 ), strN ) );
-			static_assert( identic( last( strN, 22 ), strN ) );
+			static_assert( identic( last( strN,  0 ), safe_last( strN,  0 ) ) );
+			static_assert( identic( last( strN,  5 ), safe_last( strN,  5 ) ) );
+			static_assert( identic( last( strN, 12 ), safe_last( strN, 12 ) ) );
+			static_assert( identic( last( strN, 22 ), safe_last( strN, 22 ) ) );
 
-			static_assert( last<  0 >( str )				==	null_ );
-			static_assert( last<  5 >( str )				==	last_ );
-			static_assert( identic( last< 12 >( str ), str ) );
+			static_assert( identic( last<  0 >( str  ), safe_last( str,   0 ) ) );
+			static_assert( identic( last<  5 >( str  ), safe_last( str,   5 ) ) );
+			static_assert( identic( last< 12 >( str  ), safe_last( str,  12 ) ) );
 
-			static_assert( last<  0 >( strN )				==	null_ );
-			static_assert( last<  5 >( strN )				==	last_ );
-			static_assert( identic( last< 12 >( strN ), strN ) );
-			static_assert( identic( last< 22 >( strN ), strN ) );
+			static_assert( identic( last<  0 >( strN ), safe_last( strN,  0 ) ) );
+			static_assert( identic( last<  5 >( strN ), safe_last( strN,  5 ) ) );
+			static_assert( identic( last< 12 >( strN ), safe_last( strN, 12 ) ) );
+			static_assert( identic( last< 22 >( strN ), safe_last( strN, 22 ) ) );
 		}
 		{	// last (int)
-			static_assert( last( ints,   0 ).size()		==	0 );
-			static_assert( last( ints,   5 ).front()	==	7 );
-			static_assert( identic( last( ints, 12 ), ints ) );
-			static_assert( identic( last( ints, 22 ), ints ) );
+			static_assert( identic( last( ints,   0 ), safe_last( ints,   0 ) ) );
+			static_assert( identic( last( ints,   5 ), safe_last( ints,   5 ) ) );
+			static_assert( identic( last( ints,  12 ), safe_last( ints,  12 ) ) );
+			static_assert( identic( last( ints,  22 ), safe_last( ints,  22 ) ) );
 
-			static_assert( last( intsN,  0 ).size()		==	0 );
-			static_assert( last( intsN,  5 ).front()	==	7 );
-			static_assert( identic( last( intsN, 12 ), intsN ) );
-			static_assert( identic( last( intsN, 22 ), intsN ) );
+			static_assert( identic( last( intsN,  0 ), safe_last( intsN,  0 ) ) );
+			static_assert( identic( last( intsN,  5 ), safe_last( intsN,  5 ) ) );
+			static_assert( identic( last( intsN, 12 ), safe_last( intsN, 12 ) ) );
+			static_assert( identic( last( intsN, 22 ), safe_last( intsN, 22 ) ) );
 
-			static_assert( last<  0 >( ints  ).extent	==	0 );
-			static_assert( last<  5 >( ints  ).front()	==	7 );
+			static_assert( identic( last<  0 >( ints  ), safe_last( ints,   0 ) ) );
+			static_assert( identic( last<  5 >( ints  ), safe_last( ints,   5 ) ) );
+			static_assert( identic( last< 12 >( ints  ), safe_last( ints,  12 ) ) );
 			static_assert( last<  5 >( ints  ).extent	==	5 );
-			static_assert( identic( last< 12 >( ints ), ints ) );
 
-			static_assert( last<  0 >( intsN ).extent	==	0 );
-			static_assert( last<  5 >( intsN ).front()	==	7 );
+			static_assert( identic( last<  0 >( intsN ), safe_last( intsN,  0 ) ) );
+			static_assert( identic( last<  5 >( intsN ), safe_last( intsN,  5 ) ) );
+			static_assert( identic( last< 12 >( intsN ), safe_last( intsN, 12 ) ) );
+			static_assert( identic( last< 22 >( intsN ), safe_last( intsN, 22 ) ) );
 			static_assert( last<  5 >( intsN ).extent	==	5 );
-			static_assert( identic( last< 12 >( intsN ), intsN ) );
-			static_assert( identic( last< 22 >( intsN ), intsN ) );
 		}
 		{	// not_first (character)
 			static_assert( not_first( "abcdefghijkl", 0 )		==	str );
@@ -508,37 +519,36 @@ namespace pax {
 			static_assert( not_first<  5 >( "abcdefghijkl" )	==	last< 7 >( str ) );
 			static_assert( not_first< 12 >( "abcdefghijkl" )	==	last< 0 >( str ) );
 
-			static_assert( identic( not_first( str,   0 ), str ) );
-			static_assert( identic( not_first( str,   5 ), last< 7 >( str ) ) );
-			static_assert( identic( not_first( str,  12 ), last< 0 >( str ) ) );
-			static_assert( identic( not_first( str,  22 ), last< 0 >( str ) ) );
+			static_assert( identic( not_first( str,   0 ), safe_subview( str,  0, 99 ) ) );
+			static_assert( identic( not_first( str,   5 ), safe_subview( str,  5, 99 ) ) );
+			static_assert( identic( not_first( str,  12 ), safe_subview( str, 12, 99 ) ) );
+			static_assert( identic( not_first( str,  22 ), safe_subview( str, 22, 99 ) ) );
 
-			static_assert( identic( not_first( strN,  0 ), strN ) );
-			static_assert( identic( not_first( strN,  5 ), last< 7 >( strN ) ) );
-			static_assert( identic( not_first( strN, 12 ), last< 0 >( strN ) ) );
-			static_assert( identic( not_first( strN, 22 ), last< 0 >( strN ) ) );
-			static_assert( identic( not_first( null_, 22 ), null_ ) );
+			static_assert( identic( not_first( strN,  0 ), safe_subview( strN,  0, 99 ) ) );
+			static_assert( identic( not_first( strN,  5 ), safe_subview( strN,  5, 99 ) ) );
+			static_assert( identic( not_first( strN, 12 ), safe_subview( strN, 12, 99 ) ) );
+			static_assert( identic( not_first( strN, 22 ), safe_subview( strN, 22, 99 ) ) );
 
-			static_assert( identic( not_first<  0 >( strN ), strN ) );
-			static_assert( identic( not_first<  5 >( strN ), last< 7 >( strN ) ) );
-			static_assert( identic( not_first< 12 >( strN ), last< 0 >( strN ) ) );
-			static_assert( identic( not_first< 22 >( strN ), last< 0 >( strN ) ) );
+			static_assert( identic( not_first<  0 >( strN ), safe_subview( strN,  0, 99 ) ) );
+			static_assert( identic( not_first<  5 >( strN ), safe_subview( strN,  5, 99 ) ) );
+			static_assert( identic( not_first< 12 >( strN ), safe_subview( strN, 12, 99 ) ) );
+			static_assert( identic( not_first< 22 >( strN ), safe_subview( strN, 22, 99 ) ) );
 		}
 		{	// not_first (int)
-			static_assert( identic( not_first( ints,   0 ), ints ) );
-			static_assert( identic( not_first( ints,   5 ), last< 7 >( ints ) ) );
-			static_assert( identic( not_first( ints,  12 ), last< 0 >( ints ) ) );
-			static_assert( identic( not_first( ints,  22 ), last< 0 >( ints ) ) );
+			static_assert( identic( not_first( ints,   0 ), safe_subview( ints,  0, 99 ) ) );
+			static_assert( identic( not_first( ints,   5 ), safe_subview( ints,  5, 99 ) ) );
+			static_assert( identic( not_first( ints,  12 ), safe_subview( ints, 12, 99 ) ) );
+			static_assert( identic( not_first( ints,  22 ), safe_subview( ints, 22, 99 ) ) );
 
-			static_assert( identic( not_first( intsN,  0 ), intsN ) );
-			static_assert( identic( not_first( intsN,  5 ), last< 7 >( intsN ) ) );
-			static_assert( identic( not_first( intsN, 12 ), last< 0 >( intsN ) ) );
-			static_assert( identic( not_first( intsN, 22 ), last< 0 >( intsN ) ) );
+			static_assert( identic( not_first( intsN,  0 ), safe_subview( intsN,  0, 99 ) ) );
+			static_assert( identic( not_first( intsN,  5 ), safe_subview( intsN,  5, 99 ) ) );
+			static_assert( identic( not_first( intsN, 12 ), safe_subview( intsN, 12, 99 ) ) );
+			static_assert( identic( not_first( intsN, 22 ), safe_subview( intsN, 22, 99 ) ) );
 
-			static_assert( identic( not_first<  0 >( intsN ), intsN ) );
-			static_assert( identic( not_first<  5 >( intsN ), last< 7 >( intsN ) ) );
-			static_assert( identic( not_first< 12 >( intsN ), last< 0 >( intsN ) ) );
-			static_assert( identic( not_first< 22 >( intsN ), last< 0 >( intsN ) ) );
+			static_assert( identic( not_first<  0 >( intsN ), safe_subview( intsN,  0, 99 ) ) );
+			static_assert( identic( not_first<  5 >( intsN ), safe_subview( intsN,  5, 99 ) ) );
+			static_assert( identic( not_first< 12 >( intsN ), safe_subview( intsN, 12, 99 ) ) );
+			static_assert( identic( not_first< 22 >( intsN ), safe_subview( intsN, 22, 99 ) ) );
 		}
 		{	// not_last (character)
 			static_assert( not_last( "abcdefghijkl", 0 )		==	str );
@@ -548,36 +558,36 @@ namespace pax {
 			static_assert( not_last< 12 >( "abcdefghijkl" )		==	first< 0 >( str ) );
 
 			static_assert( identic( not_last( str,   0 ), str ) );
-			static_assert( identic( not_last( str,   5 ), first< 7 >( str ) ) );
-			static_assert( identic( not_last( str,  12 ), first< 0 >( str ) ) );
-			static_assert( identic( not_last( str,  22 ), first< 0 >( str ) ) );
+			static_assert( identic( not_last( str,   5 ), safe_first( str, 7 ) ) );
+			static_assert( identic( not_last( str,  12 ), safe_first( str, 0 ) ) );
+			static_assert( identic( not_last( str,  22 ), safe_first( str, 0 ) ) );
 
 			static_assert( identic( not_last( strN,  0 ), strN ) );
-			static_assert( identic( not_last( strN,  5 ), first< 7 >( strN ) ) );
-			static_assert( identic( not_last( strN, 12 ), first< 0 >( strN ) ) );
-			static_assert( identic( not_last( strN, 22 ), first< 0 >( strN ) ) );
+			static_assert( identic( not_last( strN,  5 ), safe_first( strN, 7 ) ) );
+			static_assert( identic( not_last( strN, 12 ), safe_first( strN, 0 ) ) );
+			static_assert( identic( not_last( strN, 22 ), safe_first( strN, 0 ) ) );
 			static_assert( identic( not_last( null_, 22 ), null_ ) );
 
 			static_assert( identic( not_last<  0 >( strN ), strN ) );
-			static_assert( identic( not_last<  5 >( strN ), first< 7 >( strN ) ) );
-			static_assert( identic( not_last< 12 >( strN ), first< 0 >( strN ) ) );
-			static_assert( identic( not_last< 22 >( strN ), first< 0 >( strN ) ) );
+			static_assert( identic( not_last<  5 >( strN ), safe_first( strN, 7 ) ) );
+			static_assert( identic( not_last< 12 >( strN ), safe_first( strN, 0 ) ) );
+			static_assert( identic( not_last< 22 >( strN ), safe_first( strN, 0 ) ) );
 		}
 		{	// not_last (int)
 			static_assert( identic( not_last( ints,   0 ), ints ) );
-			static_assert( identic( not_last( ints,   5 ), first< 7 >( ints ) ) );
-			static_assert( identic( not_last( ints,  12 ), first< 0 >( ints ) ) );
-			static_assert( identic( not_last( ints,  22 ), first< 0 >( ints ) ) );
+			static_assert( identic( not_last( ints,   5 ), safe_first( ints, 7 ) ) );
+			static_assert( identic( not_last( ints,  12 ), safe_first( ints, 0 ) ) );
+			static_assert( identic( not_last( ints,  22 ), safe_first( ints, 0 ) ) );
 
 			static_assert( identic( not_last( intsN,  0 ), intsN ) );
-			static_assert( identic( not_last( intsN,  5 ), first< 7 >( intsN ) ) );
-			static_assert( identic( not_last( intsN, 12 ), first< 0 >( intsN ) ) );
-			static_assert( identic( not_last( intsN, 22 ), first< 0 >( intsN ) ) );
+			static_assert( identic( not_last( intsN,  5 ), safe_first( intsN, 7 ) ) );
+			static_assert( identic( not_last( intsN, 12 ), safe_first( intsN, 0 ) ) );
+			static_assert( identic( not_last( intsN, 22 ), safe_first( intsN, 0 ) ) );
 
 			static_assert( identic( not_last<  0 >( intsN ), intsN ) );
-			static_assert( identic( not_last<  5 >( intsN ), first< 7 >( intsN ) ) );
-			static_assert( identic( not_last< 12 >( intsN ), first< 0 >( intsN ) ) );
-			static_assert( identic( not_last< 22 >( intsN ), first< 0 >( intsN ) ) );
+			static_assert( identic( not_last<  5 >( intsN ), safe_first( intsN, 7 ) ) );
+			static_assert( identic( not_last< 12 >( intsN ), safe_first( intsN, 0 ) ) );
+			static_assert( identic( not_last< 22 >( intsN ), safe_first( intsN, 0 ) ) );
 		}
 		{	// subview (character)
 			static_assert( identic( subview( null_,   0,  0 ),	safe_subview( null_,   0,  0 ) ) );
@@ -852,273 +862,285 @@ namespace pax {
 		constexpr auto x = []( auto c ){ return c == 'x'; };
 
 		{	// find
-			DOCTEST_FAST_CHECK_EQ( find( null_, 0 ),					0 );
-			DOCTEST_FAST_CHECK_EQ( find( null_, f ),					0 );
-			DOCTEST_FAST_CHECK_EQ( find( abd,  f  ),					5 );
-			DOCTEST_FAST_CHECK_EQ( find( abd, 'f' ),					5 );
-			DOCTEST_FAST_CHECK_EQ( find( abd,  x  ),					12 );
-			DOCTEST_FAST_CHECK_EQ( find( abd, 'x' ),					12 );
+			static_assert( find( null_, 0 )		==	 0 );
+			static_assert( find( null_, f )		==	 0 );
+			static_assert( find( abd,  f  )		==	 5 );
+			static_assert( find( abd, 'f' )		==	 5 );
+			static_assert( find( abd,  x  )		==	12 );
+			static_assert( find( abd, 'x' )		==	12 );
 
-			DOCTEST_FAST_CHECK_EQ( find( null_, str ),					0 );
-			DOCTEST_FAST_CHECK_EQ( find( str, null_ ),					0 );
-			DOCTEST_FAST_CHECK_EQ( find( null_, null_ ),				0 );
+			static_assert( find( null_, str )	==	 0 );
+			static_assert( find( str, null_ )	==	 0 );
+			static_assert( find( null_, null_ )	==	 0 );
 
-			DOCTEST_FAST_CHECK_EQ( find( str, "cde" ), 					2 );
-			DOCTEST_FAST_CHECK_EQ( find( str, "cdf" ), 					view( str ).size() );
-			DOCTEST_FAST_CHECK_EQ( find( "abcdefghijkl", "cde" ), 		2 );
-			DOCTEST_FAST_CHECK_EQ( find( str, first( str, 5 ) ), 		0 );
-			DOCTEST_FAST_CHECK_EQ( find( str, last ( str, 7 ) ), 		5 );
+			static_assert( find( str, "cde" )	==	 2 );
+			static_assert( find( str, "cdf" )	==	 view( str ).size() );
+			static_assert( find( "abcdefghijkl", "cde" )		==	 2 );
+			static_assert( find( str, first( str, 5 ) )			==	 0 );
+			static_assert( find( str, last ( str, 7 ) )			==	 5 );
 
-			DOCTEST_FAST_CHECK_EQ( find( null_, Newline{} ),			0 );
-			DOCTEST_FAST_CHECK_EQ( find( "abcd\r\nefgh", Newline{} ), 	4 );
+			static_assert( find( null_, Newline{} )				==	 0 );
+			static_assert( find( "abcd\r\nefgh", Newline{} )	==	 4 );
 		}
 		{	// rfind
-			DOCTEST_FAST_CHECK_EQ( rfind( null_, f ),					0 );
-			DOCTEST_FAST_CHECK_EQ( rfind( abd,  f  ),					7 );
-			DOCTEST_FAST_CHECK_EQ( rfind( abd, 'a' ),					0 );
-			DOCTEST_FAST_CHECK_EQ( rfind( null_, 'f' ),					0 );
-			DOCTEST_FAST_CHECK_EQ( rfind( abd, 'f' ),					7 );
-			DOCTEST_FAST_CHECK_EQ( rfind( abd,  x  ),					12 );
-			DOCTEST_FAST_CHECK_EQ( rfind( abd, 'x' ),					12 );
-			// DOCTEST_FAST_CHECK_EQ( rfind( null_, str ),					0 );
-			// DOCTEST_FAST_CHECK_EQ( rfind( str, first( str, 5 ) ), 		0 );
-			// DOCTEST_FAST_CHECK_EQ( rfind( str, last ( str, 7 ) ), 		5 );
-			// DOCTEST_FAST_CHECK_EQ( rfind( null_, Newline{} ),			0 );
-			// DOCTEST_FAST_CHECK_EQ( rfind( "abcd\r\nefgh", Newline{} ),	4 );
+			static_assert( rfind( null_, f )	==	 0 );
+			static_assert( rfind( abd,  f  )	==	 7 );
+			static_assert( rfind( abd, 'a' )	==	 0 );
+			static_assert( rfind( null_, 'f' )	==	 0 );
+			static_assert( rfind( abd, 'f' )	==	 7 );
+			static_assert( rfind( abd,  x  )	==	12 );
+			static_assert( rfind( abd, 'x' )	==	12 );
+			// 			static_assert( rfind( null_, str )		==	 0 );
+			// static_assert( rfind( str, first( str, 5 ) )	==	 0 );
+			// static_assert( rfind( str, last ( str, 7 ) )	==	 5 );
+			// static_assert( rfind( null_, Newline{} )		==	 0 );
+			// static_assert( rfind( "abcd\r\nefgh", Newline{} )	==	4 );
 		}
 		{	// contains
-			DOCTEST_FAST_CHECK_EQ( contains( str, 'd' ), 						true );
-			DOCTEST_FAST_CHECK_EQ( contains( str, '8' ), 						false );
-			DOCTEST_FAST_CHECK_EQ( contains( str, first( str, 5 ) ), 			true );
-			DOCTEST_FAST_CHECK_EQ( contains( str, last ( str, 5 ) ), 			true );
-			DOCTEST_FAST_CHECK_EQ( contains( "abcdefghijkl", first( str, 5 ) ), true );
-			DOCTEST_FAST_CHECK_EQ( contains( "abcdefghijkl", "cdef" ), 			true );
-			DOCTEST_FAST_CHECK_EQ( contains( "abcd\r\nefgh", Newline{} ), 		true );
+			static_assert(  contains( str, 'd' ) );
+			static_assert( !contains( str, '8' ) );
+			static_assert(  contains( str, first( str, 5 ) ) );
+			static_assert(  contains( str, last ( str, 5 ) ) );
+			static_assert(  contains( "abcdefghijkl", first( str, 5 ) ) );
+			static_assert(  contains( "abcdefghijkl", "cdef" ) );
+			static_assert(  contains( "abcd\r\nefgh", Newline{} ) );
 		}
 		{	// until
 			using std::data, std::size;
 			constexpr auto base = subview( abc, 3, 4 );
-			DOCTEST_ASCII_CHECK_EQ( base, "defg" );
+			static_assert( base			==	"defg" );
 
-			DOCTEST_ASCII_CHECK_EQ( until( base, 'a' ), base );				// None
-			DOCTEST_ASCII_CHECK_EQ( until( base, 'd' ), first( base, 0 ) );	// First
-			DOCTEST_ASCII_CHECK_EQ( until( base, 'f' ), first( base, 2 ) );	// Middle
-			DOCTEST_ASCII_CHECK_EQ( until( base, 'g' ), first( base, 3 ) );	// Last
+			static_assert( until( base, 'a' )	==	base );				// None
+			static_assert( until( base, 'd' )	==	first( base, 0 ) );	// First
+			static_assert( until( base, 'f' )	==	first( base, 2 ) );	// Middle
+			static_assert( until( base, 'g' )	==	first( base, 3 ) );	// Last
 
-			DOCTEST_ASCII_CHECK_EQ( until( "abcdefgh", 'g' ),  "abcdef" );	// Last
-			DOCTEST_ASCII_CHECK_EQ( until( "abcdefgh", "fg" ), "abcde" );	// Last
+			static_assert( until( "abcdefgh", 'g' )		==	"abcdef" );	// Last
+			static_assert( until( "abcdefgh", "fg" )	==	"abcde" );	// Last
 
 			// Newline 
-			DOCTEST_FAST_CHECK_EQ ( until( "abcd\r\nefgh"	, Newline{} ).size(), 	4 );
-			DOCTEST_ASCII_CHECK_EQ( until( ""				, Newline{} ),	"" );
-			DOCTEST_ASCII_CHECK_EQ( until( "abcdefgh"		, Newline{} ),	"abcdefgh" );
+			static_assert( until( "abcd\r\nefgh"	, Newline{} ).size() == 4 );
+			static_assert( until( ""				, Newline{} )	==	"" );
+			static_assert( until( "abcdefgh"		, Newline{} )	==	"abcdefgh" );
 
-			DOCTEST_ASCII_CHECK_EQ( until( "\nabcdefgh"		, Newline{} ),	"" );
-			DOCTEST_ASCII_CHECK_EQ( until( "\n\r\nabcdefgh"	, Newline{} ),	"" );
-			DOCTEST_ASCII_CHECK_EQ( until( "\rabcdefgh"		, Newline{} ),	"" );
-			DOCTEST_ASCII_CHECK_EQ( until( "\r\nabcdefgh"	, Newline{} ),	"" );
+			static_assert( until( "\nabcdefgh"		, Newline{} )	==	"" );
+			static_assert( until( "\n\r\nabcdefgh"	, Newline{} )	==	"" );
+			static_assert( until( "\rabcdefgh"		, Newline{} )	==	"" );
+			static_assert( until( "\r\nabcdefgh"	, Newline{} )	==	"" );
 
-			DOCTEST_ASCII_CHECK_EQ( until( "abcd\nefgh"		, Newline{} ),	"abcd" );
-			DOCTEST_ASCII_CHECK_EQ( until( "abcd\n\refgh"	, Newline{} ),	"abcd" );
-			DOCTEST_ASCII_CHECK_EQ( until( "abcd\refgh"		, Newline{} ),	"abcd" );
-			DOCTEST_ASCII_CHECK_EQ( until( "abcd\r\nefgh"	, Newline{} ),	"abcd" );
+			static_assert( until( "abcd\nefgh"		, Newline{} )	==	"abcd" );
+			static_assert( until( "abcd\n\refgh"	, Newline{} )	==	"abcd" );
+			static_assert( until( "abcd\refgh"		, Newline{} )	==	"abcd" );
+			static_assert( until( "abcd\r\nefgh"	, Newline{} )	==	"abcd" );
 
-			DOCTEST_ASCII_CHECK_EQ( until( "abcdefgh\n"		, Newline{} ),	"abcdefgh" );
-			DOCTEST_ASCII_CHECK_EQ( until( "abcdefgh\n\r"	, Newline{} ),	"abcdefgh" );
-			DOCTEST_ASCII_CHECK_EQ( until( "abcdefgh\r"		, Newline{} ),	"abcdefgh" );
-			DOCTEST_ASCII_CHECK_EQ( until( "abcdefgh\r\n"	, Newline{} ),	"abcdefgh" );
+			static_assert( until( "abcdefgh\n"		, Newline{} )	==	"abcdefgh" );
+			static_assert( until( "abcdefgh\n\r"	, Newline{} )	==	"abcdefgh" );
+			static_assert( until( "abcdefgh\r"		, Newline{} )	==	"abcdefgh" );
+			static_assert( until( "abcdefgh\r\n"	, Newline{} )	==	"abcdefgh" );
 		}
 		{	// equal
-			DOCTEST_FAST_CHECK_UNARY(  equal( "", "" ) );
-			DOCTEST_FAST_CHECK_UNARY(  equal( str, str ) );
-			DOCTEST_FAST_CHECK_UNARY(  equal( "abcdefghijkl", "abcdefghijkl" ) );
-			DOCTEST_FAST_CHECK_UNARY(  equal( str, "abcdefghijkl" ) );
-			DOCTEST_FAST_CHECK_UNARY(  equal( "abcdefghijkl", str ) );
-			DOCTEST_FAST_CHECK_UNARY( !equal( "abcdef", "abc" ) );
-			DOCTEST_FAST_CHECK_UNARY( !equal( "abc", "abcdef" ) );
+			static_assert(  equal( "", "" ) );
+			static_assert(  equal( str, str ) );
+			static_assert(  equal( "abcdefghijkl", "abcdefghijkl" ) );
+			static_assert(  equal( str, "abcdefghijkl" ) );
+			static_assert(  equal( "abcdefghijkl", str ) );
+			static_assert( !equal( "abcdef", "abc" ) );
+			static_assert( !equal( "abc", "abcdef" ) );
 		}
 		{	// starts_with
-			DOCTEST_FAST_CHECK_EQ( starts_with( "abcdef", "abc" ),				3 );
-			DOCTEST_FAST_CHECK_EQ( starts_with( "abcdef", "abd" ),				0 );
-			DOCTEST_FAST_CHECK_EQ( starts_with( str, ""    ),					0 );
-			DOCTEST_FAST_CHECK_EQ( starts_with( null_, "123" ),					0 );
-			DOCTEST_FAST_CHECK_EQ( starts_with( str, "abc" ),					3 );
-			DOCTEST_FAST_CHECK_EQ( starts_with( str, "def" ),					0 );
-			DOCTEST_FAST_CHECK_EQ( starts_with( null_, ' ' ),					0 );
-			DOCTEST_FAST_CHECK_EQ( starts_with( str, 'a' ),						1 );
-			DOCTEST_FAST_CHECK_EQ( starts_with( str, 'b' ),						0 );
+			static_assert( starts_with( "abcdef", "abc" )	==	3 );
+			static_assert( starts_with( "abcdef", "abd" )	==	0 );
+			static_assert( starts_with( str, ""    )		==	0 );
+			static_assert( starts_with( null_, "123" )		==	0 );
+			static_assert( starts_with( str, "abc" )		==	3 );
+			static_assert( starts_with( str, "def" )		==	0 );
+			static_assert( starts_with( null_, ' ' )		==	0 );
+			static_assert( starts_with( str, 'a' )			==	1 );
+			static_assert( starts_with( str, 'b' )			==	0 );
 
-			DOCTEST_FAST_CHECK_EQ( starts_with( ""            ,	Newline{} ),	0 );
-			DOCTEST_FAST_CHECK_EQ( starts_with( "abcd\r\nefgh",	Newline{} ),	0 );
-			DOCTEST_FAST_CHECK_EQ( starts_with( "\nabcdefgh"  ,	Newline{} ),	1 );
-			DOCTEST_FAST_CHECK_EQ( starts_with( "\n\rabcdefgh",	Newline{} ),	2 );
-			DOCTEST_FAST_CHECK_EQ( starts_with( "\rabcdefgh"  ,	Newline{} ),	1 );
-			DOCTEST_FAST_CHECK_EQ( starts_with( "\r\nabcdefgh",	Newline{} ),	2 );
+			static_assert( starts_with( ""            ,	Newline{} )	==	0 );
+			static_assert( starts_with( "abcd\r\nefgh",	Newline{} )	==	0 );
+			static_assert( starts_with( "\nabcdefgh"  ,	Newline{} )	==	1 );
+			static_assert( starts_with( "\n\rabcdefgh",	Newline{} )	==	2 );
+			static_assert( starts_with( "\rabcdefgh"  ,	Newline{} )	==	1 );
+			static_assert( starts_with( "\r\nabcdefgh",	Newline{} )	==	2 );
 		}
 		{	// ends_with
-			DOCTEST_FAST_CHECK_EQ( ends_with( "abcdef", "def" ),				3 );
-			DOCTEST_FAST_CHECK_EQ( ends_with( "abcdef", "deg" ),				0 );
-			DOCTEST_FAST_CHECK_EQ( ends_with( str, ""    ),						0 );
-			DOCTEST_FAST_CHECK_EQ( ends_with( null_, "jkl" ),					0 );
-			DOCTEST_FAST_CHECK_EQ( ends_with( "abcdefghijkl", last( str, 3 ) ),	3 );
-			DOCTEST_FAST_CHECK_EQ( ends_with( str, "jkl" ),						3 );
-			DOCTEST_FAST_CHECK_EQ( ends_with( str, "ijk" ),						0 );
-			DOCTEST_FAST_CHECK_EQ( ends_with( null_, ' ' ),						0 );
-			DOCTEST_FAST_CHECK_EQ( ends_with( str, 'l' ),						1 );
-			DOCTEST_FAST_CHECK_EQ( ends_with( str, 'k' ),						0 );
+			static_assert( ends_with( "abcdef", "def" )					==	3 );
+			static_assert( ends_with( "abcdef", "deg" )					==	0 );
+			static_assert( ends_with( str, ""    )						==	0 );
+			static_assert( ends_with( null_, "jkl" )					==	0 );
+			static_assert( ends_with( "abcdefghijkl", last( str, 3 ) )	==	3 );
+			static_assert( ends_with( str, "jkl" )						==	3 );
+			static_assert( ends_with( str, "ijk" )						==	0 );
+			static_assert( ends_with( null_, ' ' )						==	0 );
+			static_assert( ends_with( str, 'l' )						==	1 );
+			static_assert( ends_with( str, 'k' )						==	0 );
 
-			DOCTEST_FAST_CHECK_EQ( ends_with( ""            ,	Newline{} ),	0 );
-			DOCTEST_FAST_CHECK_EQ( ends_with( "abcd\r\nefgh",	Newline{} ),	0 );
-			DOCTEST_FAST_CHECK_EQ( ends_with( "abcdefgh\n"  ,	Newline{} ),	1 );
-			DOCTEST_FAST_CHECK_EQ( ends_with( "abcdefgh\n\r",	Newline{} ),	2 );
-			DOCTEST_FAST_CHECK_EQ( ends_with( "abcdefgh\r"  ,	Newline{} ),	1 );
-			DOCTEST_FAST_CHECK_EQ( ends_with( "abcdefgh\r\n",	Newline{} ),	2 );
+			static_assert( ends_with( ""            ,	Newline{} )		==	0 );
+			static_assert( ends_with( "abcd\r\nefgh",	Newline{} )		==	0 );
+			static_assert( ends_with( "abcdefgh\n"  ,	Newline{} )		==	1 );
+			static_assert( ends_with( "abcdefgh\n\r",	Newline{} )		==	2 );
+			static_assert( ends_with( "abcdefgh\r"  ,	Newline{} )		==	1 );
+			static_assert( ends_with( "abcdefgh\r\n",	Newline{} )		==	2 );
 		}
 		{	// split_at, spolit_by
 			{	// at index
-				auto div = split_at( "abcdefghijkl", 24 );
-				DOCTEST_ASCII_CHECK_EQ( div.first , view( "abcdefghijkl" ) );
-				DOCTEST_ASCII_CHECK_EQ( div.second, view( "" ) );
-
-				div = split_at( "abcdefghijkl", 12 );
-				DOCTEST_ASCII_CHECK_EQ( div.first , view( "abcdefghijkl" ) );
-				DOCTEST_ASCII_CHECK_EQ( div.second, view( "" ) );
-
-				div = split_at( "abcdefghijkl", 4 );
-				DOCTEST_ASCII_CHECK_EQ( div.first , view( "abcd" ) );
-				DOCTEST_ASCII_CHECK_EQ( div.second, view( "fghijkl" ) );
-
-				div = split_at( abc, 0 );
-				DOCTEST_ASCII_CHECK_EQ( div.first , first( abc, 0 ) );
-				DOCTEST_ASCII_CHECK_EQ( div.second, not_first( abc, 1 ) );
-
-				div = split_at( abc, 2 );
-				DOCTEST_ASCII_CHECK_EQ( div.first , first( abc, 2 ) );
-				DOCTEST_ASCII_CHECK_EQ( div.second, not_first( abc, 3 ) );
-
-				div = split_at( abc, abc.size() - 1 );
-				DOCTEST_ASCII_CHECK_EQ( div.first , first( abc, abc.size() - 1 ) );
-				DOCTEST_ASCII_CHECK_EQ( div.second, last( abc, 0 ) );
-
-				div = split_at( abc, abc.size() );
-				DOCTEST_ASCII_CHECK_EQ( div.first , abc );
-				DOCTEST_ASCII_CHECK_EQ( div.second, last( abc, 0 ) );
-
-				div = split_at( abc, abc.size() + 1 );
-				DOCTEST_ASCII_CHECK_EQ( div.first , abc );
-				DOCTEST_ASCII_CHECK_EQ( div.second, last( abc, 0 ) );
+				{
+					constexpr auto div = split_at( "abcdefghijkl", 24 );
+					static_assert( div.first	==	"abcdefghijkl" );
+					static_assert( div.second	==	"" );
+				} {
+					constexpr auto div = split_at( "abcdefghijkl", 12 );
+					static_assert( div.first 	==	"abcdefghijkl" );
+					static_assert( div.second	==	"" );
+				} {
+					constexpr auto div = split_at( "abcdefghijkl", 4 );
+					static_assert( div.first 	==	"abcd" );
+					static_assert( div.second	==	"fghijkl" );
+				} {
+					constexpr auto div = split_at( abc, 0 );
+					static_assert( div.first	==	first( abc, 0 ) );
+					static_assert( div.second	==	not_first( abc, 1 ) );
+				} {
+					constexpr auto div = split_at( abc, 2 );
+					static_assert( div.first	==	first( abc, 2 ) );
+					static_assert( div.second	==	not_first( abc, 3 ) );
+				} {
+					constexpr auto div = split_at( abc, abc.size() - 1 );
+					static_assert( div.first	==	first( abc, abc.size() - 1 ) );
+					static_assert( div.second	==	last( abc, 0 ) );
+				} {
+					constexpr auto div = split_at( abc, abc.size() );
+					static_assert( div.first	==	abc );
+					static_assert( div.second	==	last( abc, 0 ) );
+				} {
+					constexpr auto div = split_at( abc, abc.size() + 1 );
+					static_assert( div.first	==	abc );
+					static_assert( div.second	==	last( abc, 0 ) );
+				}
 			}
 			{	// by value
 				constexpr auto base = subview( abc, 3, 4 );
-				DOCTEST_FAST_CHECK_EQ( base, "defg" );
-				
-				auto div = split_by( "abcdefghijkl", 'e' );
-				DOCTEST_ASCII_CHECK_EQ( div.first , view( "abcd" ) );
-				DOCTEST_ASCII_CHECK_EQ( div.second, view( "fghijkl" ) );
-
-				div = split_by( base, 'a' );					// None
-				DOCTEST_ASCII_CHECK_EQ( div.first , base );
-				DOCTEST_ASCII_CHECK_EQ( div.second, last( base, 0 ) );
-
-				div = split_by( base, 'd' );					// First
-				DOCTEST_ASCII_CHECK_EQ( div.first , first( base, 0 ) );
-				DOCTEST_ASCII_CHECK_EQ( div.second, not_first( base, 1 ) );
-
-				div = split_by( base, 'f' );					// Middle
-				DOCTEST_ASCII_CHECK_EQ( div.first , first( base, 2 ) );
-				DOCTEST_ASCII_CHECK_EQ( div.second, not_first( base, 3 ) );
-
-				div = split_by( base, 'g' );					// Last
-				DOCTEST_ASCII_CHECK_EQ( div.first , first( base, 3 ) );
-				DOCTEST_ASCII_CHECK_EQ( div.second, not_first( base, 4 ) );
+				static_assert( base				==	"defg" );
+				{
+					constexpr auto div = split_by( "abcdefghijkl", 'e' );
+					static_assert( div.first 	==	"abcd" );
+					static_assert( div.second	==	"fghijkl" );
+				} {
+					constexpr auto div = split_by( base, 'a' );					// None
+					static_assert( div.first	==	base );
+					static_assert( div.second	==	last( base, 0 ) );
+				} {
+					constexpr auto div = split_by( base, 'd' );					// First
+					static_assert( div.first	==	first( base, 0 ) );
+					static_assert( div.second	==	not_first( base, 1 ) );
+				} {
+					constexpr auto div = split_by( base, 'f' );					// Middle
+					static_assert( div.first	==	first( base, 2 ) );
+					static_assert( div.second	==	not_first( base, 3 ) );
+				} {
+					constexpr auto div = split_by( base, 'g' );					// Last
+					static_assert( div.first	==	first( base, 3 ) );
+					static_assert( div.second	==	not_first( base, 4 ) );
+				}
 			}
 			{	// by string_view
 				constexpr auto base = subview( abc, 3, 4 );
-				DOCTEST_FAST_CHECK_EQ( base, "defg" );
-				
-				auto div = split_by( "defg", "ef" );
-				DOCTEST_ASCII_CHECK_EQ( div.first , view( "d" ) );
-				DOCTEST_ASCII_CHECK_EQ( div.second, view( "g" ) );
-
-				div = split_by( str, first( str, 2 ) );			// First
-				DOCTEST_FAST_CHECK_EQ ( find( str, first( str, 2 ) ), 0 );
-				DOCTEST_ASCII_CHECK_EQ( div.first , first( str,  0 ) );
-				DOCTEST_ASCII_CHECK_EQ( div.second, last ( str, 10 ) );
-				DOCTEST_FAST_CHECK_EQ ( div.first.data() , view( str ).data() );
-
-				div = split_by( str, subview( str, 4, 2 ) );	// Middle
-				DOCTEST_ASCII_CHECK_EQ( div.first , first( str,  4 ) );
-				DOCTEST_ASCII_CHECK_EQ( div.second, last ( str,  6 ) );
-
-				div = split_by( str, last( str, 2 ) );			// End
-				DOCTEST_ASCII_CHECK_EQ( div.first , first( str, 10 ) );
-				DOCTEST_ASCII_CHECK_EQ( div.second, last ( str,  0 ) );
-				DOCTEST_FAST_CHECK_EQ ( div.second.data(), view( str ).data() + view( str ).size() );
-
-				div = split_by( str, "aaa" );					// None
-				DOCTEST_ASCII_CHECK_EQ( div.first , str );
-				DOCTEST_ASCII_CHECK_EQ( div.second, last( str, 0 ) );
+				static_assert( base			==	"defg" );
+				{
+					constexpr auto div = split_by( "defg", "ef" );
+					static_assert( div.first 	==	"d" );
+					static_assert( div.second	==	"g" );
+				} {
+					constexpr auto div = split_by( str, first( str, 2 ) );		// First
+					static_assert( find( str, first( str, 2 ) )	==	0 );
+					static_assert( div.first			==	first( str,  0 ) );
+					static_assert( div.second			==	last ( str, 10 ) );
+					static_assert( div.first.data() 	==	view( str ).data() );
+				} {
+					constexpr auto div = split_by( str, subview( str, 4, 2 ) );	// Middle
+					static_assert( div.first			==	first( str,  4 ) );
+					static_assert( div.second			==	last ( str,  6 ) );
+				} {
+					constexpr auto div = split_by( str, last( str, 2 ) );		// End
+					static_assert( div.first			==	first( str, 10 ) );
+					static_assert( div.second			==	last ( str,  0 ) );
+					static_assert ( div.second.data()	==	view( str ).data() + view( str ).size() );
+				} {
+					constexpr auto div = split_by( str, "aaa" );				// None
+					static_assert( div.first			==	str );
+					static_assert( div.second			==	last( str, 0 ) );
+				}
 			}
 			{	// by Newline
 				// None
-				auto div = split_by( std::string_view( "bcdefgh" ), Newline{} );
-				DOCTEST_FAST_CHECK_EQ( div.first , view( "bcdefgh" ) );
-				DOCTEST_FAST_CHECK_EQ( div.second, view( "" ) );
-
-				div = split_by( std::string_view( "" ), Newline{} );
-				DOCTEST_FAST_CHECK_EQ( div.first , "" );
-				DOCTEST_FAST_CHECK_EQ( div.second, "" );
+				{
+					constexpr auto div = split_by( std::string_view( "bcdefgh" ), Newline{} );
+					static_assert( div.first 		==	"bcdefgh" );
+					static_assert( div.second		==	"" );
+				} {
+					constexpr auto div = split_by( std::string_view( "" ), Newline{} );
+					static_assert( div.first		==	"" );
+					static_assert( div.second		==	"" );
+				}
 
 				{	// Beginning
-					div = split_by( "\nbcdefgh", Newline{} );
-					DOCTEST_FAST_CHECK_EQ( div.first , view( "" ) );
-					DOCTEST_FAST_CHECK_EQ( div.second, view( "bcdefgh" ) );
-
-					div = split_by( "\n\rbcdefgh", Newline{} );
-					DOCTEST_FAST_CHECK_EQ( div.first , "" );
-					DOCTEST_FAST_CHECK_EQ( div.second, "bcdefgh" );
-
-					div = split_by( "\rbcdefgh", Newline{} );
-					DOCTEST_FAST_CHECK_EQ( div.first , "" );
-					DOCTEST_FAST_CHECK_EQ( div.second, "bcdefgh" );
-
-					div = split_by( "\r\nbcdefgh", Newline{} );
-					DOCTEST_FAST_CHECK_EQ( div.first , "" );
-					DOCTEST_FAST_CHECK_EQ( div.second, "bcdefgh" );
+					{
+						constexpr auto div = split_by( "\nbcdefgh", Newline{} );
+						static_assert( div.first 	==	"" );
+						static_assert( div.second	==	"bcdefgh" );
+					} {
+						constexpr auto div = split_by( "\n\rbcdefgh", Newline{} );
+						static_assert( div.first	==	"" );
+						static_assert( div.second	==	"bcdefgh" );
+					} {
+						constexpr auto div = split_by( "\rbcdefgh", Newline{} );
+						static_assert( div.first	==	"" );
+						static_assert( div.second	==	"bcdefgh" );
+					} {
+						constexpr auto div = split_by( "\r\nbcdefgh", Newline{} );
+						static_assert( div.first	==	"" );
+						static_assert( div.second	==	"bcdefgh" );
+					}
 				}
 				{	// Middle
-					div = split_by( "bcd\nefgh", Newline{} );
-					DOCTEST_FAST_CHECK_EQ( div.first , view( "bcd" ) );
-					DOCTEST_FAST_CHECK_EQ( div.second, view( "efgh" ) );
-
-					div = split_by( "bcd\n\refgh", Newline{} );
-					DOCTEST_FAST_CHECK_EQ( div.first , "bcd" );
-					DOCTEST_FAST_CHECK_EQ( div.second, "efgh" );
-
-					div = split_by( "bcd\refgh", Newline{} );
-					DOCTEST_FAST_CHECK_EQ( div.first , "bcd" );
-					DOCTEST_FAST_CHECK_EQ( div.second, "efgh" );
-
-					div = split_by( "bcd\r\nefgh", Newline{} );
-					DOCTEST_FAST_CHECK_EQ( div.first , "bcd" );
-					DOCTEST_FAST_CHECK_EQ( div.second, "efgh" );
+					{
+						constexpr auto div = split_by( "bcd\nefgh", Newline{} );
+						static_assert( div.first 	==	"bcd" );
+						static_assert( div.second	==	"efgh" );
+					} {
+						constexpr auto div = split_by( "bcd\n\refgh", Newline{} );
+						static_assert( div.first	==	"bcd" );
+						static_assert( div.second	==	"efgh" );
+					} {
+						constexpr auto div = split_by( "bcd\refgh", Newline{} );
+						static_assert( div.first	==	"bcd" );
+						static_assert( div.second	==	"efgh" );
+					} {
+						constexpr auto div = split_by( "bcd\r\nefgh", Newline{} );
+						static_assert( div.first	==	"bcd" );
+						static_assert( div.second	==	"efgh" );
+					}
 				}
 				{	// Ending
-					div = split_by( "bcdefgh\n", Newline{} );
-					DOCTEST_FAST_CHECK_EQ( div.first , view( "bcdefgh" ) );
-					DOCTEST_FAST_CHECK_EQ( div.second, view( "" ) );
-
-					div = split_by( "bcdefgh\n\r", Newline{} );
-					DOCTEST_FAST_CHECK_EQ( div.first , "bcdefgh" );
-					DOCTEST_FAST_CHECK_EQ( div.second, "" );
-
-					div = split_by( "bcdefgh\r", Newline{} );
-					DOCTEST_FAST_CHECK_EQ( div.first , "bcdefgh" );
-					DOCTEST_FAST_CHECK_EQ( div.second, "" );
-
-					div = split_by( "bcdefgh\r\n", Newline{} );
-					DOCTEST_FAST_CHECK_EQ( div.first , "bcdefgh" );
-					DOCTEST_FAST_CHECK_EQ( div.second, "" );
+					{
+						constexpr auto div = split_by( "bcdefgh\n", Newline{} );
+						static_assert( div.first 	==	"bcdefgh" );
+						static_assert( div.second	==	"" );
+					} {
+						constexpr auto div = split_by( "bcdefgh\n\r", Newline{} );
+						static_assert( div.first	==	"bcdefgh" );
+						static_assert( div.second	==	"" );
+					} {
+						constexpr auto div = split_by( "bcdefgh\r", Newline{} );
+						static_assert( div.first	==	"bcdefgh" );
+						static_assert( div.second	==	"" );
+					} {
+						constexpr auto div = split_by( "bcdefgh\r\n", Newline{} );
+						static_assert( div.first	==	"bcdefgh" );
+						static_assert( div.second	==	"" );
+					}
 				}
 			}
 		}
@@ -1128,56 +1150,56 @@ namespace pax {
 			constexpr auto 					is_plus = []( auto x_ ){	return x_ == '+'; };
 
 			{	// trim_front
-				DOCTEST_ASCII_CHECK_EQ( trim_front( "++++abcdef++", '+' ), view( "+++abcdef++" ) );
-				DOCTEST_ASCII_CHECK_EQ( trim_front( text, '+' ),		not_first( text, 1 ) );
-				DOCTEST_ASCII_CHECK_EQ( trim_front( text, '-' ),		text );
+				static_assert( trim_front( "++++abcdef++", '+' )==	"+++abcdef++" );
+				static_assert( trim_front( text, '+' )			==	not_first( text, 1 ) );
+				static_assert( trim_front( text, '-' )			==	text );
 			}
 			{	// trim_back
-				DOCTEST_ASCII_CHECK_EQ( trim_back( "++++abcdef++", '+' ), view( "++++abcdef+" ) );
-				DOCTEST_ASCII_CHECK_EQ( trim_back( text, '+' ),			not_last( text, 1 ) );
-				DOCTEST_ASCII_CHECK_EQ( trim_back( text, '-' ),			text );
+				static_assert( trim_back( "++++abcdef++", '+' )	==	"++++abcdef+" );
+				static_assert( trim_back( text, '+' )			==	not_last( text, 1 ) );
+				static_assert( trim_back( text, '-' )			==	text );
 			}
 			{	// trim_first
 				{	// Character
-					DOCTEST_ASCII_CHECK_EQ( trim_first( "abc", '+' ),		"abc" );
-					DOCTEST_ASCII_CHECK_EQ( trim_first( text, '+' ),		not_first( text, 4 ) );
+					static_assert( trim_first( "abc", '+' )		==	"abc" );
+					static_assert( trim_first( text, '+' )		==	not_first( text, 4 ) );
 				}
 				{	// Predicate
-					DOCTEST_ASCII_CHECK_EQ( trim_first( text, is_plus ),	not_first( text, 4 ) );
-					DOCTEST_ASCII_CHECK_EQ( trim_first( text, pred ),		not_first( text, 6 ) );
+					static_assert( trim_first( text, is_plus )	==	not_first( text, 4 ) );
+					static_assert( trim_first( text, pred )		==	not_first( text, 6 ) );
 				}
 				{	// Newline
-					DOCTEST_ASCII_CHECK_EQ( trim_first( "",					Newline{} ),	"" );
-					DOCTEST_ASCII_CHECK_EQ( trim_first( "\n\r",				Newline{} ),	"" );
-					DOCTEST_ASCII_CHECK_EQ( trim_first( "abcdefgh\n\r",		Newline{} ),	"abcdefgh\n\r" );
-					DOCTEST_ASCII_CHECK_EQ( trim_first( "\nabcdefgh\n\r",	Newline{} ),	"abcdefgh\n\r" );
-					DOCTEST_ASCII_CHECK_EQ( trim_first( "\n\rabcdefgh\n\r",	Newline{} ),	"abcdefgh\n\r" );
-					DOCTEST_ASCII_CHECK_EQ( trim_first( "\rabcdefgh\n\r",	Newline{} ),	"abcdefgh\n\r" );
-					DOCTEST_ASCII_CHECK_EQ( trim_first( "\r\nabcdefgh\n\r",	Newline{} ),	"abcdefgh\n\r" );
+					static_assert( trim_first( "",					Newline{} )	==	"" );
+					static_assert( trim_first( "\n\r",				Newline{} )	==	"" );
+					static_assert( trim_first( "abcdefgh\n\r",		Newline{} )	==	"abcdefgh\n\r" );
+					static_assert( trim_first( "\nabcdefgh\n\r",	Newline{} )	==	"abcdefgh\n\r" );
+					static_assert( trim_first( "\n\rabcdefgh\n\r",	Newline{} )	==	"abcdefgh\n\r" );
+					static_assert( trim_first( "\rabcdefgh\n\r",	Newline{} )	==	"abcdefgh\n\r" );
+					static_assert( trim_first( "\r\nabcdefgh\n\r",	Newline{} )	==	"abcdefgh\n\r" );
 				}
 			}
 			{	// trim_last
 				{	// Character
-					DOCTEST_ASCII_CHECK_EQ( trim_last( "abc", '+' ),		"abc" );
-					DOCTEST_ASCII_CHECK_EQ( trim_last( text, '+' ),			not_last( text, 2 ) );
+					static_assert( trim_last( "abc", '+' )		==	"abc" );
+					static_assert( trim_last( text, '+' )		==	not_last( text, 2 ) );
 				}
 				{	// Predicate
-					DOCTEST_ASCII_CHECK_EQ( trim_last( text, is_plus ),		not_last( text, 2 ) );
-					DOCTEST_ASCII_CHECK_EQ( trim_last( text, pred ),		not_last( text, 2 ) );
+					static_assert( trim_last( text, is_plus )	==	not_last( text, 2 ) );
+					static_assert( trim_last( text, pred )		==	not_last( text, 2 ) );
 				}
 				{	// Newline
-					DOCTEST_ASCII_CHECK_EQ( trim_last( "",					Newline{} ),	"" );
-					DOCTEST_ASCII_CHECK_EQ( trim_last( "\n\r",				Newline{} ),	"" );
-					DOCTEST_ASCII_CHECK_EQ( trim_last( "\n\rabcdefgh",		Newline{} ),	"\n\rabcdefgh" );
-					DOCTEST_ASCII_CHECK_EQ( trim_last( "\n\rabcdefgh\n",	Newline{} ),	"\n\rabcdefgh" );
-					DOCTEST_ASCII_CHECK_EQ( trim_last( "\n\rabcdefgh\n\r",	Newline{} ),	"\n\rabcdefgh" );
-					DOCTEST_ASCII_CHECK_EQ( trim_last( "\n\rabcdefgh\r",	Newline{} ),	"\n\rabcdefgh" );
-					DOCTEST_ASCII_CHECK_EQ( trim_last( "\n\rabcdefgh\r\n",	Newline{} ),	"\n\rabcdefgh" );
+					static_assert( trim_last( "",					Newline{} )	==	"" );
+					static_assert( trim_last( "\n\r",				Newline{} )	==	"" );
+					static_assert( trim_last( "\n\rabcdefgh",		Newline{} )	==	"\n\rabcdefgh" );
+					static_assert( trim_last( "\n\rabcdefgh\n",		Newline{} )	==	"\n\rabcdefgh" );
+					static_assert( trim_last( "\n\rabcdefgh\n\r",	Newline{} )	==	"\n\rabcdefgh" );
+					static_assert( trim_last( "\n\rabcdefgh\r",		Newline{} )	==	"\n\rabcdefgh" );
+					static_assert( trim_last( "\n\rabcdefgh\r\n",	Newline{} )	==	"\n\rabcdefgh" );
 				}
 			}
 			{	// trim
-				DOCTEST_ASCII_CHECK_EQ( trim( text, is_plus ),	subview( text, 4, 6 ) );
-				DOCTEST_ASCII_CHECK_EQ( trim( text, pred ),		subview( text, 6, 4 ) );
+				static_assert( trim( text, is_plus )			==	subview( text, 4, 6 ) );
+				static_assert( trim( text, pred )				==	subview( text, 6, 4 ) );
 			}
 		}
 	}
@@ -1188,65 +1210,65 @@ namespace pax {
 			
 		}
 		{	// all_of
-			DOCTEST_FAST_CHECK_UNARY(  all_of ( "abcdefghijkl", []( auto c ){ return c != '\0'; } ) );
-			DOCTEST_FAST_CHECK_UNARY(  all_of ( str, []( auto c ){ return c >= 'a'; } ) );
-			DOCTEST_FAST_CHECK_UNARY( !all_of ( str, []( auto c ){ return c >= 'd'; } ) );
-			DOCTEST_FAST_CHECK_UNARY(  pax::all_of ( str, "abcdefghijkl", []( auto c, auto d ){ return c == d; } ) );
-			DOCTEST_FAST_CHECK_UNARY(  pax::all_of ( str, str, []( auto c, auto d ){ return c == d; } ) );
-			DOCTEST_FAST_CHECK_UNARY( !all_of ( str, abd, []( auto c, auto d ){ return c == d; } ) );
+			static_assert(  all_of ( "abcdefghijkl", []( auto c ){ return c != '\0'; } ) );
+			static_assert(  all_of ( str, []( auto c ){ return c >= 'a'; } ) );
+			static_assert( !all_of ( str, []( auto c ){ return c >= 'd'; } ) );
+			static_assert(  pax::all_of ( str, "abcdefghijkl", []( auto c, auto d ){ return c == d; } ) );
+			static_assert(  pax::all_of ( str, str, []( auto c, auto d ){ return c == d; } ) );
+			static_assert( !all_of ( str, abd, []( auto c, auto d ){ return c == d; } ) );
 		}
 		{	// any_of
-			DOCTEST_FAST_CHECK_UNARY( !any_of ( "abcdefghijkl", []( auto c ){ return c == '\0'; } ) );
-			DOCTEST_FAST_CHECK_UNARY(  any_of ( str, []( auto c ){ return c >= 'a'; } ) );
-			DOCTEST_FAST_CHECK_UNARY( !any_of ( str, []( auto c ){ return c == 'x'; } ) );
-			DOCTEST_FAST_CHECK_UNARY(  pax::any_of ( str, "abcdefghijkl", []( auto c, auto d ){ return c == d; } ) );
-			DOCTEST_FAST_CHECK_UNARY(  pax::any_of ( str, str, []( auto c, auto d ){ return c == d; } ) );
-			DOCTEST_FAST_CHECK_UNARY(  any_of ( str, abd, []( auto c, auto d ){ return c != d; } ) );
-			DOCTEST_FAST_CHECK_UNARY( !pax::any_of ( str, str, []( auto c, auto d ){ return c != d; } ) );
+			static_assert( !any_of ( "abcdefghijkl", []( auto c ){ return c == '\0'; } ) );
+			static_assert(  any_of ( str, []( auto c ){ return c >= 'a'; } ) );
+			static_assert( !any_of ( str, []( auto c ){ return c == 'x'; } ) );
+			static_assert(  pax::any_of ( str, "abcdefghijkl", []( auto c, auto d ){ return c == d; } ) );
+			static_assert(  pax::any_of ( str, str, []( auto c, auto d ){ return c == d; } ) );
+			static_assert(  any_of ( str, abd, []( auto c, auto d ){ return c != d; } ) );
+			static_assert( !pax::any_of ( str, str, []( auto c, auto d ){ return c != d; } ) );
 		}
 		{	// none_of
-			DOCTEST_FAST_CHECK_UNARY(  none_of( "abcdefghijkl", []( auto c ){ return c == '\0'; } ) );
-			DOCTEST_FAST_CHECK_UNARY(  none_of( str, []( auto c ){ return c == 'x'; } ) );
-			DOCTEST_FAST_CHECK_UNARY( !none_of( str, []( auto c ){ return c == 'd'; } ) );
-			DOCTEST_FAST_CHECK_UNARY(  pax::none_of ( "abcdefghijkl", str, []( auto c, auto d ){ return c != d; } ) );
-			DOCTEST_FAST_CHECK_UNARY(  pax::none_of ( str, str, []( auto c, auto d ){ return c != d; } ) );
-			DOCTEST_FAST_CHECK_UNARY( !none_of ( str, abd, []( auto c, auto d ){ return c != d; } ) );
+			static_assert(  none_of( "abcdefghijkl", []( auto c ){ return c == '\0'; } ) );
+			static_assert(  none_of( str, []( auto c ){ return c == 'x'; } ) );
+			static_assert( !none_of( str, []( auto c ){ return c == 'd'; } ) );
+			static_assert(  pax::none_of ( "abcdefghijkl", str, []( auto c, auto d ){ return c != d; } ) );
+			static_assert(  pax::none_of ( str, str, []( auto c, auto d ){ return c != d; } ) );
+			static_assert( !none_of ( str, abd, []( auto c, auto d ){ return c != d; } ) );
 		}
 		{	// identify_newline
-			DOCTEST_ASCII_CHECK_EQ( identify_newline( "abcd\n\refgh"   ),	"\n\r" );
-			DOCTEST_ASCII_CHECK_EQ( identify_newline( ""               ),	"\n" );
-			DOCTEST_ASCII_CHECK_EQ( identify_newline( "abcdefgh"       ),	"\n" );
+			static_assert( identify_newline( "abcd\n\refgh"   )	==	"\n\r" );
+			static_assert( identify_newline( ""               )	==	"\n" );
+			static_assert( identify_newline( "abcdefgh"       )	==	"\n" );
 
-			DOCTEST_ASCII_CHECK_EQ( identify_newline( "\nabcdefgh"     ),	"\n" );
-			DOCTEST_ASCII_CHECK_EQ( identify_newline( "\n\r\nabcdefgh" ),	"\n\r" );
-			DOCTEST_ASCII_CHECK_EQ( identify_newline( "\rabcdefgh"     ),	"\r" );
-			DOCTEST_ASCII_CHECK_EQ( identify_newline( "\r\nabcdefgh"   ),	"\r\n" );
+			static_assert( identify_newline( "\nabcdefgh"     )	==	"\n" );
+			static_assert( identify_newline( "\n\r\nabcdefgh" )	==	"\n\r" );
+			static_assert( identify_newline( "\rabcdefgh"     )	==	"\r" );
+			static_assert( identify_newline( "\r\nabcdefgh"   )	==	"\r\n" );
 
-			DOCTEST_ASCII_CHECK_EQ( identify_newline( "abcd\nefgh"     ),	"\n" );
-			DOCTEST_ASCII_CHECK_EQ( identify_newline( "abcd\n\refgh"   ),	"\n\r" );
-			DOCTEST_ASCII_CHECK_EQ( identify_newline( "abcd\refgh"     ),	"\r" );
-			DOCTEST_ASCII_CHECK_EQ( identify_newline( "abcd\r\nefgh"   ),	"\r\n" );
+			static_assert( identify_newline( "abcd\nefgh"     )	==	"\n" );
+			static_assert( identify_newline( "abcd\n\refgh"   )	==	"\n\r" );
+			static_assert( identify_newline( "abcd\refgh"     )	==	"\r" );
+			static_assert( identify_newline( "abcd\r\nefgh"   )	==	"\r\n" );
 
-			DOCTEST_ASCII_CHECK_EQ( identify_newline( "abcdefgh\n"     ),	"\n" );
-			DOCTEST_ASCII_CHECK_EQ( identify_newline( "abcdefgh\n\r"   ),	"\n\r" );
-			DOCTEST_ASCII_CHECK_EQ( identify_newline( "abcdefgh\r"     ),	"\r" );
-			DOCTEST_ASCII_CHECK_EQ( identify_newline( "abcdefgh\r\n"   ),	"\r\n" );
+			static_assert( identify_newline( "abcdefgh\n"     )	==	"\n" );
+			static_assert( identify_newline( "abcdefgh\n\r"   )	==	"\n\r" );
+			static_assert( identify_newline( "abcdefgh\r"     )	==	"\r" );
+			static_assert( identify_newline( "abcdefgh\r\n"   )	==	"\r\n" );
 		}
 		{	// luhn_sum
-			DOCTEST_FAST_CHECK_EQ( luhn_sum( "6112161457" ),	30 );
-			DOCTEST_FAST_CHECK_EQ( luhn_sum( "6212161457" ),	31 );
-			DOCTEST_FAST_CHECK_EQ( luhn_sum( "7112161457" ),	32 );
+			static_assert( luhn_sum( "6112161457" )	==	30 );
+			static_assert( luhn_sum( "6212161457" )	==	31 );
+			static_assert( luhn_sum( "7112161457" )	==	32 );
 		}
 	}
 	DOCTEST_TEST_CASE( "std::span in general" ) {
 		{	// comparisons
 			const auto					abc2{ "abcdffghijkl" };
 
-			DOCTEST_FAST_CHECK_EQ( std::strong_ordering::less,    not_last( abc ) <=> abc );
-			DOCTEST_FAST_CHECK_EQ( std::strong_ordering::less,    abc  <=> abc2 );
-			DOCTEST_FAST_CHECK_EQ( std::strong_ordering::equal,   abc  <=> abc );
-			DOCTEST_FAST_CHECK_EQ( std::strong_ordering::greater, abc2 <=> abc );
-			DOCTEST_FAST_CHECK_EQ( std::strong_ordering::greater, abc  <=> not_last( abc ) );
+			DOCTEST_FAST_CHECK_UNARY( std::strong_ordering::less	==	not_last( abc ) <=> abc );
+			DOCTEST_FAST_CHECK_UNARY( std::strong_ordering::less	==	( abc  <=> abc2 ) );
+			DOCTEST_FAST_CHECK_UNARY( std::strong_ordering::equal	==	( abc  <=> abc  ) );
+			DOCTEST_FAST_CHECK_UNARY( std::strong_ordering::greater	==	( abc2 <=> abc  ) );
+			DOCTEST_FAST_CHECK_UNARY( std::strong_ordering::greater	==	( abc  <=> not_last( abc ) ) );
 
 			DOCTEST_FAST_CHECK_LT( abc, abc2 );
 			DOCTEST_FAST_CHECK_LE( abc, abc2 );
@@ -1302,11 +1324,11 @@ namespace pax {
 				const auto 				res0{ os.str() };
 				const std::span 		res{ res0.data(), res0.size() };
 
-				DOCTEST_FAST_CHECK_EQ( v0.size(),   15 );
-				DOCTEST_ASCII_CHECK_EQ( res0, vr );
-				DOCTEST_FAST_CHECK_EQ( res0.size(), vr.size() );
-				DOCTEST_FAST_CHECK_EQ( res.size(),  vr.size() );
-				DOCTEST_FAST_CHECK_EQ( res, vr );
+				DOCTEST_FAST_CHECK_EQ( v0.size(),	15 );
+				DOCTEST_FAST_CHECK_EQ( res0,		vr );
+				DOCTEST_FAST_CHECK_EQ( res0.size(),	vr.size() );
+				DOCTEST_FAST_CHECK_EQ( res.size(),	vr.size() );
+				DOCTEST_FAST_CHECK_EQ( res,			vr );
 #endif
 			}
 		}
@@ -1315,13 +1337,13 @@ namespace pax {
 		// for( const auto s : String_view_splitter( "ett två tre", ' ' ) )	Debug{} << s;
 
 		constexpr String_view_splitter	split( "ett två tre", ' ' );
-		auto							itr = split.begin();
-		DOCTEST_FAST_CHECK_EQ( *    itr,   "ett" );
-		DOCTEST_FAST_CHECK_EQ( *( ++itr ), "två" );
-		DOCTEST_FAST_CHECK_EQ( *( ++itr ), "tre" );
-		DOCTEST_FAST_CHECK_NE(   itr, split.end() );
-		DOCTEST_FAST_CHECK_EQ( ++itr, split.end() );
-		DOCTEST_FAST_CHECK_EQ( ++itr, split.end() );
+		auto								itr = split.begin();
+		DOCTEST_FAST_CHECK_EQ( *    itr,  	"ett" );
+		DOCTEST_FAST_CHECK_EQ( *( ++itr ),	"två" );
+		DOCTEST_FAST_CHECK_EQ( *( ++itr ),	"tre" );
+		DOCTEST_FAST_CHECK_NE(   itr,		split.end() );
+		DOCTEST_FAST_CHECK_EQ( ++itr,		split.end() );
+		DOCTEST_FAST_CHECK_EQ( ++itr,		split.end() );
 	}
 
 }	// namespace pax

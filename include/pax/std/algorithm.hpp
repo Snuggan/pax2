@@ -712,7 +712,7 @@ namespace pax {
 			return ends_with( view_type_t< V, true >( v_ ), Newline{} );	// To remove trailing '\0'.
 		} else if constexpr( extent_v< V > > 1 ) {
 			using std::data, std::size;
-			const auto last = data( v_ ) + size( v_ ) - 1;
+			const auto last = data( v_ ) + size( v_ ) - ( size( v_ ) > 0 );
 			return	( size( v_ ) > 1 )	? Newline::is_newline2( *last, *( last - 1 ) )
 				:	  size( v_ )		? Newline::is_newline ( v_[ 0 ] )
 				:						  0;
@@ -816,7 +816,7 @@ namespace pax {
 			return trim_last( view_type_t< V, true >( v_ ), t_ );				// To remove trailing '\0'.
 		} else {
 			auto							itr  = end( v_ );
-			const auto						end_ = begin( v_ ) - 1;
+			const auto						end_ = begin( v_ );
 			while( ( --itr != end_ ) && ( *itr == t_ ) );
 			return view_type_t< V, true >{ begin( v_ ), itr + 1 };
 		}
@@ -835,7 +835,7 @@ namespace pax {
 		} else {
 			using std::begin, std::end;
 			auto							itr  = end( v_ );
-			const auto						end_ = begin( v_ ) - 1;
+			const auto						end_ = begin( v_ );
 			while( ( --itr != end_ ) && p_( *itr ) );
 			return view_type_t< V, true >{ begin( v_ ), itr + 1 };
 		}
@@ -1037,7 +1037,7 @@ namespace pax {
 	/// Return the first newline used in view_ (`"\n"`, `"\r"`, `"\n\r"`, or `"\r\n"`).
 	/// - If none is found, `"\n"` is returned.
 	template< String V >
-	[[nodiscard]] auto identify_newline( const V & str_ ) noexcept {
+	[[nodiscard]] constexpr auto identify_newline( const V & str_ ) noexcept {
 		using my_view = std::basic_string_view< Value_type_t< V > >;
 		static constexpr const my_view			 	res = { "\n\r\n" };
 		const auto 									temp = not_first( str_, find( str_, Newline{} ) );
