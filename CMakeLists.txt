@@ -25,7 +25,6 @@ list( APPEND PAX_FLAGS
 	-Wpedantic -Wall -Wextra -Werror	# Maximum number of checks.
 	-Wno-unused-function				# What is unused in one target might be used in another...
 	-Wuninitialized						# Warns about uninitialized variables.
-	-Wstring-conversion					# Warns when a string literal is implicitly converted into a bool. 
 	-ftrivial-auto-var-init=pattern		# Initiate all base type variables.
 #	-Wconversion						# Warns about implicit conversions that may change a value.
 #	-Wsign-conversion					# Warns about implicit conversions between signed and unsigned types.
@@ -59,7 +58,7 @@ list( APPEND PAX_SANITIZE
 if( ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang" )	
 	add_definitions( -D__IS_CLANG__=1 )
 	list( APPEND PAX_FLAGS
-		# No clang-specific flags.
+		-Wstring-conversion				# Warns when a string literal is implicitly converted into a bool. 
 	)
 	list( REMOVE_ITEM PAX_SANITIZE
 		-fsanitize-memory-track-origins	# Untried, see https://m-peko.github.io/craft-cpp/posts/be-wise-sanitize-keeping-your-cpp-code-free-from-bugs/
