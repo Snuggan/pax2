@@ -16,6 +16,9 @@
 
 namespace pax {
 	
+	
+
+
 	constexpr auto								str		= "abcdefghijkl";
 	constexpr auto	 							strN	= make_span( "abcdefghijkl" );
 	constexpr const std::string_view			e		= view( "" );
@@ -28,6 +31,16 @@ namespace pax {
 	
 	template< typename T >
 	constexpr bool is_value_const = std::is_const_v< std::remove_reference_t< Value_type_t< T > > >;
+	
+	template< typename T >
+	constexpr auto safe_subview( T && t_, int i_, int sz_ ) {
+		using std::size;
+		if( i_ < 0 )	i_ += size( t_ );
+		if( i_ < 0 )	i_  = 0;
+		return first( not_first( t_, i_ ), sz_ );
+	}
+	
+	
 	
 	namespace intrinsics {
 		// std::span< const int >
@@ -91,14 +104,21 @@ namespace pax {
 
 
 	DOCTEST_TEST_CASE( "textual" ) {
+		{	// Newline::is_newline
+			static_assert(  Newline::is_newline( '\n' ) );
+			static_assert(  Newline::is_newline( '\r' ) );
+			static_assert( !Newline::is_newline( '\a' ) );
+			static_assert( !Newline::is_newline( ' '  ) );
+		}
 		{	// Newline::is_newline2
 			static_assert( Newline::is_newline2( '\n', '\r' ) == 2 );
 			static_assert( Newline::is_newline2( '\r', '\n' ) == 2 );
-			static_assert( Newline::is_newline2( '\n', '\t' ) == 1 );
-			static_assert( Newline::is_newline2( '\r', '\t' ) == 1 );
-			static_assert( Newline::is_newline2( '\t', '\n' ) == 0 );
-			static_assert( Newline::is_newline2( '\t', '\r' ) == 0 );
-			static_assert( Newline::is_newline2( 'a',  'a'  ) == 0 );
+			static_assert( Newline::is_newline2( '\n', '\n' ) == 1 );
+			static_assert( Newline::is_newline2( '\r', '\r' ) == 1 );
+			static_assert( Newline::is_newline2( '\n', '\a' ) == 1 );
+			static_assert( Newline::is_newline2( '\r', '\a' ) == 1 );
+			static_assert( Newline::is_newline2( '\a', '\n' ) == 0 );
+			static_assert( Newline::is_newline2( '\a', '\r' ) == 0 );
 		}
 		{	// std::format output
 			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", std::string_view( "abc" ) ),	"abc" );
@@ -111,7 +131,7 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", first( ints, 3 ) ),	"[0, 1, 2]" );
 		}
 	}
-	DOCTEST_TEST_CASE( "view_type, view" ) {
+	DOCTEST_TEST_CASE( "view_type, make_span" ) {
 		{	// view, dview, view_type, view_type
 			static_assert( std::is_same_v< view_type_t< std::string_view >,				std::string_view > );
 			static_assert( std::is_same_v< view_type_t< std::string_view >,				std::string_view > );
@@ -131,163 +151,167 @@ namespace pax {
 
 			{
 				auto constexpr abcde = make_span( "abcde" );
-				DOCTEST_FAST_CHECK_EQ( std::string_view( "abcde" ),	"abcde" );
-				DOCTEST_FAST_CHECK_EQ( abcde.size(),				5 );
-				DOCTEST_FAST_CHECK_EQ( abcde.back(),				'e' );
-				DOCTEST_FAST_CHECK_EQ( abcde,						std::string_view( "abcde" ) );
-				DOCTEST_FAST_CHECK_LE( abcde,						std::string_view( "abcde" ) );
-				DOCTEST_FAST_CHECK_GE( abcde,						std::string_view( "abcde" ) );
+				static_assert( std::string_view( "abcde" )	==	"abcde" );
+				static_assert( abcde.size()					==	5 );
+				static_assert( abcde.back()					==	'e' );
+				static_assert( abcde						==	std::string_view( "abcde" ) );
+				static_assert( abcde						<=	std::string_view( "abcde" ) );
+				static_assert( abcde						>=	std::string_view( "abcde" ) );
 			} {
-				static constexpr const char			 	res[] = { '\n', '\r', '\n' };
-				const auto								v  = view( res );
-				const auto								dv = dview( res );
-				DOCTEST_FAST_CHECK_EQ( size( v ),		3 );
-				DOCTEST_FAST_CHECK_EQ( size( dv ),		3 );
+				static constexpr const char					res[] = { '\n', '\r', '\n' };
+				constexpr auto								v  = view( res );
+				constexpr auto								dv = dview( res );
+				static_assert( size( v )					==	3 );
+				static_assert( size( dv )					==	3 );
 				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::string_view > );
 				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::string_view > );
 			} {
-				const auto								v  = view( std::span< int >{} );
-				const auto								dv = dview( std::span< int >{} );
-				DOCTEST_FAST_CHECK_EQ( size( v ),		0 );
-				DOCTEST_FAST_CHECK_EQ( v.extent,		dynamic_extent );
-				DOCTEST_FAST_CHECK_EQ( size( dv ),		0 );
-				DOCTEST_FAST_CHECK_EQ( dv.extent,		dynamic_extent );
+				constexpr auto								v  = view( std::span< int >{} );
+				constexpr auto								dv = dview( std::span< int >{} );
+				static_assert( size( v )					==	0 );
+				static_assert( v.extent						==	dynamic_extent );
+				static_assert( size( dv )					==	0 );
+				static_assert( dv.extent					==	dynamic_extent );
 				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::span< int > > );
 				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::span< int > > );
 			} {
-				const auto								v  = view( std::span< int, 0 >{} );
-				const auto								dv = dview( std::span< int, 0 >{} );
-				DOCTEST_FAST_CHECK_EQ( size( v ),		0 );
-				DOCTEST_FAST_CHECK_EQ( v.extent,		0 );
-				DOCTEST_FAST_CHECK_EQ( size( dv ),		0 );
-				DOCTEST_FAST_CHECK_EQ( dv.extent,		dynamic_extent );
+				constexpr auto								v  = view( std::span< int, 0 >{} );
+				constexpr auto								dv = dview( std::span< int, 0 >{} );
+				static_assert( size( v )					==	0 );
+				static_assert( v.extent						==	0 );
+				static_assert( size( dv )					==	0 );
+				static_assert( dv.extent					==	dynamic_extent );
 				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::span< int, 0 > > );
 				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::span< int > > );
 			} {
-				const auto								v  = view( std::string_view{} );
-				const auto								dv = dview( std::string_view{} );
-				DOCTEST_FAST_CHECK_EQ( size( v ),		0 );
-				DOCTEST_FAST_CHECK_EQ( size( dv ),		0 );
+				constexpr auto								v  = view( std::string_view{} );
+				constexpr auto								dv = dview( std::string_view{} );
+				static_assert( size( v )					==	0 );
+				static_assert( size( dv )					==	0 );
 				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::string_view > );
 				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::string_view > );
 			} {
-				const auto								v  = view( "" );
-				const auto								dv = dview( "" );
-				DOCTEST_FAST_CHECK_EQ( size( v ),		0 );
-				DOCTEST_FAST_CHECK_EQ( size( dv ),		0 );
+				constexpr auto								v  = view( "" );
+				constexpr auto								dv = dview( "" );
+				static_assert( size( v )					==	0 );
+				static_assert( size( dv )					==	0 );
 				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::string_view > );
 				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::string_view > );
 			} {
-				const std::vector< int >				arr{ 1, 2, 3 };
-				const auto								v  = view( arr );
-				const auto								dv = dview( arr );
-				DOCTEST_FAST_CHECK_EQ( size( v ),		3 );
+				const std::vector< int >					arr{ 1, 2, 3 };
+				const auto									v  = view( arr );
+				const auto									dv = dview( arr );
+				DOCTEST_FAST_CHECK_EQ( size( v ),			3 );
 				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::span< const int > > );
 				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::span< const int > > );
 			} {
-				const std::array< int, 3 >				arr{ 1, 2, 3 };
-				const auto								v  = view( arr );
-				const auto								dv = dview( arr );
-				DOCTEST_FAST_CHECK_EQ( size( v ),		3 );
+				static constexpr std::array< int, 3 >		arr{ 1, 2, 3 };
+				constexpr auto								v  = view( arr );
+				constexpr auto								dv = dview( arr );
+				static_assert( size( v )					==	3 );
 				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::span< const int, 3 > > );
 				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::span< const int > > );
 			} {
-				const int								arr[ 3 ] = { 1, 2, 3 };
-				const auto								v  = view( arr );
-				const auto								dv = dview( arr );
-				DOCTEST_FAST_CHECK_EQ( size( v ),		3 );
+				static constexpr const int					arr[ 3 ] = { 1, 2, 3 };
+				constexpr auto								v  = view( arr );
+				constexpr auto								dv = dview( arr );
+				static_assert( size( v )					==	3 );
 				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::span< const int, 3 > > );
 				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::span< const int > > );
 			} {
-				const std::string						arr = "abc";
-				const auto								v  = view( arr );
-				const auto								dv = dview( arr );
-				DOCTEST_FAST_CHECK_EQ( size( v ),		3 );
+				static constexpr const std::string			arr = "abc";
+				constexpr auto								v  = view( arr );
+				constexpr auto								dv = dview( arr );
+				static_assert( size( v )					==	3 );
 				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::string_view > );
 				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::string_view > );
 			} {
-				const char							  * arr = "abc";
-				const auto								v  = view( arr );
-				const auto								dv = dview( arr );
-				DOCTEST_FAST_CHECK_EQ( size( v ),		3 );
+				constexpr const char					  * arr = "abc";
+				constexpr auto								v  = view( arr );
+				constexpr auto								dv = dview( arr );
+				static_assert( size( v )					==	3 );
 				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::string_view > );
 				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::string_view > );
 			} {
-				const char								arr[ 4 ] = "abc";
-				const auto								v  = view( arr );
-				const auto								dv = dview( arr );
-				DOCTEST_FAST_CHECK_EQ( size( v ),		3 );
+				static constexpr const char					arr[ 4 ] = "abc";
+				constexpr auto								v  = view( arr );
+				constexpr auto								dv = dview( arr );
+				static_assert( size( v )					==	3 );
 				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::string_view > );
 				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::string_view > );
 			} {
-				const auto								v = view( "abc" );
-				const auto								dv = dview( "abc" );
-				DOCTEST_FAST_CHECK_EQ( size( v ),		3 );
+				constexpr auto								v = view( "abc" );
+				constexpr auto								dv = dview( "abc" );
+				static_assert( size( v )					==	3 );
 				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::string_view > );
 				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::string_view > );
 			}
 		}
-		{	// std::span
+		{	// make_span
 			{
-				const std::vector< int >				arr{ 1, 2, 3 };
-				const auto								sp = make_span( arr );
-				DOCTEST_FAST_CHECK_EQ( size( sp ),		3 );
-				DOCTEST_FAST_CHECK_EQ( sp.extent,		std::dynamic_extent );
+				const std::vector< int >		arr{ 1, 2, 3 };
+				const auto						sp = make_span( arr );
+				DOCTEST_FAST_CHECK_EQ( size( sp ),	3 );
+				DOCTEST_FAST_CHECK_EQ( sp.extent,	std::dynamic_extent );
 			} {
-				const std::array< int, 3 >				arr{ 1, 2, 3 };
-				const auto								sp = make_span( arr );
-				DOCTEST_FAST_CHECK_EQ( size( sp ),		3 );
-				DOCTEST_FAST_CHECK_EQ( sp.extent,		3 );
+				static constexpr std::array< int, 3 >	arr{ 1, 2, 3 };
+				constexpr auto					sp = make_span( arr );
+				static_assert( size( sp )	==	3 );
+				static_assert( sp.extent	==	3 );
 			} {
-				const int								arr[ 3 ] = { 1, 2, 3 };
-				const auto								sp = make_span( arr );
-				DOCTEST_FAST_CHECK_EQ( size( sp ),		3 );
-				DOCTEST_FAST_CHECK_EQ( sp.extent,		3 );
+				static constexpr int			arr[ 3 ] = { 1, 2, 3 };
+				constexpr auto					sp = make_span( arr );
+				static_assert( size( sp )	==	3 );
+				static_assert( sp.extent	==	3 );
 			} {
-				const auto								sp = make_span( "abc" );
-				DOCTEST_FAST_CHECK_EQ( size( sp ),		3 );	// Includes the final '\0'!!!!
-				DOCTEST_FAST_CHECK_EQ( sp.extent,		3 );	// Includes the final '\0'!!!!
+				constexpr auto					sp = make_span( "abc" );
+				static_assert( size( sp )	==	3 );
+				static_assert( sp.extent	==	3 );
 			} {
-				const char								arr[ 4 ] = "abc";
-				const auto								sp = make_span( arr );
-				DOCTEST_FAST_CHECK_EQ( size( sp ),		3 );	// Includes the final '\0'!!!!
-				DOCTEST_FAST_CHECK_EQ( sp.extent,		3 );	// Includes the final '\0'!!!!
+				static constexpr const char		arr[ 4 ] = "abc";
+				constexpr auto					sp = make_span( arr );
+				static_assert( size( sp )	==	3 );
+				static_assert( sp.extent	==	3 );
 			} {
-				// const char							  * arr = "abc";
-				// const auto								sp = make_span( arr );
-				// DOCTEST_FAST_CHECK_EQ( size( sp ),		3 );
-				// DOCTEST_FAST_CHECK_EQ( sp.extent,		std::dynamic_extent );
-			} {
-				const char								arr[ 4 ] = "abc";
-				const auto								sp = make_span( arr );
-				DOCTEST_FAST_CHECK_EQ( size( sp ),		3 );
-				DOCTEST_FAST_CHECK_EQ( sp.extent,		3 );
-			} {
-				const auto								sp = make_span( "abc" );
-				DOCTEST_FAST_CHECK_EQ( size( sp ),		3 );
-				DOCTEST_FAST_CHECK_EQ( sp.extent,		3 );
+				constexpr const char		  * arr = "abc";
+				constexpr auto					sp = make_span( arr );
+				static_assert( size( sp )	==	3 );
+				static_assert( sp.extent	==	std::dynamic_extent );
 			}
 		}
 	}
 	DOCTEST_TEST_CASE( "specials" ) {
 		{	// valid
-			DOCTEST_FAST_CHECK_EQ( valid( std::string_view{} ),		false );
-			DOCTEST_FAST_CHECK_EQ( valid( e ),						true );
-			DOCTEST_FAST_CHECK_EQ( valid( str ),					true );
+			constexpr int		*ptr{};
+			static_assert( !valid( ptr ) );
+			static_assert( !valid( nullptr ) );
 
-			DOCTEST_FAST_CHECK_EQ( valid( std::span< int >{} ),		false );
-			DOCTEST_FAST_CHECK_EQ( valid( ints ),					true );
-			DOCTEST_FAST_CHECK_EQ( valid( intsN ),					true );
+			static_assert( !valid( std::string_view{} ) );
+			static_assert(  valid( std::string{} ) );
+			static_assert(  valid( "" ) );
+			static_assert(  valid( e ) );
+			static_assert(  valid( str ) );
+
+			static_assert( !valid( std::span< int >{} ) );
+			static_assert( !valid( std::vector< int >{} ) );
+			static_assert( !valid( std::array< int, 0 >{} ) );
+			static_assert(  valid( ints ) );
+			static_assert(  valid( intsN ) );
 		}
 		{	// empty
 			using std::empty;
-			DOCTEST_FAST_CHECK_EQ( empty( std::string_view{} ),		true );
-			DOCTEST_FAST_CHECK_EQ( empty( e ),						true );
-			DOCTEST_FAST_CHECK_EQ( empty( view( str ) ),			false );
+			static_assert(  empty( std::string_view{} ) );
+			static_assert(  empty( std::string{} ) );
+			static_assert( !std::empty( "" ) );
+			static_assert(  empty( view( "" ) ) );
+			static_assert(  empty( e ) );
+			static_assert( !empty( view( str ) ) );
 
-			DOCTEST_FAST_CHECK_EQ( empty( std::span< int >{} ),		true );
-			DOCTEST_FAST_CHECK_EQ( empty( ints ),					false );
-			DOCTEST_FAST_CHECK_EQ( empty( intsN ),					false );
+			static_assert(  empty( std::span< int >{} ) );
+			static_assert(  empty( std::vector< int >{} ) );
+			static_assert(  empty( std::array< int, 0 >{} ) );
+			static_assert( !empty( ints ) );
+			static_assert( !empty( intsN ) );
 		}
 		{	// as_const
 			int					sp0[ 3 ] = { 0, 1, 2 };
@@ -295,241 +319,530 @@ namespace pax {
 
 			static_assert(  is_value_const< std::string_view > );
 			static_assert( !is_value_const< decltype( sp.front() ) > );
-//			static_assert(  is_value_const< decltype( as_const( sp ).front() ) > );
+			static_assert(  is_value_const< decltype( as_const( sp ).front() ) > );
 		}
 		{	// as_dynamic
-			DOCTEST_FAST_CHECK_EQ( as_dynamic( std::string_view{} ).extent,		dynamic_extent );
-			DOCTEST_FAST_CHECK_EQ( as_dynamic( e ).extent,						dynamic_extent );
-			DOCTEST_FAST_CHECK_EQ( as_dynamic( str ).extent,					dynamic_extent );
+			static_assert( as_dynamic( std::string_view{} ).extent	== dynamic_extent );
+			static_assert( as_dynamic( e ).extent					== dynamic_extent );
+			static_assert( as_dynamic( str ).extent					== dynamic_extent );
 
-			DOCTEST_FAST_CHECK_EQ( as_dynamic( ints ).extent,					dynamic_extent );
-			DOCTEST_FAST_CHECK_EQ( as_dynamic( intsN ).extent,					dynamic_extent );
+			static_assert( as_dynamic( ints ).extent				== dynamic_extent );
+			static_assert( as_dynamic( intsN ).extent				== dynamic_extent );
 
-			DOCTEST_FAST_CHECK_EQ( std::span< int >{}.extent,					dynamic_extent );
-			DOCTEST_FAST_CHECK_EQ( ints.extent,									dynamic_extent );
-			DOCTEST_FAST_CHECK_EQ( intsN.extent,								N );
+			static_assert( std::span< int >{}.extent				== dynamic_extent );
+			static_assert( ints.extent								== dynamic_extent );
+			static_assert( intsN.extent								== N );
 		}
 		{	// identic
-			constexpr auto	str2 = view( str );
-			DOCTEST_FAST_CHECK_UNARY(  identic( str, str ) );
-			DOCTEST_FAST_CHECK_UNARY( !identic( str2, first( str2, 2 ) ) );
-			DOCTEST_FAST_CHECK_UNARY(  identic( str2, first( str2, str2.size() ) ) );
+			DOCTEST_FAST_CHECK_UNARY(  identic( "abc", "abc" ) );
+			DOCTEST_FAST_CHECK_UNARY( !identic( "abc", first( "abcdef", 3 ) ) );
 
-			DOCTEST_FAST_CHECK_UNARY(  identic( ints, ints ) );
-			DOCTEST_FAST_CHECK_UNARY(  identic( ints, intsN ) );
-			DOCTEST_FAST_CHECK_UNARY( !identic( ints, intsN. first( 2 ) ) );
-			DOCTEST_FAST_CHECK_UNARY(  identic( ints, intsN. first( intsN.size() ) ) );
+			constexpr auto	str2 = view( str );
+			static_assert(  identic( str, str ) );
+			static_assert( !identic( str2, first( str2, 2 ) ) );
+			static_assert(  identic( str2, first( str2, str2.size() ) ) );
+
+			static_assert(  identic( ints, ints ) );
+			static_assert(  identic( ints, intsN ) );
+			static_assert( !identic( ints, intsN. first( 2 ) ) );
+			static_assert(  identic( ints, intsN. first( intsN.size() ) ) );
 		}
 		{	// overlap
-			const std::span					subc{ subview( str, 3, 3 ) };				// "def"
-			DOCTEST_FAST_CHECK_UNARY( !overlap( std::string_view{}, std::string_view{} ) );
-			DOCTEST_FAST_CHECK_UNARY(  overlap( str, str ) );
-			DOCTEST_FAST_CHECK_UNARY(  overlap( subc, subc ) );
-			DOCTEST_FAST_CHECK_UNARY(  overlap( subc, str ) );
-			DOCTEST_FAST_CHECK_UNARY(  overlap( str, subc ) );
-			DOCTEST_FAST_CHECK_UNARY( !overlap( str, subview( str, 3, 0 ) ) );		// An emptry span cannot overlap
-			DOCTEST_FAST_CHECK_UNARY( !overlap( subview( str, 3, 0 ), str ) );		// An emptry span cannot overlap
-			DOCTEST_FAST_CHECK_UNARY( !overlap( subc, first( str, 3 ) ) );			// Kloss i kloss
-			DOCTEST_FAST_CHECK_UNARY(  overlap( subc, first( str, 4 ) ) );			// First overlapion
-			DOCTEST_FAST_CHECK_UNARY(  overlap( subc, not_first( str, 4 ) ) );		// Middle overlapion
-			DOCTEST_FAST_CHECK_UNARY(  overlap( subc, not_first( str, 5 ) ) );		// Last overlapion
-			DOCTEST_FAST_CHECK_UNARY( !overlap( subc, not_first( str, 6 ) ) );		// Kloss i kloss
-			DOCTEST_FAST_CHECK_UNARY( !overlap( subc, subview( str, 2, 0 ) ) );
-			DOCTEST_FAST_CHECK_UNARY( !overlap( subc, subview( str, 3, 0 ) ) );
-			DOCTEST_FAST_CHECK_UNARY( !overlap( subc, subview( str, 4, 0 ) ) );
-			DOCTEST_FAST_CHECK_UNARY( !overlap( subc, subview( str, 5, 0 ) ) );
-			DOCTEST_FAST_CHECK_UNARY( !overlap( subc, subview( str, 6, 0 ) ) );
+			constexpr std::span				subc{ subview( str, 3, 3 ) };	// "def"
+			static_assert( !overlap( std::string_view{}, std::string_view{} ) );
+			static_assert(  overlap( str, str ) );
+			static_assert(  overlap( subc, subc ) );
+			static_assert(  overlap( subc, str ) );
+			static_assert(  overlap( str, subc ) );
+			static_assert( !overlap( str, subview( str, 3, 0 ) ) );			// An emptry span cannot overlap
+			static_assert( !overlap( subview( str, 3, 0 ), str ) );			// An emptry span cannot overlap
+			static_assert( !overlap( subc, first( str, 3 ) ) );				// Kloss i kloss
+			static_assert(  overlap( subc, first( str, 4 ) ) );				// First overlapion
+			static_assert(  overlap( subc, not_first( str, 4 ) ) );			// Middle overlapion
+			static_assert(  overlap( subc, not_first( str, 5 ) ) );			// Last overlapion
+			static_assert( !overlap( subc, not_first( str, 6 ) ) );			// Kloss i kloss
+			static_assert( !overlap( subc, subview( str, 2, 0 ) ) );
+			static_assert( !overlap( subc, subview( str, 3, 0 ) ) );
+			static_assert( !overlap( subc, subview( str, 4, 0 ) ) );
+			static_assert( !overlap( subc, subview( str, 5, 0 ) ) );
+			static_assert( !overlap( subc, subview( str, 6, 0 ) ) );
 
-			const std::span					subi{ subview( ints, 3, 3 ) };			// { 3, 4, 5 }
-			DOCTEST_FAST_CHECK_UNARY( !overlap( std::span< int >{}, std::span< int >{} ) );
-			DOCTEST_FAST_CHECK_UNARY(  overlap( ints, ints ) );
-			DOCTEST_FAST_CHECK_UNARY(  overlap( subi, subi ) );
-			DOCTEST_FAST_CHECK_UNARY(  overlap( subi, ints ) );
-			DOCTEST_FAST_CHECK_UNARY(  overlap( ints, subi ) );
-			DOCTEST_FAST_CHECK_UNARY( !overlap( ints, subview( ints, 3, 0 ) ) );	// An emptry span cannot overlap
-			DOCTEST_FAST_CHECK_UNARY( !overlap( subview( ints, 3, 0 ), ints ) );	// An emptry span cannot overlap
-			DOCTEST_FAST_CHECK_UNARY( !overlap( subi, first( ints, 3 ) ) );			// Kloss i kloss
-			DOCTEST_FAST_CHECK_UNARY(  overlap( subi, first( ints, 4 ) ) );			// First overlapion
-			DOCTEST_FAST_CHECK_UNARY(  overlap( subi, not_first( ints, 4 ) ) );		// Middle overlapion
-			DOCTEST_FAST_CHECK_UNARY(  overlap( subi, not_first( ints, 5 ) ) );		// Last overlapion
-			DOCTEST_FAST_CHECK_UNARY( !overlap( subi, not_first( ints, 6 ) ) );		// Kloss i kloss
-			DOCTEST_FAST_CHECK_UNARY( !overlap( subi, subview( ints, 2, 0 ) ) );
-			DOCTEST_FAST_CHECK_UNARY( !overlap( subi, subview( ints, 3, 0 ) ) );
-			DOCTEST_FAST_CHECK_UNARY( !overlap( subi, subview( ints, 4, 0 ) ) );
-			DOCTEST_FAST_CHECK_UNARY( !overlap( subi, subview( ints, 5, 0 ) ) );
-			DOCTEST_FAST_CHECK_UNARY( !overlap( subi, subview( ints, 6, 0 ) ) );
-		}
-		{	// as_bytes, as_writable_bytes
-			// DOCTEST_FAST_CHECK_EQ( as_bytes( std::string_view{} ),			0 );
-			// DOCTEST_FAST_CHECK_EQ( as_bytes( e ),							0 );
-			// DOCTEST_FAST_CHECK_EQ( as_bytes( str ),							view( str ).size() );
-			//
-			// DOCTEST_FAST_CHECK_EQ( as_bytes( std::span< int >{} ),			0 );
-			// DOCTEST_FAST_CHECK_EQ( as_bytes( ints ),						3*sizeof( int ) );
-			// DOCTEST_FAST_CHECK_EQ( as_bytes( intsN ),						3*sizeof( int ) );
-			//
-			// DOCTEST_FAST_CHECK_EQ( as_writable_bytes( std::string_view{} ),	0 );
-			// DOCTEST_FAST_CHECK_EQ( as_writable_bytes( e ),					0 );
-			// DOCTEST_FAST_CHECK_EQ( as_writable_bytes( str ),				view( str ).size() );
-			//
-			// DOCTEST_FAST_CHECK_EQ( as_writable_bytes( std::span< int >{} ),	0 );
-			// DOCTEST_FAST_CHECK_EQ( as_writable_bytes( ints ),				3*sizeof( int ) );
-			// DOCTEST_FAST_CHECK_EQ( as_writable_bytes( intsN ),				3*sizeof( int ) );
+			constexpr std::span				subi{ subview( ints, 3, 3 ) };	// { 3, 4, 5 }
+			static_assert( !overlap( std::span< int >{}, std::span< int >{} ) );
+			static_assert(  overlap( ints, ints ) );
+			static_assert(  overlap( subi, subi ) );
+			static_assert(  overlap( subi, ints ) );
+			static_assert(  overlap( ints, subi ) );
+			static_assert( !overlap( ints, subview( ints, 3, 0 ) ) );		// An emptry span cannot overlap
+			static_assert( !overlap( subview( ints, 3, 0 ), ints ) );		// An emptry span cannot overlap
+			static_assert( !overlap( subi, first( ints, 3 ) ) );			// Kloss i kloss
+			static_assert(  overlap( subi, first( ints, 4 ) ) );			// First overlapion
+			static_assert(  overlap( subi, not_first( ints, 4 ) ) );		// Middle overlapion
+			static_assert(  overlap( subi, not_first( ints, 5 ) ) );		// Last overlapion
+			static_assert( !overlap( subi, not_first( ints, 6 ) ) );		// Kloss i kloss
+			static_assert( !overlap( subi, subview( ints, 2, 0 ) ) );
+			static_assert( !overlap( subi, subview( ints, 3, 0 ) ) );
+			static_assert( !overlap( subi, subview( ints, 4, 0 ) ) );
+			static_assert( !overlap( subi, subview( ints, 5, 0 ) ) );
+			static_assert( !overlap( subi, subview( ints, 6, 0 ) ) );
 		}
 	}
 	DOCTEST_TEST_CASE( "parts" ) {
 		constexpr auto						first_	= "abcde";
-		constexpr auto						last_	= "jkl";
+		constexpr auto						last_	= "hijkl";
 		constexpr const std::string_view	null_{};
 		constexpr auto						empty_	= "";
 		
 		{	// front, back
-			char			str2[ 10 ] = { '1','2','3','4','5','6','7','8','9','0' };
-			const std::span	v( str2 );
-			
-			DOCTEST_FAST_CHECK_EQ( front( "abc" ),  'a' );
-			DOCTEST_FAST_CHECK_EQ( back ( "abc" ),  'c' );
+			static_assert( front( "abc" ) == 'a' );
+			static_assert( back ( "abc" ) == 'c' );
 
+			char						str2[ 10 ] = { '1','2','3','4','5','6','7','8','9','0' };
+			const std::span				v( str2 );
 			v[ 0 ]			= 'a';		DOCTEST_FAST_CHECK_EQ( front( v ), 'a' );
 			front( v )		= 'c';		DOCTEST_FAST_CHECK_EQ( front( v ), 'c' );
 			back( v )		= 'd';		DOCTEST_FAST_CHECK_EQ( back( v ),  'd' );
 			*v.begin()		= 'e';		DOCTEST_FAST_CHECK_EQ( front( v ), 'e' );
 			*v.rbegin()		= 'f';		DOCTEST_FAST_CHECK_EQ( back( v ),  'f' );
 		}
-		{	// first
-			DOCTEST_FAST_CHECK_EQ( first( "abcdefghijkl", 22 ),  		str );
-			// Should assert:	    first< 13 >( "abcdefghijkl" )
+		{	// first (character)
+			static_assert( first( "abcdefghijkl", 22 )		==	str );
+			static_assert( first< 22 >( "abcdefghijkl" )	==	"abcdefghijkl" );
+			static_assert( first< 22 >( "abcdefghijkl" ).size()	==	12 );
+			static_assert( first<  5 >( "abcdefghijkl" )	==	first_ );
+			static_assert( first< 12 >( "abcdefghijkl" )	==	str );
 
-			DOCTEST_FAST_CHECK_EQ( first( str,  0 ), 					empty_ );
-			DOCTEST_FAST_CHECK_EQ( first( str,  5 ), 					first_ );
-			DOCTEST_FAST_CHECK_EQ( first( str, 22 ),  					str );
-			DOCTEST_FAST_CHECK_EQ( first( str, 22 ).data(),  			view( str ).data() );
-			DOCTEST_FAST_CHECK_EQ( first( null_, 22 ),  				empty_ );
-			DOCTEST_FAST_CHECK_EQ( first( null_, 22 ).data(),  			nullptr );
+			static_assert( first( str,  0 )					==	empty_ );
+			static_assert( first( str,  5 )					==	first_ );
+			static_assert( identic( first( str, 12 ), str ) );
+			static_assert( identic( first( str, 22 ), str ) );
 
-			DOCTEST_FAST_CHECK_EQ( first< 12 >( "abcdefghijkl" ),		str );
-			DOCTEST_FAST_CHECK_EQ( first<  5 >( "abcdefghijkl" ), 		first_ );
-			DOCTEST_FAST_CHECK_EQ( first<  5 >( str ), 					first_ );
-			// Should assert:	   first< 25 >( str )               	
-			DOCTEST_FAST_CHECK_EQ( first<  5 >( strN ), 				first_ );
-			DOCTEST_FAST_CHECK_EQ( first< 22 >( strN ),					str );
-			DOCTEST_FAST_CHECK_EQ( first< 22 >( strN ).data(),			strN.data() );
-			DOCTEST_FAST_CHECK_EQ( first<  0 >( null_ ), 				empty_ );
-			DOCTEST_FAST_CHECK_EQ( first<  0 >( null_ ).data(), 		nullptr );
-			// Should assert:	   first< 22 >( empty_ )
+			static_assert( first( strN,  0 )				==	empty_ );
+			static_assert( first( strN,  5 )				==	first_ );
+			static_assert( identic( first( strN, 12 ), strN ) );
+			static_assert( identic( first( strN, 22 ), strN ) );
+
+			static_assert( first<  0 >( str )				==	null_ );
+			static_assert( first<  5 >( str )				==	first_ );
+			static_assert( identic( first< 12 >( str ), str ) );
+
+			static_assert( first<  0 >( strN )				==	null_ );
+			static_assert( first<  5 >( strN )				==	first_ );
+			static_assert( identic( first< 12 >( strN ), strN ) );
+			static_assert( identic( first< 22 >( strN ), strN ) );
 		}
-		{	// last
-			DOCTEST_FAST_CHECK_EQ( last( "abcdefghijkl", 22 ),  		str );
+		{	// first (int)
+			static_assert( first( ints,   0 ).size()	==	0 );
+			static_assert( first( ints,   5 ).back()	==	4 );
+			static_assert( identic( first( ints, 12 ), ints ) );
+			static_assert( identic( first( ints, 22 ), ints ) );
 
-			DOCTEST_FAST_CHECK_EQ( last( str,  0 ), 					empty_ );
-			DOCTEST_FAST_CHECK_EQ( last( str,  3 ), 					last_ );
-			DOCTEST_FAST_CHECK_EQ( last( str, 22 ), 					str );
-			DOCTEST_FAST_CHECK_EQ( last( str, 22 ).data(), 				view( str ).data() );
-			DOCTEST_FAST_CHECK_EQ( last( null_, 22 ),  					empty_ );
-			DOCTEST_FAST_CHECK_EQ( last( null_, 22 ).data(),  			nullptr );
+			static_assert( first( intsN,  0 ).size()	==	0 );
+			static_assert( first( intsN,  5 ).back()	==	4 );
+			static_assert( identic( first( intsN, 12 ), intsN ) );
+			static_assert( identic( first( intsN, 22 ), intsN ) );
 
-			DOCTEST_FAST_CHECK_EQ( last< 12 >( "abcdefghijkl" ),		str );
-			DOCTEST_FAST_CHECK_EQ( last<  3 >( "abcdefghijkl" ), 		last_ );
-			DOCTEST_FAST_CHECK_EQ( last < 3 >( str ), 					last_ );
-			DOCTEST_FAST_CHECK_EQ( last < 3 >( strN ), 					last_ );
-			DOCTEST_FAST_CHECK_EQ( last< 22 >( strN ), 					str );
-			DOCTEST_FAST_CHECK_EQ( last< 22 >( strN ).data(), 			strN.data() );
-			DOCTEST_FAST_CHECK_EQ( last<  0 >( null_ ), 				empty_ );
-			DOCTEST_FAST_CHECK_EQ( last<  0 >( null_ ).data(), 			nullptr );
-			// Should assert:	   last< 22 >( empty_ )
+			static_assert( first<  0 >( ints  ).extent	==	0 );
+			static_assert( first<  5 >( ints  ).back()	==	4 );
+			static_assert( first<  5 >( ints  ).extent	==	5 );
+			static_assert( identic( first< 12 >( ints ), ints ) );
+
+			static_assert( first<  0 >( intsN ).extent	==	0 );
+			static_assert( first<  5 >( intsN ).back()	==	4 );
+			static_assert( first<  5 >( intsN ).extent	==	5 );
+			static_assert( identic( first< 12 >( intsN ), intsN ) );
+			static_assert( identic( first< 22 >( intsN ), intsN ) );
 		}
-		{	// not_first
-			DOCTEST_FAST_CHECK_EQ( not_first( "abcdefghijkl", 0 ), 		str );
-			DOCTEST_FAST_CHECK_EQ( not_first( str,  0 ), 				str );
-			DOCTEST_FAST_CHECK_EQ( not_first( str,  9 ), 				last_ );
-			DOCTEST_FAST_CHECK_EQ( not_first( str, 22 ), 				empty_ );
-			DOCTEST_FAST_CHECK_EQ( not_first( str, 22 ).data(), 		view( str ).data() + view( str ).size() );
-			DOCTEST_FAST_CHECK_EQ( not_first( null_, 22 ),  			empty_ );
-			DOCTEST_FAST_CHECK_EQ( not_first( null_, 22 ).data(),  		nullptr );
+		{	// last (character)
+			static_assert( last( "abcdefghijkl", 22 )		==	str );
+			static_assert( last< 22 >( "abcdefghijkl" )		==	"abcdefghijkl" );
+			static_assert( last< 22 >( "abcdefghijkl" ).size()	==	12 );
+			static_assert( last<  5 >( "abcdefghijkl" )		==	last_ );
+			static_assert( last< 12 >( "abcdefghijkl" )		==	str );
 
-			DOCTEST_FAST_CHECK_EQ( not_first< 12 >( "abcdefghijkl" ),	empty_ );
-			DOCTEST_FAST_CHECK_EQ( not_first<  9 >( "abcdefghijkl" ), 	last_ );
-			DOCTEST_FAST_CHECK_EQ( not_first<  0 >( strN ),				str );
-			DOCTEST_FAST_CHECK_EQ( not_first<  9 >( strN ), 			last_ );
-			DOCTEST_FAST_CHECK_EQ( not_first< 22 >( strN ), 			empty_ );
-			DOCTEST_FAST_CHECK_EQ( not_first< 22 >( strN ).data(), 		strN.data() + strN.size() );
+			static_assert( last( str,  0 )					==	empty_ );
+			static_assert( last( str,  5 )					==	last_ );
+			static_assert( identic( last( str, 12 ), str ) );
+			static_assert( identic( last( str, 22 ), str ) );
+
+			static_assert( last( strN,  0 )					==	empty_ );
+			static_assert( last( strN,  5 )					==	last_ );
+			static_assert( identic( last( strN, 12 ), strN ) );
+			static_assert( identic( last( strN, 22 ), strN ) );
+
+			static_assert( last<  0 >( str )				==	null_ );
+			static_assert( last<  5 >( str )				==	last_ );
+			static_assert( identic( last< 12 >( str ), str ) );
+
+			static_assert( last<  0 >( strN )				==	null_ );
+			static_assert( last<  5 >( strN )				==	last_ );
+			static_assert( identic( last< 12 >( strN ), strN ) );
+			static_assert( identic( last< 22 >( strN ), strN ) );
 		}
-		{	// not_last
-			DOCTEST_FAST_CHECK_EQ( not_last( "abcdefghijkl", 0 ), 		str );
-			DOCTEST_FAST_CHECK_EQ( not_last( str,  0 ), 				str );
-			DOCTEST_FAST_CHECK_EQ( not_last( str,  7 ), 				first_ );
-			DOCTEST_FAST_CHECK_EQ( not_last( str, 22 ), 				empty_ );
-			DOCTEST_FAST_CHECK_EQ( not_last( str, 22 ).data(), 			view( str ).data() );
-			DOCTEST_FAST_CHECK_EQ( not_last( null_, 22 ),  				empty_ );
-			DOCTEST_FAST_CHECK_EQ( not_last( null_, 22 ).data(),  		nullptr );
+		{	// last (int)
+			static_assert( last( ints,   0 ).size()		==	0 );
+			static_assert( last( ints,   5 ).front()	==	7 );
+			static_assert( identic( last( ints, 12 ), ints ) );
+			static_assert( identic( last( ints, 22 ), ints ) );
 
-			DOCTEST_FAST_CHECK_EQ( not_last< 12 >( "abcdefghijkl" ),	empty_ );
-			DOCTEST_FAST_CHECK_EQ( not_last<  7 >( "abcdefghijkl" ),	first_ );
-			DOCTEST_FAST_CHECK_EQ( not_last<  0 >( strN ),				str );
-			DOCTEST_FAST_CHECK_EQ( not_last<  7 >( strN ), 				first_ );
-			DOCTEST_FAST_CHECK_EQ( not_last< 22 >( strN ), 				empty_ );
-			DOCTEST_FAST_CHECK_EQ( not_last< 22 >( strN ).data(), 		strN.data() );
+			static_assert( last( intsN,  0 ).size()		==	0 );
+			static_assert( last( intsN,  5 ).front()	==	7 );
+			static_assert( identic( last( intsN, 12 ), intsN ) );
+			static_assert( identic( last( intsN, 22 ), intsN ) );
+
+			static_assert( last<  0 >( ints  ).extent	==	0 );
+			static_assert( last<  5 >( ints  ).front()	==	7 );
+			static_assert( last<  5 >( ints  ).extent	==	5 );
+			static_assert( identic( last< 12 >( ints ), ints ) );
+
+			static_assert( last<  0 >( intsN ).extent	==	0 );
+			static_assert( last<  5 >( intsN ).front()	==	7 );
+			static_assert( last<  5 >( intsN ).extent	==	5 );
+			static_assert( identic( last< 12 >( intsN ), intsN ) );
+			static_assert( identic( last< 22 >( intsN ), intsN ) );
 		}
-		{	// subview
-			constexpr std::string_view		cd = "cd";
+		{	// not_first (character)
+			static_assert( not_first( "abcdefghijkl", 0 )		==	str );
+			static_assert( not_first< 0 >( "abcdefghijkl" )		==	"abcdefghijkl" );
+			static_assert( not_first< 0 >( "abcdefghijkl" ).size()	==	12 );
+			static_assert( not_first<  5 >( "abcdefghijkl" )	==	last< 7 >( str ) );
+			static_assert( not_first< 12 >( "abcdefghijkl" )	==	last< 0 >( str ) );
 
-			DOCTEST_FAST_CHECK_EQ( subview( "abcdefghijkl",   0, 22 ),	str );
-			DOCTEST_FAST_CHECK_EQ( subview( "abcdefghijkl", -22, 22 ),	str );
+			static_assert( identic( not_first( str,   0 ), str ) );
+			static_assert( identic( not_first( str,   5 ), last< 7 >( str ) ) );
+			static_assert( identic( not_first( str,  12 ), last< 0 >( str ) ) );
+			static_assert( identic( not_first( str,  22 ), last< 0 >( str ) ) );
 
-			DOCTEST_FAST_CHECK_EQ(subview( null_, 0, 0 ),				empty_ );
-			DOCTEST_FAST_CHECK_EQ(subview( null_, 0, 0 ).data(),		nullptr );
-			DOCTEST_FAST_CHECK_EQ(subview( null_, 0, 2 ),				empty_ );
-			DOCTEST_FAST_CHECK_EQ(subview( null_, 0, 2 ).data(),		nullptr );
-			DOCTEST_FAST_CHECK_EQ(subview( null_, 2, 2 ),				empty_ );
-			DOCTEST_FAST_CHECK_EQ(subview( null_, 2, 2 ).data(),		nullptr );
-			DOCTEST_FAST_CHECK_EQ(subview( null_, 2, 0 ),				empty_ );
-			DOCTEST_FAST_CHECK_EQ(subview( null_, 2, 0 ).data(),		nullptr );
+			static_assert( identic( not_first( strN,  0 ), strN ) );
+			static_assert( identic( not_first( strN,  5 ), last< 7 >( strN ) ) );
+			static_assert( identic( not_first( strN, 12 ), last< 0 >( strN ) ) );
+			static_assert( identic( not_first( strN, 22 ), last< 0 >( strN ) ) );
+			static_assert( identic( not_first( null_, 22 ), null_ ) );
 
-			DOCTEST_FAST_CHECK_EQ(subview( str,   0, 22 ),				str );
-			DOCTEST_FAST_CHECK_EQ(subview( str,   0,  5 ), 				first( str, 5 ) );
-			DOCTEST_FAST_CHECK_EQ(subview( str,   3,  2 ), 				"de" );
-			DOCTEST_FAST_CHECK_EQ(subview( str,   7, 22 ), 				not_first( str, 7 ) );
-			DOCTEST_FAST_CHECK_EQ(subview( str,  22,  0 ), 				empty_ );
-			DOCTEST_FAST_CHECK_EQ(subview( str,  22,  0 ).data(), 		view( str ).data() + view( str ).size() );
-			DOCTEST_FAST_CHECK_EQ(subview( str,  -7, 22 ), 				last( str, 7 ) );
-			DOCTEST_FAST_CHECK_EQ(subview( str,  -9,  2 ), 				"de" );
-			DOCTEST_FAST_CHECK_EQ(subview( str, -22,  0 ), 				empty_ );
-			DOCTEST_FAST_CHECK_EQ(subview( str, -22,  0 ).data(), 		view( str ).data() );
-			DOCTEST_FAST_CHECK_EQ(subview( str, -22, 22 ), 				str );
+			static_assert( identic( not_first<  0 >( strN ), strN ) );
+			static_assert( identic( not_first<  5 >( strN ), last< 7 >( strN ) ) );
+			static_assert( identic( not_first< 12 >( strN ), last< 0 >( strN ) ) );
+			static_assert( identic( not_first< 22 >( strN ), last< 0 >( strN ) ) );
+		}
+		{	// not_first (int)
+			static_assert( identic( not_first( ints,   0 ), ints ) );
+			static_assert( identic( not_first( ints,   5 ), last< 7 >( ints ) ) );
+			static_assert( identic( not_first( ints,  12 ), last< 0 >( ints ) ) );
+			static_assert( identic( not_first( ints,  22 ), last< 0 >( ints ) ) );
 
-			DOCTEST_FAST_CHECK_EQ(subview<   2 >( "abcde", -3 ),		cd );
-			DOCTEST_FAST_CHECK_EQ(subview<   2 >( str,   2 ), 			cd );
-			DOCTEST_FAST_CHECK_EQ(subview<   2 >( strN,  2 ), 			cd );
-			DOCTEST_FAST_CHECK_EQ(subview<   2 >( str, -10 ), 			cd );
-			DOCTEST_FAST_CHECK_EQ(subview<   2 >( strN,-10 ), 			cd );
-			DOCTEST_FAST_CHECK_EQ(subview<  12 >( strN,  0 ),			str );
+			static_assert( identic( not_first( intsN,  0 ), intsN ) );
+			static_assert( identic( not_first( intsN,  5 ), last< 7 >( intsN ) ) );
+			static_assert( identic( not_first( intsN, 12 ), last< 0 >( intsN ) ) );
+			static_assert( identic( not_first( intsN, 22 ), last< 0 >( intsN ) ) );
 
-			DOCTEST_FAST_CHECK_EQ(subview<   2,  2 >( "abcde" ), 		cd );
-			DOCTEST_FAST_CHECK_EQ(subview<  -3,  2 >( "abcde" ), 		cd );
-			DOCTEST_FAST_CHECK_EQ(subview<   0,  5 >( str  ), 			first( str, 5 ) );
-			DOCTEST_FAST_CHECK_EQ(subview<   0,  5 >( strN ), 			first( str, 5 ) );
-			DOCTEST_FAST_CHECK_EQ(subview<   0, 12 >( strN ),			str );
-			DOCTEST_FAST_CHECK_EQ(subview<   0, 22 >( strN ),			str );
-			DOCTEST_FAST_CHECK_EQ(subview<   2,  2 >( str  ), 			cd );
-			DOCTEST_FAST_CHECK_EQ(subview<   2,  2 >( strN ), 			cd );
-			// Should assert:	    subview<   7, 22 >( str  )
-			DOCTEST_FAST_CHECK_EQ( subview<   7, 22 >( strN ), 			not_first( str, 7 ) );
-			DOCTEST_FAST_CHECK_EQ( subview<  22,  0 >( str  ), 			empty_ );
-			DOCTEST_FAST_CHECK_EQ( subview<  22,  0 >( str  ).data(),	view( str ).data() + strN.size() );
-			DOCTEST_FAST_CHECK_EQ( subview<  22,  0 >( strN ), 			empty_ );
-			DOCTEST_FAST_CHECK_EQ( subview<  22,  0 >( strN ).data(),	strN.data() + strN.size() );
-			// Should assert:	    subview<  22, 22 >( str  )
-			DOCTEST_FAST_CHECK_EQ( subview<  22, 22 >( strN ), 			empty_ );
-			DOCTEST_FAST_CHECK_EQ( subview<  22, 22 >( strN ).data(),	strN.data() + strN.size() );
-			// Should assert:	   subview<  -7, 22 >( str  )
-			DOCTEST_FAST_CHECK_EQ( subview<  -7, 22 >( strN ), 			last( str, 7 ) );
-			DOCTEST_FAST_CHECK_EQ( subview< -10,  2 >( strN ), 			cd );
-			DOCTEST_FAST_CHECK_EQ( subview< -10,  2 >( str  ), 			cd );
-			DOCTEST_FAST_CHECK_EQ( subview< -22,  0 >( str  ),			empty_ );
-			DOCTEST_FAST_CHECK_EQ( subview< -22,  0 >( str  ).data(), 	view( str ).data() );
-			DOCTEST_FAST_CHECK_EQ( subview< -22,  0 >( strN ), 			empty_ );
-			DOCTEST_FAST_CHECK_EQ( subview< -22,  0 >( strN ).data(), 	strN.data() );
-			DOCTEST_FAST_CHECK_EQ( subview< -22, 22 >( strN ), 			str );
+			static_assert( identic( not_first<  0 >( intsN ), intsN ) );
+			static_assert( identic( not_first<  5 >( intsN ), last< 7 >( intsN ) ) );
+			static_assert( identic( not_first< 12 >( intsN ), last< 0 >( intsN ) ) );
+			static_assert( identic( not_first< 22 >( intsN ), last< 0 >( intsN ) ) );
+		}
+		{	// not_last (character)
+			static_assert( not_last( "abcdefghijkl", 0 )		==	str );
+			static_assert( not_last< 0 >( "abcdefghijkl" )		==	"abcdefghijkl" );
+			static_assert( not_last< 0 >( "abcdefghijkl" ).size()	==	12 );
+			static_assert( not_last<  5 >( "abcdefghijkl" )		==	first< 7 >( str ) );
+			static_assert( not_last< 12 >( "abcdefghijkl" )		==	first< 0 >( str ) );
+
+			static_assert( identic( not_last( str,   0 ), str ) );
+			static_assert( identic( not_last( str,   5 ), first< 7 >( str ) ) );
+			static_assert( identic( not_last( str,  12 ), first< 0 >( str ) ) );
+			static_assert( identic( not_last( str,  22 ), first< 0 >( str ) ) );
+
+			static_assert( identic( not_last( strN,  0 ), strN ) );
+			static_assert( identic( not_last( strN,  5 ), first< 7 >( strN ) ) );
+			static_assert( identic( not_last( strN, 12 ), first< 0 >( strN ) ) );
+			static_assert( identic( not_last( strN, 22 ), first< 0 >( strN ) ) );
+			static_assert( identic( not_last( null_, 22 ), null_ ) );
+
+			static_assert( identic( not_last<  0 >( strN ), strN ) );
+			static_assert( identic( not_last<  5 >( strN ), first< 7 >( strN ) ) );
+			static_assert( identic( not_last< 12 >( strN ), first< 0 >( strN ) ) );
+			static_assert( identic( not_last< 22 >( strN ), first< 0 >( strN ) ) );
+		}
+		{	// not_last (int)
+			static_assert( identic( not_last( ints,   0 ), ints ) );
+			static_assert( identic( not_last( ints,   5 ), first< 7 >( ints ) ) );
+			static_assert( identic( not_last( ints,  12 ), first< 0 >( ints ) ) );
+			static_assert( identic( not_last( ints,  22 ), first< 0 >( ints ) ) );
+
+			static_assert( identic( not_last( intsN,  0 ), intsN ) );
+			static_assert( identic( not_last( intsN,  5 ), first< 7 >( intsN ) ) );
+			static_assert( identic( not_last( intsN, 12 ), first< 0 >( intsN ) ) );
+			static_assert( identic( not_last( intsN, 22 ), first< 0 >( intsN ) ) );
+
+			static_assert( identic( not_last<  0 >( intsN ), intsN ) );
+			static_assert( identic( not_last<  5 >( intsN ), first< 7 >( intsN ) ) );
+			static_assert( identic( not_last< 12 >( intsN ), first< 0 >( intsN ) ) );
+			static_assert( identic( not_last< 22 >( intsN ), first< 0 >( intsN ) ) );
+		}
+		{	// subview (character)
+			static_assert( identic( subview( null_,   0,  0 ),	safe_subview( null_,   0,  0 ) ) );
+			static_assert( identic( subview( null_,   0,  3 ),	safe_subview( null_,   0,  3 ) ) );
+			static_assert( identic( subview( null_,   0, 12 ),	safe_subview( null_,   0, 12 ) ) );
+			static_assert( identic( subview( null_,   0, 22 ),	safe_subview( null_,   0, 22 ) ) );
+			static_assert( identic( subview( null_,   5,  0 ),	safe_subview( null_,   5,  0 ) ) );
+			static_assert( identic( subview( null_,   5,  3 ),	safe_subview( null_,   5,  3 ) ) );
+			static_assert( identic( subview( null_,   5, 12 ),	safe_subview( null_,   5, 12 ) ) );
+			static_assert( identic( subview( null_,   5, 22 ),	safe_subview( null_,   5, 22 ) ) );
+			static_assert( identic( subview( null_,  -5,  0 ),	safe_subview( null_,  -5,  0 ) ) );
+			static_assert( identic( subview( null_,  -5,  3 ),	safe_subview( null_,  -5,  3 ) ) );
+			static_assert( identic( subview( null_,  -5, 12 ),	safe_subview( null_,  -5, 12 ) ) );
+			static_assert( identic( subview( null_,  -5, 22 ),	safe_subview( null_,  -5, 22 ) ) );
+			static_assert( identic( subview( null_,  12,  0 ),	safe_subview( null_,  12,  0 ) ) );
+			static_assert( identic( subview( null_,  12,  3 ),	safe_subview( null_,  12,  3 ) ) );
+			static_assert( identic( subview( null_,  12, 12 ),	safe_subview( null_,  12, 12 ) ) );
+			static_assert( identic( subview( null_,  12, 22 ),	safe_subview( null_,  12, 22 ) ) );
+			static_assert( identic( subview( null_, -12,  0 ),	safe_subview( null_, -12,  0 ) ) );
+			static_assert( identic( subview( null_, -12,  3 ),	safe_subview( null_, -12,  3 ) ) );
+			static_assert( identic( subview( null_, -12, 12 ),	safe_subview( null_, -12, 12 ) ) );
+			static_assert( identic( subview( null_, -12, 22 ),	safe_subview( null_, -12, 22 ) ) );
+			static_assert( identic( subview( null_,  22,  0 ),	safe_subview( null_,  22,  0 ) ) );
+			static_assert( identic( subview( null_,  22,  5 ),	safe_subview( null_,  22,  3 ) ) );
+			static_assert( identic( subview( null_,  22, 12 ),	safe_subview( null_,  22, 12 ) ) );
+			static_assert( identic( subview( null_,  22, 22 ),	safe_subview( null_,  22, 22 ) ) );
+			static_assert( identic( subview( null_, -22,  0 ),	safe_subview( null_, -22,  0 ) ) );
+			static_assert( identic( subview( null_, -22,  5 ),	safe_subview( null_, -22,  3 ) ) );
+			static_assert( identic( subview( null_, -22, 12 ),	safe_subview( null_, -22, 12 ) ) );
+			static_assert( identic( subview( null_, -22, 22 ),	safe_subview( null_, -22, 22 ) ) );
+
+			static_assert( identic( subview( str,   0,  0 ),	safe_subview( str,   0,  0 ) ) );
+			static_assert( identic( subview( str,   0,  3 ),	safe_subview( str,   0,  3 ) ) );
+			static_assert( identic( subview( str,   0, 12 ),	safe_subview( str,   0, 12 ) ) );
+			static_assert( identic( subview( str,   0, 22 ),	safe_subview( str,   0, 22 ) ) );
+			static_assert( identic( subview( str,   5,  0 ),	safe_subview( str,   5,  0 ) ) );
+			static_assert( identic( subview( str,   5,  3 ),	safe_subview( str,   5,  3 ) ) );
+			static_assert( identic( subview( str,   5, 12 ),	safe_subview( str,   5, 12 ) ) );
+			static_assert( identic( subview( str,   5, 22 ),	safe_subview( str,   5, 22 ) ) );
+			static_assert( identic( subview( str,  -5,  0 ),	safe_subview( str,  -5,  0 ) ) );
+			static_assert( identic( subview( str,  -5,  3 ),	safe_subview( str,  -5,  3 ) ) );
+			static_assert( identic( subview( str,  -5, 12 ),	safe_subview( str,  -5, 12 ) ) );
+			static_assert( identic( subview( str,  -5, 22 ),	safe_subview( str,  -5, 22 ) ) );
+			static_assert( identic( subview( str,  12,  0 ),	safe_subview( str,  12,  0 ) ) );
+			static_assert( identic( subview( str,  12,  3 ),	safe_subview( str,  12,  3 ) ) );
+			static_assert( identic( subview( str,  12, 12 ),	safe_subview( str,  12, 12 ) ) );
+			static_assert( identic( subview( str,  12, 22 ),	safe_subview( str,  12, 22 ) ) );
+			static_assert( identic( subview( str, -12,  0 ),	safe_subview( str, -12,  0 ) ) );
+			static_assert( identic( subview( str, -12,  3 ),	safe_subview( str, -12,  3 ) ) );
+			static_assert( identic( subview( str, -12, 12 ),	safe_subview( str, -12, 12 ) ) );
+			static_assert( identic( subview( str, -12, 22 ),	safe_subview( str, -12, 22 ) ) );
+			static_assert( identic( subview( str,  22,  0 ),	safe_subview( str,  22,  0 ) ) );
+			static_assert( identic( subview( str,  22,  3 ),	safe_subview( str,  22,  3 ) ) );
+			static_assert( identic( subview( str,  22, 12 ),	safe_subview( str,  22, 12 ) ) );
+			static_assert( identic( subview( str,  22, 22 ),	safe_subview( str,  22, 22 ) ) );
+			static_assert( identic( subview( str, -22,  0 ),	safe_subview( str, -22,  0 ) ) );
+			static_assert( identic( subview( str, -22,  3 ),	safe_subview( str, -22,  3 ) ) );
+			static_assert( identic( subview( str, -22, 12 ),	safe_subview( str, -22, 12 ) ) );
+			static_assert( identic( subview( str, -22, 22 ),	safe_subview( str, -22, 22 ) ) );
+
+			static_assert( identic( subview( strN,  0,  0 ),	safe_subview( strN,  0,  0 ) ) );
+			static_assert( identic( subview( strN,  0,  3 ),	safe_subview( strN,  0,  3 ) ) );
+			static_assert( identic( subview( strN,  0, 12 ),	safe_subview( strN,  0, 12 ) ) );
+			static_assert( identic( subview( strN,  0, 22 ),	safe_subview( strN,  0, 22 ) ) );
+			static_assert( identic( subview( strN,  5,  0 ),	safe_subview( strN,  5,  0 ) ) );
+			static_assert( identic( subview( strN,  5,  3 ),	safe_subview( strN,  5,  3 ) ) );
+			static_assert( identic( subview( strN,  5, 12 ),	safe_subview( strN,  5, 12 ) ) );
+			static_assert( identic( subview( strN,  5, 22 ),	safe_subview( strN,  5, 22 ) ) );
+			static_assert( identic( subview( strN, -5,  0 ),	safe_subview( strN, -5,  0 ) ) );
+			static_assert( identic( subview( strN, -5,  3 ),	safe_subview( strN, -5,  3 ) ) );
+			static_assert( identic( subview( strN, -5, 12 ),	safe_subview( strN, -5, 12 ) ) );
+			static_assert( identic( subview( strN, -5, 22 ),	safe_subview( strN, -5, 22 ) ) );
+			static_assert( identic( subview( strN, 12,  0 ),	safe_subview( strN, 12,  0 ) ) );
+			static_assert( identic( subview( strN, 12,  3 ),	safe_subview( strN, 12,  3 ) ) );
+			static_assert( identic( subview( strN, 12, 12 ),	safe_subview( strN, 12, 12 ) ) );
+			static_assert( identic( subview( strN, 12, 22 ),	safe_subview( strN, 12, 22 ) ) );
+			static_assert( identic( subview( strN,-12,  0 ),	safe_subview( strN,-12,  0 ) ) );
+			static_assert( identic( subview( strN,-12,  3 ),	safe_subview( strN,-12,  3 ) ) );
+			static_assert( identic( subview( strN,-12, 12 ),	safe_subview( strN,-12, 12 ) ) );
+			static_assert( identic( subview( strN,-12, 22 ),	safe_subview( strN,-12, 22 ) ) );
+			static_assert( identic( subview( strN, 22,  0 ),	safe_subview( strN, 22,  0 ) ) );
+			static_assert( identic( subview( strN, 22,  3 ),	safe_subview( strN, 22,  3 ) ) );
+			static_assert( identic( subview( strN, 22, 12 ),	safe_subview( strN, 22, 12 ) ) );
+			static_assert( identic( subview( strN, 22, 22 ),	safe_subview( strN, 22, 22 ) ) );
+			static_assert( identic( subview( strN,-22,  0 ),	safe_subview( strN,-22,  0 ) ) );
+			static_assert( identic( subview( strN,-22,  3 ),	safe_subview( strN,-22,  3 ) ) );
+			static_assert( identic( subview( strN,-22, 12 ),	safe_subview( strN,-22, 12 ) ) );
+			static_assert( identic( subview( strN,-22, 22 ),	safe_subview( strN,-22, 22 ) ) );
+
+			static_assert( identic( subview<  0 >( str,   0 ),	safe_subview( str,   0,  0 ) ) );
+			static_assert( identic( subview<  0 >( str,   5 ),	safe_subview( str,   5,  0 ) ) );
+			static_assert( identic( subview<  0 >( str,  -5 ),	safe_subview( str,  -5,  0 ) ) );
+			static_assert( identic( subview<  0 >( str,  12 ),	safe_subview( str,  12,  0 ) ) );
+			static_assert( identic( subview<  0 >( str, -12 ),	safe_subview( str, -12,  0 ) ) );
+			static_assert( identic( subview<  0 >( str,  22 ),	safe_subview( str,  22,  0 ) ) );
+			static_assert( identic( subview<  3 >( str,   0 ),	safe_subview( str,   0,  3 ) ) );
+			static_assert( identic( subview<  3 >( str,   5 ),	safe_subview( str,   5,  3 ) ) );
+			static_assert( identic( subview<  3 >( str,  -5 ),	safe_subview( str,  -5,  3 ) ) );
+			static_assert( identic( subview< 12 >( str,   0 ),	safe_subview( str,   0, 12 ) ) );
+			static_assert( identic( subview< 12 >( str,   0 ),	safe_subview( str,   0, 12 ) ) );
+
+			static_assert( identic( subview<  0 >( strN,  0 ),	safe_subview( strN,  0,  0 ) ) );
+			static_assert( identic( subview<  0 >( strN,  5 ),	safe_subview( strN,  5,  0 ) ) );
+			static_assert( identic( subview<  0 >( strN, -5 ),	safe_subview( strN, -5,  0 ) ) );
+			static_assert( identic( subview<  0 >( strN, 12 ),	safe_subview( strN, 12,  0 ) ) );
+			static_assert( identic( subview<  0 >( strN,-12 ),	safe_subview( strN,-12,  0 ) ) );
+			static_assert( identic( subview<  0 >( strN, 22 ),	safe_subview( strN, 22,  0 ) ) );
+			static_assert( identic( subview<  3 >( strN,  0 ),	safe_subview( strN,  0,  3 ) ) );
+			static_assert( identic( subview<  3 >( strN,  5 ),	safe_subview( strN,  5,  3 ) ) );
+			static_assert( identic( subview<  3 >( strN, -5 ),	safe_subview( strN, -5,  3 ) ) );
+			static_assert( identic( subview< 12 >( strN,  0 ),	safe_subview( strN,  0, 12 ) ) );
+
+			static_assert( identic( subview<  0,  0 >( str  ),	safe_subview( str,   0,  0 ) ) );
+			static_assert( identic( subview<  0,  3 >( str  ),	safe_subview( str,   0,  3 ) ) );
+			static_assert( identic( subview<  0, 12 >( str  ),	safe_subview( str,   0, 12 ) ) );
+			// static_assert( identic( subview<  0, 22 >( str  ),	safe_subview( str,   0, 22 ) ) );
+			static_assert( identic( subview<  5,  0 >( str  ),	safe_subview( str,   5,  0 ) ) );
+			static_assert( identic( subview<  5,  3 >( str  ),	safe_subview( str,   5,  3 ) ) );
+			// static_assert( identic( subview<  5, 12 >( str  ),	safe_subview( str,   5, 12 ) ) );
+			// static_assert( identic( subview<  5, 22 >( str  ),	safe_subview( str,   5, 22 ) ) );
+			static_assert( identic( subview< -5,  0 >( str  ),	safe_subview( str,  -5,  0 ) ) );
+			static_assert( identic( subview< -5,  3 >( str  ),	safe_subview( str,  -5,  3 ) ) );
+			// static_assert( identic( subview< -5, 12 >( str  ),	safe_subview( str,  -5, 12 ) ) );
+			// static_assert( identic( subview< -5, 22 >( str  ),	safe_subview( str,  -5, 22 ) ) );
+			static_assert( identic( subview< 12,  0 >( str  ),	safe_subview( str,  12,  0 ) ) );
+			// static_assert( identic( subview< 12,  3 >( str  ),	safe_subview( str,  12,  3 ) ) );
+			// static_assert( identic( subview< 12, 12 >( str  ),	safe_subview( str,  12, 12 ) ) );
+			// static_assert( identic( subview< 12, 22 >( str  ),	safe_subview( str,  12, 22 ) ) );
+			static_assert( identic( subview<-12,  0 >( str  ),	safe_subview( str, -12,  0 ) ) );
+			// static_assert( identic( subview<-12,  3 >( str  ),	safe_subview( str, -12,  3 ) ) );
+			// static_assert( identic( subview<-12, 12 >( str  ),	safe_subview( str, -12, 12 ) ) );
+			// static_assert( identic( subview<-12, 22 >( str  ),	safe_subview( str, -12, 22 ) ) );
+			static_assert( identic( subview< 22,  0 >( str  ),	safe_subview( str,  22,  0 ) ) );
+			// static_assert( identic( subview< 22,  3 >( str  ),	safe_subview( str,  22,  3 ) ) );
+			// static_assert( identic( subview< 22, 12 >( str  ),	safe_subview( str,  22, 12 ) ) );
+			// static_assert( identic( subview< 22, 22 >( str  ),	safe_subview( str,  22, 22 ) ) );
+
+			static_assert( identic( subview<  0,  0 >( strN ),	safe_subview( strN,  0,  0 ) ) );
+			static_assert( identic( subview<  0,  3 >( strN ),	safe_subview( strN,  0,  3 ) ) );
+			static_assert( identic( subview<  0, 12 >( strN ),	safe_subview( strN,  0, 12 ) ) );
+			static_assert( identic( subview<  0, 22 >( strN ),	safe_subview( strN,  0, 22 ) ) );
+			static_assert( identic( subview<  5,  0 >( strN ),	safe_subview( strN,  5,  0 ) ) );
+			static_assert( identic( subview<  5,  3 >( strN ),	safe_subview( strN,  5,  3 ) ) );
+			static_assert( identic( subview<  5, 12 >( strN ),	safe_subview( strN,  5, 12 ) ) );
+			static_assert( identic( subview<  5, 22 >( strN ),	safe_subview( strN,  5, 22 ) ) );
+			static_assert( identic( subview< -5,  0 >( strN ),	safe_subview( strN, -5,  0 ) ) );
+			static_assert( identic( subview< -5,  3 >( strN ),	safe_subview( strN, -5,  3 ) ) );
+			static_assert( identic( subview< -5, 12 >( strN ),	safe_subview( strN, -5, 12 ) ) );
+			static_assert( identic( subview< -5, 22 >( strN ),	safe_subview( strN, -5, 22 ) ) );
+			static_assert( identic( subview< 12,  0 >( strN ),	safe_subview( strN, 12,  0 ) ) );
+			static_assert( identic( subview< 12,  3 >( strN ),	safe_subview( strN, 12,  3 ) ) );
+			static_assert( identic( subview< 12, 12 >( strN ),	safe_subview( strN, 12, 12 ) ) );
+			static_assert( identic( subview< 12, 22 >( strN ),	safe_subview( strN, 12, 22 ) ) );
+			static_assert( identic( subview<-12,  0 >( strN ),	safe_subview( strN,-12,  0 ) ) );
+			static_assert( identic( subview<-12,  3 >( strN ),	safe_subview( strN,-12,  3 ) ) );
+			static_assert( identic( subview<-12, 12 >( strN ),	safe_subview( strN,-12, 12 ) ) );
+			static_assert( identic( subview<-12, 22 >( strN ),	safe_subview( strN,-12, 22 ) ) );
+			static_assert( identic( subview< 22,  0 >( strN ),	safe_subview( strN, 22,  0 ) ) );
+			static_assert( identic( subview< 22,  3 >( strN ),	safe_subview( strN, 22,  3 ) ) );
+			static_assert( identic( subview< 22, 12 >( strN ),	safe_subview( strN, 22, 12 ) ) );
+			static_assert( identic( subview< 22, 22 >( strN ),	safe_subview( strN, 22, 22 ) ) );
+			static_assert( identic( subview<-22,  0 >( strN ),	safe_subview( strN,-22,  0 ) ) );
+			static_assert( identic( subview<-22,  3 >( strN ),	safe_subview( strN,-22,  3 ) ) );
+			static_assert( identic( subview<-22, 12 >( strN ),	safe_subview( strN,-22, 12 ) ) );
+			static_assert( identic( subview<-22, 22 >( strN ),	safe_subview( strN,-22, 22 ) ) );
+		}
+		{	// subview (int)
+			static_assert( identic( subview( ints,   0,  0 ),	safe_subview( ints,   0,  0 ) ) );
+			static_assert( identic( subview( ints,   0,  3 ),	safe_subview( ints,   0,  3 ) ) );
+			static_assert( identic( subview( ints,   0, 12 ),	safe_subview( ints,   0, 12 ) ) );
+			static_assert( identic( subview( ints,   0, 22 ),	safe_subview( ints,   0, 22 ) ) );
+			static_assert( identic( subview( ints,   5,  0 ),	safe_subview( ints,   5,  0 ) ) );
+			static_assert( identic( subview( ints,   5,  3 ),	safe_subview( ints,   5,  3 ) ) );
+			static_assert( identic( subview( ints,   5, 12 ),	safe_subview( ints,   5, 12 ) ) );
+			static_assert( identic( subview( ints,   5, 22 ),	safe_subview( ints,   5, 22 ) ) );
+			static_assert( identic( subview( ints,  -5,  0 ),	safe_subview( ints,  -5,  0 ) ) );
+			static_assert( identic( subview( ints,  -5,  3 ),	safe_subview( ints,  -5,  3 ) ) );
+			static_assert( identic( subview( ints,  -5, 12 ),	safe_subview( ints,  -5, 12 ) ) );
+			static_assert( identic( subview( ints,  -5, 22 ),	safe_subview( ints,  -5, 22 ) ) );
+			static_assert( identic( subview( ints,  12,  0 ),	safe_subview( ints,  12,  0 ) ) );
+			static_assert( identic( subview( ints,  12,  3 ),	safe_subview( ints,  12,  3 ) ) );
+			static_assert( identic( subview( ints,  12, 12 ),	safe_subview( ints,  12, 12 ) ) );
+			static_assert( identic( subview( ints,  12, 22 ),	safe_subview( ints,  12, 22 ) ) );
+			static_assert( identic( subview( ints, -12,  0 ),	safe_subview( ints, -12,  0 ) ) );
+			static_assert( identic( subview( ints, -12,  3 ),	safe_subview( ints, -12,  3 ) ) );
+			static_assert( identic( subview( ints, -12, 12 ),	safe_subview( ints, -12, 12 ) ) );
+			static_assert( identic( subview( ints, -12, 22 ),	safe_subview( ints, -12, 22 ) ) );
+			static_assert( identic( subview( ints,  22,  0 ),	safe_subview( ints,  22,  0 ) ) );
+			static_assert( identic( subview( ints,  22,  3 ),	safe_subview( ints,  22,  3 ) ) );
+			static_assert( identic( subview( ints,  22, 12 ),	safe_subview( ints,  22, 12 ) ) );
+			static_assert( identic( subview( ints,  22, 22 ),	safe_subview( ints,  22, 22 ) ) );
+			static_assert( identic( subview( ints, -22,  0 ),	safe_subview( ints, -22,  0 ) ) );
+			static_assert( identic( subview( ints, -22,  3 ),	safe_subview( ints, -22,  3 ) ) );
+			static_assert( identic( subview( ints, -22, 12 ),	safe_subview( ints, -22, 12 ) ) );
+			static_assert( identic( subview( ints, -22, 22 ),	safe_subview( ints, -22, 22 ) ) );
+
+			static_assert( identic( subview( intsN,  0,  0 ),	safe_subview( intsN,  0,  0 ) ) );
+			static_assert( identic( subview( intsN,  0,  3 ),	safe_subview( intsN,  0,  3 ) ) );
+			static_assert( identic( subview( intsN,  0, 12 ),	safe_subview( intsN,  0, 12 ) ) );
+			static_assert( identic( subview( intsN,  0, 22 ),	safe_subview( intsN,  0, 22 ) ) );
+			static_assert( identic( subview( intsN,  5,  0 ),	safe_subview( intsN,  5,  0 ) ) );
+			static_assert( identic( subview( intsN,  5,  3 ),	safe_subview( intsN,  5,  3 ) ) );
+			static_assert( identic( subview( intsN,  5, 12 ),	safe_subview( intsN,  5, 12 ) ) );
+			static_assert( identic( subview( intsN,  5, 22 ),	safe_subview( intsN,  5, 22 ) ) );
+			static_assert( identic( subview( intsN, -5,  0 ),	safe_subview( intsN, -5,  0 ) ) );
+			static_assert( identic( subview( intsN, -5,  3 ),	safe_subview( intsN, -5,  3 ) ) );
+			static_assert( identic( subview( intsN, -5, 12 ),	safe_subview( intsN, -5, 12 ) ) );
+			static_assert( identic( subview( intsN, -5, 22 ),	safe_subview( intsN, -5, 22 ) ) );
+			static_assert( identic( subview( intsN, 12,  0 ),	safe_subview( intsN, 12,  0 ) ) );
+			static_assert( identic( subview( intsN, 12,  3 ),	safe_subview( intsN, 12,  3 ) ) );
+			static_assert( identic( subview( intsN, 12, 12 ),	safe_subview( intsN, 12, 12 ) ) );
+			static_assert( identic( subview( intsN, 12, 22 ),	safe_subview( intsN, 12, 22 ) ) );
+			static_assert( identic( subview( intsN,-12,  0 ),	safe_subview( intsN,-12,  0 ) ) );
+			static_assert( identic( subview( intsN,-12,  3 ),	safe_subview( intsN,-12,  3 ) ) );
+			static_assert( identic( subview( intsN,-12, 12 ),	safe_subview( intsN,-12, 12 ) ) );
+			static_assert( identic( subview( intsN,-12, 22 ),	safe_subview( intsN,-12, 22 ) ) );
+			static_assert( identic( subview( intsN, 22,  0 ),	safe_subview( intsN, 22,  0 ) ) );
+			static_assert( identic( subview( intsN, 22,  3 ),	safe_subview( intsN, 22,  3 ) ) );
+			static_assert( identic( subview( intsN, 22, 12 ),	safe_subview( intsN, 22, 12 ) ) );
+			static_assert( identic( subview( intsN, 22, 22 ),	safe_subview( intsN, 22, 22 ) ) );
+			static_assert( identic( subview( intsN,-22,  0 ),	safe_subview( intsN,-22,  0 ) ) );
+			static_assert( identic( subview( intsN,-22,  3 ),	safe_subview( intsN,-22,  3 ) ) );
+			static_assert( identic( subview( intsN,-22, 12 ),	safe_subview( intsN,-22, 12 ) ) );
+			static_assert( identic( subview( intsN,-22, 22 ),	safe_subview( intsN,-22, 22 ) ) );
+
+			static_assert( identic( subview<  0 >( intsN,  0 ),	safe_subview( intsN,  0,  0 ) ) );
+			static_assert( identic( subview<  0 >( intsN,  5 ),	safe_subview( intsN,  5,  0 ) ) );
+			static_assert( identic( subview<  0 >( intsN, -5 ),	safe_subview( intsN, -5,  0 ) ) );
+			static_assert( identic( subview<  0 >( intsN, 12 ),	safe_subview( intsN, 12,  0 ) ) );
+			static_assert( identic( subview<  0 >( intsN,-12 ),	safe_subview( intsN,-12,  0 ) ) );
+			static_assert( identic( subview<  0 >( intsN, 22 ),	safe_subview( intsN, 22,  0 ) ) );
+			static_assert( identic( subview<  0 >( intsN,-22 ),	safe_subview( intsN,-22,  0 ) ) );
+			static_assert( identic( subview<  3 >( intsN,  0 ),	safe_subview( intsN,  0,  3 ) ) );
+			static_assert( identic( subview<  3 >( intsN,  5 ),	safe_subview( intsN,  5,  3 ) ) );
+			static_assert( identic( subview<  3 >( intsN, -5 ),	safe_subview( intsN, -5,  3 ) ) );
+			static_assert( identic( subview< 12 >( intsN,  0 ),	safe_subview( intsN,  0, 12 ) ) );
+
+			static_assert( identic( subview<  0,  0 >( intsN ),	safe_subview( intsN,  0,  0 ) ) );
+			static_assert( identic( subview<  0,  3 >( intsN ),	safe_subview( intsN,  0,  3 ) ) );
+			static_assert( identic( subview<  0, 12 >( intsN ),	safe_subview( intsN,  0, 12 ) ) );
+			static_assert( identic( subview<  0, 22 >( intsN ),	safe_subview( intsN,  0, 22 ) ) );
+			static_assert( identic( subview<  5,  0 >( intsN ),	safe_subview( intsN,  5,  0 ) ) );
+			static_assert( identic( subview<  5,  3 >( intsN ),	safe_subview( intsN,  5,  3 ) ) );
+			static_assert( identic( subview<  5, 12 >( intsN ),	safe_subview( intsN,  5, 12 ) ) );
+			static_assert( identic( subview<  5, 22 >( intsN ),	safe_subview( intsN,  5, 22 ) ) );
+			static_assert( identic( subview< -5,  0 >( intsN ),	safe_subview( intsN, -5,  0 ) ) );
+			static_assert( identic( subview< -5,  3 >( intsN ),	safe_subview( intsN, -5,  3 ) ) );
+			static_assert( identic( subview< -5, 12 >( intsN ),	safe_subview( intsN, -5, 12 ) ) );
+			static_assert( identic( subview< -5, 22 >( intsN ),	safe_subview( intsN, -5, 22 ) ) );
+			static_assert( identic( subview< 12,  0 >( intsN ),	safe_subview( intsN, 12,  0 ) ) );
+			static_assert( identic( subview< 12,  3 >( intsN ),	safe_subview( intsN, 12,  3 ) ) );
+			static_assert( identic( subview< 12, 12 >( intsN ),	safe_subview( intsN, 12, 12 ) ) );
+			static_assert( identic( subview< 12, 22 >( intsN ),	safe_subview( intsN, 12, 22 ) ) );
+			static_assert( identic( subview<-12,  0 >( intsN ),	safe_subview( intsN,-12,  0 ) ) );
+			static_assert( identic( subview<-12,  3 >( intsN ),	safe_subview( intsN,-12,  3 ) ) );
+			static_assert( identic( subview<-12, 12 >( intsN ),	safe_subview( intsN,-12, 12 ) ) );
+			static_assert( identic( subview<-12, 22 >( intsN ),	safe_subview( intsN,-12, 22 ) ) );
+			static_assert( identic( subview< 22,  0 >( intsN ),	safe_subview( intsN, 22,  0 ) ) );
+			static_assert( identic( subview< 22,  3 >( intsN ),	safe_subview( intsN, 22,  3 ) ) );
+			static_assert( identic( subview< 22, 12 >( intsN ),	safe_subview( intsN, 22, 12 ) ) );
+			static_assert( identic( subview< 22, 22 >( intsN ),	safe_subview( intsN, 22, 22 ) ) );
+			static_assert( identic( subview<-22,  0 >( intsN ),	safe_subview( intsN,-22,  0 ) ) );
+			static_assert( identic( subview<-22,  3 >( intsN ),	safe_subview( intsN,-22,  3 ) ) );
+			static_assert( identic( subview<-22, 12 >( intsN ),	safe_subview( intsN,-22, 12 ) ) );
+			static_assert( identic( subview<-22, 22 >( intsN ),	safe_subview( intsN,-22, 22 ) ) );
 		}
 	}
 	DOCTEST_TEST_CASE( "searching-related" ) {

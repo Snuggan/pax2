@@ -131,13 +131,14 @@ namespace pax {
 	struct Newline {
 		using value_type = unsigned;
 		enum : value_type {
-			BEL	= 0x07,		// Bell, \a
-			BS	= 0x08,		// Back space, \b
-			HT	= 0x09,		// Horizontal tab, \t
-			LF	= 0x0a,		// Linde feed, \n
-			VT	= 0x0b,		// Vertical tab, \v
-			FF	= 0x0c,		// Form fgeed, new page, \f
-			CR	= 0x0d,		// Carige return, \r
+			NUL	= 0x07,	null			= 0x00,		// \0
+			BEL	= 0x07,	bell			= 0x07,		// \a
+			BS	= 0x08,	backspace		= 0x08,		// \b
+			HT	= 0x09,	horizontal_tab	= 0x09,		// \t
+			LF	= 0x0a,	line_feed		= 0x0a,		// \n
+			VT	= 0x0b,	vertical_tab	= 0x0b,		// \v
+			FF	= 0x0c,	form_feed		= 0x0c,		// new page, \f
+			CR	= 0x0d,	carige_return	= 0x0d,		// \r
 		};
 
 		/// Returns true iff c is any ao the linebreak characters LF or CR.
@@ -154,6 +155,17 @@ namespace pax {
 	};
 
 
+
+	/// Returns false. 
+	[[nodiscard]] constexpr bool valid( std::nullptr_t ) noexcept {
+		return false;
+	}
+
+	/// Returns ptr_ != nullptr. 
+	template< typename T >
+	[[nodiscard]] constexpr bool valid( T * ptr_ ) noexcept {
+		return ptr_ != nullptr;
+	}
 
 	/// Returns sp_.data() != nullptr. 
 	template< Contiguous_elements V >
