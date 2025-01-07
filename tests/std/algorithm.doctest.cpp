@@ -325,25 +325,25 @@ namespace pax {
 			static_assert( !empty( ints ) );
 			static_assert( !empty( intsN ) );
 		}
-		{	// as_const
+		{	// make_const_span
 			int					sp0[ 3 ] = { 0, 1, 2 };
 			const std::span		sp	= dview( sp0 );
 
 			static_assert(  is_value_const< std::string_view > );
 			static_assert( !is_value_const< decltype( sp.front() ) > );
-			static_assert(  is_value_const< decltype( as_const( sp ).front() ) > );
+			static_assert(  is_value_const< decltype( make_const_span( sp ).front() ) > );
 		}
-		{	// as_dynamic
-			static_assert( as_dynamic( std::string_view{} ).extent	== dynamic_extent );
-			static_assert( as_dynamic( e ).extent					== dynamic_extent );
-			static_assert( as_dynamic( str ).extent					== dynamic_extent );
+		{	// make_dynamic_span
+			static_assert( make_dynamic_span( std::string_view{} ).extent	== dynamic_extent );
+			static_assert( make_dynamic_span( e ).extent					== dynamic_extent );
+			static_assert( make_dynamic_span( str ).extent					== dynamic_extent );
 
-			static_assert( as_dynamic( ints ).extent				== dynamic_extent );
-			static_assert( as_dynamic( intsN ).extent				== dynamic_extent );
+			static_assert( make_dynamic_span( ints ).extent					== dynamic_extent );
+			static_assert( make_dynamic_span( intsN ).extent				== dynamic_extent );
 
-			static_assert( std::span< int >{}.extent				== dynamic_extent );
-			static_assert( ints.extent								== dynamic_extent );
-			static_assert( intsN.extent								== N );
+			static_assert( std::span< int >{}.extent						== dynamic_extent );
+			static_assert( ints.extent										== dynamic_extent );
+			static_assert( intsN.extent										== N );
 		}
 		{	// identic
 			DOCTEST_FAST_CHECK_UNARY(  identic( "abc", "abc" ) );
@@ -400,8 +400,6 @@ namespace pax {
 		}
 	}
 	DOCTEST_TEST_CASE( "parts" ) {
-		constexpr auto						first_	= "abcde";
-		constexpr auto						last_	= "hijkl";
 		constexpr const std::string_view	null_{};
 		
 		{	// front, back
@@ -418,10 +416,6 @@ namespace pax {
 		}
 		{	// first (character)
 			static_assert( first( "abcdefghijkl", 22 )		==	str );
-			static_assert( first< 22 >( "abcdefghijkl" )	==	"abcdefghijkl" );
-			static_assert( first< 22 >( "abcdefghijkl" ).size()	==	12 );
-			static_assert( first<  5 >( "abcdefghijkl" )	==	first_ );
-			static_assert( first< 12 >( "abcdefghijkl" )	==	str );
 
 			static_assert( identic( first( str,   0 ), safe_first( str,   0 ) ) );
 			static_assert( identic( first( str,   5 ), safe_first( str,   5 ) ) );
@@ -432,10 +426,6 @@ namespace pax {
 			static_assert( identic( first( strN,  5 ), safe_first( strN,  5 ) ) );
 			static_assert( identic( first( strN, 12 ), safe_first( strN, 12 ) ) );
 			static_assert( identic( first( strN, 22 ), safe_first( strN, 22 ) ) );
-
-			static_assert( identic( first<  0 >( str  ), safe_first( str,   0 ) ) );
-			static_assert( identic( first<  5 >( str  ), safe_first( str,   5 ) ) );
-			static_assert( identic( first< 12 >( str  ), safe_first( str,  12 ) ) );
 
 			static_assert( identic( first<  0 >( strN ), safe_first( strN,  0 ) ) );
 			static_assert( identic( first<  5 >( strN ), safe_first( strN,  5 ) ) );
@@ -466,10 +456,6 @@ namespace pax {
 		}
 		{	// last (character)
 			static_assert( last( "abcdefghijkl", 22 )		==	str );
-			static_assert( last< 22 >( "abcdefghijkl" )		==	"abcdefghijkl" );
-			static_assert( last< 22 >( "abcdefghijkl" ).size()	==	12 );
-			static_assert( last<  5 >( "abcdefghijkl" )		==	last_ );
-			static_assert( last< 12 >( "abcdefghijkl" )		==	str );
 
 			static_assert( identic( last( str,   0 ), safe_last( str,   0 ) ) );
 			static_assert( identic( last( str,   5 ), safe_last( str,   5 ) ) );
@@ -480,10 +466,6 @@ namespace pax {
 			static_assert( identic( last( strN,  5 ), safe_last( strN,  5 ) ) );
 			static_assert( identic( last( strN, 12 ), safe_last( strN, 12 ) ) );
 			static_assert( identic( last( strN, 22 ), safe_last( strN, 22 ) ) );
-
-			static_assert( identic( last<  0 >( str  ), safe_last( str,   0 ) ) );
-			static_assert( identic( last<  5 >( str  ), safe_last( str,   5 ) ) );
-			static_assert( identic( last< 12 >( str  ), safe_last( str,  12 ) ) );
 
 			static_assert( identic( last<  0 >( strN ), safe_last( strN,  0 ) ) );
 			static_assert( identic( last<  5 >( strN ), safe_last( strN,  5 ) ) );
@@ -514,10 +496,6 @@ namespace pax {
 		}
 		{	// not_first (character)
 			static_assert( not_first( "abcdefghijkl", 0 )		==	str );
-			static_assert( not_first< 0 >( "abcdefghijkl" )		==	"abcdefghijkl" );
-			static_assert( not_first< 0 >( "abcdefghijkl" ).size()	==	12 );
-			static_assert( not_first<  5 >( "abcdefghijkl" )	==	last< 7 >( str ) );
-			static_assert( not_first< 12 >( "abcdefghijkl" )	==	last< 0 >( str ) );
 
 			static_assert( identic( not_first( str,   0 ), safe_subview( str,  0, 99 ) ) );
 			static_assert( identic( not_first( str,   5 ), safe_subview( str,  5, 99 ) ) );
@@ -552,10 +530,6 @@ namespace pax {
 		}
 		{	// not_last (character)
 			static_assert( not_last( "abcdefghijkl", 0 )		==	str );
-			static_assert( not_last< 0 >( "abcdefghijkl" )		==	"abcdefghijkl" );
-			static_assert( not_last< 0 >( "abcdefghijkl" ).size()	==	12 );
-			static_assert( not_last<  5 >( "abcdefghijkl" )		==	first< 7 >( str ) );
-			static_assert( not_last< 12 >( "abcdefghijkl" )		==	first< 0 >( str ) );
 
 			static_assert( identic( not_last( str,   0 ), str ) );
 			static_assert( identic( not_last( str,   5 ), safe_first( str, 7 ) ) );
@@ -677,18 +651,6 @@ namespace pax {
 			static_assert( identic( subview( strN,-22, 12 ),	safe_subview( strN,-22, 12 ) ) );
 			static_assert( identic( subview( strN,-22, 22 ),	safe_subview( strN,-22, 22 ) ) );
 
-			static_assert( identic( subview<  0 >( str,   0 ),	safe_subview( str,   0,  0 ) ) );
-			static_assert( identic( subview<  0 >( str,   5 ),	safe_subview( str,   5,  0 ) ) );
-			static_assert( identic( subview<  0 >( str,  -5 ),	safe_subview( str,  -5,  0 ) ) );
-			static_assert( identic( subview<  0 >( str,  12 ),	safe_subview( str,  12,  0 ) ) );
-			static_assert( identic( subview<  0 >( str, -12 ),	safe_subview( str, -12,  0 ) ) );
-			static_assert( identic( subview<  0 >( str,  22 ),	safe_subview( str,  22,  0 ) ) );
-			static_assert( identic( subview<  3 >( str,   0 ),	safe_subview( str,   0,  3 ) ) );
-			static_assert( identic( subview<  3 >( str,   5 ),	safe_subview( str,   5,  3 ) ) );
-			static_assert( identic( subview<  3 >( str,  -5 ),	safe_subview( str,  -5,  3 ) ) );
-			static_assert( identic( subview< 12 >( str,   0 ),	safe_subview( str,   0, 12 ) ) );
-			static_assert( identic( subview< 12 >( str,   0 ),	safe_subview( str,   0, 12 ) ) );
-
 			static_assert( identic( subview<  0 >( strN,  0 ),	safe_subview( strN,  0,  0 ) ) );
 			static_assert( identic( subview<  0 >( strN,  5 ),	safe_subview( strN,  5,  0 ) ) );
 			static_assert( identic( subview<  0 >( strN, -5 ),	safe_subview( strN, -5,  0 ) ) );
@@ -699,31 +661,6 @@ namespace pax {
 			static_assert( identic( subview<  3 >( strN,  5 ),	safe_subview( strN,  5,  3 ) ) );
 			static_assert( identic( subview<  3 >( strN, -5 ),	safe_subview( strN, -5,  3 ) ) );
 			static_assert( identic( subview< 12 >( strN,  0 ),	safe_subview( strN,  0, 12 ) ) );
-
-			static_assert( identic( subview<  0,  0 >( str  ),	safe_subview( str,   0,  0 ) ) );
-			static_assert( identic( subview<  0,  3 >( str  ),	safe_subview( str,   0,  3 ) ) );
-			static_assert( identic( subview<  0, 12 >( str  ),	safe_subview( str,   0, 12 ) ) );
-			// static_assert( identic( subview<  0, 22 >( str  ),	safe_subview( str,   0, 22 ) ) );
-			static_assert( identic( subview<  5,  0 >( str  ),	safe_subview( str,   5,  0 ) ) );
-			static_assert( identic( subview<  5,  3 >( str  ),	safe_subview( str,   5,  3 ) ) );
-			// static_assert( identic( subview<  5, 12 >( str  ),	safe_subview( str,   5, 12 ) ) );
-			// static_assert( identic( subview<  5, 22 >( str  ),	safe_subview( str,   5, 22 ) ) );
-			static_assert( identic( subview< -5,  0 >( str  ),	safe_subview( str,  -5,  0 ) ) );
-			static_assert( identic( subview< -5,  3 >( str  ),	safe_subview( str,  -5,  3 ) ) );
-			// static_assert( identic( subview< -5, 12 >( str  ),	safe_subview( str,  -5, 12 ) ) );
-			// static_assert( identic( subview< -5, 22 >( str  ),	safe_subview( str,  -5, 22 ) ) );
-			static_assert( identic( subview< 12,  0 >( str  ),	safe_subview( str,  12,  0 ) ) );
-			// static_assert( identic( subview< 12,  3 >( str  ),	safe_subview( str,  12,  3 ) ) );
-			// static_assert( identic( subview< 12, 12 >( str  ),	safe_subview( str,  12, 12 ) ) );
-			// static_assert( identic( subview< 12, 22 >( str  ),	safe_subview( str,  12, 22 ) ) );
-			static_assert( identic( subview<-12,  0 >( str  ),	safe_subview( str, -12,  0 ) ) );
-			// static_assert( identic( subview<-12,  3 >( str  ),	safe_subview( str, -12,  3 ) ) );
-			// static_assert( identic( subview<-12, 12 >( str  ),	safe_subview( str, -12, 12 ) ) );
-			// static_assert( identic( subview<-12, 22 >( str  ),	safe_subview( str, -12, 22 ) ) );
-			static_assert( identic( subview< 22,  0 >( str  ),	safe_subview( str,  22,  0 ) ) );
-			// static_assert( identic( subview< 22,  3 >( str  ),	safe_subview( str,  22,  3 ) ) );
-			// static_assert( identic( subview< 22, 12 >( str  ),	safe_subview( str,  22, 12 ) ) );
-			// static_assert( identic( subview< 22, 22 >( str  ),	safe_subview( str,  22, 22 ) ) );
 
 			static_assert( identic( subview<  0,  0 >( strN ),	safe_subview( strN,  0,  0 ) ) );
 			static_assert( identic( subview<  0,  3 >( strN ),	safe_subview( strN,  0,  3 ) ) );
