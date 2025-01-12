@@ -82,30 +82,32 @@ namespace std {
 
 namespace pax {
 
+	/// Returns a std::span.
 	template< Not_character_array A >
 	constexpr auto make_span( A && a_ ) 											noexcept {
 		using std::begin, std::end;
 		return std::span< Value_type_t< A >, extent_v< A > >{ begin( a_ ), end( a_ ) };
 	}
 
+	/// Returns a std::span.
 	template< typename T, std::size_t N >
 	constexpr auto make_span( T( & c_ )[ N ] ) 										noexcept {
 		return std::span< std::remove_reference_t< T >, N >{ c_, N };
 	}
 
+	/// Returns a std::span.
 	template< Character Ch, std::size_t N >
 	constexpr auto make_span( Ch( & c_ )[ N ] ) 									noexcept {
 		constexpr std::size_t 	sz = ( N == 0 ) ? 0u : N-1u;
 		return std::span< std::remove_reference_t< Ch >, sz >{ c_, sz };
 	}
 
+	/// Returns a std::span.
 	template< Character Ch >
 	constexpr auto make_span( Ch * const & c_ ) 									noexcept {
 		using std::size;
 		return std::span< std::remove_reference_t< Ch > >{ c_, size( c_ ) };
 	}
-
-
 
 	/// Returns a std::span with const elements.
 	template< typename T, std::size_t N >
@@ -163,10 +165,10 @@ namespace pax {
 	///	- There is an assert( I <= size( v_ ) ).
 	template< std::size_t I, Not_character_array V >
 		requires( ( I != dynamic_extent ) && ( extent_v< V > == dynamic_extent ) )
-	[[nodiscard]] constexpr auto first( V const & v_ ) 								noexcept {
+	[[nodiscard]] constexpr auto first( V const & v_ )								noexcept {
 		using std::data, std::size;
 		assert( I <= size( v_ ) && "first< I >( v_ ) requires I <= size( v_ )." );
-		return std::span< Value_type_t< V >, I >( data( v_ ), I );
+		return std::span< Value_type_t< V >, I >{ data( v_ ), I };
 	}
 
 	/// Returns a statically sized span of the first I elements of v_.
@@ -194,6 +196,16 @@ namespace pax {
 	}
 
 	/// Returns a statically sized span of the last I elements of v_.
+	///	- There is an assert( I <= size( v_ ) ).
+	template< std::size_t I, Not_character_array V >
+		requires( ( I != dynamic_extent ) && ( extent_v< V > == dynamic_extent ) )
+	[[nodiscard]] constexpr auto last( V && v_ ) 									noexcept {
+		using std::data, std::size;
+		assert( I <= size( v_ ) && "last< I >( v_ ) requires I <= size( v_ )." );
+		return std::span< Value_type_t< V >, I >( data( v_ ) + size( v_ ) - I, I );
+	}
+
+	/// Returns a statically sized span of the last I elements of v_.
 	///	- If i_ > size( v_ ), a span of all v_ is returned.
 	template< std::size_t I, Not_character_array V >
 		requires( ( I != dynamic_extent ) && ( extent_v< V > != dynamic_extent ) )
@@ -202,16 +214,6 @@ namespace pax {
 		static constexpr std::size_t	sz = extent_v< V >;
 		static constexpr std::size_t	offset = ( I < sz ) ? sz - I : 0u;
 		return std::span< Value_type_t< V >, sz - offset >( data( v_ ) + offset, sz - offset );
-	}
-
-	/// Returns a statically sized span of the last I elements of v_.
-	///	- There is an assert( I <= size( v_ ) ).
-	template< std::size_t I, Not_character_array V >
-		requires( ( I != dynamic_extent ) && ( extent_v< V > == dynamic_extent ) )
-	[[nodiscard]] constexpr auto last( V && v_ ) 									noexcept {
-		using std::data, std::size;
-		assert( I <= size( v_ ) && "last< I >( v_ ) requires I <= size( v_ )." );
-		return std::span< Value_type_t< V >, I >( data( v_ ) + size( v_ ) - I, I );
 	}
 
 
@@ -261,6 +263,8 @@ namespace pax {
 		static constexpr std::size_t	sz = ( extent_v< V > > I ) ? extent_v< V > - I : 0;
 		return std::span< Value_type_t< V >, sz >( data( v_ ), sz );
 	}
+
+
 
 	/// Returns a span of `size_` elements in `v_` starting with `offset_`.
 	///	- If `offset_ < 0`, `offset_ += size( v_ )` is used (the offset is seen from the back), 
