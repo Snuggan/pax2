@@ -3,10 +3,8 @@
 
 
 #include <pax/std/algorithm.hpp>
+#include <pax/std/format.hpp>
 #include <pax/doctest.hpp>
-
-#include <pax/textual/as_ascii.hpp>
-#include <pax/reporting/debug.hpp>
 
 #include <sstream>
 #include <array>
@@ -132,9 +130,9 @@ namespace pax {
 			static_assert( Newline::is_newline2( '\a', '\r' ) == 0 );
 		}
 		{	// std::format output
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", std::string_view( "abc" ) ),	"abc" );
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", first( abc, 3 ) ),				"abc" );
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", view( first( abc, 3 ) ) ),		"abc" );
+			DOCTEST_FAST_CHECK_EQ( std::string_view( "abc" ),	"abc" );
+			DOCTEST_FAST_CHECK_EQ( first( abc, 3 ),				"abc" );
+			DOCTEST_FAST_CHECK_EQ( view( first( abc, 3 ) ),		"abc" );
 
 			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", make_span( first( abc, 3 ) ) ),	"['a', 'b', 'c']" );
 			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", first( ints, 0 ) ),	"[]" );

@@ -8,6 +8,18 @@
 #include <string_view>
 
 
+#define DOCTEST_ASCII_CHECK_EQ( __1__, __2__ )	DOCTEST_FAST_CHECK_EQ( pax::as_ascii( __1__ ), pax::as_ascii( __2__ ) )
+#define DOCTEST_ASCII_CHECK_NE( __1__, __2__ )	DOCTEST_FAST_CHECK_NE( pax::as_ascii( __1__ ), pax::as_ascii( __2__ ) )
+#define DOCTEST_ASCII_WARN_EQ ( __1__, __2__ )	DOCTEST_FAST_WARN_EQ(  pax::as_ascii( __1__ ), pax::as_ascii( __2__ ) )
+#define DOCTEST_ASCII_WARN_NE ( __1__, __2__ )	DOCTEST_FAST_WARN_NE(  pax::as_ascii( __1__ ), pax::as_ascii( __2__ ) )
+
+
+#if defined( FMT_HEADER_ONLY )
+#	define PAX_ASCII_TEST_UNUSABLE
+#endif
+
+
+
 namespace std {
 
 	/// Concatenate a string and a string view.
@@ -35,12 +47,12 @@ namespace std {
 namespace pax {
 
 	template< Character Ch = char, typename Traits = std::char_traits< std::remove_cvref_t< Ch > > >
-	class Ascii : public std::basic_string_view< std::remove_cvref_t< Ch >, Traits > {
+	class Ascii {
+	public:
 		using value_type  = std::remove_cvref_t< Ch >;
 		using string	  = typename std::basic_string     < value_type, Traits >;
 		using string_view = typename std::basic_string_view< value_type, Traits >;
 		
-	public:
 		enum : unsigned {
 			NUL	= 0x00,		null			= NUL,		// \0
 			BEL	= 0x07,		bell			= BEL,		// \a
@@ -84,29 +96,55 @@ namespace pax {
 			const auto			view = substitute_view( c_ );
 			return view.size() ? string{ view } : string( 1u, value_type( c_ ) );
 		}
-		
-		using string_view::string_view;
-		
-		template< typename ...Args >
-		constexpr Ascii( Args && ...args_ ) : string_view( std::forward< Args... >( args_... ) ) {}
 	};
-
-	template< typename It, typename EndOrSize >
-	Ascii( It, EndOrSize )		-> Ascii< std::remove_cvref_t< std::iter_reference_t< It > > >;
-
-	template< String S >
-	Ascii( S && )				-> Ascii< std::remove_cvref_t< Value_type_t< S > >, typename std::remove_cvref_t< S >::traits_type >;
-
-	// template< Contiguous_elements Cont >
-	// Ascii( Cont && )			-> Ascii< std::remove_cvref_t< Value_type_t< Cont > > >;
-
-	template< Character Ch, std::size_t N >
-	Ascii( Ch( & c_ )[ N ] )	-> Ascii< std::remove_cvref_t< Ch > >;
-
-	template< Character Ch >
-	Ascii( Ch * const & c_ )	-> Ascii< std::remove_cvref_t< Ch > >;
 	
 	using Newline = Ascii<>;
+
+
+
+	template< Character Ch >
+	constexpr std::basic_string< Ch > as_ascii( const Ch c_ )	noexcept	{
+		const auto view = pax::Ascii< Ch >::substitute_view( c_ );
+		return view.size()	? std::basic_string< Ch >{{ '"' }} + view + '"'
+							: std::basic_string< Ch >{{ '"', c_, '"' }};
+	}
+
+	template< String S >
+	constexpr auto as_ascii( const S & str_ )					noexcept	{
+		using std::size, std::begin, std::end;
+		using 					Ch	  = Value_type_t< S >;
+		using					Str	  = std::basic_string< typename S::value_type >;
+		Str						result;
+		result.reserve( size( str_ ) + 2 );
+
+		auto					itr	  = begin( str_ );
+		const auto				stop  = end( str_ );
+		result+=	'"';
+		while( itr != stop ) {
+			auto				itr2  = itr;
+			std::string_view	sub{};
+			while( ( ( sub = pax::Ascii< Ch >::substitute_view( *itr2 ) ).size() == 0u ) && ( ++itr2 != stop ) );
+			if( itr2 != itr ) {
+				result+=		std::basic_string_view{ itr, itr2 };
+				itr = itr2;
+			} else if( itr2 != stop ) {
+				result+=		sub;
+				++itr;
+			}
+		}
+		result+=	'"';
+		return result;
+	}
+
+	template< Character Ch >
+	constexpr std::basic_string< Ch > as_ascii( const Ch *c_ )	noexcept	{
+		return as_ascii( std::basic_string_view( c_ ) );
+	}
+
+	template< typename Out, typename Ch, typename Traits >
+	constexpr Out & operator<<( Out & out_, const Ascii< Ch, Traits > ascii_ ) {
+		return out_ << as_ascii( ascii_ );
+	}
 
 
 
