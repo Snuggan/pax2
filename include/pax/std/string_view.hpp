@@ -141,11 +141,6 @@ namespace pax {
 		return as_ascii( std::basic_string_view( c_ ) );
 	}
 
-	template< typename Out, typename Ch, typename Traits >
-	constexpr Out & operator<<( Out & out_, const Ascii< Ch, Traits > ascii_ ) {
-		return out_ << as_ascii( ascii_ );
-	}
-
 
 
 
