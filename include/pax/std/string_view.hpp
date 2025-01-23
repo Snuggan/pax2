@@ -34,31 +34,82 @@ namespace std {
 
 namespace pax {
 
-	struct Newline {
-		using value_type = unsigned;
-		enum : value_type {
-			NUL	= 0x07,	null			= 0x00,		// \0
-			BEL	= 0x07,	bell			= 0x07,		// \a
-			BS	= 0x08,	backspace		= 0x08,		// \b
-			HT	= 0x09,	horizontal_tab	= 0x09,		// \t
-			LF	= 0x0a,	line_feed		= 0x0a,		// \n
-			VT	= 0x0b,	vertical_tab	= 0x0b,		// \v
-			FF	= 0x0c,	form_feed		= 0x0c,		// new page, \f
-			CR	= 0x0d,	carige_return	= 0x0d,		// \r
+	template< Character Ch = char, typename Traits = std::char_traits< std::remove_cvref_t< Ch > > >
+	class Ascii : public std::basic_string_view< std::remove_cvref_t< Ch >, Traits > {
+		using value_type  = std::remove_cvref_t< Ch >;
+		using string	  = typename std::basic_string     < value_type, Traits >;
+		using string_view = typename std::basic_string_view< value_type, Traits >;
+		
+	public:
+		enum : unsigned {
+			NUL	= 0x00,		null			= NUL,		// \0
+			BEL	= 0x07,		bell			= BEL,		// \a
+			BS	= 0x08,		backspace		= BS,		// \b
+			HT	= 0x09,		horizontal_tab	= HT,		// \t
+			LF	= 0x0a,		line_feed		= LF,		// \n
+			VT	= 0x0b,		vertical_tab	= VT,		// \v
+			FF	= 0x0c,		form_feed		= FF,		// new page, \f
+			CR	= 0x0d,		carige_return	= CR,		// \r
 		};
 
 		/// Returns true iff c is any ao the linebreak characters LF or CR.
-		static constexpr auto is_newline  = []( const value_type c )					noexcept {
+		static constexpr auto is_newline  = []( const unsigned c )					noexcept {
 			// The first part of the test is redundant, but is thought to quicken up the test in most cases.
 			return ( c <= CR ) && ( ( c == LF ) || ( c == CR ) );
 		};
 		
 		/// Returns 2 if { LF, CR } or { CR, LF }, returns 1 if c is LF or CR, and returns 0 otherwise.
-		static constexpr auto is_newline2( const value_type c, const value_type c2 )	noexcept {
+		static constexpr auto is_newline2( const unsigned c, const unsigned c2 )	noexcept {
 			// ( c^c2 ) == 0x7 signifies either { LF, CR } or { CR, LF }:
 			return is_newline( c ) ? 1u + ( ( c^c2 ) == 0x7 ) : 0u;
 		}
+
+		static constexpr string_view substitute_view( const unsigned c_ )				noexcept {
+			static constexpr	unsigned	specialsN = 35;
+			static constexpr	string_view	specials[ specialsN ] = { 
+				"\\0",   "<SOH>", "<STX>", "<ETX>", "<EOT>", "<ENQ>", "<ACK>", "\\a",
+				"\\b",   "\\t",   "\\n",   "\\v",   "\\f",   "\\r",   "<SO>",  "<SI>",
+				"<DLE>", "<DC1>", "<DC2>", "<DC3>", "<DC4>", "<NAK>", "<SYN>", "<ETB>", 
+				"<CAN>", "<EM>",  "<SUB>", "\\e",   "<FS>",  "<GS>",  "<RS>",  "<US>",
+				" ",	 "!",	  "\\\""
+			};
+			switch( c_ ) {
+				case '\\': 		return "\\\\";
+				case 0x7f:		return "<DEL>";
+				default:		return ( c_ >= specialsN ) ? string_view{} : specials[ c_ ];
+			}
+		}
+
+		static constexpr string substitute( const unsigned c_ )						noexcept {
+			const auto			view = substitute_view( c_ );
+			return view.size() ? string{ view } : string( 1u, value_type( c_ ) );
+		}
+		
+		using string_view::string_view;
+		
+		template< typename ...Args >
+		constexpr Ascii( Args && ...args_ ) : string_view( std::forward< Args... >( args_... ) ) {}
 	};
+
+	template< typename It, typename EndOrSize >
+	Ascii( It, EndOrSize )		-> Ascii< std::remove_cvref_t< std::iter_reference_t< It > > >;
+
+	template< String S >
+	Ascii( S && )				-> Ascii< std::remove_cvref_t< Value_type_t< S > >, typename std::remove_cvref_t< S >::traits_type >;
+
+	// template< Contiguous_elements Cont >
+	// Ascii( Cont && )			-> Ascii< std::remove_cvref_t< Value_type_t< Cont > > >;
+
+	template< Character Ch, std::size_t N >
+	Ascii( Ch( & c_ )[ N ] )	-> Ascii< std::remove_cvref_t< Ch > >;
+
+	template< Character Ch >
+	Ascii( Ch * const & c_ )	-> Ascii< std::remove_cvref_t< Ch > >;
+	
+	using Newline = Ascii<>;
+
+
+
 
 	template< String V >
 	[[nodiscard]] constexpr std::size_t length( V && v_ ) noexcept {

@@ -2,7 +2,6 @@
 //	Contact: peder ( at ) axensten.se
 
 
-#include <pax/std/format.hpp>
 #include <pax/std/algorithm.hpp>
 #include <pax/doctest.hpp>
 
@@ -1250,23 +1249,6 @@ namespace pax {
 				os << std::span( strings );
 				DOCTEST_FAST_CHECK_EQ( os.str().size(), 36 );
 				DOCTEST_FAST_CHECK_EQ( os.str(), "[\"Hej\", \" \", \"hela\", \" \", \"varlden\"]" );
-			}
-			{	// with text technical
-#if !defined( PAX_ASCII_TEST_UNUSABLE )
-				std::ostringstream		os;
-				constexpr auto			v0 = view( ">\0\a\b\t\n\v\f\r\"'\x18\x7f <" );
-				constexpr auto			vr = view( "\">\\0\\a\\b\\t\\n\\v\\f\\r\\\"'<CAN><DEL> <\"" );
-
-				os << as_ascii( v0 );
-				const auto 				res0{ os.str() };
-				const std::span 		res{ res0.data(), res0.size() };
-
-				DOCTEST_FAST_CHECK_EQ( v0.size(),	15 );
-				DOCTEST_FAST_CHECK_EQ( res0,		vr );
-				DOCTEST_FAST_CHECK_EQ( res0.size(),	vr.size() );
-				DOCTEST_FAST_CHECK_EQ( res.size(),	vr.size() );
-				DOCTEST_FAST_CHECK_EQ( res,			vr );
-#endif
 			}
 		}
 	}

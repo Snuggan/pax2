@@ -6,8 +6,9 @@
 
 #pragma once
 
-#include <cassert>		// assert
-#include <algorithm>	// std::min, std::equal, std::lexicographical_compare_three_way
+#include <cassert>			// assert
+#include <algorithm>		// std::min, std::equal, std::lexicographical_compare_three_way
+#include "../concepts.hpp"	// pax::Character, pax::String, pax::Contiguous_elements
 
 
 // From https://lemire.me/blog/2024/07/26/safer-code-in-c-with-lifetime-bounds/
@@ -72,7 +73,7 @@ namespace pax {
 	template< Contiguous_elements V >
 	[[nodiscard]] constexpr auto & front( V && v_ ) noexcept {
 		using std::data, std::size;
-		static_assert( extent_v< V > != 0 );
+		static_assert( extent_v< V > != 0, "front( v_ ) requires size( v_ ) > 0" );
 		if constexpr ( extent_v< V > == dynamic_extent )
 			assert( size( v_ ) && "front( v_ ) requires size( v_ ) > 0" );
 		return *data( v_ );

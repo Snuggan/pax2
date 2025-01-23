@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "../concepts.hpp"	// pax::Character, pax::String, pax::Contiguous_elements
 #include "contiguous_stuff.hpp"
 #include <span>
 
@@ -141,12 +140,15 @@ namespace pax {
 	/// Returns a reference to the last item. 
 	/// UB, if v_ has a dynamic size that is zero.
 	template< typename V >
-	[[nodiscard]] constexpr auto & back( const V & v_ ) 							noexcept {
+	[[nodiscard]] constexpr auto & back( V && v_ ) 							noexcept {
 		using std::data, std::size;
-		static_assert( extent_v< V > != 0 );
-		if constexpr ( extent_v< V > == dynamic_extent ) 
+		static_assert( extent_v< V > != 0, "back( v_ ) requires size( v_ ) > 0" );
+		if constexpr ( extent_v< V > == dynamic_extent ) {
 			assert( size( v_ ) && "back( v_ ) requires size( v_ ) > 0" );
-		return *( data( v_ ) + size( v_ ) - 1 );
+			return *( data( v_ ) + size( v_ ) - 1 );
+		} else {
+			return *( data( v_ ) + ( extent_v< V > - 1 ) );
+		}
 	}
 
 
