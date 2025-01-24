@@ -71,102 +71,15 @@ namespace pax {
 
 
 
-
-	/// Returns the offset to the first occurence of sp1_ in sp0_.
-	/// - Returns size( v_ ) if there is no such.
-	template< Contiguous_elements V0, Contiguous_elements V1 >
-	[[nodiscard]] constexpr std::size_t find(  
-		const V0						  & v0_, 
-		const V1						  & v1_
-	) noexcept {
-		if constexpr( Character_array< V0 > ) {
-			return find( std::basic_string_view( v0_ ), v1_ );			// To remove possible trailing '\0'.
-		} else if constexpr( Character_array< V1 > ) {
-			return find( v0_, std::basic_string_view( v1_ ) );			// To remove possible trailing '\0'.
-		} else {
-			using std::begin, std::end;
-			return std::search( begin( v0_ ), end( v0_ ), begin( v1_ ), end( v1_ ) ) - begin( v0_ );
-		}
-	}
-
-	/// Returns the offset to the first occurence of t_ in v_.
-	/// - Returns v_.size() if there is no such.
-	template< Contiguous_elements V >
-	[[nodiscard]] constexpr std::size_t find(  
-		const V							  & v_, 
-		const Value_type_t< V >			  & t_ 
-	) noexcept {
-		if constexpr( Character_array< V > ) {
-			return find( std::basic_string_view( v_ ), t_ );				// To remove possible trailing '\0'.
-		} else {
-			using std::begin, std::end;
-			return std::find( begin( v_ ), end( v_ ), t_ ) - begin( v_ );
-		}
-	}
-
-	/// Returns the offset to v for the first true occurence of pred_( v ) in v_.
-	/// - Returns size( v_ ) if there is no such.
-	template< Contiguous_elements V, typename Pred >
-		requires( std::predicate< Pred, Value_type_t< V > > )
-	[[nodiscard]] constexpr std::size_t find(  
-		const V							  & v_, 
-		Pred							 && pred_ 
-	) noexcept {
-		if constexpr( Character_array< V > ) {
-			return find( std::basic_string_view( v_ ), pred_ );			// To remove possible trailing '\0'.
-		} else {
-			using std::begin, std::end;
-			return std::find_if( begin( v_ ), end( v_ ), pred_ ) - begin( v_ );
-		}
-	}
-
-
-	/// Returns the offset to the last occurence of t_ in v_.
-	/// - Returns size( v_ ) if there is no such.
-	template< Contiguous_elements V >
-	[[nodiscard]] constexpr std::size_t rfind(  
-		const V							  & v_, 
-		const Value_type_t< V >			  & t_ 
-	) noexcept {
-		if constexpr( Character_array< V > ) {
-			return rfind( std::basic_string_view( v_ ), t_ );				// To remove possible trailing '\0'.
-		} else {
-			using std::size, std::rbegin, std::rend;
-			const auto res = std::find( rbegin( v_ ), rend( v_ ), t_ );
-			return ( res == rend( v_ ) ) ? size( v_ ) : rend( v_ ) - res - 1;
-		}
-	}
-
-	/// Returns the offset for the last true occurence of pred_( ... ).
-	/// - Returns size( v_ ) if there is no such.
-	template< Contiguous_elements V, typename Pred >
-		requires( std::predicate< Pred, Value_type_t< V > > )
-	[[nodiscard]] constexpr std::size_t rfind(  
-		const V							  & v_, 
-		Pred							 && pred_ 
-	) noexcept {
-		if constexpr( Character_array< V > ) {
-			return rfind( std::basic_string_view( v_ ), pred_ );			// To remove possible trailing '\0'.
-		} else {
-			using std::size, std::rbegin, std::rend;
-			const auto res = std::find_if( rbegin( v_ ), rend( v_ ), pred_ );
-			return ( res == rend( v_ ) ) ? size( v_ ) : rend( v_ ) - res - 1;
-		}
-	}
-
-
-	/// Returns true iff find( v_, x_ ) < size( v_ ).
-	template< Contiguous_elements V, typename X >
-	[[nodiscard]] constexpr bool contains(  
-		const V							  & v_, 
-		X								 && x_ 
-	) noexcept {
-		if constexpr( Character_array< V > ) {
-			return find( v_, x_ ) < size( std::basic_string_view( v_ ) );	// To remove possible trailing '\0'.
-		} else {
-			using std::size;
-			return find( v_, x_ ) < size( v_ );
-		}
+	/// Return the first newline used in view_ (`"\n"`, `"\r"`, `"\n\r"`, or `"\r\n"`).
+	/// - If none is found, `"\n"` is returned.
+	template< String V >
+	[[nodiscard]] constexpr auto identify_newline( const V & str_ ) noexcept {
+		using my_view = std::basic_string_view< Value_type_t< V > >;
+		static constexpr const my_view			 	res = { "\n\r\n" };
+		const auto 									temp = not_first( str_, find( str_, Newline{} ) );
+		const std::size_t 							sz = starts_with( temp, Newline{} );
+		return	sz ? subview( res, temp.front() == '\r', sz ) : first( res, 1 );
 	}
 
 
@@ -182,101 +95,6 @@ namespace pax {
 		} else {
 			using std::data;
 			return view_type_t< V, true >( data( v_ ), find( v_, until_this_ ) );
-		}
-	}
-
-
-
-
-	/// Returns true iff v_ and u_ are equal.
-	template< Contiguous_elements V, Contiguous_elements U >
-	[[nodiscard]] constexpr bool equal(  
-		const V							  & v_, 
-		U								 && u_
-	) noexcept {
-		if constexpr( Character_array< V > || Character_array< U > ) {
-			return equal( std::basic_string_view( v_  ), std::basic_string_view( u_  ) );	// To remove possible trailing '\0'.
-		} else {
-			using std::begin, std::end;
-			return std::equal( begin( v_ ), end( v_ ), begin( u_ ), end( u_ ) );
-		}
-	}
-
-
-	/// Returns 1, if the beginning of `view_` is `t_` and 0 otherwise.
-	template< Contiguous_elements V >
-	[[nodiscard]] constexpr std::size_t starts_with(  
-		const V							  & v_, 
-		const Value_type_t< V >				t_ 
-	) noexcept {
-		if constexpr( Character_array< V > ) {
-			return starts_with( std::basic_string_view( v_ ), t_ );		// To remove possible trailing '\0'.
-		} else {
-			using std::size;
-			return size( v_ ) && ( v_[ 0 ] == t_ );
-		}
-	}
-
-	/// Returns 1, if the end of `view_` is `t_` and 0 otherwise.
-	template< Contiguous_elements V >
-	[[nodiscard]] constexpr std::size_t ends_with(  
-		const V							  & v_, 
-		const Value_type_t< V >				t_ 
-	) noexcept {
-		if constexpr( Character_array< V > ) {
-			return ends_with( std::basic_string_view( v_ ), t_ );			// To remove possible trailing '\0'.
-		} else {
-			using std::size;
-			return size( v_ ) && ( back( v_ ) == t_ );
-		}
-	}
-
-	/// Returns the size of `v_` if the beginning of `view_` is lexicographical equal to `v_` and 0 otherwise.
-	template< Contiguous_elements V, Contiguous_elements U >
-	[[nodiscard]] constexpr std::size_t starts_with(  
-		const V							  & v_, 
-		U								 && u_
-	) noexcept {
-		if constexpr( Character_array< V > || Character_array< U > ) {
-			return starts_with( std::basic_string_view( v_ ), std::basic_string_view( u_ ) );	// To remove possible trailing '\0'.
-		} else {
-			using std::size;
-			return equal( first( v_, size( u_ ) ), u_ ) ? size( u_ ) : 0u;
-		}
-	}
-
-	/// Returns the size of `v_`, if the end of `view_` is lexicographical equal to `v_` and 0 otherwise.
-	template< Contiguous_elements V, Contiguous_elements U >
-	[[nodiscard]] constexpr std::size_t ends_with( 
-		const V							  & v_, 
-		U								 && u_
-	) noexcept {
-		if constexpr( Character_array< V > || Character_array< U > ) {
-			return ends_with( std::basic_string_view( v_ ), std::basic_string_view( u_ ) );		// To remove possible trailing '\0'.
-		} else {
-			using std::size;
-			return equal( last( v_, size( u_ ) ), u_ ) ? size( u_ ) : 0u;
-		}
-	}
-
-	/// Returns 2 if `view_` ends with `"\n\r"` or `"\r\n"`; 1 if `'\n'` or `'\r'`; and 0 otherwise.
-	template< String V >
-	[[nodiscard]] constexpr std::size_t ends_with(  
-		const V							& v_, 
-		Newline 
-	) noexcept {
-		if constexpr( Character_array< V > ) {
-			return ends_with( std::basic_string_view( v_ ), Newline{} );	// To remove trailing '\0'.
-		} else if constexpr( extent_v< V > > 1 ) {
-			using std::data, std::size;
-			const auto last = data( v_ ) + size( v_ ) - ( size( v_ ) > 0 );
-			return	( size( v_ ) > 1 )	? newlines  ( *last, *( last - 1 ) )
-				:	  size( v_ )		? is_newline( v_[ 0 ] )
-				:						  0;
-		} else if constexpr( extent_v< V > == 1 ) {
-			return is_newline( v_[ 0 ] );
-		} else {
-			return 0;
 		}
 	}
 
