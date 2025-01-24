@@ -186,4 +186,24 @@ namespace pax {
 		return std::basic_string_view( data( v_ ) + offset, std::min( length( v_ ) - offset, size_ ) );
 	}
 
+
+
+	/// Calculate the Luhn sum (a control sum).
+	/// – UB if any character is outside ['0', '9'].
+	/// - https://en.wikipedia.org/wiki/Luhn_algorithm
+	template< String V >
+	[[nodiscard]] constexpr std::size_t luhn_sum( const V & v_ ) noexcept {
+		using std::begin, std::end;
+		auto				b = begin( v_ );
+		auto				e = end  ( v_ );
+		if constexpr( Character_array< V > ) 
+			e -= ( b != e ) && !*( e - 1 );			// To remove possible trailing '\0'.
+
+		static constexpr char	twice[] = { 0, 2, 4, 6, 8, 1, 3, 5, 7, 9 };
+		std::size_t				sum{};
+		bool					one{ true };
+		while( b != e )			sum += ( one = !one ) ? ( *( b++ ) - '0' ) : twice[ *( b++ ) - '0' ];
+		return sum;
+	}
+
 }

@@ -409,24 +409,6 @@ namespace pax {
 
 
 
-	/// Calculate the Luhn sum (a control sum).
-	/// – UB if any character is outside ['0', '9'].
-	/// - https://en.wikipedia.org/wiki/Luhn_algorithm
-	template< String V >
-	[[nodiscard]] constexpr std::size_t luhn_sum( const V & str_ ) noexcept {
-		if constexpr( Character_array< V > ) {
-			return luhn_sum( std::basic_string_view( str_ ) );	// To remove possible trailing '\0'.
-		} else {
-			static constexpr char		 	twice[] = { 0, 2, 4, 6, 8, 1, 3, 5, 7, 9 };
-			std::size_t						sum{};
-			bool							one{ true };
-			for( const auto c : str_ )		sum += ( one = !one ) ? ( c - '0' ) : twice[ c - '0' ];
-			return sum;
-		}
-	}
-
-
-
 
 	/// Split v_ into two parts: before `at_` and after (but not including) `at_ + n_`.
 	/// - If `at_ >= size( v_ )`, then `{ v_, last( v_, 0 ) }` is returned.
@@ -460,12 +442,12 @@ namespace pax {
 		const V							  & v_, 
 		By								 && by_
 	) noexcept {
-		if constexpr( Character_array< By > ) {	// To remove possible trailing '\0'.
-			return split_by( v_, std::basic_string_view( by_ ) );
-		} else {
-			using std::size;
-			return split_at( v_, find( v_, by_ ), size( by_ ) );
-		}
+		using std::size;
+		auto				s = size( by_ );
+		if constexpr( Character_array< V > ) 
+			s -= bool( s ) && !by_[ s - 1 ];		// To remove possible trailing '\0'.
+
+		return split_at( v_, find( v_, by_ ), s );
 	}
 
 	/// Split into two parts: before and after the first newline (`'\n'`, `'\r'`, `"\n\r"`, or `"\r\n"`), but not including it.
@@ -475,7 +457,7 @@ namespace pax {
 		const V							  & v_, 
 		Newline 
 	) noexcept {
-		const std::size_t 					i  = find( v_, is_newline );
+		const std::size_t 	i = find( v_, is_newline );
 		return split_at( v_, i, starts_with( not_first( v_, i ), Newline{} ) );
 	}
 
