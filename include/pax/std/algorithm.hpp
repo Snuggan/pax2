@@ -119,16 +119,6 @@ namespace pax {
 			return std::find_if( begin( v_ ), end( v_ ), pred_ ) - begin( v_ );
 		}
 	}
-	
-	/// Returns the offset to the first occurence of either `'\n'` or `'\r'` in `view_`.
-	/// - Returns `view_.size()` if there is no such.
-	template< String V >
-	[[nodiscard]] constexpr std::size_t find(  
-		const V							  & v_, 
-		Newline	
-	) noexcept {
-		return find( v_, Newline::is_newline );
-	}
 
 
 	/// Returns the offset to the last occurence of t_ in v_.
@@ -188,7 +178,7 @@ namespace pax {
 		U								 && until_this_ 
 	) noexcept {
 		if constexpr( Character_array< V > ) {			// To remove possible trailing '\0'.
-			return view_type_t< V, true >( data( v_ ), find( std::basic_string_view( v_ ), until_this_ ) );
+			return std::basic_string_view( data( v_ ), find( std::basic_string_view( v_ ), until_this_ ) );
 		} else {
 			using std::data;
 			return view_type_t< V, true >( data( v_ ), find( v_, until_this_ ) );
@@ -269,24 +259,6 @@ namespace pax {
 		}
 	}
 
-	/// Returns 2 if `view_` starts with `"\n\r"` or `"\r\n"`; 1 if `'\n'` or `'\r'`; and 0 otherwise.
-	template< String V >
-	[[nodiscard]] constexpr std::size_t starts_with(  
-		const V							& v_, 
-		Newline 
-	) noexcept {
-		if constexpr( extent_v< V > > 1 ) {
-			using std::data, std::size;
-			return	( size( v_ ) > 1 )	? Newline::is_newline2( v_[ 0 ], v_[ 1 ] )
-				:	  size( v_ )		? Newline::is_newline ( v_[ 0 ] )
-				:						  0;
-		} else if constexpr( extent_v< V > == 1 ) {
-			return Newline::is_newline( v_[ 0 ] );
-		} else {
-			return 0;
-		}
-	}
-
 	/// Returns 2 if `view_` ends with `"\n\r"` or `"\r\n"`; 1 if `'\n'` or `'\r'`; and 0 otherwise.
 	template< String V >
 	[[nodiscard]] constexpr std::size_t ends_with(  
@@ -294,15 +266,15 @@ namespace pax {
 		Newline 
 	) noexcept {
 		if constexpr( Character_array< V > ) {
-			return ends_with( view_type_t< V, true >( v_ ), Newline{} );	// To remove trailing '\0'.
+			return ends_with( std::basic_string_view( v_ ), Newline{} );	// To remove trailing '\0'.
 		} else if constexpr( extent_v< V > > 1 ) {
 			using std::data, std::size;
 			const auto last = data( v_ ) + size( v_ ) - ( size( v_ ) > 0 );
-			return	( size( v_ ) > 1 )	? Newline::is_newline2( *last, *( last - 1 ) )
-				:	  size( v_ )		? Newline::is_newline ( v_[ 0 ] )
+			return	( size( v_ ) > 1 )	? newlines  ( *last, *( last - 1 ) )
+				:	  size( v_ )		? is_newline( v_[ 0 ] )
 				:						  0;
 		} else if constexpr( extent_v< V > == 1 ) {
-			return Newline::is_newline( v_[ 0 ] );
+			return is_newline( v_[ 0 ] );
 		} else {
 			return 0;
 		}
@@ -319,7 +291,7 @@ namespace pax {
 		const Value_type_t< V >				t_ 
 	) noexcept {
 		if constexpr( Character_array< V > ) {
-			return trim_front( view_type_t< V, true >( v_ ), t_ );	// To remove trailing '\0'.
+			return trim_front( std::basic_string_view( v_ ), t_ );	// To remove trailing '\0'.
 		} else {
 			return not_first( v_, starts_with( v_, t_ ) );
 		}
@@ -333,7 +305,7 @@ namespace pax {
 		const Value_type_t< V >				t_ 
 	) noexcept {
 		if constexpr( Character_array< V > ) {
-			return trim_back( view_type_t< V, true >( v_ ), t_ );	// To remove trailing '\0'.
+			return trim_back( std::basic_string_view( v_ ), t_ );	// To remove trailing '\0'.
 		} else {
 			return not_last( v_, ends_with( v_, t_ ) );
 		}
@@ -348,7 +320,7 @@ namespace pax {
 		const Value_type_t< V >				t_ 
 	) noexcept {
 		if constexpr( Character_array< V > ) {
-			return trim_first( view_type_t< V, true >( v_ ), t_ );	// To remove trailing '\0'.
+			return trim_first( std::basic_string_view( v_ ), t_ );	// To remove trailing '\0'.
 		} else {
 			using std::begin, std::end;
 			auto							itr = begin( v_ );
@@ -366,7 +338,7 @@ namespace pax {
 		Pred							 && p_ 
 	) noexcept {
 		if constexpr( Character_array< V > ) {
-			return trim_first( view_type_t< V, true >( v_ ), p_ );	// To remove trailing '\0'.
+			return trim_first( std::basic_string_view( v_ ), p_ );	// To remove trailing '\0'.
 		} else {
 			using std::begin, std::end;
 			auto							itr = begin( v_ );
@@ -383,7 +355,7 @@ namespace pax {
 		Newline 
 	) noexcept {
 		if constexpr( Character_array< V > ) {
-			return trim_first( view_type_t< V, true >( v_ ), Newline{} );	// To remove trailing '\0'.
+			return trim_first( std::basic_string_view( v_ ), Newline{} );		// To remove trailing '\0'.
 		} else {
 			return not_first( v_, starts_with( v_, Newline{} ) );
 		}
@@ -398,7 +370,7 @@ namespace pax {
 		const Value_type_t< V >				t_ 
 	) noexcept {
 		if constexpr( Character_array< V > ) {
-			return trim_last( view_type_t< V, true >( v_ ), t_ );				// To remove trailing '\0'.
+			return trim_last( std::basic_string_view( v_ ), t_ );				// To remove trailing '\0'.
 		} else {
 			auto							itr  = end( v_ );
 			const auto						end_ = begin( v_ );
@@ -416,7 +388,7 @@ namespace pax {
 		Pred							 && p_ 
 	) noexcept {
 		if constexpr( Character_array< V > ) {
-			return trim_last( view_type_t< V, true >( v_ ), p_ );				// To remove trailing '\0'.
+			return trim_last( std::basic_string_view( v_ ), p_ );				// To remove trailing '\0'.
 		} else {
 			using std::begin, std::end;
 			auto							itr  = end( v_ );
@@ -434,7 +406,7 @@ namespace pax {
 		Newline 
 	) noexcept {
 		if constexpr( Character_array< V > ) {
-			return trim_last( view_type_t< V, true >( v_ ), Newline{} );	// To remove trailing '\0'.
+			return trim_last( std::basic_string_view( v_ ), Newline{} );		// To remove trailing '\0'.
 		} else {
 			return not_last( v_, ends_with( v_, Newline{} ) );
 		}
@@ -480,9 +452,9 @@ namespace pax {
 		Binary							 && binary_
 	) noexcept {
 		if constexpr( Character_array< V0 > ) {			// To remove possible trailing '\0'.
-			return on_each_pair( view_type_t< V0, true >( v0_ ), v1_, binary_ );
+			return on_each_pair( std::basic_string_view( v0_ ), v1_, binary_ );
 		} else if constexpr( Character_array< V1 > ) {	// To remove possible trailing '\0'.
-			return on_each_pair( v0_, view_type_t< V1, true >( v1_ ), binary_ );
+			return on_each_pair( v0_, std::basic_string_view( v1_ ), binary_ );
 		} else {
 			using std::begin;
 			detail::assert_equal_extent( v0_, v1_ );
@@ -504,9 +476,9 @@ namespace pax {
 		Binary							 && binary_
 	) noexcept {
 		if constexpr( Character_array< V0 > ) {			// To remove possible trailing '\0'.
-			return on_each_pair_while( view_type_t< V0, true >( v0_ ), v1_, binary_ );
+			return on_each_pair_while( std::basic_string_view( v0_ ), v1_, binary_ );
 		} else if constexpr( Character_array< V1 > ) {	// To remove possible trailing '\0'.
-			return on_each_pair_while( v0_, view_type_t< V1, true >( v1_ ), binary_ );
+			return on_each_pair_while( v0_, std::basic_string_view( v1_ ), binary_ );
 		} else {
 			using std::begin, std::end;
 			detail::assert_equal_extent( v0_, v1_ );
@@ -527,7 +499,7 @@ namespace pax {
 		Pred							 && p_
 	) {
 		if constexpr( Character_array< V > ) {	// To remove possible trailing '\0'.
-			return std::ranges::all_of( view_type_t< V, true >( v_ ), p_ );
+			return std::ranges::all_of( std::basic_string_view( v_ ), p_ );
 		} else {
 			return std::ranges::all_of( v_, p_ );
 		}
@@ -560,7 +532,7 @@ namespace pax {
 		Pred							 && p_
 	) {
 		if constexpr( Character_array< V > ) {	// To remove possible trailing '\0'.
-			return std::ranges::any_of( view_type_t< V, true >( v_ ), p_ );
+			return std::ranges::any_of( std::basic_string_view( v_ ), p_ );
 		} else {
 			return std::ranges::any_of( v_, p_ );
 		}
@@ -593,7 +565,7 @@ namespace pax {
 		Pred							 && p_
 	) {
 		if constexpr( Character_array< V > ) {	// To remove possible trailing '\0'.
-			return std::ranges::none_of( view_type_t< V, true >( v_ ), p_ );
+			return std::ranges::none_of( std::basic_string_view( v_ ), p_ );
 		} else {
 			return std::ranges::none_of( v_, p_ );
 		}
@@ -618,17 +590,6 @@ namespace pax {
 	}
 
 
-
-	/// Return the first newline used in view_ (`"\n"`, `"\r"`, `"\n\r"`, or `"\r\n"`).
-	/// - If none is found, `"\n"` is returned.
-	template< String V >
-	[[nodiscard]] constexpr auto identify_newline( const V & str_ ) noexcept {
-		using my_view = std::basic_string_view< Value_type_t< V > >;
-		static constexpr const my_view			 	res = { "\n\r\n" };
-		const auto 									temp = not_first( str_, find( str_, Newline{} ) );
-		const std::size_t 							sz = starts_with( temp, Newline{} );
-		return	sz ? subview( res, temp.front() == '\r', sz ) : first( res, 1 );
-	}
 
 	/// Calculate the Luhn sum (a control sum).
 	/// – UB if any character is outside ['0', '9'].
@@ -696,7 +657,7 @@ namespace pax {
 		const V							  & v_, 
 		Newline 
 	) noexcept {
-		const std::size_t 					i  = find( v_, Newline::is_newline );
+		const std::size_t 					i  = find( v_, is_newline );
 		return split_at( v_, i, starts_with( not_first( v_, i ), Newline{} ) );
 	}
 

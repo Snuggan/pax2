@@ -113,21 +113,21 @@ namespace pax {
 
 
 	DOCTEST_TEST_CASE( "textual" ) {
-		{	// Newline::is_newline
-			static_assert(  Newline::is_newline( '\n' ) );
-			static_assert(  Newline::is_newline( '\r' ) );
-			static_assert( !Newline::is_newline( '\a' ) );
-			static_assert( !Newline::is_newline( ' '  ) );
+		{	// is_newline
+			static_assert(  is_newline( '\n' ) );
+			static_assert(  is_newline( '\r' ) );
+			static_assert( !is_newline( '\a' ) );
+			static_assert( !is_newline( ' '  ) );
 		}
-		{	// Newline::is_newline2
-			static_assert( Newline::is_newline2( '\n', '\r' ) == 2 );
-			static_assert( Newline::is_newline2( '\r', '\n' ) == 2 );
-			static_assert( Newline::is_newline2( '\n', '\n' ) == 1 );
-			static_assert( Newline::is_newline2( '\r', '\r' ) == 1 );
-			static_assert( Newline::is_newline2( '\n', '\a' ) == 1 );
-			static_assert( Newline::is_newline2( '\r', '\a' ) == 1 );
-			static_assert( Newline::is_newline2( '\a', '\n' ) == 0 );
-			static_assert( Newline::is_newline2( '\a', '\r' ) == 0 );
+		{	// newlines
+			static_assert( newlines( '\n', '\r' ) == 2 );
+			static_assert( newlines( '\r', '\n' ) == 2 );
+			static_assert( newlines( '\n', '\n' ) == 1 );
+			static_assert( newlines( '\r', '\r' ) == 1 );
+			static_assert( newlines( '\n', '\a' ) == 1 );
+			static_assert( newlines( '\r', '\a' ) == 1 );
+			static_assert( newlines( '\a', '\n' ) == 0 );
+			static_assert( newlines( '\a', '\r' ) == 0 );
 		}
 		{	// std::format output
 			DOCTEST_FAST_CHECK_EQ( std::string_view( "abc" ),	"abc" );
