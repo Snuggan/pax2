@@ -87,15 +87,10 @@ namespace pax {
 	/// - If no until_this_ is found, v_ is returned.
 	template< Contiguous_elements V, typename U >
 	constexpr auto until(  
-		V								 && v_, 
-		U								 && until_this_ 
+		V					 && v_, 
+		U					 && until_this_ 
 	) noexcept {
-		if constexpr( Character_array< V > ) {			// To remove possible trailing '\0'.
-			return std::basic_string_view( data( v_ ), find( std::basic_string_view( v_ ), until_this_ ) );
-		} else {
-			using std::data;
-			return view_type_t< V, true >( data( v_ ), find( v_, until_this_ ) );
-		}
+		return first( v_, find( v_, until_this_ ) );
 	}
 
 
@@ -105,129 +100,98 @@ namespace pax {
 	/// Returns a [non-owning] string view into v_.
 	template< Contiguous_elements V >
 	[[nodiscard]] constexpr auto trim_front( 
-		const V							  & v_, 
-		const Value_type_t< V >				t_ 
+		const V				  & v_, 
+		const Value_type_t< V >	t_ 
 	) noexcept {
-		if constexpr( Character_array< V > ) {
-			return trim_front( std::basic_string_view( v_ ), t_ );	// To remove trailing '\0'.
-		} else {
-			return not_first( v_, starts_with( v_, t_ ) );
-		}
+		return not_first( v_, starts_with( v_, t_ ) );
 	}
 
 	/// Returns `v_` possibly excluding a trailing `t_`. 
 	/// Returns a [non-owning] string view into v_.
 	template< Contiguous_elements V >
 	[[nodiscard]] constexpr auto trim_back( 
-		const V							  & v_, 
-		const Value_type_t< V >				t_ 
+		const V				  & v_, 
+		const Value_type_t< V >	t_ 
 	) noexcept {
-		if constexpr( Character_array< V > ) {
-			return trim_back( std::basic_string_view( v_ ), t_ );	// To remove trailing '\0'.
-		} else {
-			return not_last( v_, ends_with( v_, t_ ) );
-		}
+		return not_last( v_, ends_with( v_, t_ ) );
 	}
 
-
-	/// Returns `v_`, but excluding all leading `t_`, if any.
-	/// Returns a [non-owning] string view into v_.
-	template< Contiguous_elements V >
-	[[nodiscard]] constexpr auto trim_first( 
-		const V							  & v_, 
-		const Value_type_t< V >				t_ 
-	) noexcept {
-		if constexpr( Character_array< V > ) {
-			return trim_first( std::basic_string_view( v_ ), t_ );	// To remove trailing '\0'.
-		} else {
-			using std::begin, std::end;
-			auto							itr = begin( v_ );
-			while( ( itr != end( v_ ) ) && ( *itr == t_ ) )		++itr;
-			return view_type_t< V, true >{ itr, end( v_ ) };
-		}
-	}
 
 	/// Returns `v_`, but excluding any leading elements `v` that satisfy `p_( v )`.
 	/// Returns a [non-owning] string view into v_.
 	template< typename Pred, Contiguous_elements V >
 		requires( std::predicate< Pred, Value_type_t< V > > )
 	[[nodiscard]] constexpr auto trim_first( 
-		const V							  & v_, 
-		Pred							 && p_ 
+		const V		  & v_, 
+		Pred		 && p_ 
 	) noexcept {
-		if constexpr( Character_array< V > ) {
-			return trim_first( std::basic_string_view( v_ ), p_ );	// To remove trailing '\0'.
-		} else {
-			using std::begin, std::end;
-			auto							itr = begin( v_ );
-			while( ( itr != end( v_ ) ) && p_( *itr ) )		++itr;
-			return view_type_t< V, true >{ itr, end( v_ ) };
-		}
+		using std::begin, std::end;
+		auto			itr = begin( v_ );
+		auto			e   = end  ( v_ );
+		if constexpr( Character_array< V > ) 
+			e -= ( itr != e ) && !*( e - 1 );			// To remove possible trailing '\0'.
+
+		while( ( itr != e ) && p_( *itr ) )				++itr;
+		return view_type_t< V, true >{ itr, e };
+	}
+
+	/// Returns `v_`, but excluding all leading `t_`, if any.
+	/// Returns a [non-owning] string view into v_.
+	template< Contiguous_elements V >
+	[[nodiscard]] constexpr auto trim_first( 
+		const V					  & v_, 
+		const Value_type_t< V >   & t_ 
+	) noexcept {
+		return trim_first( v_, [ & t_ ]( const Value_type_t< V > & t ){ return t == t_; } );
 	}
 
 	/// Returns `v_`, but excluding a leading `'\n'`, `'\r'`, `"\n\r"`, or `"\r\n"`. 
 	/// Returns a [non-owning] string view into v_.
 	template< String V >
 	[[nodiscard]] constexpr auto trim_first( 
-		const V							  & v_, 
+		const V		  & v_, 
 		Newline 
 	) noexcept {
-		if constexpr( Character_array< V > ) {
-			return trim_first( std::basic_string_view( v_ ), Newline{} );		// To remove trailing '\0'.
-		} else {
-			return not_first( v_, starts_with( v_, Newline{} ) );
-		}
+		return not_first( v_, starts_with( v_, Newline{} ) );
 	}
 
-
-	/// Returns `v_`, but excluding all trailing `t_`, if any.
-	/// Returns a [non-owning] string view into v_.
-	template< Contiguous_elements V >
-	[[nodiscard]] constexpr auto trim_last( 
-		const V							  & v_, 
-		const Value_type_t< V >				t_ 
-	) noexcept {
-		if constexpr( Character_array< V > ) {
-			return trim_last( std::basic_string_view( v_ ), t_ );				// To remove trailing '\0'.
-		} else {
-			auto							itr  = end( v_ );
-			const auto						end_ = begin( v_ );
-			while( ( --itr != end_ ) && ( *itr == t_ ) );
-			return view_type_t< V, true >{ begin( v_ ), itr + 1 };
-		}
-	}
 
 	/// Returns `v_`, but excluding any trailing elements `v` that satisfy `p_( v )`.
 	/// Returns a [non-owning] string view into v_.
 	template< typename Pred, Contiguous_elements V >
 		requires( std::predicate< Pred, Value_type_t< V > > )
 	[[nodiscard]] constexpr auto trim_last( 
-		const V							  & v_, 
-		Pred							 && p_ 
+		const V		  & v_, 
+		Pred		 && p_ 
 	) noexcept {
-		if constexpr( Character_array< V > ) {
-			return trim_last( std::basic_string_view( v_ ), p_ );				// To remove trailing '\0'.
-		} else {
-			using std::begin, std::end;
-			auto							itr  = end( v_ );
-			const auto						end_ = begin( v_ );
-			while( ( --itr != end_ ) && p_( *itr ) );
-			return view_type_t< V, true >{ begin( v_ ), itr + 1 };
-		}
+		using std::begin, std::end;
+		auto			itr = end  ( v_ );
+		const auto		b   = begin( v_ );
+		if constexpr( Character_array< V > ) 
+			itr -= ( itr != b ) && !*( itr - 1 );		// To remove possible trailing '\0'.
+
+		while( ( --itr != b ) && p_( *itr ) );
+		return view_type_t< V, true >{ b, itr + 1 };
+	}
+
+	/// Returns `v_`, but excluding all trailing `t_`, if any.
+	/// Returns a [non-owning] string view into v_.
+	template< Contiguous_elements V >
+	[[nodiscard]] constexpr auto trim_last( 
+		const V				  & v_, 
+		const Value_type_t< V >	t_ 
+	) noexcept {
+		return trim_last( v_, [ & t_ ]( const Value_type_t< V > & t ){ return t == t_; } );
 	}
 
 	/// Returns `v_`, but excluding a trailing `'\n'`, `'\r'`, `"\n\r"`, or `"\r\n"`. 
 	/// Returns a [non-owning] string view into v_.
 	template< String V >
 	[[nodiscard]] constexpr auto trim_last( 
-		const V							  & v_, 
+		const V		  & v_, 
 		Newline 
 	) noexcept {
-		if constexpr( Character_array< V > ) {
-			return trim_last( std::basic_string_view( v_ ), Newline{} );		// To remove trailing '\0'.
-		} else {
-			return not_last( v_, ends_with( v_, Newline{} ) );
-		}
+		return not_last( v_, ends_with( v_, Newline{} ) );
 	}
 
 
@@ -235,8 +199,8 @@ namespace pax {
 	/// Returns a [non-owning] string view into v_.
 	template< Contiguous_elements V, typename T >
 	[[nodiscard]] constexpr auto trim( 
-		const V							  & v_, 
-		T								 && p_ 
+		const V		  & v_, 
+		T			 && p_ 
 	) noexcept {
 		return trim_last( trim_first( v_, p_ ), p_ );
 	}
@@ -249,12 +213,13 @@ namespace pax {
 	/// - https://en.cppreference.com/w/cpp/algorithm/sort
 	template< Contiguous_elements V >
 	constexpr void sort( V & v_ ) {
-		if constexpr( Character_array< V > ) {
-			sort( std::basic_string_view( v_ ) );		// To remove possible trailing '\0'.
-		} else {
-			using std::begin, std::end;
-			std::sort( begin( v_ ), end( v_ ) );
-		}
+		using std::begin, std::end;
+		const auto		b = begin( v_ );
+		auto			e = end  ( v_ );
+		if constexpr( Character_array< V > ) 
+			e -= ( b != e ) && !*( e - 1 );			// To remove possible trailing '\0'.
+
+		std::sort( b, e );
 	}
 
 
@@ -265,20 +230,23 @@ namespace pax {
 	template< Contiguous_elements V0, Contiguous_elements V1, typename Binary >
 		requires std::is_invocable_v< Binary, Value_type_t< V0 >, Value_type_t< V1 > >
 	constexpr void on_each_pair(
-		const V0						  & v0_,
-		const V1						  & v1_,
-		Binary							 && binary_
+		const V0	  & v0_,
+		const V1	  & v1_,
+		Binary		 && binary_
 	) noexcept {
-		if constexpr( Character_array< V0 > ) {			// To remove possible trailing '\0'.
-			return on_each_pair( std::basic_string_view( v0_ ), v1_, binary_ );
-		} else if constexpr( Character_array< V1 > ) {	// To remove possible trailing '\0'.
-			return on_each_pair( v0_, std::basic_string_view( v1_ ), binary_ );
-		} else {
-			using std::begin;
-			detail::assert_equal_extent( v0_, v1_ );
-			auto							i1 = begin( v1_ );
-			for( auto & item : v0_ ) 		binary_( item, *( i1++ ) );
-		}
+		using std::begin, std::size;
+		auto			b0 = begin( v0_ );
+		auto			s0 = size ( v0_ );
+		auto			b1 = begin( v1_ );
+		auto			s1 = size ( v1_ );
+		if constexpr( Character_array< V0 > ) 
+			s0 -= bool( s0 ) && !v0_[ s0 - 1 ];		// To remove possible trailing '\0'.
+		if constexpr( Character_array< V1 > ) 
+			s1 -= bool( s1 ) && !v1_[ s1 - 1 ];		// To remove possible trailing '\0'.
+
+		assert( ( s0 == s1 ) && "The containers must have the same size" );
+		const auto		e0 = b0 + s0;
+		while( b0 != e0 ) 	binary_( *( b0++ ), *( b1++ ) );
 	}
 
 	/// Applies the function f_ on all elements while f_ returns true.
@@ -289,23 +257,24 @@ namespace pax {
 	template< Contiguous_elements V0, Contiguous_elements V1, typename Binary >
 		requires std::is_invocable_r_v< bool, Binary, Value_type_t< V0 >, Value_type_t< V1 > >
 	constexpr bool on_each_pair_while(
-		const V0						  & v0_,
-		const V1						  & v1_,
-		Binary							 && binary_
+		const V0	  & v0_,
+		const V1	  & v1_,
+		Binary		 && binary_
 	) noexcept {
-		if constexpr( Character_array< V0 > ) {			// To remove possible trailing '\0'.
-			return on_each_pair_while( std::basic_string_view( v0_ ), v1_, binary_ );
-		} else if constexpr( Character_array< V1 > ) {	// To remove possible trailing '\0'.
-			return on_each_pair_while( v0_, std::basic_string_view( v1_ ), binary_ );
-		} else {
-			using std::begin, std::end;
-			detail::assert_equal_extent( v0_, v1_ );
-			auto 							itr0 = begin( v0_ );
-			const auto 						end0 = end( v0_ );
-			auto 							itr1 = begin( v1_ );
-			while( ( itr0 != end0 ) && binary_( *itr0, *itr1 ) )	{	++itr0; ++itr1;		}
-			return itr0 == end0;
-		}
+		using std::begin, std::size;
+		auto			b0 = begin( v0_ );
+		auto			s0 = size ( v0_ );
+		auto			b1 = begin( v1_ );
+		auto			s1 = size ( v1_ );
+		if constexpr( Character_array< V0 > ) 
+			s0 -= bool( s0 ) && !v0_[ s0 - 1 ];		// To remove possible trailing '\0'.
+		if constexpr( Character_array< V1 > ) 
+			s1 -= bool( s1 ) && !v1_[ s1 - 1 ];		// To remove possible trailing '\0'.
+
+		assert( ( s0 == s1 ) && "The containers must have the same size" );
+		const auto		e0 = b0 + s0;
+		while( ( b0 != e0 ) && binary_( *( b0++ ), *( b1++ ) ) );
+		return b0 == e0;
 	}
 
 	///	Checks if unary predicate p returns true for all elements in v.

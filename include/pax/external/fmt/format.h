@@ -227,7 +227,9 @@ FMT_CONSTEXPR inline void abort_fuzzing_if(bool condition) {
 #if defined(FMT_USE_STRING_VIEW)
 template <typename Char> using std_string_view = std::basic_string_view<Char>;
 #else
-template <typename T> struct std_string_view {};
+template <typename Char> struct std_string_view {
+  operator basic_string_view<Char>() const;
+};
 #endif
 
 template <typename Char, Char... C> struct string_literal {
@@ -1203,7 +1205,7 @@ FMT_CONSTEXPR FMT_INLINE auto format_decimal(Char* out, UInt value,
 }
 
 template <typename Char, typename UInt, typename OutputIt,
-          FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>::value)>
+          FMT_ENABLE_IF(!std::is_pointer<remove_cvref_t<OutputIt>>::value)>
 FMT_CONSTEXPR auto format_decimal(OutputIt out, UInt value, int num_digits)
     -> OutputIt {
   if (auto ptr = to_pointer<Char>(out, to_unsigned(num_digits))) {
@@ -2330,7 +2332,7 @@ template <typename Char, typename OutputIt, typename DecimalFP,
           typename Grouping = digit_grouping<Char>>
 FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
                                     const format_specs& specs, sign s,
-                                    locale_ref loc) -> OutputIt {
+                                    int exp_upper, locale_ref loc) -> OutputIt {
   auto significand = f.significand;
   int significand_size = get_significand_size(f);
   const Char zero = static_cast<Char>('0');
@@ -2346,7 +2348,7 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
     if (specs.type() == presentation_type::fixed) return false;
     // Use the fixed notation if the exponent is in [exp_lower, exp_upper),
     // e.g. 0.0001 instead of 1e-04. Otherwise use the exponent notation.
-    const int exp_lower = -4, exp_upper = 16;
+    const int exp_lower = -4;
     return output_exp < exp_lower ||
            output_exp >= (specs.precision > 0 ? specs.precision : exp_upper);
   };
@@ -2449,12 +2451,13 @@ template <typename Char> class fallback_digit_grouping {
 template <typename Char, typename OutputIt, typename DecimalFP>
 FMT_CONSTEXPR20 auto write_float(OutputIt out, const DecimalFP& f,
                                  const format_specs& specs, sign s,
-                                 locale_ref loc) -> OutputIt {
+                                 int exp_upper, locale_ref loc) -> OutputIt {
   if (is_constant_evaluated()) {
     return do_write_float<Char, OutputIt, DecimalFP,
-                          fallback_digit_grouping<Char>>(out, f, specs, s, loc);
+                          fallback_digit_grouping<Char>>(out, f, specs, s,
+                                                         exp_upper, loc);
   } else {
-    return do_write_float<Char>(out, f, specs, s, loc);
+    return do_write_float<Char>(out, f, specs, s, exp_upper, loc);
   }
 }
 
@@ -3286,6 +3289,14 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision,
   return exp;
 }
 
+// Numbers with exponents greater or equal to the returned value will use
+// the exponential notation.
+template <typename T> constexpr auto exp_upper() -> int {
+  return std::numeric_limits<T>::digits10 != 0
+             ? min_of(16, std::numeric_limits<T>::digits10 + 1)
+             : 16;
+}
+
 template <typename Char, typename OutputIt, typename T>
 FMT_CONSTEXPR20 auto write_float(OutputIt out, T value, format_specs specs,
                                  locale_ref loc) -> OutputIt {
@@ -3301,6 +3312,7 @@ FMT_CONSTEXPR20 auto write_float(OutputIt out, T value, format_specs specs,
     if (specs.width != 0) --specs.width;
   }
 
+  constexpr int exp_upper = detail::exp_upper<T>();
   int precision = specs.precision;
   if (precision < 0) {
     if (specs.type() != presentation_type::none) {
@@ -3309,7 +3321,7 @@ FMT_CONSTEXPR20 auto write_float(OutputIt out, T value, format_specs specs,
       // Use Dragonbox for the shortest format.
       using floaty = conditional_t<sizeof(T) >= sizeof(double), double, float>;
       auto dec = dragonbox::to_decimal(static_cast<floaty>(value));
-      return write_float<Char>(out, dec, specs, s, loc);
+      return write_float<Char>(out, dec, specs, s, exp_upper, loc);
     }
   }
 
@@ -3337,7 +3349,7 @@ FMT_CONSTEXPR20 auto write_float(OutputIt out, T value, format_specs specs,
 
   specs.precision = precision;
   auto f = big_decimal_fp{buffer.data(), static_cast<int>(buffer.size()), exp};
-  return write_float<Char>(out, f, specs, s, loc);
+  return write_float<Char>(out, f, specs, s, exp_upper, loc);
 }
 
 template <typename Char, typename OutputIt, typename T,
@@ -3364,7 +3376,7 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
     return write_nonfinite<Char>(out, std::isnan(value), specs, s);
 
   auto dec = dragonbox::to_decimal(static_cast<floaty>(value));
-  return write_float<Char>(out, dec, specs, s, {});
+  return write_float<Char>(out, dec, specs, s, exp_upper<T>(), {});
 }
 
 template <typename Char, typename OutputIt, typename T,
