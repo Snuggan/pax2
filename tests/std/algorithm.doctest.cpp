@@ -2,7 +2,7 @@
 //	Contact: peder ( at ) axensten.se
 
 
-#include <pax/std/contiguous_stuff.hpp>
+#include <pax/std/algorithm.hpp>
 #include <pax/std/string_view.hpp>
 #include <pax/std/span.hpp>
 

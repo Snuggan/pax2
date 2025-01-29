@@ -4,8 +4,9 @@
 
 #pragma once
 
-#include "contiguous_stuff.hpp"
+#include "../concepts.hpp"
 #include <span>
+#include <algorithm>
 
 
 namespace pax {
@@ -266,6 +267,22 @@ namespace pax {
 	}
 
 
+
+	namespace detail {
+		template< std::integral Int >
+		[[nodiscard]] static constexpr std::size_t subview_offset( 
+			const Int			 			offset_, 
+			const std::size_t 				size_ 
+		) noexcept {
+			if constexpr( std::is_unsigned_v< Int > ) {
+				return	std::min( offset_, size_ );
+			} else {
+				return	( offset_ >= 0 )					  ? std::min( std::size_t( offset_ ), size_ ) 
+					:	( std::size_t( -offset_ ) < size_ )	  ? size_ - std::size_t( -offset_ )
+					:											std::size_t{};
+			}
+		}
+	}
 
 	/// Returns a span of `size_` elements in `v_` starting with `offset_`.
 	///	- If `offset_ < 0`, `offset_ += size( v_ )` is used (the offset is seen from the back), 

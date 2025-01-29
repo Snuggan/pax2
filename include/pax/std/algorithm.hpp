@@ -28,32 +28,7 @@
 namespace pax {
 
 	/// Tag for use when doing stuff with newlines. 
-	using Newline = struct{};
-
-	/// Name some of the control characters.
-	enum Ascii : unsigned {
-		NUL	= 0x00,		null			= NUL,		// \0
-		BEL	= 0x07,		bell			= BEL,		// \a
-		BS	= 0x08,		backspace		= BS,		// \b
-		HT	= 0x09,		horizontal_tab	= HT,		// \t
-		LF	= 0x0a,		line_feed		= LF,		// \n
-		VT	= 0x0b,		vertical_tab	= VT,		// \v
-		FF	= 0x0c,		form_feed		= FF,		// new page, \f
-		CR	= 0x0d,		carige_return	= CR,		// \r
-	};
-
-	/// Returns true iff c is any ao the linebreak characters LF or CR.
-	static constexpr auto is_newline  = []( const unsigned c )						noexcept {
-		// The first part of the test is redundant, but is thought to quicken up the test in most cases.
-		return ( c <= Ascii::CR ) && ( ( c == Ascii::LF ) || ( c == Ascii::CR ) );
-	};
-	
-	/// Returns 2 if { LF, CR } or { CR, LF }, returns 1 if c is LF or CR, and returns 0 otherwise.
-	static constexpr auto newlines( const unsigned c, const unsigned c2 )			noexcept {
-		// ( c^c2 ) == 0x7 signifies either { LF, CR } or { CR, LF }:
-		return is_newline( c ) ? 1u + ( ( c^c2 ) == 0x7 ) : 0u;
-	}
-
+	struct Newline{};
 
 
 
@@ -113,20 +88,6 @@ namespace pax {
 
 
 	namespace detail {
-		template< std::integral Int >
-		[[nodiscard]] static constexpr std::size_t subview_offset( 
-			const Int			 			offset_, 
-			const std::size_t 				size_ 
-		) noexcept {
-			if constexpr( std::is_unsigned_v< Int > ) {
-				return	std::min( offset_, size_ );
-			} else {
-				return	( offset_ >= 0 )					  ? std::min( std::size_t( offset_ ), size_ ) 
-					:	( std::size_t( -offset_ ) < size_ )	  ? size_ - std::size_t( -offset_ )
-					:											std::size_t{};
-			}
-		}
-
 		// Return true iff copying to dest_ requires backward copy.
 		template< Contiguous_elements V, typename Itr >
 		[[nodiscard]] constexpr bool requires_backward( 
@@ -187,24 +148,6 @@ namespace pax {
 		return ( s1 > s0 ) ? 0u : std::equal( b1, b1 + s1, b0 ) ? s1 : 0u;
 	}
 
-	/// Returns 2 if `view_` starts with `"\n\r"` or `"\r\n"`; 1 if `'\n'` or `'\r'`; and 0 otherwise.
-	template< String V >
-	[[nodiscard]] constexpr std::size_t starts_with(  
-		const V							& v_, 
-		Newline 
-	) noexcept {
-		if constexpr( extent_v< V > > 1 ) {
-			using std::data, std::size;
-			return	( size( v_ ) > 1 )	? newlines  ( v_[ 0 ], v_[ 1 ] )
-				:	  size( v_ )		? is_newline( v_[ 0 ] )
-				:						  0;
-		} else if constexpr( extent_v< V > == 1 ) {
-			return is_newline( v_[ 0 ] );
-		} else {
-			return 0;
-		}
-	}
-
 
 	/// Returns 1, if the end of `view_` is `t_` and 0 otherwise.
 	template< Contiguous_elements V >
@@ -237,29 +180,6 @@ namespace pax {
 			s1 -= bool( s1 ) && !v1_[ s1 - 1 ];		// To remove possible trailing '\0'.
 
 		return ( s1 > s0 ) ? 0u : std::equal( b1, b1 + s1, b0 + ( s0 - s1 ) ) ? s1 : 0u;
-	}
-
-	/// Returns 2 if `view_` ends with `"\n\r"` or `"\r\n"`; 1 if `'\n'` or `'\r'`; and 0 otherwise.
-	template< String V >
-	[[nodiscard]] constexpr std::size_t ends_with(  
-		const V							& v_, 
-		Newline 
-	) noexcept {
-		if constexpr( extent_v< V > > 1 ) {
-			using std::data, std::size;
-			auto			s = size ( v_ );
-			if constexpr( Character_array< V > ) 
-				s -= bool( s ) && !v_[ s - 1 ];		// To remove possible trailing '\0'.
-
-			const auto last = data( v_ ) + s - ( s > 0 );
-			return	( s > 1 )	? newlines  ( *last, *( last - 1 ) )
-				:	bool( s )	? is_newline( v_[ 0 ] )
-				:	0u;
-		} else if constexpr( extent_v< V > == 1 ) {
-			return is_newline( v_[ 0 ] );
-		} else {
-			return 0u;
-		}
 	}
 
 
@@ -325,7 +245,12 @@ namespace pax {
 		const V							  & v_, 
 		Newline	
 	) noexcept {
-		return find( v_, is_newline );
+		return find( v_, []( const unsigned c )	noexcept 
+			{
+				// The first part of the test is redundant, but is thought to quicken up the test in most cases.
+				return ( c <= 0x0d ) && ( ( c == 0x0a ) || ( c == 0x0d ) );
+			}
+		);
 	}
 
 	/// Returns true iff find( v_, x_ ) < size( v_ ).

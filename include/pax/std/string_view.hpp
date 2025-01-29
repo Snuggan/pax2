@@ -4,8 +4,10 @@
 
 #pragma once
 
-#include "contiguous_stuff.hpp"
+#include "algorithm.hpp"	// struct Newline
+#include "../concepts.hpp"
 #include <string_view>
+#include <cassert>			// assert
 
 
 #define DOCTEST_ASCII_CHECK_EQ( __1__, __2__ )	DOCTEST_FAST_CHECK_EQ( pax::as_ascii( __1__ ), pax::as_ascii( __2__ ) )
@@ -39,6 +41,31 @@ namespace std {
 
 
 namespace pax {
+
+	/// Name some of the control characters.
+	enum Ascii : unsigned {
+		NUL	= 0x00,		null			= NUL,		// \0
+		BEL	= 0x07,		bell			= BEL,		// \a
+		BS	= 0x08,		backspace		= BS,		// \b
+		HT	= 0x09,		horizontal_tab	= HT,		// \t
+		LF	= 0x0a,		line_feed		= LF,		// \n
+		VT	= 0x0b,		vertical_tab	= VT,		// \v
+		FF	= 0x0c,		form_feed		= FF,		// new page, \f
+		CR	= 0x0d,		carige_return	= CR,		// \r
+		DEL	= 0x7f,		delete_			= DEL,
+	};
+
+	/// Returns true iff c is any ao the linebreak characters LF or CR.
+	static constexpr auto is_newline  = []( const unsigned c )	noexcept {
+		// The first part of the test is redundant, but is thought to quicken up the test in most cases.
+		return ( c <= Ascii::CR ) && ( ( c == Ascii::LF ) || ( c == Ascii::CR ) );
+	};
+	
+	/// Returns 2 if { LF, CR } or { CR, LF }, returns 1 if c is LF or CR, and returns 0 otherwise.
+	static constexpr auto newlines( const unsigned c, const unsigned c2 )			noexcept {
+		// ( c^c2 ) == 0x7 signifies either { LF, CR } or { CR, LF }:
+		return is_newline( c ) ? 1u + ( ( c^c2 ) == 0x7 ) : 0u;
+	}
 	
 	/// Returns a descriptive string view for invisible characters and an empty one for visible ones.
 	template< Character Ch2 >
@@ -54,7 +81,7 @@ namespace pax {
 		};
 		switch( c_ ) {
 			case '\\': 			return "\\\\";
-			case 0x7f:			return "<DEL>";
+			case Ascii::DEL:	return "<DEL>";
 			default:			return ( unsigned( c_ ) >= specialsN ) ? string_view{} : specials[ unsigned( c_ ) ];
 		}
 	}
@@ -97,6 +124,49 @@ namespace pax {
 	template< Character Ch >
 	constexpr std::basic_string< Ch > as_ascii( const Ch *c_ )	noexcept	{
 		return as_ascii( std::basic_string_view( c_ ) );
+	}
+
+
+
+	/// Returns 2 if `view_` starts with `"\n\r"` or `"\r\n"`; 1 if `'\n'` or `'\r'`; and 0 otherwise.
+	template< String V >
+	[[nodiscard]] constexpr std::size_t starts_with(  
+		const V							& v_, 
+		Newline 
+	) noexcept {
+		if constexpr( extent_v< V > > 1 ) {
+			using std::data, std::size;
+			return	( size( v_ ) > 1 )	? newlines  ( v_[ 0 ], v_[ 1 ] )
+				:	  size( v_ )		? is_newline( v_[ 0 ] )
+				:						  0;
+		} else if constexpr( extent_v< V > == 1 ) {
+			return is_newline( v_[ 0 ] );
+		} else {
+			return 0;
+		}
+	}
+
+	/// Returns 2 if `view_` ends with `"\n\r"` or `"\r\n"`; 1 if `'\n'` or `'\r'`; and 0 otherwise.
+	template< String V >
+	[[nodiscard]] constexpr std::size_t ends_with(  
+		const V							& v_, 
+		Newline 
+	) noexcept {
+		if constexpr( extent_v< V > > 1 ) {
+			using std::data, std::size;
+			auto			s = size ( v_ );
+			if constexpr( Character_array< V > ) 
+				s -= bool( s ) && !v_[ s - 1 ];		// To remove possible trailing '\0'.
+
+			const auto last = data( v_ ) + s - ( s > 0 );
+			return	( s > 1 )	? newlines  ( *last, *( last - 1 ) )
+				:	bool( s )	? is_newline( v_[ 0 ] )
+				:	0u;
+		} else if constexpr( extent_v< V > == 1 ) {
+			return is_newline( v_[ 0 ] );
+		} else {
+			return 0u;
+		}
 	}
 
 
@@ -182,7 +252,11 @@ namespace pax {
 		const std::size_t 		size_ 
 	) noexcept {
 		using 					std::data, std::size;
-		const auto 				offset = detail::subview_offset( offset_, size( v_ ) );
+		const auto				sz = size( v_ );
+		const std::size_t 		offset	=	( offset_ >= 0 )					? std::min( std::size_t( offset_ ), sz ) 
+										:	( std::size_t( -offset_ ) < sz )	? sz - std::size_t( -offset_ )
+										:										  std::size_t{};
+
 		return std::basic_string_view( data( v_ ) + offset, std::min( length( v_ ) - offset, size_ ) );
 	}
 
