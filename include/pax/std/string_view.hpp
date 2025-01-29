@@ -188,6 +188,244 @@ namespace pax {
 
 
 
+	/// Return the beginning of v_ up to but not including the first until_this_.
+	/// - If no until_this_ is found, v_ is returned.
+	template< String V, typename U >
+	constexpr auto until(  
+		V					 && v_, 
+		U					 && until_this_ 
+	) noexcept {
+		return first( v_, find( v_, until_this_ ) );
+	}
+
+
+
+	/// Returns `v_`, possibly excluding a leading `t_`. 
+	/// Returns a [non-owning] string view into v_.
+	template< String V >
+	[[nodiscard]] constexpr auto trim_front( 
+		const V				  & v_, 
+		const Value_type_t< V >	t_ 
+	) noexcept {
+		return not_first( v_, starts_with( v_, t_ ) );
+	}
+
+	/// Returns `v_` possibly excluding a trailing `t_`. 
+	/// Returns a [non-owning] string view into v_.
+	template< String V >
+	[[nodiscard]] constexpr auto trim_back( 
+		const V				  & v_, 
+		const Value_type_t< V >	t_ 
+	) noexcept {
+		return not_last( v_, ends_with( v_, t_ ) );
+	}
+
+
+
+	/// Returns `v_`, but excluding any leading elements `v` that satisfy `p_( v )`.
+	/// Returns a [non-owning] string view into v_.
+	template< typename Pred, String V >
+		requires( std::predicate< Pred, Value_type_t< V > > )
+	[[nodiscard]] constexpr auto trim_first( 
+		const V		  & v_, 
+		Pred		 && p_ 
+	) noexcept {
+		using std::begin, std::end;
+		auto			itr = begin( v_ );
+		auto			e   = end  ( v_ );
+		if constexpr( Character_array< V > ) 
+			e -= ( itr != e ) && !*( e - 1 );			// To remove possible trailing '\0'.
+
+		while( ( itr != e ) && p_( *itr ) )				++itr;
+		return std::basic_string_view{ itr, e };
+	}
+
+	/// Returns `v_`, but excluding all leading `t_`, if any.
+	/// Returns a [non-owning] string view into v_.
+	template< String V >
+	[[nodiscard]] constexpr auto trim_first( 
+		const V					  & v_, 
+		const Value_type_t< V >   & t_ 
+	) noexcept {
+		return trim_first( v_, [ & t_ ]( const Value_type_t< V > & t ){ return t == t_; } );
+	}
+
+	/// Returns `v_`, but excluding a leading `'\n'`, `'\r'`, `"\n\r"`, or `"\r\n"`. 
+	/// Returns a [non-owning] string view into v_.
+	template< String V >
+	[[nodiscard]] constexpr auto trim_first( 
+		const V		  & v_, 
+		Newline 
+	) noexcept {
+		return not_first( v_, starts_with( v_, Newline{} ) );
+	}
+
+	/// Returns `v_`, but excluding any trailing elements `v` that satisfy `p_( v )`.
+	/// Returns a [non-owning] string view into v_.
+	template< typename Pred, String V >
+		requires( std::predicate< Pred, Value_type_t< V > > )
+	[[nodiscard]] constexpr auto trim_last( 
+		const V		  & v_, 
+		Pred		 && p_ 
+	) noexcept {
+		using std::begin, std::end;
+		auto			itr = end  ( v_ );
+		const auto		b   = begin( v_ );
+		if constexpr( Character_array< V > ) 
+			itr -= ( itr != b ) && !*( itr - 1 );		// To remove possible trailing '\0'.
+
+		while( ( --itr != b ) && p_( *itr ) );
+		return std::basic_string_view{ b, itr + 1 };
+	}
+
+	/// Returns `v_`, but excluding all trailing `t_`, if any.
+	/// Returns a [non-owning] string view into v_.
+	template< String V >
+	[[nodiscard]] constexpr auto trim_last( 
+		const V				  & v_, 
+		const Value_type_t< V >	t_ 
+	) noexcept {
+		return trim_last( v_, [ & t_ ]( const Value_type_t< V > & t ){ return t == t_; } );
+	}
+
+	/// Returns `v_`, but excluding a trailing `'\n'`, `'\r'`, `"\n\r"`, or `"\r\n"`. 
+	/// Returns a [non-owning] string view into v_.
+	template< String V >
+	[[nodiscard]] constexpr auto trim_last( 
+		const V		  & v_, 
+		Newline 
+	) noexcept {
+		return not_last( v_, ends_with( v_, Newline{} ) );
+	}
+
+	/// Returns `v_`, but without any leading or trailing values `v` that satisfy `p_( v )`.
+	/// Returns a [non-owning] string view into v_.
+	template< String V, typename T >
+	[[nodiscard]] constexpr auto trim( 
+		const V		  & v_, 
+		T			 && p_ 
+	) noexcept {
+		return trim_last( trim_first( v_, p_ ), p_ );
+	}
+
+
+
+	/// Split v_ into two parts: before `at_` and after (but not including) `at_ + n_`.
+	/// - If `at_ >= size( v_ )`, then `{ v_, last( v_, 0 ) }` is returned.
+	/// Returns a pair of [non-owning] string views into v_.
+	template< String V >
+	[[nodiscard]] constexpr auto split_at( 
+		const V							  & v_, 
+		const std::size_t 					at_, 
+		const std::size_t 					n_ = 1 
+	) noexcept {
+		// first() and not_first() handle the case if at_ + n_ >= size( v_ ).
+		return std::pair{ first( v_, at_ ), not_first( v_, at_ + n_ ) };
+	}
+
+	/// Split `view_` into two parts: before and after the first `x_`, not including it.
+	/// Returns a pair of [non-owning] string views into v_.
+	template< String V >
+	[[nodiscard]] constexpr auto split_by( 
+		const V							  & v_, 
+		const Value_type_t< V >				item_ 
+	) noexcept {
+		return split_at( v_, find( v_, item_ ) );
+	}
+
+	/// Split the v_ into two parts: before and after (but not including) `by_`.
+	/// - If `begin( by_ ) <= begin( v_ )`, the first string view returned is `first( v_, 0 )`.
+	///	- If `end( by_ )   >= end( v_ )`,   the second string view returned is `last( v_, 0 )`.
+	/// Returns a pair of [non-owning] string views into v_.
+	template< String V, String By >
+	[[nodiscard]] constexpr auto split_by(
+		const V							  & v_, 
+		By								 && by_
+	) noexcept {
+		using std::size;
+		auto				s = size( by_ );
+		if constexpr( Character_array< V > ) 
+			s -= bool( s ) && !by_[ s - 1 ];		// To remove possible trailing '\0'.
+
+		return split_at( v_, find( v_, by_ ), s );
+	}
+
+	/// Split into two parts: before and after the first newline (`'\n'`, `'\r'`, `"\n\r"`, or `"\r\n"`), but not including it.
+	/// Returns a pair of [non-owning] string views into v_.
+	template< String V >
+	[[nodiscard]] constexpr auto split_by(
+		const V							  & v_, 
+		Newline 
+	) noexcept {
+		const std::size_t 	i = find( v_, is_newline );
+		return split_at( v_, i, starts_with( not_first( v_, i ), Newline{} ) );
+	}
+
+
+
+	/// A class to simplify iterating using ´split_by´. It uses views, so the original string must remain static.
+	/// - Example usage: ´for( const auto item : String_view_splitter( "A\nNumber\nof\nRows", Newline{} ) ) { ... }´. 
+	/// - The Divider type may be any that is accepted by ´split_by( ..., Divider )´. 
+	/// - String_view_splitter is constexpr [and never throws]. 
+	template< Character Char, typename Divider, typename Traits = std::char_traits< std::remove_const_t< Char > > >
+	class String_view_splitter {
+		class End						{};
+		using Value					  = std::basic_string_view< std::remove_const_t< Char >, Traits >;
+		Value							m_str;
+		Divider							m_divider;
+		
+
+		class iterator {
+			std::pair< Value, Value >	m_parts;
+			Divider						m_divider;
+
+		public:
+			constexpr iterator( const Value str_, const Divider divider_ )	noexcept :
+				m_parts{ split_by( str_, divider_ ) }, m_divider{ divider_ } {}
+
+			/// Iterate to next item. 
+			constexpr iterator & operator++()	noexcept		{
+				m_parts = split_by( m_parts.second, m_divider );
+				return *this;
+			}
+
+			/// Get the string_view of the present element. 
+			constexpr Value operator*()			const noexcept	{	return m_parts.first;									}
+
+			/// Does *not* check equality! Only checks if we are done iterating. 
+			constexpr bool operator==( End )	const noexcept	{	return m_parts.first.data() == m_parts.second.data();	}
+		};
+		
+	public:
+		constexpr String_view_splitter( const Value str_, const Divider divider_ ) 	noexcept :
+			m_str{ str_ }, m_divider{ divider_ } {}
+
+		constexpr iterator begin()				const noexcept	{	return { m_str, m_divider };							}
+		constexpr End end()						const noexcept	{	return {};												}
+	};
+
+	template< String S, typename D >
+	String_view_splitter( S &&, D ) 
+		-> String_view_splitter< Value_type_t< S >, D, typename std::remove_cvref_t< S >::traits_type >;
+
+	template< Character Ch, typename D >
+	String_view_splitter( Ch *, D ) -> String_view_splitter< std::remove_reference_t< Ch >, D >;
+
+
+
+	/// Return the first newline used in view_ (`"\n"`, `"\r"`, `"\n\r"`, or `"\r\n"`).
+	/// - If none is found, `"\n"` is returned.
+	template< String V >
+	[[nodiscard]] constexpr auto identify_newline( const V & str_ ) noexcept {
+		using my_view = std::basic_string_view< Value_type_t< V > >;
+		static constexpr const my_view			 	res = { "\n\r\n" };
+		const auto 									temp = not_first( str_, find( str_, Newline{} ) );
+		const std::size_t 							sz = starts_with( temp, Newline{} );
+		return	sz ? subview( res, temp.front() == '\r', sz ) : first( res, 1 );
+	}
+
+
+
 	/// Calculate the Luhn sum (a control sum).
 	/// – UB if any character is outside ['0', '9'].
 	/// - https://en.wikipedia.org/wiki/Luhn_algorithm

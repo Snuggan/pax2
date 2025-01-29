@@ -163,7 +163,7 @@ namespace pax {
 		using std::size;
 		auto			s = size( v_ );
 		if constexpr( Character_array< V > ) 
-			s -= bool( s );					// To remove possible trailing '\0'.
+			s -= bool( s ) && !v_[ s - 1 ];		// To remove possible trailing '\0'.
 
 		return s && ( v_[ 0 ] == t_ );
 	}
@@ -396,6 +396,181 @@ namespace pax {
 			e1 -= ( b1 != e1 ) && !*( e1 - 1 );		// To remove possible trailing '\0'.
 
 		return std::equal( b0, e0, b1, e1 );
+	}
+
+
+
+	///	Sorts the elements in v in non-descending order.
+	///	- The order of equal elements is not guaranteed to be preserved.
+	/// - https://en.cppreference.com/w/cpp/algorithm/sort
+	template< Contiguous_elements V >
+	constexpr void sort( V & v_ ) {
+		using std::begin, std::end;
+		const auto		b = begin( v_ );
+		auto			e = end  ( v_ );
+		if constexpr( Character_array< V > ) 
+			e -= ( b != e ) && !*( e - 1 );			// To remove possible trailing '\0'.
+
+		std::sort( b, e );
+	}
+
+
+
+	/// A tool to apply binary_ on all pairs of items from v0_/v1_. 
+	/// v0_ and v1_ must have the same same size.
+	template< Contiguous_elements V0, Contiguous_elements V1, typename Binary >
+		requires std::is_invocable_v< Binary, Value_type_t< V0 >, Value_type_t< V1 > >
+	constexpr void on_each_pair(
+		const V0	  & v0_,
+		const V1	  & v1_,
+		Binary		 && binary_
+	) noexcept {
+		using std::begin, std::size;
+		auto			b0 = begin( v0_ );
+		auto			s0 = size ( v0_ );
+		auto			b1 = begin( v1_ );
+		auto			s1 = size ( v1_ );
+		if constexpr( Character_array< V0 > ) 
+			s0 -= bool( s0 ) && !v0_[ s0 - 1 ];		// To remove possible trailing '\0'.
+		if constexpr( Character_array< V1 > ) 
+			s1 -= bool( s1 ) && !v1_[ s1 - 1 ];		// To remove possible trailing '\0'.
+
+		assert( ( s0 == s1 ) && "The containers must have the same size" );
+		const auto		e0 = b0 + s0;
+		while( b0 != e0 ) 	binary_( *( b0++ ), *( b1++ ) );
+	}
+
+	/// Applies the function f_ on all elements while f_ returns true.
+	/** - Returns true iff all pairs are iterated. 
+		- Terminates unless v0_.size() == v1_.size().
+		- This could be used to mutate elements or aggregate/count in different ways.
+	**/
+	template< Contiguous_elements V0, Contiguous_elements V1, typename Binary >
+		requires std::is_invocable_r_v< bool, Binary, Value_type_t< V0 >, Value_type_t< V1 > >
+	constexpr bool on_each_pair_while(
+		const V0	  & v0_,
+		const V1	  & v1_,
+		Binary		 && binary_
+	) noexcept {
+		using std::begin, std::size;
+		auto			b0 = begin( v0_ );
+		auto			s0 = size ( v0_ );
+		auto			b1 = begin( v1_ );
+		auto			s1 = size ( v1_ );
+		if constexpr( Character_array< V0 > ) 
+			s0 -= bool( s0 ) && !v0_[ s0 - 1 ];		// To remove possible trailing '\0'.
+		if constexpr( Character_array< V1 > ) 
+			s1 -= bool( s1 ) && !v1_[ s1 - 1 ];		// To remove possible trailing '\0'.
+
+		assert( ( s0 == s1 ) && "The containers must have the same size" );
+		const auto		e0 = b0 + s0;
+		while( ( b0 != e0 ) && binary_( *( b0++ ), *( b1++ ) ) );
+		return b0 == e0;
+	}
+
+	///	Checks if unary predicate p returns true for all elements in v.
+	/**	- https://en.cppreference.com/w/cpp/algorithm/all_any_none_of		**/
+	template< Contiguous_elements V, typename Pred >
+		requires std::is_invocable_r_v< bool, Pred, Value_type_t< V > >
+	[[nodiscard]] constexpr bool all_of( 
+		const V							  & v_, 
+		Pred							 && p_
+	) {
+		using std::begin, std::end;
+		const auto		b = begin( v_ );
+		auto			e = end  ( v_ );
+		if constexpr( Character_array< V > ) 
+			e -= ( b != e ) && !*( e - 1 );		// To remove possible trailing '\0'.
+
+		return std::all_of( b, e, p_ );
+	}
+
+	/// Checks if binary_( v0_[i], v1_[i] ) is true for all i.
+	template< Contiguous_elements V0, Contiguous_elements V1, typename Binary >
+		requires std::is_invocable_r_v< bool, Binary, Value_type_t< V0 >, Value_type_t< V1 > >
+	[[nodiscard]] constexpr bool all_of(
+		const V0						  & v0_,
+		const V1						  & v1_,
+		Binary							 && binary_
+	) noexcept {
+		return on_each_pair_while( v0_, v1_, 
+			[ binary_ ]( 
+				const Value_type_t< V0 >  & t0_, 
+				const Value_type_t< V1 >  & t1_ 
+			) {
+				return binary_( t0_, t1_ );
+			}
+		);
+	}
+
+	///	Checks if unary predicate p returns true for at least one element in v.
+	/**	- https://en.cppreference.com/w/cpp/algorithm/all_any_none_of		**/
+	template< Contiguous_elements V, typename Pred >
+		requires std::is_invocable_r_v< bool, Pred, Value_type_t< V > >
+	[[nodiscard]] constexpr bool any_of( 
+		const V							  & v_, 
+		Pred							 && p_
+	) {
+		using std::begin, std::end;
+		const auto		b = begin( v_ );
+		auto			e = end  ( v_ );
+		if constexpr( Character_array< V > ) 
+			e -= ( b != e ) && !*( e - 1 );		// To remove possible trailing '\0'.
+
+		return std::any_of( b, e, p_ );
+	}
+
+	/// Checks if binary_( v0_[i], v1_[i] ) is true for any i.
+	template< Contiguous_elements V0, Contiguous_elements V1, typename Binary >
+		requires std::is_invocable_r_v< bool, Binary, Value_type_t< V0 >, Value_type_t< V1 > >
+	[[nodiscard]] constexpr bool any_of(
+		const V0						  & v0_,
+		const V1						  & v1_,
+		Binary							 && binary_
+	) noexcept {
+		return !on_each_pair_while( v0_, v1_, 
+			[ binary_ ]( 
+				const Value_type_t< V0 >  & t0_, 
+				const Value_type_t< V1 >  & t1_ 
+			) {
+				return !binary_( t0_, t1_ );
+			}
+		);
+	}
+
+	///	Checks if unary predicate p returns true for no elements in v.
+	/**	- https://en.cppreference.com/w/cpp/algorithm/all_any_none_of		**/
+	template< Contiguous_elements V, typename Pred >
+		requires std::is_invocable_r_v< bool, Pred, Value_type_t< V > >
+	[[nodiscard]] constexpr bool none_of( 
+		const V							  & v_, 
+		Pred							 && p_
+	) {
+		using std::begin, std::end;
+		const auto		b = begin( v_ );
+		auto			e = end  ( v_ );
+		if constexpr( Character_array< V > ) 
+			e -= ( b != e ) && !*( e - 1 );		// To remove possible trailing '\0'.
+
+		return std::none_of( b, e, p_ );
+	}
+
+	/// Checks if binary_( v0_[i], v1_[i] ) is true for no i.
+	template< Contiguous_elements V0, Contiguous_elements V1, typename Binary >
+		requires std::is_invocable_r_v< bool, Binary, Value_type_t< V0 >, Value_type_t< V1 > >
+	[[nodiscard]] constexpr bool none_of(
+  		const V0						  & v0_,
+  		const V1						  & v1_,
+  		Binary							 && binary_
+	) noexcept {
+		return on_each_pair_while( v0_, v1_, 
+			[ binary_ ](
+				const Value_type_t< V0 >  & t0_, 
+				const Value_type_t< V1 >  & t1_ 
+			) {
+				return !binary_( t0_, t1_ );
+			}
+		);
 	}
 
 }	// namespace pax

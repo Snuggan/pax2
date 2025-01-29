@@ -8,7 +8,6 @@
 #include <span>
 
 
-
 namespace pax {
 
 	template< typename T >
@@ -319,6 +318,18 @@ namespace pax {
 		const auto 						offset = detail::subview_offset( Offset, size( v_ ) );
 		assert( offset + Len <= size( v_ ) && "subview< Offset, Len >( v_ ) requires Offset + Len <= size( v_ )." );
 		return std::span< Value_type_t< V >, Len >( data( v_ ) + offset, Len );
+	}
+
+
+
+	/// Return the beginning of v_ up to but not including the first until_this_.
+	/// - If no until_this_ is found, v_ is returned.
+	template< Contiguous_elements V, typename U >
+	constexpr auto until(  
+		V					 && v_, 
+		U					 && until_this_ 
+	) noexcept {
+		return first( v_, find( v_, until_this_ ) );
 	}
 
 }	// namespace pax

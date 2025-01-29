@@ -2,7 +2,10 @@
 //	Contact: peder ( at ) axensten.se
 
 
-#include <pax/std/algorithm.hpp>
+#include <pax/std/contiguous_stuff.hpp>
+#include <pax/std/string_view.hpp>
+#include <pax/std/span.hpp>
+
 #include <pax/std/format.hpp>
 #include <pax/doctest.hpp>
 
@@ -13,14 +16,48 @@
 
 namespace pax {
 
+	/// What std::span or std::string_view is suitable for a type?
+	/// Candidates are std::span< T >, std::span< T, N >, or std::string_view< T >.
+	template< Contiguous_elements C, bool Dynamic = false >
+	struct view_type {
+		using type = std::span< Value_type_t< C >, Dynamic ? std::dynamic_extent : extent_v< C > >;
+	};
+
+	template< typename T, std::size_t N, bool Dynamic >
+	struct view_type< std::span< T, N >, Dynamic > {
+		using type = std::span< T, Dynamic ? std::dynamic_extent : N >;
+	};
+
+	template< String S, bool Dynamic >
+	struct view_type< S, Dynamic > {
+		using type = std::basic_string_view< std::remove_cvref_t< Value_type_t< S > > >;
+	};
+
+	template< String S, bool Dynamic >
+		requires( std::remove_cvref_t< S >::traits_type )
+	struct view_type< S, Dynamic > {
+		using Ch = std::remove_cvref_t< Value_type_t< S > >;
+		using Tr = typename std::remove_cvref_t< S >::traits_type;
+		using type = std::basic_string_view< Ch, Tr >;
+	};
+
+	template< typename T, bool Dynamic >
+	struct view_type< const T, Dynamic > : view_type< T, Dynamic > {};
+
+	template< Contiguous_elements C, bool Dynamic = false >
+	using view_type_t = typename view_type< C, Dynamic >::type;
+
+
+
+
 	constexpr auto								str		= "abcdefghijkl";
 	constexpr auto	 							strN	= make_span( "abcdefghijkl" );
-	constexpr const std::string_view			e		= view( "" );
+	constexpr const std::string_view			e( "" );
 
 	constexpr const std::size_t 				N = 12;
 	constexpr const int							ints0[ N ] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
-	constexpr const std::span< const int >		ints	= dview( ints0 );
-	constexpr const std::span< const int, N >	intsN	=  view( ints0 );
+	constexpr const std::span< const int >		ints ( ints0 );
+	constexpr const std::span< const int, N >	intsN( ints0 );
 	constexpr const auto						abc		= std::span< const char >{ str, 12 };
 	
 	template< typename T >
@@ -132,7 +169,6 @@ namespace pax {
 		{	// std::format output
 			DOCTEST_FAST_CHECK_EQ( std::string_view( "abc" ),	"abc" );
 			DOCTEST_FAST_CHECK_EQ( first( abc, 3 ),				"abc" );
-			DOCTEST_FAST_CHECK_EQ( view( first( abc, 3 ) ),		"abc" );
 
 			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", make_span( first( abc, 3 ) ) ),	"['a', 'b', 'c']" );
 			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", first( ints, 0 ) ),	"[]" );
@@ -141,121 +177,6 @@ namespace pax {
 		}
 	}
 	DOCTEST_TEST_CASE( "view_type, make_span" ) {
-		{	// view, dview, view_type, view_type
-			static_assert( std::is_same_v< view_type_t< std::string_view >,				std::string_view > );
-			static_assert( std::is_same_v< view_type_t< std::string_view >,				std::string_view > );
-			static_assert( std::is_same_v< view_type_t< std::string >,					std::string_view > );
-			static_assert( std::is_same_v< view_type_t< std::span< int > >,				std::span< int > > );
-			static_assert( std::is_same_v< view_type_t< std::span< int, 4 > >,			std::span< int, 4 > > );
-			static_assert( std::is_same_v< view_type_t< std::vector< int > >,			std::span< int > > );
-			static_assert( std::is_same_v< view_type_t< std::array < int, 4 > >,		std::span< int, 4 > > );
-
-			static_assert( std::is_same_v< view_type_t< std::string_view, true >,		std::string_view > );
-			static_assert( std::is_same_v< view_type_t< std::string_view, true >,		std::string_view > );
-			static_assert( std::is_same_v< view_type_t< std::string, true >,			std::string_view > );
-			static_assert( std::is_same_v< view_type_t< std::span< int >, true >,		std::span< int > > );
-			static_assert( std::is_same_v< view_type_t< std::span< int, 4 >, true >,	std::span< int > > );
-			static_assert( std::is_same_v< view_type_t< std::vector< int >, true >,		std::span< int > > );
-			static_assert( std::is_same_v< view_type_t< std::array < int, 4 >, true >,	std::span< int > > );
-
-			{
-				auto constexpr abcde = make_span( "abcde" );
-				static_assert( std::string_view( "abcde" )	==	"abcde" );
-				static_assert( abcde.size()					==	5 );
-				static_assert( abcde.back()					==	'e' );
-				static_assert( abcde						==	std::string_view( "abcde" ) );
-				static_assert( abcde						<=	std::string_view( "abcde" ) );
-				static_assert( abcde						>=	std::string_view( "abcde" ) );
-			} {
-				static constexpr const char					res[] = { '\n', '\r', '\n' };
-				constexpr auto								v  = view( res );
-				constexpr auto								dv = dview( res );
-				static_assert( size( v )					==	3 );
-				static_assert( size( dv )					==	3 );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::string_view > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::string_view > );
-			} {
-				constexpr auto								v  = view( std::span< int >{} );
-				constexpr auto								dv = dview( std::span< int >{} );
-				static_assert( size( v )					==	0 );
-				static_assert( v.extent						==	dynamic_extent );
-				static_assert( size( dv )					==	0 );
-				static_assert( dv.extent					==	dynamic_extent );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::span< int > > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::span< int > > );
-			} {
-				constexpr auto								v  = view( std::span< int, 0 >{} );
-				constexpr auto								dv = dview( std::span< int, 0 >{} );
-				static_assert( size( v )					==	0 );
-				static_assert( v.extent						==	0 );
-				static_assert( size( dv )					==	0 );
-				static_assert( dv.extent					==	dynamic_extent );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::span< int, 0 > > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::span< int > > );
-			} {
-				constexpr auto								v  = view( std::string_view{} );
-				constexpr auto								dv = dview( std::string_view{} );
-				static_assert( size( v )					==	0 );
-				static_assert( size( dv )					==	0 );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::string_view > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::string_view > );
-			} {
-				constexpr auto								v  = view( "" );
-				constexpr auto								dv = dview( "" );
-				static_assert( size( v )					==	0 );
-				static_assert( size( dv )					==	0 );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::string_view > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::string_view > );
-			} {
-				const std::vector< int >					arr{ 1, 2, 3 };
-				const auto									v  = view( arr );
-				const auto									dv = dview( arr );
-				DOCTEST_FAST_CHECK_EQ( size( v ),			3 );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::span< const int > > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::span< const int > > );
-			} {
-				static constexpr std::array< int, 3 >		arr{ 1, 2, 3 };
-				constexpr auto								v  = view( arr );
-				constexpr auto								dv = dview( arr );
-				static_assert( size( v )					==	3 );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::span< const int, 3 > > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::span< const int > > );
-			} {
-				static constexpr const int					arr[ 3 ] = { 1, 2, 3 };
-				constexpr auto								v  = view( arr );
-				constexpr auto								dv = dview( arr );
-				static_assert( size( v )					==	3 );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::span< const int, 3 > > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::span< const int > > );
-			} {
-				static constexpr const std::string			arr = "abc";
-				constexpr auto								v  = view( arr );
-				constexpr auto								dv = dview( arr );
-				static_assert( size( v )					==	3 );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::string_view > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::string_view > );
-			} {
-				constexpr const char					  * arr = "abc";
-				constexpr auto								v  = view( arr );
-				constexpr auto								dv = dview( arr );
-				static_assert( size( v )					==	3 );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::string_view > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::string_view > );
-			} {
-				static constexpr const char					arr[ 4 ] = "abc";
-				constexpr auto								v  = view( arr );
-				constexpr auto								dv = dview( arr );
-				static_assert( size( v )					==	3 );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::string_view > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::string_view > );
-			} {
-				constexpr auto								v = view( "abc" );
-				constexpr auto								dv = dview( "abc" );
-				static_assert( size( v )					==	3 );
-				static_assert( std::is_same_v< view_type_t< decltype( v ) >,		std::string_view > );
-				static_assert( std::is_same_v< view_type_t< decltype( dv ), true >,	std::string_view > );
-			}
-		}
 		{	// make_span
 			{
 				const std::vector< int >		arr{ 1, 2, 3 };
@@ -312,9 +233,7 @@ namespace pax {
 			static_assert(  empty( std::string_view{} ) );
 			static_assert(  empty( std::string{} ) );
 			static_assert( !std::empty( "" ) );
-			static_assert(  empty( view( "" ) ) );
 			static_assert(  empty( e ) );
-			static_assert( !empty( view( str ) ) );
 
 			static_assert(  empty( std::span< int >{} ) );
 			static_assert(  empty( std::vector< int >{} ) );
@@ -324,7 +243,7 @@ namespace pax {
 		}
 		{	// make_const_span
 			int					sp0[ 3 ] = { 0, 1, 2 };
-			const std::span		sp	= dview( sp0 );
+			const std::span		sp( sp0 );
 
 			static_assert(  is_value_const< std::string_view > );
 			static_assert( !is_value_const< decltype( sp.front() ) > );
@@ -346,7 +265,7 @@ namespace pax {
 			DOCTEST_FAST_CHECK_UNARY(  identic( "abc", "abc" ) );
 			DOCTEST_FAST_CHECK_UNARY( !identic( "abc", first( "abcdef", 3 ) ) );
 
-			constexpr auto	str2 = view( str );
+			constexpr std::string_view	str2( str );
 			static_assert(  identic( str, str ) );
 			static_assert( !identic( str2, first( str2, 2 ) ) );
 			static_assert(  identic( str2, first( str2, str2.size() ) ) );
@@ -808,7 +727,7 @@ namespace pax {
 			static_assert( find( null_, null_ )	==	 0 );
 
 			static_assert( find( str, "cde" )	==	 2 );
-			static_assert( find( str, "cdf" )	==	 view( str ).size() );
+			static_assert( find( str, "cdf" )	==	 std::string_view( str ).size() );
 			static_assert( find( "abcdefghijkl", "cde" )		==	 2 );
 			static_assert( find( str, first( str, 5 ) )			==	 0 );
 			static_assert( find( str, last ( str, 7 ) )			==	 5 );
@@ -991,7 +910,7 @@ namespace pax {
 					static_assert( find( str, first( str, 2 ) )	==	0 );
 					static_assert( div.first			==	first( str,  0 ) );
 					static_assert( div.second			==	last ( str, 10 ) );
-					static_assert( div.first.data() 	==	view( str ).data() );
+					static_assert( div.first.data() 	==	std::string_view( str ).data() );
 				} {
 					constexpr auto div = split_by( str, subview( str, 4, 2 ) );	// Middle
 					static_assert( div.first			==	first( str,  4 ) );
@@ -1000,7 +919,7 @@ namespace pax {
 					constexpr auto div = split_by( str, last( str, 2 ) );		// End
 					static_assert( div.first			==	first( str, 10 ) );
 					static_assert( div.second			==	last ( str,  0 ) );
-					static_assert ( div.second.data()	==	view( str ).data() + view( str ).size() );
+					static_assert ( div.second.data()	==	std::string_view( str ).data() + std::string_view( str ).size() );
 				} {
 					constexpr auto div = split_by( str, "aaa" );				// None
 					static_assert( div.first			==	str );

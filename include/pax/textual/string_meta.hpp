@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "../std/algorithm.hpp"			// pax::split
+#include "../std/string_view.hpp"	// pax::split
 #include "../reporting/error_message.hpp"
 
 #include <span>
