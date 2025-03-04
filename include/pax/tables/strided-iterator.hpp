@@ -33,22 +33,22 @@ namespace pax {
 		//   Some std functions (i.e. std::copy) will not function correctly if the contiguous_iterator_tag is used.
 		using iterator_category			  = std::random_access_iterator_tag;
 
-		constexpr Strided_iterator()											=	default;
-		constexpr Strided_iterator( const Strided_iterator & )					=	default;
-		constexpr Strided_iterator & operator=( const Strided_iterator & )		=	default;
+		constexpr Strided_iterator()													=	default;
+		constexpr Strided_iterator( const Strided_iterator & )							=	default;
+		constexpr Strided_iterator & operator=( const Strided_iterator & )				=	default;
 
-		constexpr auto operator<=>( const Strided_iterator & )	const noexcept	=	default;
-		constexpr bool operator== ( const Strided_iterator & )	const noexcept	=	default;
+		constexpr auto operator<=>( const Strided_iterator & )			const noexcept	=	default;
+		constexpr bool operator== ( const Strided_iterator & )			const noexcept	=	default;
 
 		constexpr Strided_iterator(
 			const pointer					ptr_, 
 			const stride_type 				stride_ = 1
 		) : m_ptr{ ptr_ }, m_stride{ stride_ } {}
 
-		constexpr stride_type stride()							const noexcept	{	return m_stride;					}
-		constexpr pointer operator->()							const noexcept	{	return m_ptr;						}
-		constexpr reference operator*()							const noexcept	{	return *m_ptr;						}
-		constexpr reference operator[]( const stride_type o_ )	const noexcept	{	return *( m_ptr + stride()*o_ );	}
+		constexpr stride_type stride()									const noexcept	{	return m_stride;					}
+		constexpr pointer operator->()									const noexcept	{	return m_ptr;						}
+		constexpr reference operator*()									const noexcept	{	return *m_ptr;						}
+		constexpr reference operator[]( const stride_type o_ )			const noexcept	{	return *( m_ptr + stride()*o_ );	}
 
 		constexpr Strided_iterator & operator++()							  noexcept	{
 			m_ptr+= stride();
@@ -100,7 +100,7 @@ namespace pax {
 		/// Undefined behaviour, unless the following is true:
 		/// - stride() == o_.stride() and
 		/// - ( m_ptr - o_.m_ptr )%stride() == 0
-		constexpr stride_type operator-( const Strided_iterator o_ )	const noexcept {
+		constexpr stride_type operator-( const Strided_iterator o_ )	const noexcept	{
 			assert( stride() == o_.stride() );
 			assert( ( m_ptr - o_.m_ptr )%stride() == 0 );
 			return  ( m_ptr - o_.m_ptr )/stride();

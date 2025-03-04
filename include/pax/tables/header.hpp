@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "tools.hpp"
+#include "table.hpp"				// stream_deligneated
 #include "../reporting/error_message.hpp"
 
 #include <vector>
@@ -15,7 +15,7 @@ namespace pax {
 	/** Header reference: 
 		Construct from std::span, ensure unique ids,
 		id2idx, idx2id 
-		add/remove cells (std::span), reference all headers (std::span). 
+		add/remove cells, reference all headers (std::span). 
 	**/
 	template< typename Ch >
 	class Header {
@@ -37,16 +37,10 @@ namespace pax {
 			m_cells{ cells_.begin(), cells_.end() }
 		{}
 		
-		constexpr cspan_type cells()							const noexcept	{	return m_cells;			}
+		constexpr cspan_type span()								const noexcept	{	return m_cells;			}
 		constexpr std::size_t size()							const noexcept	{	return m_cells.size();	}
-
-		constexpr value_type operator[]( const std::size_t i_ )	const			{
-			return m_cells[ i_ ];
-		}
-
-		constexpr value_type & operator[]( const std::size_t i_ )				{
-			return m_cells[ i_ ];
-		}
+		constexpr value_type operator[]( const std::size_t i_ )	const			{	return m_cells[ i_ ];	}
+		constexpr value_type & operator[]( const std::size_t i_ )				{	return m_cells[ i_ ];	}
 
 
 		/// Returns the id corresponding to index i_.
@@ -84,7 +78,7 @@ namespace pax {
 			Out							  & out_,
 			Ch								col_mark_
 		) const {
-			stream_deligneated( out_, cells(), col_mark_ );
+			stream_deligneated( out_, span(), col_mark_ );
 		}
 	};
 

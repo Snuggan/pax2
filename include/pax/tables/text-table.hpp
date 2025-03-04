@@ -19,6 +19,12 @@
 
 namespace pax {
 	
+	/// Always returns true.
+	/// Useful in calls with required predicate but you don't need one: use always_true. 
+	static constexpr auto always_true = []( std::size_t ){ return true; };
+
+
+
 	/** Text_table principles
 		- Read a text file into one text string.
 		- Organises a table of string views into the string (and an vector of string views of the header). 
