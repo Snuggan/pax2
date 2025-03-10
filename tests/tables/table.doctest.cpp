@@ -178,7 +178,13 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( table.rows(),		 0 );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 0 );
 	}
-
+	DOCTEST_TEST_CASE( "Table tests" ) {
+		std::vector< int >		base{};
+		const std::mdspan		test{ base.data(), std::dextents< std::size_t, 4 >{ 2, 2, 4, 4 } };
+		std::print( " {:2} {:7} {:7}\n", "d", "extent", "stride" );
+		for( int i{}; i<4; ++i )
+			std::print( "{:2} {:7} {:7}\n", i, test.extent( i ), test.stride( i ) );
+	}
 
 	namespace Text_ns {
 		using T = Table< char >;

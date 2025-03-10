@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <cassert>		// assert
 #include <iterator>		// std::random_access_iterator_tag
 
 
@@ -100,11 +99,11 @@ namespace pax {
 		/// Undefined behaviour, unless the following is true:
 		/// - stride() == o_.stride() and
 		/// - ( m_ptr - o_.m_ptr )%stride() == 0
-		constexpr stride_type operator-( const Strided_iterator o_ )	const noexcept	{
-			assert( stride() == o_.stride() );
-			assert( ( m_ptr - o_.m_ptr )%stride() == 0 );
-			return  ( m_ptr - o_.m_ptr )/stride();
-		}
+		// constexpr stride_type operator-( const Strided_iterator o_ )	const noexcept	{
+		// 	assert( stride() == o_.stride() );
+		// 	assert( ( m_ptr - o_.m_ptr )%stride() == 0 );
+		// 	return  ( m_ptr - o_.m_ptr )/stride();
+		// }
 	};
 
 }	// namespace pax

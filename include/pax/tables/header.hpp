@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "table.hpp"				// stream_deligneated
 #include "../reporting/error_message.hpp"
 
 #include <vector>
+#include <span>
 
 
 namespace pax {
@@ -33,22 +33,18 @@ namespace pax {
 		constexpr Header & operator=( const Header & )		  = default;
 		constexpr Header & operator=( Header && )			  = default;
 
-		constexpr Header( const span_type cells_ ) : 
-			m_cells{ cells_.begin(), cells_.end() }
-		{}
+		constexpr Header( const span_type cells_ ) : m_cells{ cells_.begin(), cells_.end() } {}
 		
 		constexpr cspan_type span()								const noexcept	{	return m_cells;			}
 		constexpr std::size_t size()							const noexcept	{	return m_cells.size();	}
 		constexpr value_type operator[]( const std::size_t i_ )	const			{	return m_cells[ i_ ];	}
 		constexpr value_type & operator[]( const std::size_t i_ )				{	return m_cells[ i_ ];	}
 
-
 		/// Returns the id corresponding to index i_.
 		/// Returns an empty item if i_ is out of range. 
 		constexpr value_type id( const std::size_t i_ )			const noexcept	{
 			return ( i_ < size() ) ? m_cells[ i_ ] : value_type{};
 		}
-
 
 		/// Returns the index corresponding to id_.
 		/// Returns -1u, if there is no item == id_.
@@ -57,7 +53,6 @@ namespace pax {
 				if( m_cells[ i ] == id_ )						return i;
 			return -1;
 		}
-
 
 		/// Adds id_ to the header if it is not already there.
 		/// - Throws if id_ is empty.
@@ -70,18 +65,22 @@ namespace pax {
 			return m_cells.size() - 1;
 		}
 
-
 		/// Stream the header items to out_ using col_mark_ as column deligneater. 
 		///
 		template< typename Out >
-		void stream(
+		Out & stream(
 			Out							  & out_,
 			Ch								col_mark_
 		) const {
-			stream_deligneated( out_, span(), col_mark_ );
+			auto							itr = m_cells.begin();
+			const auto						end = m_cells.end();
+			if( itr != end ) {
+				out_ << *itr;
+				while( ++itr != end )		out_ << col_mark_ << *itr;
+			}
+			return out_;
 		}
 	};
-
 
 	template< typename U, std::size_t N >
 	Header( std::span< U, N > )	-> Header< typename std::remove_cv_t< U >::value_type >;
