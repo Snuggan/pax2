@@ -6,93 +6,111 @@
 
 #include "strided-iterator.hpp"
 
+#if( 0 )
+#	include <print>
+#	define PRINT( ... )		std::print( __VA_ARGS__ )
+#else
+#	define PRINT( ... )	
+#endif
+
+#include <cassert>
 #include <vector>
 #include <span>
 #include <mdspan>
-#include <algorithm>	// std::copy_n, std::fill_n
+#include <algorithm>	// std::copy_n, std::fill_n, std::min
 
 
 namespace pax {
 
-	template< typename T, typename IndexType, std::size_t... Extents >
-	class Resizer {
-		using Size						  = std::size_t;
-		using extent_type				  = std::extents< IndexType, Extents... >;	//std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy >;
-		static constexpr Size		Rank  = sizeof...( Extents );
-
-		const std::span< T >				m_data; 
-		const extent_type					m_srce; 
-		const extent_type					m_dest;
-		const Size							m_chunksize;	// How much to copy at each std::copy_n.
+	template< typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy >
+	static void resize(
+		const std::span< T >											data_, 
+		const std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy >	srce_map_, 
+		const std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy >	dest_map_ 
+	) {
 
 		//	From [ 5, 3, 2, 2 ] to [ 4, 4, 2, 2 ], which gives stride [ 12,  4, 2, 1 ] to [ 16,  4, 2, 1 ]
 		//	From [ 2, 2, 3, 5 ] to [ 2, 2, 4, 4 ], which gives stride [ 30, 15, 5, 1 ] to [ 32, 16, 4, 1 ]
-	
-		//	|  0   1   2   3   4 |	| 15  16  17  18  19 |		|  0   1   2   3 |	| 15  16  17  18 |		|  0   1   2   3 |	| 16  17  18  19 |
-		//	|  5   6   7   8   9 |	| 20  21  22  23  24 |		|  5   6   7   8 |	| 20  21  22  23 |		|  4   5   6   7 |	| 20  21  22  23 |
-		//	| 10  11  12  13  14 |	| 25  26  27  28  29 ]		| 10  11  12  13 |	| 25  26  27  28 ]		|  8   9  10  11 |	| 24  25  26  27 ]
-		//														|  0   0   0   0 |	|  0   0   0   0 |		| 12  13  14  15 |	| 28  29  30  31 |
-		//                                                		                                        	                                              
-		//	| 30  31  32  33  34 ]	| 45  46  47  48  49 |		| 30  31  32  33 ]	| 45  46  47  48 |		| 32  33  34  35 ]	| 48  49  50  51 |
-		//	| 35  36  37  38  39 |	| 50  51  52  53  54 |		| 35  36  37  38 |	| 50  51  52  53 |		| 36  37  38  39 |	| 52  53  54  55 |
-		//	| 40  41  42  43  44 |	| 55  56  57  58  59 |		| 40  41  42  43 |	| 55  56  57  58 |		| 40  41  42  43 |	| 56  57  58  59 |
-		//														|  0   0   0   0 |	|  0   0   0   0 |		| 44  45  46  47 |	| 60  61  62  63 |
 
-		template< Size D >
-		constexpr void resizeD( T * srce, T * dest ) {
-			// If srce_.extent( D ) > dest_.extent( D ) shrink:  copy from first to last.
-			// If srce_.extent( D ) < dest_.extent( D ) expoand: copy from last to first.
-			const bool		expand	  = m_srce.extent( D ) < m_dest.extent( D );
-			const int		srce_step = expand ? -1 : 1;	/////////////////////////////////////// FIX!
-			const int		dest_step = expand ? -1 : 1;	/////////////////////////////////////// FIX!
-			srce					 += expand*( m_srce.extent( D ) - 1 )*srce_step;
-			dest					 += expand*( m_dest.extent( D ) - 1 )*dest_step;
-			const T *		srce_end  = srce + srce_step*m_srce.extent( D );
+		//	|  0  1  2  3  4 |	| 15 16 17 18 19 |		|  0  1  2  3 |	| 15 16 17 18 |		|  0  1  2  3 |	| 16 17 18 19 |
+		//	|  5  6  7  8  9 |	| 20 21 22 23 24 |		|  5  6  7  8 |	| 20 21 22 23 |		|  4  5  6  7 |	| 20 21 22 23 |
+		//	| 10 11 12 13 14 |	| 25 26 27 28 29 ]		| 10 11 12 13 |	| 25 26 27 28 ]		|  8  9 10 11 |	| 24 25 26 27 ]
+		//								   				|  0  0  0  0 |	|  0  0  0  0 |		| 12 13 14 15 |	| 28 29 30 31 |
+		//
+		//	| 30 31 32 33 34 ]	| 45 46 47 48 49 |		| 30 31 32 33 ]	| 45 46 47 48 |		| 32 33 34 35 ]	| 48 49 50 51 |
+		//	| 35 36 37 38 39 |	| 50 51 52 53 54 |		| 35 36 37 38 |	| 50 51 52 53 |		| 36 37 38 39 |	| 52 53 54 55 |
+		//	| 40 41 42 43 44 |	| 55 56 57 58 59 |		| 40 41 42 43 |	| 55 56 57 58 |		| 40 41 42 43 |	| 56 57 58 59 |
+		//												|  0  0  0  0 |	|  0  0  0  0 |		| 44 45 46 47 |	| 60 61 62 63 |
 
-			if constexpr( D < ( Rank - 1 ) ) {
-				while( srce	!= srce_end ) 
-					resizeD< D+1 >( srce += srce_step, dest += dest_step );
-			} else {
-				if( expand ) {
-					while( srce	!= srce_end ) {
-						std::copy_n( srce += srce_step, m_chunksize, dest += dest_step );
-						std::fill_n( dest + m_chunksize, m_dest.extent( 0 ) - m_chunksize, T{} );
-					}
-				} else {
-					while( srce	!= srce_end ) 
-						std::copy_n( srce += srce_step, m_chunksize, dest += dest_step );
-				}
+		PRINT( ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n" );
+		PRINT( "Resize from [ {}, {} ] to [ {}, {} ]\n",	srce_map_.extent( 0 ), srce_map_.extent( 1 ),
+		 													dest_map_.extent( 0 ), dest_map_.extent( 1 ) );
+
+		// If either source or destination is empty, there is nothing to copy.
+		if( !srce_map_.size() || !dest_map_.size() )					return;
+
+		static_assert( Extents::rank() );
+		assert( data_.size() >= srce_map_.size() );
+		assert( data_.size() >= dest_map_.size() );
+
+		using Size					  = std::size_t;
+		using Step					  = std::ptrdiff_t;
+		static constexpr Size	D	  = Extents::rank() - 1;	// What dimension has contiguous elements? (Either 0 or rank-1.)
+
+		// If srce_map_.extent( D ) > dest_map_.extent( D ) shrink:  copy from first to last.
+		// If srce_map_.extent( D ) < dest_map_.extent( D ) expoand: copy from last to first.
+		const Size		chunksize	  = std::min( srce_map_.extent( D ), dest_map_.extent( D ) );
+		const Size		iters		  = std::min( srce_map_.size()/srce_map_.extent( D ), dest_map_.size()/dest_map_.extent( D ) );
+		const bool		expand		  = srce_map_.extent( D ) < dest_map_.extent( D );
+		
+		const Step		srce_step	  = ( expand ? -1 : 1 )*static_cast< Step >( srce_map_.extent( D ) );
+		const Step		dest_step	  = ( expand ? -1 : 1 )*static_cast< Step >( dest_map_.extent( D ) );
+		T			  * srce		  = data_.data() + ( expand ? -srce_step*( iters - 1 ) : 0 );
+		T			  * dest		  = data_.data() + ( expand ? -dest_step*( iters - 1 ) : 0 );
+		T const		  * srce_end	  = srce + srce_step*iters;
+
+		PRINT( "expand:    {}\n", expand );
+		PRINT( "chunksize: {}\n", chunksize );
+		PRINT( "iters:     {}\n", iters );
+		PRINT( "srce:      {} + {} ({})\n", srce - data_.data(), srce_step, srce_end - data_.data() );
+		PRINT( "dest:      {} + {}\n", dest - data_.data(), dest_step );
+
+		if( expand ) {
+			while( srce	!= srce_end ) {
+				PRINT( "copy_n( {}, {}, {} )\n", srce-data_.data(), chunksize, dest-data_.data() );
+				std::copy_n( srce, chunksize, dest );
+				PRINT( "fill_n( {}, {}, 0 )\n", dest + chunksize - data_.data(), dest_map_.extent( D ) - chunksize );
+				std::fill_n( dest + chunksize, dest_map_.extent( D ) - chunksize, T{} );
+				srce += srce_step;
+				dest += dest_step;
+			}
+		} else {
+			while( srce	!= srce_end ) {
+				PRINT( "copy_n( {}, {}, {} )\n", srce-data_.data(), chunksize, dest-data_.data() );
+				std::copy_n( srce, chunksize, dest );
+				srce += srce_step;
+				dest += dest_step;
 			}
 		}
-	
-	public:
-		constexpr Resizer( 
-			const std::span< T >	& data_, 
-			const extent_type		& srce_, 
-			const extent_type		& dest_ 
-		) : m_data{ data_ }, 
-			m_srce{ srce_ }, 
-			m_dest{ dest_ },
-			m_chunksize{ ( srce_.extent( 0 ) < dest_.extent( 0 ) ) ? srce_.extent( 0 ) : dest_.extent( 0 ) }
-		{
-			assert( m_data.size() <= m_dest.size() );
-			resizeD< 0 >( m_data.data(), m_data.data() );
+
+		// Zero trailing values, if any. 
+		if( dest_step*iters < dest_map_.size() ) {	//true || expand ) {
+			PRINT( "fill_n( {}, {}, {} )\n", dest_step*iters, dest_map_.size() - dest_step*iters, T{} );
+			std::fill_n( data_.data() + dest_step*iters, dest_map_.size() - dest_step*iters, T{} );
 		}
-	};
+	}
 
 
 	// template< typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy >
-	template< typename T, typename IndexType, std::size_t... Extents >
-	constexpr void resize( 
-		std::vector< T >						& data_, 
-		const std::extents< T, Extents... >		& srce_, 
-		const std::extents< T, Extents... >		& dest_ 
+	template< typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy >
+	static void resize( 
+		std::vector< T >											  & data_, 
+		const std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy >	srce_, 
+		const std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy >	dest_ 
 	) {
-		if( data_.size() <  dest_.size() )
-			data_.resize  ( dest_.size() );
-		Resizer( std::span{ data_ }, srce_, dest_ );
-		if( data_.size() != dest_.size() )
-			data_.resize  ( dest_.size() );
+		if( data_.size() <  dest_.size() )	data_.resize  ( dest_.size() );
+		resize( std::span{ data_ }, srce_, dest_ );
+		if( data_.size() != dest_.size() )	data_.resize  ( dest_.size() );
 	}
 
 
@@ -102,10 +120,10 @@ namespace pax {
 	///
 	template< typename Out, typename Itr, typename Ch >
 	Out & stream(
-		Out							  & out_,
-		Itr								itr_, 
-		const Itr						end_, 
-		const Ch						col_mark_
+		Out						  & out_,
+		Itr							itr_, 
+		const Itr					end_, 
+		const Ch					col_mark_
 	) {
 		if( itr_ != end_ ) {
 			out_ << *itr_;
@@ -198,18 +216,41 @@ namespace pax {
 
 		/// Return row r_ as a span.
 		///
-		constexpr span_type row( const Size r_ )		  noexcept	{
+		constexpr span_type row( const Size r_ )		  			{
 			return ( r_ < rows() ) ? span_type{ data() + cols()*r_, cols() } : span_type{};
 		}
 
 		/// Resize the tablen.
 		/// If the table is enlarged, old values are retained and new items are set to T{}.
 		/// If the table is decreased, the values within the new size are retained. 
-		constexpr void resize( const Size rows_, const Size cols_ );
+		constexpr void resize( const Size rows_, const Size cols_ ) {
+			pax::resize( m_cells, *this, mdspan{ m_cells.data(), std::array{ rows_, cols_ } } );
+			adjust_size( rows_, cols_ );
+		}
 
 		/// Remove a column.
 		/// 
-		constexpr void remove_column( const Size col_ );
+		constexpr void remove_column( const Size col_ ) 			{
+			if( ( col_ < extent( colR ) ) && size() ) {
+				// We leave be the elements before the first column item to remove.
+				const auto		new_cols = extent( colR ) - 1;
+				T			  * dest = data() + col_;
+				T			  * srce = dest + 1;
+				const T		  * send = dest + extent( colR ) * ( extent( rowR ) - 1 );
+
+				// Copy the rows from behind one column item to remove to just before the next. 
+				while( srce < send ) {
+					std::copy_n( srce, new_cols, dest );
+					srce	 += extent( colR );
+					dest	 += new_cols;
+				}
+
+				// Copy the elements behind the last column item to remove, the trailing elements of the last row. 
+				std::copy_n( srce, new_cols - col_, dest );
+
+				adjust_size( extent( rowR ), extent( colR ) - 1 );
+			}
+		}
 
 		/// Stream the rows for which predicate_[ i ] is true to out_ using col_mark_ as column deligneater. 
 		/// Row deligneator is '\n'.
@@ -228,7 +269,7 @@ namespace pax {
 		/// Stream the table to out_ using col_mark_ as column deligneater. 
 		/// Row deligneator is '\n'.
 		template< typename Out >
-		void stream(
+		Out & stream(
 			Out							  & out_,
 			const char 						col_mark_ = ';'
 		) const {
@@ -252,64 +293,5 @@ namespace pax {
 	template< typename U, std::size_t N >
 	Table( std::span< U, N >, std::size_t )	-> Table< std::remove_cv_t< U > >;
 
-
-	template< typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy >
-	constexpr void Table< T, Extents, LayoutPolicy, AccessorPolicy >::resize( const Size rows_, const Size cols_ ) {
-		/// Are we expanding?
-		if( rows_*cols_ >  size() )
-			m_cells.resize( rows_*cols_ );
-
-		// We do not need to copy more rows than min( rows(), rows_ ).
-		const auto			chunksize = ( extent( rowR ) < rows_ ) ? extent( rowR ) : rows_;
-
-		if( extent( colR ) < cols_ ) {			// Copy rows from last to first.
-			T			  * srce = data() + extent( colR ) * chunksize;
-			T			  * dest = data() + cols_  * chunksize;
-			const T		  * dend = data();
-			while( ( dest-= cols_ ) >= dend ) {
-				srce	 -= extent( colR );
-				std::copy_n( srce, extent( colR ), dest );
-				std::fill_n( dest + extent( colR ), cols_ - extent( colR ), T{} );
-			}
-		} else if( extent( colR ) > cols_ ) {	// Copy rows from first to last.
-			T			  * srce = data();
-			T			  * dest = data();
-			const T		  * dend = dest + cols_ * chunksize;
-			while( ( dest+= cols_ ) < dend ) {
-				srce	 += extent( colR );
-				std::copy_n( srce, cols_, dest );
-			}
-		}
-
-		// Zero trailing values, if any. 
-		if( size() > chunksize*cols_ )
-			std::fill_n( data() + chunksize*cols_, size() - chunksize*cols_, T{} );
-
-		// Clean up.
-		adjust_size( rows_, cols_ );
-	}
-
-	template< typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy >
-	constexpr void Table< T, Extents, LayoutPolicy, AccessorPolicy >::remove_column( const Size col_ )	{
-		if( ( col_ < extent( colR ) ) && size() ) {
-			// We leave be the elements before the first column item to remove.
-			const auto		new_cols = extent( colR ) - 1;
-			T			  * dest = data() + col_;
-			T			  * srce = dest + 1;
-			const T		  * send = dest + extent( colR ) * ( extent( rowR ) - 1 );
-
-			// Copy the rows from behind one column item to remove to just before the next. 
-			while( srce < send ) {
-				std::copy_n( srce, new_cols, dest );
-				srce	 += extent( colR );
-				dest	 += new_cols;
-			}
-
-			// Copy the elements behind the last column item to remove, the trailing elements of the last row. 
-			std::copy_n( srce, new_cols - col_, dest );
-
-			adjust_size( extent( rowR ), extent( colR ) - 1 );
-		}
-	}
-
 }	// namespace pax
+#undef PRINT
