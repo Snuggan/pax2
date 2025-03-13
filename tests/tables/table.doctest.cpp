@@ -13,17 +13,16 @@ namespace pax {
 	constexpr std::size_t 		sz = 32;
 	constexpr std::size_t 		cols = 4;
 	constexpr std::size_t 		rows = sz/cols;
-	static constexpr int arr[ sz ] = {
-		 0,  1,  2,  3, 
-		 4,  5,  6,  7, 
-		 8,  9, 10, 11, 
-		12, 13, 14, 15, 
-		16, 17, 18, 19, 
-		20, 21, 22, 23, 
-		24, 25, 26, 27, 
-		28, 29, 30, 31
+	static  int arr[ 64 ] = {
+		 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 
+		16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 
+		32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 
+		48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63
 	};
-	constexpr std::span			sp{ arr };
+	constexpr std::span			sp{ std::span{ arr }.first( sz ) };
+
+	template< typename LayoutPolicy >
+	using mdspan = std::mdspan< int, std::dextents< std::size_t, 4 >, std::layout_right >;
 	
 	
 	template< typename T, std::size_t N >
@@ -54,7 +53,7 @@ namespace pax {
 		{	// Construction.
 			DOCTEST_FAST_CHECK_EQ( table.rows(),			rows );
 			DOCTEST_FAST_CHECK_EQ( table.cols(),			cols );
-			DOCTEST_FAST_CHECK_EQ( table.size(),			sz );
+			DOCTEST_FAST_CHECK_EQ( table.size(),			32 );
 			DOCTEST_FAST_CHECK_EQ( table.span(),			sp );
 			DOCTEST_FAST_CHECK_EQ( sum( table.span() ),		31*16 );
 		}
@@ -125,7 +124,7 @@ namespace pax {
 			}
 		}
 		{	// Normal resize.
-			Table table( std::span{ arr }, 4 );
+			Table table( sp, 4 );
 			DOCTEST_FAST_CHECK_EQ( table.rows(),		 8 );
 			DOCTEST_FAST_CHECK_EQ( table.cols(), 		 4 );
 			DOCTEST_FAST_CHECK_EQ( table[ 3, 1 ],		13 );
@@ -152,7 +151,7 @@ namespace pax {
 		}
 	}
 	DOCTEST_TEST_CASE( "Table remove_column" ) { 
-		Table table( std::span{ arr }, 4 );
+		Table table( sp, 4 );
 		DOCTEST_FAST_CHECK_EQ( table.rows(),		 8 );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 4 );
 		DOCTEST_FAST_CHECK_EQ( table[ 7, 1 ],		29 );
@@ -177,6 +176,15 @@ namespace pax {
 		table.remove_column( 0 );
 		DOCTEST_FAST_CHECK_EQ( table.rows(),		 0 );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 0 );
+	}
+
+
+	DOCTEST_TEST_CASE( "Table specials" ) { 
+
+		constexpr mdspan< std::layout_right >		md{ arr, 2, 2, 3, 5 };
+		stream( std::cout, md );
+		// print( mdspan< std::layout_left  >{ md } );
+		
 	}
 
 	namespace Text_ns {

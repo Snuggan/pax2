@@ -6,14 +6,8 @@
 
 #include "strided-iterator.hpp"
 
-#if( 0 )
-#	include <print>
-#	define PRINT( ... )		std::print( __VA_ARGS__ )
-#else
-#	define PRINT( ... )	
-#endif
-
 #include <cassert>
+#include <print>
 #include <vector>
 #include <span>
 #include <mdspan>
@@ -24,28 +18,10 @@ namespace pax {
 
 	template< typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy >
 	static void resize(
-		const std::span< T >											data_, 
-		const std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy >	srce_map_, 
-		const std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy >	dest_map_ 
+		const std::span< T >											data_, 		///< The actual data items.
+		const std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy >	srce_map_, 	///< The source extents.
+		const std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy >	dest_map_ 	///< The destination extents. 
 	) {
-
-		//	From [ 5, 3, 2, 2 ] to [ 4, 4, 2, 2 ], which gives stride [ 12,  4, 2, 1 ] to [ 16,  4, 2, 1 ]
-		//	From [ 2, 2, 3, 5 ] to [ 2, 2, 4, 4 ], which gives stride [ 30, 15, 5, 1 ] to [ 32, 16, 4, 1 ]
-
-		//	|  0  1  2  3  4 |	| 15 16 17 18 19 |		|  0  1  2  3 |	| 15 16 17 18 |		|  0  1  2  3 |	| 16 17 18 19 |
-		//	|  5  6  7  8  9 |	| 20 21 22 23 24 |		|  5  6  7  8 |	| 20 21 22 23 |		|  4  5  6  7 |	| 20 21 22 23 |
-		//	| 10 11 12 13 14 |	| 25 26 27 28 29 ]		| 10 11 12 13 |	| 25 26 27 28 ]		|  8  9 10 11 |	| 24 25 26 27 ]
-		//								   				|  0  0  0  0 |	|  0  0  0  0 |		| 12 13 14 15 |	| 28 29 30 31 |
-		//
-		//	| 30 31 32 33 34 ]	| 45 46 47 48 49 |		| 30 31 32 33 ]	| 45 46 47 48 |		| 32 33 34 35 ]	| 48 49 50 51 |
-		//	| 35 36 37 38 39 |	| 50 51 52 53 54 |		| 35 36 37 38 |	| 50 51 52 53 |		| 36 37 38 39 |	| 52 53 54 55 |
-		//	| 40 41 42 43 44 |	| 55 56 57 58 59 |		| 40 41 42 43 |	| 55 56 57 58 |		| 40 41 42 43 |	| 56 57 58 59 |
-		//												|  0  0  0  0 |	|  0  0  0  0 |		| 44 45 46 47 |	| 60 61 62 63 |
-
-		PRINT( ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n" );
-		PRINT( "Resize from [ {}, {} ] to [ {}, {} ]\n",	srce_map_.extent( 0 ), srce_map_.extent( 1 ),
-		 													dest_map_.extent( 0 ), dest_map_.extent( 1 ) );
-
 		// If either source or destination is empty, there is nothing to copy.
 		if( !srce_map_.size() || !dest_map_.size() )					return;
 
@@ -53,64 +29,46 @@ namespace pax {
 		assert( data_.size() >= srce_map_.size() );
 		assert( data_.size() >= dest_map_.size() );
 
-		using Size					  = std::size_t;
-		using Step					  = std::ptrdiff_t;
-		static constexpr Size	D	  = Extents::rank() - 1;	// What dimension has contiguous elements? (Either 0 or rank-1.)
+		using Ptr					 	  = T*;
+		static constexpr std::size_t D	  = Extents::rank() - 1;	// What dimension has contiguous elements? (Either 0 or rank-1.)
 
-		// If srce_map_.extent( D ) > dest_map_.extent( D ) shrink:  copy from first to last.
-		// If srce_map_.extent( D ) < dest_map_.extent( D ) expoand: copy from last to first.
-		const Size		chunksize	  = std::min( srce_map_.extent( D ), dest_map_.extent( D ) );
-		const Size		iters		  = std::min( srce_map_.size()/srce_map_.extent( D ), dest_map_.size()/dest_map_.extent( D ) );
-		const bool		expand		  = srce_map_.extent( D ) < dest_map_.extent( D );
-		
-		const Step		srce_step	  = ( expand ? -1 : 1 )*static_cast< Step >( srce_map_.extent( D ) );
-		const Step		dest_step	  = ( expand ? -1 : 1 )*static_cast< Step >( dest_map_.extent( D ) );
-		T			  * srce		  = data_.data() + ( expand ? -srce_step*( iters - 1 ) : 0 );
-		T			  * dest		  = data_.data() + ( expand ? -dest_step*( iters - 1 ) : 0 );
-		T const		  * srce_end	  = srce + srce_step*iters;
+		//	From [ 5, 3, 2, 2 ] to [ 4, 4, 2, 2 ], which gives stride [ 12,  4, 2, 1 ] to [ 16,  4, 2, 1 ]
+		//	From [ 2, 2, 3, 5 ] to [ 2, 2, 4, 4 ], which gives stride [ 30, 15, 5, 1 ] to [ 32, 16, 4, 1 ]
+		//	|  0  1  2  3  4 | | 15 16 17 18 19 |		|  0  1  2  3 | | 15 16 17 18 |		|  0  1  2  3 | | 16 17 18 19 |
+		//	|  5  6  7  8  9 | | 20 21 22 23 24 |		|  5  6  7  8 | | 20 21 22 23 |		|  4  5  6  7 | | 20 21 22 23 |
+		//	| 10 11 12 13 14 | | 25 26 27 28 29 ]		| 10 11 12 13 | | 25 26 27 28 ]		|  8  9 10 11 | | 24 25 26 27 ]
+		//								   				|  0  0  0  0 | |  0  0  0  0 |		| 12 13 14 15 | | 28 29 30 31 |
+		//
+		//	| 30 31 32 33 34 ] | 45 46 47 48 49 |		| 30 31 32 33 ] | 45 46 47 48 |		| 32 33 34 35 ] | 48 49 50 51 |
+		//	| 35 36 37 38 39 | | 50 51 52 53 54 |		| 35 36 37 38 | | 50 51 52 53 |		| 36 37 38 39 | | 52 53 54 55 |
+		//	| 40 41 42 43 44 | | 55 56 57 58 59 |		| 40 41 42 43 | | 55 56 57 58 |		| 40 41 42 43 | | 56 57 58 59 |
+		//												|  0  0  0  0 | |  0  0  0  0 |		| 44 45 46 47 | | 60 61 62 63 |
 
-		PRINT( "expand:    {}\n", expand );
-		PRINT( "chunksize: {}\n", chunksize );
-		PRINT( "iters:     {}\n", iters );
-		PRINT( "srce:      {} + {} ({})\n", srce - data_.data(), srce_step, srce_end - data_.data() );
-		PRINT( "dest:      {} + {}\n", dest - data_.data(), dest_step );
+		const auto		  & srce_step  = srce_map_.extent( D );
+		const auto		  & dest_step  = dest_map_.extent( D );
+		const std::size_t	iters	  = std::min( srce_map_.size()/srce_step, dest_map_.size()/dest_step );
 
-		if( expand ) {
+		if( srce_step < dest_step ) {				// Expoand: copy from last to first.
+			Ptr				srce	  = data_.data() + srce_step*iters;
+			Ptr				dest	  = data_.data() + dest_step*iters;
+			const Ptr		srce_end  = data_.data();
+			const auto		remains	  = dest_step - srce_step;
 			while( srce	!= srce_end ) {
-				PRINT( "copy_n( {}, {}, {} )\n", srce-data_.data(), chunksize, dest-data_.data() );
-				std::copy_n( srce, chunksize, dest );
-				PRINT( "fill_n( {}, {}, 0 )\n", dest + chunksize - data_.data(), dest_map_.extent( D ) - chunksize );
-				std::fill_n( dest + chunksize, dest_map_.extent( D ) - chunksize, T{} );
-				srce += srce_step;
-				dest += dest_step;
+				std::copy_n( srce -= srce_step, srce_step, dest -= dest_step );
+				std::fill_n( dest +  srce_step, remains, T{} );
 			}
-		} else {
+		} else if( srce_step > dest_step ) {		// Shrink:  copy from first to last.
+			Ptr				srce	  = data_.data();
+			Ptr				dest	  = data_.data();
+			const Ptr		srce_end  = data_.data() + srce_step*iters;
 			while( srce	!= srce_end ) {
-				PRINT( "copy_n( {}, {}, {} )\n", srce-data_.data(), chunksize, dest-data_.data() );
-				std::copy_n( srce, chunksize, dest );
+				std::copy_n( srce, dest_step, dest );
 				srce += srce_step;
 				dest += dest_step;
 			}
 		}
-
-		// Zero trailing values, if any. 
-		if( dest_step*iters < dest_map_.size() ) {	//true || expand ) {
-			PRINT( "fill_n( {}, {}, {} )\n", dest_step*iters, dest_map_.size() - dest_step*iters, T{} );
+		if( dest_step*iters < dest_map_.size() )	// Zero-out trailing values, if any.
 			std::fill_n( data_.data() + dest_step*iters, dest_map_.size() - dest_step*iters, T{} );
-		}
-	}
-
-
-	// template< typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy >
-	template< typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy >
-	static void resize( 
-		std::vector< T >											  & data_, 
-		const std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy >	srce_, 
-		const std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy >	dest_ 
-	) {
-		if( data_.size() <  dest_.size() )	data_.resize  ( dest_.size() );
-		resize( std::span{ data_ }, srce_, dest_ );
-		if( data_.size() != dest_.size() )	data_.resize  ( dest_.size() );
 	}
 
 
@@ -118,18 +76,41 @@ namespace pax {
 
 	/// Stream the header items to out_ using col_mark_ as column deligneater. 
 	///
-	template< typename Out, typename Itr, typename Ch >
+	template< typename Out, typename Itr, typename Ch = char >
 	Out & stream(
-		Out						  & out_,
-		Itr							itr_, 
-		const Itr					end_, 
-		const Ch					col_mark_
+		Out							  & out_,
+		Itr								itr_, 
+		const Itr						end_, 
+		const Ch						col_mark_ = ';'
 	) {
 		if( itr_ != end_ ) {
-			out_ << *itr_;
-			while( ++itr_ != end_ )		out_ << col_mark_ << *itr_;
+			out_ << std::format( "{}", *itr_ );
+			while( ++itr_ != end_ )		out_ << std::format( "{}{}", col_mark_, *itr_ );
 		}
 		return out_;
+	}
+
+	template< typename Out, typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy, typename Ch = char >
+	Out & stream( 
+		Out													  & out_, 
+		std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy >	md_, 
+		const Ch												col_mark_ = ';'
+	) {
+		out_	<< std::format( "-----------------------------------------------------\n" )
+				<< std::format( "rank {}, size {}, ", md_.rank(), md_.size() )
+				<< std::format( "extents [ {}, {}, {}, {} ], ", md_.extent( 0 ), md_.extent( 1 ), md_.extent( 2 ), md_.extent( 3 ) )
+				<< std::format( "strides [ {}, {}, {}, {} ]\n", md_.stride( 0 ), md_.stride( 1 ), md_.stride( 2 ), md_.stride( 3 ) );
+		for( std::size_t m{}; m<md_.extent( 0 ); ++m ) {
+			for( std::size_t n{}; n<md_.extent( 1 ); ++n ) {
+				out_ << std::format( "\n[ {}, {}, r, c ]; \n", m, n );
+				for( std::size_t r{}; r<md_.extent( 2 ); ++r ) {
+					stream( out_, &md_[ m, n, r, 0 ], &md_[ m, n, r, md_.extent( 3 ) ], col_mark_ );
+					out_ << std::format( "\n" );
+				}
+			}
+		}
+		// std::println( "{}", std::span{ md_.data_handle(), md_.size() } );
+		return out_ << "-----------------------------------------------------\n";
 	}
 
 
@@ -224,7 +205,10 @@ namespace pax {
 		/// If the table is enlarged, old values are retained and new items are set to T{}.
 		/// If the table is decreased, the values within the new size are retained. 
 		constexpr void resize( const Size rows_, const Size cols_ ) {
-			pax::resize( m_cells, *this, mdspan{ m_cells.data(), std::array{ rows_, cols_ } } );
+			const mdspan		  dest{ m_cells.data(), std::array{ rows_, cols_ } };
+			if( m_cells.size() <  dest.size() )	m_cells.resize( dest.size() );
+			pax::resize( std::span( data(), m_cells.size() ), *this, dest );
+			if( m_cells.size() != dest.size() )	m_cells.resize( dest.size() );
 			adjust_size( rows_, cols_ );
 		}
 
@@ -258,11 +242,11 @@ namespace pax {
 			requires( std::is_invocable_r_v< bool, Predicate, Size > )
 		Out & stream(
 			Out							  & out_,
-			Predicate					 && predicate_, 
+			Predicate					 && row_predicate_, 
 			const char						col_mark_ = ';'
 		) const {
 			for( Size r{}; r<rows(); ++r ) 
-				if( predicate_( r ) )		pax::stream( out_, begin_row( r ), end_row( r ), col_mark_ ) << '\n';
+				if( row_predicate_( r ) )	pax::stream( out_, begin_row( r ), end_row( r ), col_mark_ ) << '\n';
 			return out_;
 		}
 
@@ -294,4 +278,3 @@ namespace pax {
 	Table( std::span< U, N >, std::size_t )	-> Table< std::remove_cv_t< U > >;
 
 }	// namespace pax
-#undef PRINT
