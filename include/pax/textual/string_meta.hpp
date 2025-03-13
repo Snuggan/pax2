@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "html-table-template.hpp"	// pax::html_table_template
 #include "../std/string_view.hpp"	// pax::split
 #include "../reporting/error_message.hpp"
 
@@ -399,58 +400,7 @@ namespace pax {
 			}
 
 			// Collect the result.
-			return std20::format( 
-				"<!doctype html>\n"
-				"<html lang=\"se\">\n"
-				"<head>\n"
-				"<title>{}</title>\n"
-				"<meta http-equiv=Content-Type content=\"text/html; charset=utf-8\">\n"
-				"<style>\n"
-				"	body {{\n"
-				"		margin: 0;\n"
-				"	}}\n"
-				"	table {{\n"
-				"		position: relative;\n"
-				"		overflow-x: auto;\n"
-				"		border-spacing: 0;\n"
-				"		white-space: nowrap;\n"
-				"		text-align: left;\n"
-				"		font-family: ArialUnicodeMS, arial, sans-serif;\n"
-				"		font-variant-numeric: lining-nums tabular-nums;\n"
-				"	}}\n"
-				"	thead tr td {{\n"
-				"		background-color: #70AD47;\n"
-				"		font-weight: bold;\n"
-				"		position: sticky;\n"
-				"		top: 0;\n"
-				"	}}\n"
-				"	tr {{\n"
-				"		background-color: #D2DFCA;\n"
-				"	}}\n"
-				"	tr:nth-of-type(odd) {{\n"
-				"		background-color: #E2EFDA;\n"
-				"	}}\n"
-				"	td {{\n"
-				"		padding: 6px;\n"
-				"		font-variant-numeric: tabular-nums;\n"
-				"	}}\n"
-				"{}"
-				"</style>\n"
-				"<script src=\"https://www.kryogenix.org/code/browser/sorttable/sorttable.js\"></script>\n"
-				"</head>\n"
-				"<body>\n"
-				"<table class=\"sortable\">\n"
-				"<thead>\n"
-				"	<tr>\n"
-				"{}"
-				"	</tr>\n"
-				"</thead>\n"
-				"<tbody>\n"
-				"	{}\n"
-				"</tbody>\n"
-				"</table>\n"
-				"</body>\n"
-				"</html>\n",
+			return std20::format( html_table_template,
 				title_, css2, process_header( String_view_splitter( header, meta.col_delimiter() ), col_types ), body 
 			);
 		}
