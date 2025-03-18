@@ -247,7 +247,7 @@ namespace pax {
 			col_mark_					  = ( col_mark_ == value_type{} ) ? m_col_mark : col_mark_;
 			m_header.stream( out_, col_mark_ );
 			out_ << '\n';
-			m_table .stream( out_, predicate_, col_mark_ );
+			m_table .print( out_, predicate_, col_mark_ );
 		}
 
 		/// Stream the table as text to out_.

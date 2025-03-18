@@ -5,114 +5,12 @@
 #pragma once
 
 #include "strided-iterator.hpp"
+#include "../std/mdspan.hpp"
 
-#include <cassert>
-#include <print>
 #include <vector>
-#include <span>
-#include <mdspan>
-#include <algorithm>	// std::copy_n, std::fill_n, std::min
 
 
 namespace pax {
-
-	template< typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy >
-	static void resize(
-		const std::span< T >											data_, 		///< The actual data items.
-		const std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy >	srce_map_, 	///< The source extents.
-		const std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy >	dest_map_ 	///< The destination extents. 
-	) {
-		// If either source or destination is empty, there is nothing to copy.
-		if( !srce_map_.size() || !dest_map_.size() )					return;
-
-		static_assert( Extents::rank() );
-		assert( data_.size() >= srce_map_.size() );
-		assert( data_.size() >= dest_map_.size() );
-
-		using Ptr					 	  = T*;
-		static constexpr std::size_t D	  = Extents::rank() - 1;	// What dimension has contiguous elements? (Either 0 or rank-1.)
-
-		//	From [ 5, 3, 2, 2 ] to [ 4, 4, 2, 2 ], which gives stride [ 12,  4, 2, 1 ] to [ 16,  4, 2, 1 ]
-		//	From [ 2, 2, 3, 5 ] to [ 2, 2, 4, 4 ], which gives stride [ 30, 15, 5, 1 ] to [ 32, 16, 4, 1 ]
-		//	|  0  1  2  3  4 | | 15 16 17 18 19 |		|  0  1  2  3 | | 15 16 17 18 |		|  0  1  2  3 | | 16 17 18 19 |
-		//	|  5  6  7  8  9 | | 20 21 22 23 24 |		|  5  6  7  8 | | 20 21 22 23 |		|  4  5  6  7 | | 20 21 22 23 |
-		//	| 10 11 12 13 14 | | 25 26 27 28 29 ]		| 10 11 12 13 | | 25 26 27 28 ]		|  8  9 10 11 | | 24 25 26 27 ]
-		//								   				|  0  0  0  0 | |  0  0  0  0 |		| 12 13 14 15 | | 28 29 30 31 |
-		//
-		//	| 30 31 32 33 34 ] | 45 46 47 48 49 |		| 30 31 32 33 ] | 45 46 47 48 |		| 32 33 34 35 ] | 48 49 50 51 |
-		//	| 35 36 37 38 39 | | 50 51 52 53 54 |		| 35 36 37 38 | | 50 51 52 53 |		| 36 37 38 39 | | 52 53 54 55 |
-		//	| 40 41 42 43 44 | | 55 56 57 58 59 |		| 40 41 42 43 | | 55 56 57 58 |		| 40 41 42 43 | | 56 57 58 59 |
-		//												|  0  0  0  0 | |  0  0  0  0 |		| 44 45 46 47 | | 60 61 62 63 |
-
-		const auto		  & srce_step  = srce_map_.extent( D );
-		const auto		  & dest_step  = dest_map_.extent( D );
-		const std::size_t	iters	  = std::min( srce_map_.size()/srce_step, dest_map_.size()/dest_step );
-
-		if( srce_step < dest_step ) {				// Expoand: copy from last to first.
-			Ptr				srce	  = data_.data() + srce_step*iters;
-			Ptr				dest	  = data_.data() + dest_step*iters;
-			const Ptr		srce_end  = data_.data();
-			const auto		remains	  = dest_step - srce_step;
-			while( srce	!= srce_end ) {
-				std::copy_n( srce -= srce_step, srce_step, dest -= dest_step );
-				std::fill_n( dest +  srce_step, remains, T{} );
-			}
-		} else if( srce_step > dest_step ) {		// Shrink:  copy from first to last.
-			Ptr				srce	  = data_.data();
-			Ptr				dest	  = data_.data();
-			const Ptr		srce_end  = data_.data() + srce_step*iters;
-			while( srce	!= srce_end ) {
-				std::copy_n( srce, dest_step, dest );
-				srce += srce_step;
-				dest += dest_step;
-			}
-		}
-		if( dest_step*iters < dest_map_.size() )	// Zero-out trailing values, if any.
-			std::fill_n( data_.data() + dest_step*iters, dest_map_.size() - dest_step*iters, T{} );
-	}
-
-
-
-
-	/// Stream the header items to out_ using col_mark_ as column deligneater. 
-	///
-	template< typename Out, typename Itr, typename Ch = char >
-	Out & stream(
-		Out							  & out_,
-		Itr								itr_, 
-		const Itr						end_, 
-		const Ch						col_mark_ = ';'
-	) {
-		if( itr_ != end_ ) {
-			out_ << std::format( "{}", *itr_ );
-			while( ++itr_ != end_ )		out_ << std::format( "{}{}", col_mark_, *itr_ );
-		}
-		return out_;
-	}
-
-	template< typename Out, typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy, typename Ch = char >
-	Out & stream( 
-		Out													  & out_, 
-		std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy >	md_, 
-		const Ch												col_mark_ = ';'
-	) {
-		out_	<< std::format( "-----------------------------------------------------\n" )
-				<< std::format( "rank {}, size {}, ", md_.rank(), md_.size() )
-				<< std::format( "extents [ {}, {}, {}, {} ], ", md_.extent( 0 ), md_.extent( 1 ), md_.extent( 2 ), md_.extent( 3 ) )
-				<< std::format( "strides [ {}, {}, {}, {} ]\n", md_.stride( 0 ), md_.stride( 1 ), md_.stride( 2 ), md_.stride( 3 ) );
-		for( std::size_t m{}; m<md_.extent( 0 ); ++m ) {
-			for( std::size_t n{}; n<md_.extent( 1 ); ++n ) {
-				out_ << std::format( "\n[ {}, {}, r, c ]; \n", m, n );
-				for( std::size_t r{}; r<md_.extent( 2 ); ++r ) {
-					stream( out_, &md_[ m, n, r, 0 ], &md_[ m, n, r, md_.extent( 3 ) ], col_mark_ );
-					out_ << std::format( "\n" );
-				}
-			}
-		}
-		// std::println( "{}", std::span{ md_.data_handle(), md_.size() } );
-		return out_ << "-----------------------------------------------------\n";
-	}
-
 
 	/// Handle 2-dimensional data. 
 	/// With time, use md_span?
@@ -130,6 +28,7 @@ namespace pax {
 		using cspan_type		  = std::span< const value_type >;
 		using index_type		  = typename Extents::index_type;
 		using Size				  = std::make_unsigned_t< index_type >;
+		static_assert( mdspan::rank() == 2 );
 		
 		static constexpr Size		rowR = 0;
 		static constexpr Size		colR = 1;
@@ -240,26 +139,17 @@ namespace pax {
 		/// Row deligneator is '\n'.
 		template< typename Out, typename Predicate >
 			requires( std::is_invocable_r_v< bool, Predicate, Size > )
-		Out & stream(
+		void print(
 			Out							  & out_,
 			Predicate					 && row_predicate_, 
-			const char						col_mark_ = ';'
+			const char 						separator_ = 0
 		) const {
-			for( Size r{}; r<rows(); ++r ) 
-				if( row_predicate_( r ) )	pax::stream( out_, begin_row( r ), end_row( r ), col_mark_ ) << '\n';
-			return out_;
-		}
-
-		/// Stream the table to out_ using col_mark_ as column deligneater. 
-		/// Row deligneator is '\n'.
-		template< typename Out >
-		Out & stream(
-			Out							  & out_,
-			const char 						col_mark_ = ';'
-		) const {
-			for( Size r = 1; r<=rows(); ++r ) 
-				pax::stream( out_, begin_row( r ), end_row( r ), col_mark_ ) << '\n';
-			return out_;
+			for( Size r{}; r<rows(); ++r ) {
+				if( row_predicate_( r ) ) {
+					pax::print( out_, begin_row( r ), end_row( r ), separator_ );
+					std::println( out_, "" );
+				}
+			}
 		}
 
 		/// Stream the table as text to out_.
@@ -269,7 +159,7 @@ namespace pax {
 			Out							  & out_,
 			const Table					  & table_
 		) {
-			table_.stream( out_ );
+			pax::print( out_, table_, ';' );
 			return out_;
 		}
 	};

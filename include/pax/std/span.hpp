@@ -7,6 +7,8 @@
 #include "../concepts.hpp"
 #include <span>
 #include <algorithm>
+#include <print>
+#include <iostream>
 
 
 namespace pax {
@@ -80,6 +82,34 @@ namespace std {
 
 
 namespace pax {
+
+	/// Stream the header items to out_ using col_mark_ as column deligneater. 
+	///
+	template< typename Out, typename Itr >
+	void print(
+		Out							  & out_,
+		Itr								itr_, 
+		const Itr						end_, 
+		const char						separator_ = 0
+	) {
+		const char						temp[ 2 ] = { separator_ };
+		const char					  * separator = separator_ ? temp : ", ";
+		if( !separator_ )				std::print( out_, "[ " );
+		if( itr_ != end_ ) {
+			std::print( out_, "{}", *itr_ );
+			while( ++itr_ != end_ )		std::print( out_, "{}{}", separator, *itr_ );
+		}
+		if( !separator_ )				std::print( out_, " ]" );
+	}
+
+	template< typename Itr, typename Ch = char >
+	void print(
+		Itr								itr_, 
+		const Itr						end_, 
+		const char 						separator_ = 0
+	) {	return print( std::cout, itr_, end_, separator_ );				}
+
+
 
 	/// Returns a std::span.
 	template< Not_character_array A >

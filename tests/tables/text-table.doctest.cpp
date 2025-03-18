@@ -14,14 +14,14 @@ namespace pax {
 		Text_table< char >		table;
 
 		{	// Create a Text_table.
-			const std::string_view		table_contents  ( "r1,r2,r3\na1,a2,1.3\nb1,b2,2.3\n\nc1,c2,3.3\n" );
-			const std::string_view		table_contentsA ( "r1,r2,r3\na1,a2,1.3\nb1,b2,2.3\nc1,c2,3.3\n" );
+			const std::string_view		table_contents  ( "r1;r2;r3\na1;a2;1.3\nb1;b2;2.3\n\nc1;c2;3.3\n" );
+			const std::string_view		table_contentsA ( "r1;r2;r3\na1;a2;1.3\nb1;b2;2.3\nc1;c2;3.3\n" );
 			table					  = Text_table{ std::string{ table_contents } };
 			DOCTEST_FAST_CHECK_EQ( table.as_str(), table_contentsA );
 		}
 		{	// Insert columns.
-			const std::string_view		table_contentsB ( "R1,r2,R3\nA4,1,A5\nB4,2,B5\nC4,3,C5\n" );
-			const std::string_view		table_contentsAB( "r1,r2,r3,R1,R3\na1,1,1.3,A4,A5\nb1,2,2.3,B4,B5\nc1,3,3.3,C4,C5\n" );
+			const std::string_view		table_contentsB ( "R1;r2;R3\nA4;1;A5\nB4;2;B5\nC4;3;C5\n" );
+			const std::string_view		table_contentsAB( "r1;r2;r3;R1;R3\na1;1;1.3;A4;A5\nb1;2;2.3;B4;B5\nc1;3;3.3;C4;C5\n" );
 			table.insert_cols( Text_table{ std::string{ table_contentsB } } );
 			DOCTEST_FAST_CHECK_EQ( table.as_str(), table_contentsAB );
 			DOCTEST_FAST_CHECK_EQ( table.rows(),				3 );
