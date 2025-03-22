@@ -7,8 +7,7 @@
 
 // Using std::format works well with clang 18. It does not work with gcc 13.2 or 14, however.
 // So I stick with fmt::format until gcc implements std::runtime_format as defined in C++26.
-#define PAX_USE_STD_FORMAT			( ( __cplusplus > 202302L ) || false )
-#if PAX_USE_STD_FORMAT
+#if ( ( __cplusplus > 202302L ) || false )
 #	include <format>
 #	define std20 std
 #else
