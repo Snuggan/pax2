@@ -9,6 +9,7 @@
 #include <string_view>
 #include <cmath>		// std::isinf
 
+
 namespace pax {
 
 	template< typename Rep, typename Ratio >

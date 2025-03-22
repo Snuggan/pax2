@@ -20,32 +20,10 @@
 #	include "../external/fmt/ostream.h"
 #	include "../external/fmt/ranges.h"
 #	define std20 fmt
-#endif
 
-
-namespace pax {
-	template< typename Ch, typename Traits >
-	class basic_string_view2;
-}	// Namespace pax
-
-
-namespace std20 {
-
-	template< typename Ch, typename Traits >
-	struct formatter< pax::basic_string_view2< Ch, Traits >, Ch > 
-		:  formatter< std::basic_string_view < Ch, Traits > > {};
-
-#	if !PAX_USE_STD_FORMAT
-
-		// For fmt 10.2.2
-		template< typename Ch, typename Traits >
-		struct detail::is_std_string_like< pax::basic_string_view2< Ch, Traits > > : std::true_type {};
-
+	namespace fmt {
 		/// When the format string is not known at compile time, std::format may not be used as usual.
 		/** Instead the format argument signals this case by having a specific type.		**/
-		inline auto runtime_format( const std::string_view fmt_ ) {
-			return fmt::runtime( fmt_ );
-		}
-
-#	endif
-}	// namespace std20
+		inline auto runtime_format( const std::string_view fmt_ )	{	return fmt::runtime( fmt_ );		}
+	}	// namespace std20
+#endif
