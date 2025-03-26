@@ -2,7 +2,6 @@
 //	Contact: peder ( at ) axensten.se
 
 
-#include <pax/std/algorithm.hpp>
 #include <pax/std/string_view.hpp>
 #include <pax/std/span.hpp>
 
@@ -167,13 +166,17 @@ namespace pax {
 			static_assert( newlines( '\a', '\r' ) == 0 );
 		}
 		{	// std::format output
-			DOCTEST_FAST_CHECK_EQ( std::string_view( "abc" ),	"abc" );
-			DOCTEST_FAST_CHECK_EQ( first( abc, 3 ),				"abc" );
-
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", make_span( first( abc, 3 ) ) ),	"['a', 'b', 'c']" );
 			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", first( ints, 0 ) ),	"[]" );
 			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", first( ints, 1 ) ),	"[0]" );
 			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", first( ints, 3 ) ),	"[0, 1, 2]" );
+
+			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", make_span( first( abc, 3 ) ) ),	"['a', 'b', 'c']" );
+			
+			DOCTEST_FAST_CHECK_EQ( std::string_view( "abc" ),	"abc" );
+			DOCTEST_FAST_CHECK_EQ( first( abc, 3 ),				"abc" );
+
+			constexpr char const	  * strs[] = { "abc", "def", "ghi" };
+			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", std::span( strs ) ),	"[\"abc\", \"def\", \"ghi\"]" );
 		}
 	}
 	DOCTEST_TEST_CASE( "view_type, make_span" ) {
