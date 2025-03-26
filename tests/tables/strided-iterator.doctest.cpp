@@ -77,6 +77,16 @@ namespace pax {
 				DOCTEST_FAST_CHECK_EQ( *end, 		28 );
 			}
 		}
+		{	// Strider
+			const	std::ptrdiff_t 				stride{ 3 };					
+			const	Strider						strider( Strided_iterator{ arr, stride }, 5 );
+			int		check{};
+			for( const auto item : strider ) {
+				DOCTEST_FAST_CHECK_EQ( item, check );
+				check+= stride;
+			}
+			DOCTEST_FAST_CHECK_EQ( check, 15 );
+		}
 	}
 
 

@@ -33,9 +33,9 @@ namespace pax {
 		//   Some std functions (i.e. std::copy) will not function correctly if the contiguous_iterator_tag is used.
 		using iterator_category			  = std::random_access_iterator_tag;
 
-		constexpr Strided_iterator()													=	default;
-		constexpr Strided_iterator( const Strided_iterator & )							=	default;
-		constexpr Strided_iterator & operator=( const Strided_iterator & )				=	default;
+		constexpr Strided_iterator()										  noexcept	=	default;
+		constexpr Strided_iterator( const Strided_iterator & )				  noexcept	=	default;
+		constexpr Strided_iterator & operator=( const Strided_iterator & )	  noexcept	=	default;
 
 		constexpr auto operator<=>( const Strided_iterator & )			const noexcept	=	default;
 		constexpr bool operator== ( const Strided_iterator & )			const noexcept	=	default;
@@ -43,7 +43,7 @@ namespace pax {
 		constexpr Strided_iterator(
 			const pointer					ptr_, 
 			const stride_type 				stride_ = 1
-		) : m_ptr{ ptr_ }, m_stride{ stride_ } {}
+		) noexcept : m_ptr{ ptr_ }, m_stride{ stride_ } {}
 
 		constexpr stride_type stride()									const noexcept	{	return m_stride;					}
 		constexpr pointer operator->()									const noexcept	{	return m_ptr;						}
@@ -106,5 +106,36 @@ namespace pax {
 			return  ( m_ptr - o_.m_ptr )/stride();
 		}
 	};
+	
+	
+	
+	/// A convenience class for a pair of strided iterators.
+	/// Easy to use in loops: for( const auto item : strider ) { ... }.
+	template< typename T >
+	class Strider {
+		using 		iterator = Strided_iterator< T >;
+		iterator	m_begin{}, m_end{};
+		
+	public:
+		using element_type				  = T;
+		using value_type				  = std::remove_cv_t< element_type >;
+
+		constexpr Strider()													  noexcept	=	default;
+		constexpr Strider( const Strider & )								  noexcept	=	default;
+		constexpr Strider & operator=( const Strider & )					  noexcept	=	default;
+
+		constexpr Strider(
+			const iterator					begin_, 
+			const std::size_t 				items_
+		) noexcept : m_begin{ begin_ }, m_end{ begin_ + items_ } {}
+
+		constexpr auto begin()											const noexcept	{	return m_begin;					}
+		constexpr auto end()											const noexcept	{	return m_end;					}
+		constexpr auto size()											const noexcept	{	return m_begin.stride();		}
+		constexpr auto stride()											const noexcept	{	return end() - begin();			}
+	};
+
+	template< typename T >
+	Strider( Strided_iterator< T >, std::size_t )	-> Strider< T >;
 
 }	// namespace pax
