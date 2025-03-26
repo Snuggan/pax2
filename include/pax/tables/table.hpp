@@ -60,33 +60,33 @@ namespace pax {
 		constexpr Table(
 			const std::span< U, N >	cells_, 
 			const Size		 		cols_
-		) : m_cells{ cells_.begin(), cells_.end() }					{	adjust_size( cells_.size() / cols_, cols_ );			}
+		) : m_cells{ cells_.begin(), cells_.end() }					{	adjust_size( cells_.size() / cols_, cols_ );		}
 
 		using mdspan::extent;
 		using mdspan::size;
 		using mdspan::stride;
-		constexpr Size rows()						const noexcept	{	return extent( rowR );									}
-		constexpr Size cols()						const noexcept	{	return extent( colR );									}
-		constexpr const value_type * data()			const noexcept	{	return mdspan::data_handle();							}
-		constexpr value_type * data()					  noexcept	{	return m_cells.data();									}
+		constexpr Size rows()						const noexcept	{	return extent( rowR );								}
+		constexpr Size cols()						const noexcept	{	return extent( colR );								}
+		constexpr const value_type * data()			const noexcept	{	return mdspan::data_handle();						}
+		constexpr value_type * data()					  noexcept	{	return m_cells.data();								}
 
-		constexpr auto span()						const noexcept	{	return std::span( data(), size() );						}
-		constexpr auto span()							  noexcept	{	return std::span( data(), size() );						}
+		constexpr auto span()						const noexcept	{	return std::span( data(), size() );					}
+		constexpr auto span()							  noexcept	{	return std::span( data(), size() );					}
 
-		constexpr auto begin()						const noexcept	{	return m_cells.begin();									}
-		constexpr auto begin()							  noexcept	{	return m_cells.begin();									}
-		constexpr auto end  ()						const noexcept	{	return m_cells.end();									}
-		constexpr auto end  ()							  noexcept	{	return m_cells.end();									}
+		constexpr auto begin()						const noexcept	{	return m_cells.begin();								}
+		constexpr auto begin()							  noexcept	{	return m_cells.begin();								}
+		constexpr auto end  ()						const noexcept	{	return m_cells.end();								}
+		constexpr auto end  ()							  noexcept	{	return m_cells.end();								}
 
-		constexpr auto begin_row( const Size r_ )	const noexcept	{	return strider( r_*stride( rowR ), stride( colR ) );	}
-		constexpr auto begin_row( const Size r_ )		  noexcept	{	return strider( r_*stride( rowR ), stride( colR ) );	}
-		constexpr auto end_row  ( const Size r_ )	const noexcept	{	return begin_row( r_ + 1 );								}
-		constexpr auto end_row  ( const Size r_ )		  noexcept	{	return begin_row( r_ + 1 );								}
+		constexpr auto begin_row( const Size r_ )	const noexcept	{	return strider( r_*stride( rowR ), stride( colR ) );}
+		constexpr auto begin_row( const Size r_ )		  noexcept	{	return strider( r_*stride( rowR ), stride( colR ) );}
+		constexpr auto end_row  ( const Size r_ )	const noexcept	{	return begin_row( r_ + 1 );							}
+		constexpr auto end_row  ( const Size r_ )		  noexcept	{	return begin_row( r_ + 1 );							}
 
-		constexpr auto begin_col( const Size c_ )	const noexcept	{	return strider( c_*stride( colR ), stride( rowR ) );	}
-		constexpr auto begin_col( const Size c_ )		  noexcept	{	return strider( c_*stride( colR ), stride( rowR ) );	}
-		constexpr auto end_col  ( const Size c_ )	const noexcept	{	return begin_col( c_ ) + rows();						}
-		constexpr auto end_col  ( const Size c_ )		  noexcept	{	return begin_col( c_ ) + rows();						}
+		constexpr auto begin_col( const Size c_ )	const noexcept	{	return strider( c_*stride( colR ), stride( rowR ) );}
+		constexpr auto begin_col( const Size c_ )		  noexcept	{	return strider( c_*stride( colR ), stride( rowR ) );}
+		constexpr auto end_col  ( const Size c_ )	const noexcept	{	return begin_col( c_ ) + rows();					}
+		constexpr auto end_col  ( const Size c_ )		  noexcept	{	return begin_col( c_ ) + rows();					}
 
 		/// Return row r_ as a span.
 		///
