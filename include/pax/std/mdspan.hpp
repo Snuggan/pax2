@@ -4,11 +4,17 @@
 
 #pragma once
 
-#include "span.hpp"
 
+#if ( defined( __cpp_lib_mdspan ) && ( __cpp_lib_mdspan >= 202207L ) || false )
+#	include <mdspan>
+#else
+	//	https://github.com/kokkos/mdspan
+#	define MDSPAN_IMPL_STANDARD_NAMESPACE std
+#	include "../external/mdspan/mdspan.hpp"
+#endif
+
+#include "span.hpp"
 #include <cassert>
-#include <span>
-#include <mdspan>
 #include <algorithm>	// std::copy_n, std::fill_n, std::min
 
 
