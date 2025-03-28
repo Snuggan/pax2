@@ -85,7 +85,9 @@ namespace pax {
 				DOCTEST_FAST_CHECK_EQ( item, check );
 				check+= stride;
 			}
-			DOCTEST_FAST_CHECK_EQ( check, 15 );
+			DOCTEST_FAST_CHECK_EQ( check,				15 );
+			DOCTEST_FAST_CHECK_EQ( strider.size(),		 5 );
+			DOCTEST_FAST_CHECK_EQ( strider.stride(),	stride );
 		}
 	}
 

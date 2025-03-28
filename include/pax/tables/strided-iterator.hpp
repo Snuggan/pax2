@@ -131,8 +131,8 @@ namespace pax {
 
 		constexpr auto begin()											const noexcept	{	return m_begin;					}
 		constexpr auto end()											const noexcept	{	return m_end;					}
-		constexpr auto size()											const noexcept	{	return m_begin.stride();		}
-		constexpr auto stride()											const noexcept	{	return end() - begin();			}
+		constexpr auto size()											const noexcept	{	return end() - begin();			}
+		constexpr auto stride()											const noexcept	{	return m_begin.stride();		}
 	};
 
 	template< typename T >
