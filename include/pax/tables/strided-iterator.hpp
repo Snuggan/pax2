@@ -4,111 +4,66 @@
 
 #pragma once
 
-#include <cassert>
+#include <cassert>		// assert()
 #include <iterator>		// std::random_access_iterator_tag
 
 
 namespace pax {
 
-
 	/// A bare bones class implementing a random access iterator with a step that may be other than 1.
 	/// - The stride may be negative. 
-	/// - It never throws by itself, but the user must naturally see to it that it is in range.
-	/// - There are some restrictions on operator-. Not complying is undefined behaviour. 
+	/// - It never throws.
+	/// - As it strides, it is not a contiguous_iterator.
 	template< typename T >
 	class Strided_iterator {
+		using Strided					  = Strided_iterator< T >;
 		T								  * m_ptr{ nullptr };
 		std::ptrdiff_t 						m_stride{ 1 };
 
+		constexpr Strided & offset( const std::ptrdiff_t offs_ )	  noexcept	{	m_ptr+= offs_;		return *this;		}
+
 	public:
-		using difference_type			  = std::ptrdiff_t;
-		using stride_type				  = difference_type;
+		using stride_type				  = std::ptrdiff_t;
 		using element_type				  = T;
 		using value_type				  = std::remove_cv_t< element_type >;
 		using pointer					  = element_type *;
 		using reference					  = element_type &;
-
-		// This iterator type is random access: 
-		// - operator++() does "jump" values, so it is not a contiguous_iterator.
-		//   Some std functions (i.e. std::copy) will not function correctly if the contiguous_iterator_tag is used.
 		using iterator_category			  = std::random_access_iterator_tag;
 
-		constexpr Strided_iterator()										  noexcept	=	default;
-		constexpr Strided_iterator( const Strided_iterator & )				  noexcept	=	default;
-		constexpr Strided_iterator & operator=( const Strided_iterator & )	  noexcept	=	default;
-
-		constexpr auto operator<=>( const Strided_iterator & )			const noexcept	=	default;
-		constexpr bool operator== ( const Strided_iterator & )			const noexcept	=	default;
+		constexpr Strided_iterator()								  noexcept	=	default;
+		constexpr Strided_iterator( const Strided & )				  noexcept	=	default;
+		constexpr Strided & operator=( const Strided & )			  noexcept	=	default;
+		constexpr auto operator<=>( const Strided & )			const noexcept	=	default;
+		constexpr bool operator== ( const Strided & )			const noexcept	=	default;
 
 		constexpr Strided_iterator(
 			const pointer					ptr_, 
 			const stride_type 				stride_ = 1
 		) noexcept : m_ptr{ ptr_ }, m_stride{ stride_ } {}
 
-		constexpr stride_type stride()									const noexcept	{	return m_stride;					}
-		constexpr pointer operator->()									const noexcept	{	return m_ptr;						}
-		constexpr reference operator*()									const noexcept	{	return *m_ptr;						}
-		constexpr reference operator[]( const stride_type o_ )			const noexcept	{	return *( m_ptr + stride()*o_ );	}
+		constexpr stride_type stride()							const noexcept	{	return m_stride;						}
+		constexpr pointer   operator->()						const noexcept	{	return m_ptr;							}
+		constexpr reference operator*()							const noexcept	{	return *m_ptr;							}
+		constexpr reference operator[]( const stride_type o_ )	const noexcept	{	return *( m_ptr + stride()*o_ );		}
+		constexpr Strided & operator++()							  noexcept	{	return offset(  stride() );				}
+		constexpr Strided & operator+=( const stride_type o_ )		  noexcept	{	return offset(  stride()*o_ );			}
+		constexpr Strided   operator+ ( const stride_type o_ ) 	const noexcept	{	return Strided{ *this }+= o_;			}
+		constexpr Strided & operator--()							  noexcept	{	return offset( -stride() );				}
+		constexpr Strided & operator-=( const stride_type o_ )		  noexcept	{	return offset( -stride()*o_ );			}
+		constexpr Strided   operator- ( const stride_type o_ ) 	const noexcept	{	return Strided{ *this }-= o_;			}
 
-		constexpr Strided_iterator & operator++()							  noexcept	{
-			m_ptr+= stride();
-			return *this;
-		}
+		constexpr Strided   operator++( int ) noexcept {	const Strided temp = *this;	m_ptr+= stride();	return temp;	}
+		constexpr Strided   operator--( int ) noexcept {	const Strided temp = *this;	m_ptr-= stride();	return temp;	}
 
-		constexpr Strided_iterator operator++( int )						  noexcept	{
-			const pointer	temp = m_ptr;
-			m_ptr+= stride();
-			return { temp, stride() };
-		}
-
-		constexpr Strided_iterator & operator--()							  noexcept	{
-			m_ptr-= stride();
-			return *this;
-		}
-
-		constexpr Strided_iterator operator--( int )						  noexcept	{
-			const pointer	temp = m_ptr;
-			m_ptr-= stride();
-			return { temp, stride() };
-		}
-
-		constexpr Strided_iterator & operator+=( const stride_type o_ )		  noexcept	{
-			m_ptr+= stride()*o_;
-			return *this;
-		}
-
-		constexpr Strided_iterator & operator-=( const stride_type o_ )		  noexcept	{
-			m_ptr-= stride()*o_;
-			return *this;
-		}
-
-		constexpr Strided_iterator operator+( const stride_type o_ )	const noexcept	{
-			return { m_ptr + stride()*o_, stride() };
-		}
-
-		friend constexpr Strided_iterator operator+(
-			const stride_type 			o_, 
-			const Strided_iterator		itr_
-		) noexcept {
-			return itr_ + o_;
-		}
-
-		constexpr Strided_iterator operator-( const stride_type o_ )	const noexcept	{
-			return { m_ptr - stride()*o_, stride() };
-		}
-
-		/// Undefined behaviour, unless the following is true:
-		/// - stride() == o_.stride() and
-		/// - ( m_ptr - o_.m_ptr )%stride() == 0
-		constexpr stride_type operator-( const Strided_iterator o_ )	const noexcept	{
-			assert( stride() == o_.stride() );
-			assert( ( m_ptr - o_.m_ptr )%stride() == 0 );
+		/// Undefined behaviour if ( stride() != o_.stride() ) || ( ( m_ptr - o_.m_ptr )%stride() != 0 ).
+		constexpr stride_type operator-( const Strided o_ ) 	const noexcept	{
+			assert( stride() == o_.stride() );					// Otherwise it doesn't make sense...
+			assert( ( m_ptr - o_.m_ptr )%stride() == 0 );		// They must be in sync.
 			return  ( m_ptr - o_.m_ptr )/stride();
 		}
 	};
-	
-	
-	
+
+
 	/// A convenience class for a pair of strided iterators.
 	/// Easy to use in loops: for( const auto item : strider ) { ... }.
 	template< typename T >
@@ -120,19 +75,19 @@ namespace pax {
 		using element_type				  = T;
 		using value_type				  = std::remove_cv_t< element_type >;
 
-		constexpr Strider()													  noexcept	=	default;
-		constexpr Strider( const Strider & )								  noexcept	=	default;
-		constexpr Strider & operator=( const Strider & )					  noexcept	=	default;
+		constexpr Strider()											  noexcept	=	default;
+		constexpr Strider( const Strider & )						  noexcept	=	default;
+		constexpr Strider & operator=( const Strider & )			  noexcept	=	default;
 
 		constexpr Strider(
 			const iterator					begin_, 
 			const std::size_t 				items_
 		) noexcept : m_begin{ begin_ }, m_end{ begin_ + items_ } {}
 
-		constexpr auto begin()											const noexcept	{	return m_begin;					}
-		constexpr auto end()											const noexcept	{	return m_end;					}
-		constexpr auto size()											const noexcept	{	return end() - begin();			}
-		constexpr auto stride()											const noexcept	{	return m_begin.stride();		}
+		constexpr auto begin()									const noexcept	{	return m_begin;							}
+		constexpr auto end()									const noexcept	{	return m_end;							}
+		constexpr auto size()									const noexcept	{	return end() - begin();					}
+		constexpr auto stride()									const noexcept	{	return m_begin.stride();				}
 	};
 
 	template< typename T >
