@@ -58,21 +58,13 @@ namespace pax {
 			Predicate							 && predicate_,
 			std::integer_sequence< Size, I... >
 		) const {
-			// Convert the column ids to indeces and check they are valid.
-			const Size						idxs[] = { m_header.index( col_ids_[ I ] )... };
-			std::string						missing;
-			for( std::size_t i=0; i<col_ids_.size(); ++i ) 
-				if( idxs[ i ] > m_header.size() )	missing+= std::string( missing.empty() ? "\"" : "\", \"" ) + col_ids_[ i ];
-			if( missing.size() ) throw error_message( std20::format( "Missing column[s]: {}\".", missing ) );
-
-			// Create and push a value for each row in the table [with true row predicate_].
+			const auto						idxs = m_header.index( col_ids_ );
 			Size		 					r{};					// The predicator needs the row number.
 			auto							itr{ m_table.begin() };	// Beginning-of-row iterator.
-			const auto						end{ m_table.end() };	// Iteration end.
 			std::vector< T >				result;
 			result.reserve( m_table.rows() );
 			try {
-				while( itr < end ) {
+				while( r < m_table.rows() ) {	// Create and push a value for each row in the table [with true row predicate_].
 					if( predicate_( r ) ) 
 						result.emplace_back( from_string< std::tuple_element_t< I, Tuple > >( itr[ idxs[ I ] ] )... );
 					++r;
@@ -81,8 +73,7 @@ namespace pax {
 			} catch( const std::exception & error_ ) {
 				throw error_message( std20::format( 
 					"{} (Text_table row {}: Creating type '{}' from columns {}.)", 
-					error_.what(), r+1, type_name_rt< T >, std::span( col_ids_ )
-				) );
+					error_.what(), r+1, type_name_rt< T >, std::span( col_ids_ ) ) );
 			}
 			return result;
 		}
@@ -106,8 +97,8 @@ namespace pax {
 			// A good traitise on sso: https://devblogs.microsoft.com/oldnewthing/20230803-00/?p=108532
 			m_data.front().reserve( sizeof( std::string ) + 8 );
 
-			auto[ cells, cols, col_mark ] = parse2table( std::basic_string_view( m_data.front() ) );
-			std::span 						cells_ref{ cells };
+			const auto[ cells, cols, col_mark ] = parse2table( std::basic_string_view( m_data.front() ) );
+			const std::span 				cells_ref{ cells };
 			m_header					  = Header{ cells_ref.subspan( 0, cols ) };
 			m_table						  = Table< view_type >{ cells_ref.subspan( cols ), cols };
 			m_col_mark 					  = col_mark;
@@ -148,11 +139,9 @@ namespace pax {
 		/// - The tables must have the same number of rows. 
 		///	– If there are columns with the same id, the column from other_ will replace the old column.
 		constexpr void insert_cols( Text_table< Ch > && other_ ) {
-			if( m_table.rows() != other_.m_table.rows() )
-				throw error_message( std20::format( 
-					"Text_table: Merge tables must have the equal number of rows, but {} (this) != {} (other).", 
-					m_table.rows(), other_.m_table.rows()
-				) );
+			if( m_table.rows() != other_.m_table.rows() )	throw error_message( std20::format( 
+				"Text_table: The tables must have the equal number of rows, but {} (this) != {} (other).", 
+				m_table.rows(), other_.m_table.rows() ) );
 			
 			// Copy columns with same existing id, save index of others.
 			std::vector< Size > 			cols_to_add{};
@@ -189,7 +178,8 @@ namespace pax {
 			Predicate					 && predicate_ = always_true
 		) const {
 			return export_values_impl< T, Tuple >( 
-				col_ids_, predicate_, std::make_index_sequence< std::tuple_size_v< Tuple > >{}
+				col_ids_, 
+				predicate_, std::make_index_sequence< std::tuple_size_v< Tuple > >{}
 			);
 		}
 

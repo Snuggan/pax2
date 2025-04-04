@@ -36,7 +36,6 @@ namespace pax {
 
 	public:
 		using Plot_base::coord_type;
-		using Tuply					  = std::tuple< std::string, coord_type, coord_type >;
 
 		Plot_points(
 			const string_view			id_, 
@@ -101,6 +100,20 @@ namespace pax {
 		}
 	};
 
+	template< typename T > class constructor_elements;
+	template<> class constructor_elements< Plot_points > {
+		static constexpr std::size_t 			N = 3;
+		static constexpr std::array				m_names{ "", "east", "north" };
+		using coord_type					  = Plot_points::coord_type;
+
+	public:
+		using types							  = std::tuple< std::string, coord_type, coord_type >;
+		static constexpr auto					names()	{	return std::span( m_names );	};
+		static constexpr std::size_t 			size()	{	return N;						};
+	};
+	static_assert(	constructor_elements< Plot_points >::names().size() == 
+					std::tuple_size_v< constructor_elements< Plot_points >::types > );
+
 
 	/// Process the plots in a plots text file.
 	/** 1. Construct (Process_plots_points) the base data from the plots source file (a csv type of file).
@@ -110,6 +123,7 @@ namespace pax {
 	class Process_plots_points {
 		using coord_type						  = Plot_points::coord_type;
 		using string_view						  = std::string_view;
+		using meta								  = constructor_elements< Plot_points >;
 
 		pdal::PointViewPtr							m_view_ptr;
 		std::vector< Plot_points >					m_plots;				// Binary "table" of plots.
@@ -122,9 +136,9 @@ namespace pax {
 			const string_view						id_column_
 		) {
 			try {
-				const std::array< string_view, 3 >	names = { id_column_, "east", "north" };
+				const string_view					names[ 3 ] = { id_column_, string_view( meta::names()[ 1 ] ), string_view( meta::names()[ 2 ] ) };
 				Text_table< char >					plots_table{ plots_source_ };
-				return plots_table.export_values< Plot_points, Plot_points::Tuply >( std::span( names ) );
+				return plots_table.export_values< Plot_points, meta::types >( std::span( names ) );
 			} catch( const std::exception & error_ ) {
 				throw error_message( std20::format( "Plot_points: {}. (Reading text table '{}'.)",
 					error_.what(), to_string( plots_source_ ) 

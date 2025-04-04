@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../reporting/error_message.hpp"
+#include "../concepts.hpp"
 
 #include <vector>
 #include <span>
@@ -33,7 +34,8 @@ namespace pax {
 		constexpr Header & operator=( const Header & )		  = default;
 		constexpr Header & operator=( Header && )			  = default;
 
-		constexpr Header( const span_type cells_ ) : m_cells{ cells_.begin(), cells_.end() } {}
+		constexpr Header( const  span_type cells_ ) : m_cells{ cells_.begin(), cells_.end() } {}
+		constexpr Header( const cspan_type cells_ ) : m_cells{ cells_.begin(), cells_.end() } {}
 		
 		constexpr cspan_type span()								const noexcept	{	return m_cells;			}
 		constexpr std::size_t size()							const noexcept	{	return m_cells.size();	}
@@ -50,17 +52,33 @@ namespace pax {
 		/// Returns -1u, if there is no item == id_.
 		constexpr std::size_t index( const value_type id_ )		const noexcept	{
 			for( std::size_t i{}; i<m_cells.size(); ++i )	
-				if( m_cells[ i ] == id_ )						return i;
+				if( m_cells[ i ] == id_ )	return i;
 			return -1;
+		}
+
+		/// Returns the indeces corresponding to col_ids_.
+		/// Throws if any item in col_ids_ is not in the header.
+		template< String Str, std::size_t N >
+		constexpr std::vector< std::size_t > index( const std::span< Str, N > col_ids_ ) const {
+			std::string						missing;
+			std::vector< std::size_t >		idxs;
+			idxs.reserve( col_ids_.size() );
+			for( const auto & id : col_ids_ ) {
+				const std::size_t 			i{ index( id ) };
+				if( i < size() )			idxs.push_back( i );
+				else						missing+= std::string( missing.empty() ? "\"" : "\", \"" ) + id;
+			}
+			if( missing.size() )			throw error_message( std20::format( "Missing column[s]: {}\".", missing ) );
+			return idxs;
 		}
 
 		/// Adds id_ to the header if it is not already there.
 		/// - Throws if id_ is empty.
 		/// - Returns the index of id_.
 		constexpr std::size_t add( const value_type id_ )						{
-			if( id_.empty() )	throw error_message( "Text_table: No header item is allowed to be empty." );
+			if( id_.empty() )				throw error_message( "Text_table: No header item is allowed to be empty." );
 			for( std::size_t i{}; i<m_cells.size(); ++i )	
-				if( id_ == m_cells[ i ] )		return i;
+				if( id_ == m_cells[ i ] )	return i;
 			m_cells.push_back( id_ );
 			return m_cells.size() - 1;
 		}

@@ -18,27 +18,21 @@ namespace pax {
 	
 	/// A simple container for the spacial data of a plot.
 	class Plot_metrics : public Plot_base, public metrics::Point_aggregator {
-		static constexpr const char *	s_names[] = { "east", "north", "radius" };
-
-		Plot_base::coord_type			m_max_distance{};
+		Plot_base::coord_type				m_max_distance{};
 		
 	public:
 		using Plot_base::coord_type;
-		using Tuply					  = std::tuple< coord_type, coord_type, coord_type >;
-        [[nodiscard]] static constexpr auto names()				    	  noexcept	{
-            return std::span( s_names );
-        }
 
 		template< std::size_t I >
         [[nodiscard]] friend auto get( const Plot_metrics & me_ )		  noexcept	{
-			if constexpr( I < 2 )		return get< I >( me_ );
-			else if constexpr( I == 2 )	return me_.m_max_distance;
+			if constexpr( I < 2 )			return get< I >( me_ );
+			else if constexpr( I == 2 )		return me_.m_max_distance;
 		}
 
 		constexpr Plot_metrics(
-			const coord_type			east_, 
-			const coord_type			north_, 
-			const coord_type			radius_
+			const coord_type				east_, 
+			const coord_type				north_, 
+			const coord_type				radius_
 		) noexcept : Plot_base{ east_, north_ }, m_max_distance{ radius_ } {}
 
 		/// Should the plot recieve points from file_ (with the bbox_)?
@@ -58,6 +52,19 @@ namespace pax {
         }
 	};
 
+	template< typename T > class constructor_elements;
+	template<> class constructor_elements< Plot_metrics > {
+		static constexpr std::string_view		m_names[ 3 ] = { "east", "north", "radius" };
+		using coord_type					  = Plot_metrics::coord_type;
+
+	public:
+		using types							  = std::tuple< coord_type, coord_type, coord_type >;
+		static constexpr auto					names()	{	return std::span{ m_names };	};
+		static constexpr std::size_t 			size()	{	return names().size();			};
+	};
+	static_assert(	constructor_elements< Plot_metrics >::names().size() == 
+					std::tuple_size_v< constructor_elements< Plot_metrics >::types > );
+
 
 
 	/// Process the plots in a plots text file.
@@ -70,6 +77,7 @@ namespace pax {
 		using Metric						  = metrics::Function_filter;
 		using value_type					  = metrics::metrics_value_type;
 		using coord_type					  = Plot_metrics::coord_type;
+		using meta							  = constructor_elements< Plot_metrics >;
 
 		Table									m_plots_table;				// Text table of plots.
 		std::vector< Plot_metrics >				m_plots;					// Binary "table" of plots.
@@ -110,7 +118,7 @@ namespace pax {
 		explicit Process_plots_metrics( const file_path & plots_source_ ) 
 			try :
 				m_plots_table( plots_source_ ), 
-				m_plots( m_plots_table.export_values< Plot_metrics, Plot_metrics::Tuply >( Plot_metrics::names() ) ), 
+				m_plots( m_plots_table.export_values< Plot_metrics, meta::types >( meta::names() ) ), 
 				m_plots_source( plots_source_ )
 			{}
 			catch( Runtime_exception & e_ ) {
