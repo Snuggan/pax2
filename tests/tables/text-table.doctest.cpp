@@ -10,17 +10,6 @@
 namespace pax {
 
 
-	using Testtuple = std::tuple< double, int, std::string >;
-	template< typename T > class constructor_elements;
-	template<> class constructor_elements< Testtuple > {
-		static constexpr std::size_t 			N = 3;
-		static constexpr std::array				m_names{ "r3", "r2", "R1" };
-
-	public:
-		using types							  = Testtuple;
-		static constexpr auto					names()	{	return std::span( m_names );	};
-		static constexpr std::size_t 			size()	{	return N;						};
-	};
 
 	DOCTEST_TEST_CASE( "Text_table" ) { 
 		Text_table< char >		table;
@@ -54,8 +43,10 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( exported[ 2 ],				3 );
 		}
 		{	// Export a tuple.
-			using meta = constructor_elements< Testtuple >;
-			const auto exported	  = table.export_values< Testtuple, meta::types >( meta::names() );
+			using Testtuple = std::tuple< double, int, std::string >;
+			static constexpr class_meta< Testtuple, double, int, std::string >	meta{ "r3", "r2", "R1" };
+
+			const auto exported	  = table.export_values( meta );
 			DOCTEST_FAST_CHECK_EQ( exported.size(),				3 );
 			DOCTEST_FAST_CHECK_EQ( get< 2 >( exported[ 0 ] ),	"A4" );
 			DOCTEST_FAST_CHECK_EQ( get< 1 >( exported[ 1 ] ),	2 );

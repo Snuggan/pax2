@@ -2,6 +2,8 @@
 //	Contact: peder ( at ) axensten.se
 
 
+#pragma once
+
 #include <pax/concepts.hpp>
 
 #include <utility>
@@ -12,15 +14,11 @@
 namespace pax {
 
 	template< typename T, typename ...U > 
-	class class_meta {
-		static constexpr auto 	N			  = sizeof ...( U );
-		using 					View		  = std::string_view;
-		std::array< View, N >	m_names;
-
-	public:
-		using 					value_type	  = T;
-		using 					types		  = std::tuple< U... >;
-		static constexpr auto 	Rank		  = N;
+	struct class_meta {
+		static constexpr auto 		Rank		  = sizeof ...( U );
+		using 						value_type	  = T;
+		using 						types		  = std::tuple< U... >;
+		using 						View		  = std::string_view;
 
 		template< String ...Strs > requires( sizeof ...( Strs ) == Rank )
 		constexpr class_meta( Strs && ...names_ ) : m_names{ View( std::forward< Strs >( names_ ) )... } {}
@@ -28,6 +26,9 @@ namespace pax {
 		constexpr auto names()	const noexcept	{
 			return std::span< const View, Rank >{ m_names.data(), Rank };
 		}
+		
+	private:
+		std::array< View, Rank >	m_names;
 	};
 
 }	// namespace pax

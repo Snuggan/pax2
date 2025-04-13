@@ -12,6 +12,7 @@
 #include "../std/file.hpp"
 #include "../reporting/error_message.hpp"
 #include "../external/type_name_rt.hpp"		// type_name_rt
+#include "../meta/class-meta.hpp"
 
 #include <span>
 #include <sstream>
@@ -49,31 +50,32 @@ namespace pax {
 		std::vector< string_type >			m_data;
 		Header< value_type >				m_header;
 		value_type							m_col_mark{ ';' };
-		
 
-		template< typename T, typename Tuple, String Str, typename Predicate, Size ...I >
+
+		template< typename T, typename ...U, typename Predicate, Size ...I >
 			requires( std::is_invocable_r_v< bool, Predicate, Size > )
-		constexpr std::vector< T > export_values_impl(
-			const std::span< Str, sizeof...( I ) >	col_ids_,
-			Predicate							 && predicate_,
+		constexpr std::vector< T > export_values_impl( 
+			const class_meta< T, U... >	  & meta_,
+			Predicate					 && pred_,
 			std::integer_sequence< Size, I... >
 		) const {
-			const auto						idxs = m_header.index( col_ids_ );
-			Size		 					r{};					// The predicator needs the row number.
-			auto							itr{ m_table.begin() };	// Beginning-of-row iterator.
+			const auto						idxs = m_header.index( meta_.names() );
+			Size		 					r{};		// The predicator needs the row number.
 			std::vector< T >				result;
 			result.reserve( m_table.rows() );
-			try {
-				while( r < m_table.rows() ) {	// Create and push a value for each row in the table [with true row predicate_].
-					if( predicate_( r ) ) 
-						result.emplace_back( from_string< std::tuple_element_t< I, Tuple > >( itr[ idxs[ I ] ] )... );
-					++r;
-					itr+= m_table.cols();
+			try {	// Potentially create and push a value for each row.
+				for( auto itr{ m_table.begin() }; r < m_table.rows(); ++r, itr+= m_table.cols() ) {
+#					if defined( __cpp_pack_indexing )	// New in C++26.
+						if( pred_( r ) )	result.emplace_back( from_string< U...[ I ] >( itr[ idxs[ I ] ] )... );
+#					else
+						if( pred_( r ) ) 
+							result.emplace_back( from_string< std::tuple_element_t< I, typename class_meta< T, U... >::types > >( itr[ idxs[ I ] ] )... );
+#					endif
 				}
 			} catch( const std::exception & error_ ) {
 				throw error_message( std20::format( 
 					"{} (Text_table row {}: Creating type '{}' from columns {}.)", 
-					error_.what(), r+1, type_name_rt< T >, std::span( col_ids_ ) ) );
+					error_.what(), r+1, type_name_rt< T >, meta_.names() ) );
 			}
 			return result;
 		}
@@ -168,33 +170,27 @@ namespace pax {
 		}
 
 
-		/// Return a vector with T, formed from the columns col_ids_.
-		/// - All ids of col_ids_ must be in the header. 
-		///	- Tuple defines the types T's constructor needs.
-		template< typename T, typename Tuple = T, String Str, typename Predicate = const decltype( always_true ) & >
+		/// Return a vector with T, using meta_ for constructor types and column names.
+		/// - All meta_.names() must be in the header. 
+		template< typename Predicate = const decltype( always_true ) &, typename T, typename ...U >
 			requires( std::is_invocable_r_v< bool, Predicate, Size > )
 		constexpr std::vector< T > export_values( 
-			const std::span< Str, std::tuple_size_v< Tuple > >	col_ids_,
-			Predicate					 && predicate_ = always_true
+			const class_meta< T, U... >	  & meta_,
+			Predicate					 && pred_ = always_true
 		) const {
-			return export_values_impl< T, Tuple >( 
-				col_ids_, 
-				predicate_, std::make_index_sequence< std::tuple_size_v< Tuple > >{}
-			);
+			return export_values_impl( meta_, pred_, std::make_index_sequence< sizeof ...( U ) >{} );
 		}
 
 
 		/// Return a vector with T, formed from the column col_id_.
-		/// - There are two oveloads of this member function, this is the simple scalar case. 
+		/// - col_id_ must be in the header. 
 		template< typename T, String Str, typename Predicate = const decltype( always_true ) & >
 			requires( std::is_invocable_r_v< bool, Predicate, Size > )
 		constexpr std::vector< T > export_values( 
 			const Str					  & col_id_,
-			Predicate					 && predicate_ = always_true
+			Predicate					 && pred_ = always_true
 		) const {
-			return export_values_impl< T, std::tuple< T > >( 
-				std::span< const Str, 1 >( &col_id_, 1 ), predicate_, std::make_index_sequence< 1 >{}
-			);
+			return export_values_impl( class_meta< T, T >{ col_id_ }, pred_, std::make_index_sequence< 1 >{} );
 		}
 
 

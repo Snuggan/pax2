@@ -9,6 +9,7 @@
 
 // Read a csv file
 #include <pax/tables/text-table.hpp>
+#include <pax/meta/class-meta.hpp>
 
 // pdal stuff
 #include <pdal/PointView.hpp>
@@ -19,9 +20,11 @@ namespace pax {
 	/// A simple container for the spacial data of a plot.
 	class Plot_metrics : public Plot_base, public metrics::Point_aggregator {
 		Plot_base::coord_type				m_max_distance{};
+		using Meta = class_meta< Plot_metrics, coord_type, coord_type, coord_type >;
 		
 	public:
 		using Plot_base::coord_type;
+		static constexpr Meta				meta{ "east", "north", "radius" };
 
 		template< std::size_t I >
         [[nodiscard]] friend auto get( const Plot_metrics & me_ )		  noexcept	{
@@ -52,19 +55,6 @@ namespace pax {
         }
 	};
 
-	template< typename T > class constructor_elements;
-	template<> class constructor_elements< Plot_metrics > {
-		static constexpr std::string_view		m_names[ 3 ] = { "east", "north", "radius" };
-		using coord_type					  = Plot_metrics::coord_type;
-
-	public:
-		using types							  = std::tuple< coord_type, coord_type, coord_type >;
-		static constexpr auto					names()	{	return std::span{ m_names };	};
-		static constexpr std::size_t 			size()	{	return names().size();			};
-	};
-	static_assert(	constructor_elements< Plot_metrics >::names().size() == 
-					std::tuple_size_v< constructor_elements< Plot_metrics >::types > );
-
 
 
 	/// Process the plots in a plots text file.
@@ -77,7 +67,6 @@ namespace pax {
 		using Metric						  = metrics::Function_filter;
 		using value_type					  = metrics::metrics_value_type;
 		using coord_type					  = Plot_metrics::coord_type;
-		using meta							  = constructor_elements< Plot_metrics >;
 
 		Table									m_plots_table;				// Text table of plots.
 		std::vector< Plot_metrics >				m_plots;					// Binary "table" of plots.
@@ -118,7 +107,7 @@ namespace pax {
 		explicit Process_plots_metrics( const file_path & plots_source_ ) 
 			try :
 				m_plots_table( plots_source_ ), 
-				m_plots( m_plots_table.export_values< Plot_metrics, meta::types >( meta::names() ) ), 
+				m_plots( m_plots_table.export_values( Plot_metrics::meta ) ), 
 				m_plots_source( plots_source_ )
 			{}
 			catch( Runtime_exception & e_ ) {
