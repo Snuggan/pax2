@@ -20,15 +20,16 @@ namespace pax {
 		using 						types		  = std::tuple< U... >;
 		using 						View		  = std::string_view;
 
-		template< String ...Strs > requires( sizeof ...( Strs ) == Rank )
-		constexpr class_meta( Strs && ...names_ ) : m_names{ View( std::forward< Strs >( names_ ) )... } {}
+		template< String ...Strs >	requires( sizeof ...( Strs ) == Rank )
+		constexpr class_meta( Strs && ...ids_ ) noexcept 
+			: m_ids{ View( std::forward< Strs >( ids_ ) )... } {}
 
-		constexpr auto names()	const noexcept	{
-			return std::span< const View, Rank >{ m_names.data(), Rank };
+		constexpr auto names()		const noexcept	{
+			return std::span< const View, Rank >{ m_ids.data(), Rank };
 		}
 		
 	private:
-		std::array< View, Rank >	m_names;
+		std::array< View, Rank >	m_ids;
 	};
 
 }	// namespace pax
