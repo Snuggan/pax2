@@ -55,6 +55,11 @@ namespace pax {
 		constexpr Table & operator=( const Table & )				=	default;
 		constexpr Table & operator=( Table && )						=	default;
 
+		constexpr Table(
+			const Size		 		rows_, 
+			const Size		 		cols_
+		) : m_cells( rows_*cols_ )									{	adjust_size( rows_, cols_ );						}
+
 		template< typename U, Size N >
 			requires std::is_same_v< value_type, std::remove_cv_t< U > >
 		constexpr Table(
