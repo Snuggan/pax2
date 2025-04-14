@@ -140,7 +140,7 @@ namespace pax {
 		/// Fuse other_ into this by adding the other_ as columns.
 		/// - The tables must have the same number of rows. 
 		///	– If there are columns with the same id, the column from other_ will replace the old column.
-		constexpr void insert_cols( Text_table< Ch > && other_ ) {
+		constexpr void insert_cols( Text_table && other_ ) {
 			if( m_table.rows() != other_.m_table.rows() )	throw error_message( std20::format( 
 				"Text_table: The tables must have the equal number of rows, but {} (this) != {} (other).", 
 				m_table.rows(), other_.m_table.rows() ) );

@@ -50,9 +50,24 @@ namespace pax {
 	}
 
 
-	DOCTEST_TEST_CASE( "Table basics" ) { 
+	DOCTEST_TEST_CASE( "Table basics, constructed with rows and cols" ) { 
+		{
+			Table< int >		   table{ 0, 0 };
+			DOCTEST_FAST_CHECK_EQ( table.rows(),			0 );
+			DOCTEST_FAST_CHECK_EQ( table.cols(),			0 );
+			DOCTEST_FAST_CHECK_EQ( table.size(),			0 );
+			DOCTEST_FAST_CHECK_EQ( sum( table.span() ),		0 );
+		}
+		{
+			Table< int >		   table{ 10, 12 };
+			DOCTEST_FAST_CHECK_EQ( table.rows(),			 10 );
+			DOCTEST_FAST_CHECK_EQ( table.cols(),			 12 );
+			DOCTEST_FAST_CHECK_EQ( table.size(),			120 );
+			DOCTEST_FAST_CHECK_EQ( sum( table.span() ),		  0 );
+		}
+	}
+	DOCTEST_TEST_CASE( "Table basics, constructed with contents" ) { 
 		Table					table{ sp, cols };
-		
 		{	// Construction.
 			DOCTEST_FAST_CHECK_EQ( table.rows(),			rows );
 			DOCTEST_FAST_CHECK_EQ( table.cols(),			cols );
@@ -180,8 +195,6 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( table.rows(),		 0 );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 0 );
 	}
-
-
 	DOCTEST_TEST_CASE( "Table print" ) { 
 		{	// Not csv
 			{	// Rank 1
