@@ -173,9 +173,6 @@
 #include <forward_list> // forward_list
 #include <iterator> // inserter, front_inserter, end
 #include <map> // map
-#ifdef JSON_HAS_CPP_17
-    #include <optional> // optional
-#endif
 #include <string> // string
 #include <tuple> // tuple, make_tuple
 #include <type_traits> // is_arithmetic, is_same, is_enum, underlying_type, is_convertible
@@ -4817,6 +4814,11 @@ NLOHMANN_JSON_NAMESPACE_END
 // #include <nlohmann/detail/value_t.hpp>
 
 
+// include after macro_scope.hpp
+#ifdef JSON_HAS_CPP_17
+    #include <optional> // optional
+#endif
+
 NLOHMANN_JSON_NAMESPACE_BEGIN
 namespace detail
 {
@@ -4832,7 +4834,6 @@ inline void from_json(const BasicJsonType& j, typename std::nullptr_t& n)
 }
 
 #ifdef JSON_HAS_CPP_17
-#ifndef JSON_USE_IMPLICIT_CONVERSIONS
 template<typename BasicJsonType, typename T>
 void from_json(const BasicJsonType& j, std::optional<T>& opt)
 {
@@ -4845,8 +4846,6 @@ void from_json(const BasicJsonType& j, std::optional<T>& opt)
         opt.emplace(j.template get<T>());
     }
 }
-
-#endif // JSON_USE_IMPLICIT_CONVERSIONS
 #endif // JSON_HAS_CPP_17
 
 // overloads for basic_json template parameters
@@ -5914,7 +5913,7 @@ struct external_constructor<value_t::object>
 #ifdef JSON_HAS_CPP_17
 template<typename BasicJsonType, typename T,
          enable_if_t<std::is_constructible<BasicJsonType, T>::value, int> = 0>
-void to_json(BasicJsonType& j, const std::optional<T>& opt)
+void to_json(BasicJsonType& j, const std::optional<T>& opt) noexcept
 {
     if (opt.has_value())
     {
@@ -12602,17 +12601,22 @@ class binary_reader
         {
             return;
         }
-        if constexpr(std::is_integral_v<NumberType>)
+        else if constexpr(std::is_integral_v<NumberType>)
         {
             number = std::byteswap(number);
             return;
         }
-#endif
-        auto* ptr = reinterpret_cast<std::uint8_t*>(&number);
-        for (std::size_t i = 0; i < sz / 2; ++i)
+        else
         {
-            std::swap(ptr[i], ptr[sz - i - 1]);
+#endif
+            auto* ptr = reinterpret_cast<std::uint8_t*>(&number);
+            for (std::size_t i = 0; i < sz / 2; ++i)
+            {
+                std::swap(ptr[i], ptr[sz - i - 1]);
+            }
+#ifdef __cpp_lib_byteswap
         }
+#endif
     }
 
     /*
@@ -16713,9 +16717,9 @@ class binary_writer
         if (JSON_HEDLEY_UNLIKELY(it != BasicJsonType::string_t::npos))
         {
             JSON_THROW(out_of_range::create(409, concat("BSON key cannot contain code point U+0000 (at byte ", std::to_string(it), ")"), &j));
-            static_cast<void>(j);
         }
 
+        static_cast<void>(j);
         return /*id*/ 1ul + name.size() + /*zero-terminator*/1u;
     }
 
@@ -19483,7 +19487,7 @@ class serializer
 
         // jump to the end to generate the string from backward,
         // so we later avoid reversing the result
-        buffer_ptr += n_chars;
+        buffer_ptr += static_cast<typename decltype(number_buffer)::difference_type>(n_chars);
 
         // Fast int2ascii implementation inspired by "Fastware" talk by Andrei Alexandrescu
         // See: https://www.youtube.com/watch?v=o4-CwDo2zpg
