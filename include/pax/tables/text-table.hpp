@@ -65,12 +65,12 @@ namespace pax {
 			result.reserve( m_table.rows() );
 			try {	// Potentially create and push a value for each row.
 				for( auto itr{ m_table.begin() }; r < m_table.rows(); ++r, itr+= m_table.cols() ) {
-#					if defined( __cpp_pack_indexing )	// New in C++26.
+// #					if defined( __cpp_pack_indexing )	// New in C++26.
 						if( pred_( r ) )	result.emplace_back( from_string< U...[ I ] >( itr[ idxs[ I ] ] )... );
-#					else
-						if( pred_( r ) ) 
-							result.emplace_back( from_string< std::tuple_element_t< I, typename class_meta< T, U... >::types > >( itr[ idxs[ I ] ] )... );
-#					endif
+// #					else
+// 						if( pred_( r ) )
+// 							result.emplace_back( from_string< std::tuple_element_t< I, typename class_meta< T, U... >::types > >( itr[ idxs[ I ] ] )... );
+// #					endif
 				}
 			} catch( const std::exception & error_ ) {
 				throw error_message( std20::format( 

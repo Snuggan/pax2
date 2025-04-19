@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include <pax/concepts.hpp>			// Concept String.
-#include <utility>					// std::forward.
 #include <array>
 #include <string_view>
 #include <span>
@@ -15,21 +13,20 @@ namespace pax {
 
 	template< typename T, typename ...U > 
 	struct class_meta {
-		static constexpr auto 		Rank		  = sizeof ...( U );
-		using 						value_type	  = T;
-		using 						types		  = std::tuple< U... >;
-		using 						View		  = std::string_view;
+		static constexpr auto 	Rank		  = sizeof ...( U );
+		using 					value_type	  = T;
+		using 					types		  = std::tuple< U... >;
 
-		template< String ...Strs >	requires( sizeof ...( Strs ) == Rank )
-		constexpr class_meta( Strs && ...ids_ ) noexcept 
-			: m_ids{ View( std::forward< Strs >( ids_ ) )... } {}
+		template< typename ...Strings >	requires( sizeof ...( Strings ) == Rank )
+		constexpr class_meta( Strings && ...ids_ ) noexcept 
+			: m_ids{ std::string_view( std::forward< Strings >( ids_ ) )... } {}
 
-		constexpr auto names()		const noexcept	{
-			return std::span< const View, Rank >{ m_ids.data(), Rank };
+		constexpr auto names()	const noexcept	{
+			return std::span< const std::string_view, Rank >{ m_ids.data(), Rank };
 		}
 		
 	private:
-		std::array< View, Rank >	m_ids;
+		std::array< std::string_view, Rank >	m_ids;
 	};
 
 }	// namespace pax
