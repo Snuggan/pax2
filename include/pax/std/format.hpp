@@ -7,10 +7,10 @@
 
 // Using std::format works well with clang 18. It does not work with gcc 13.2 or 14, however.
 // So I stick with fmt::format until gcc implements std::runtime_format as defined in C++26.
-#if ( ( __cplusplus > 202302L ) || false )
-#	include <format>
-#	define std20 std
-#else
+#include <format>
+#define std20 std
+
+#if defined( __GNUC__ ) && !defined( __clang__ ) && true
 	//	https://fmt.dev/latest/index.html
 	//	https://github.com/fmtlib/fmt
 #	define FMT_HEADER_ONLY
@@ -18,6 +18,7 @@
 #	include "../external/fmt/chrono.h"
 #	include "../external/fmt/ostream.h"
 #	include "../external/fmt/ranges.h"
+#	undef std20
 #	define std20 fmt
 
 	namespace fmt {

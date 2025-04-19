@@ -10,7 +10,7 @@ project( "pax2"
 
 ## Set the c++ standard required.
 if( ${CMAKE_CXX_COMPILER_ID} MATCHES "GNU" )
-	set( CMAKE_CXX_STANDARD 			23 )
+	set( CMAKE_CXX_STANDARD 			26 )
 else()
 	set( CMAKE_CXX_STANDARD 			26 )
 endif()
@@ -70,6 +70,7 @@ elseif( ${CMAKE_CXX_COMPILER_ID} MATCHES "GNU" )
 	add_definitions( -D__IS_GCC__=1 )
 	list( APPEND PAX_FLAGS
 		-Wno-maybe-uninitialized
+		-Wno-deprecated-declarations
 	)
 	list( REMOVE_ITEM PAX_SANITIZE
 		-fsanitize=nullability			# Not available in my gcc.

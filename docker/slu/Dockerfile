@@ -1,4 +1,4 @@
-FROM	ubuntu:24.10
+FROM	ubuntu:25.04
 LABEL	url="https://hub.docker.com/repository/docker/axensten/slu" \
 		organiusation="SLU, Swedish University of Agricultural Sciences" \
 		maintainer="Peder Axensten <peder.axensten@slu.se>"
@@ -15,8 +15,8 @@ RUN		echo "\n\n--- Main stuff ---" \
 				xz-utils \
 				# Informational list of build-essential packages:
 				build-essential \
-				gcc-14 \
-				g++-14 \
+				gcc-15 \
+				g++-15 \
 				doctest-dev \
 				libgdal-dev \
 				gdb \
@@ -43,9 +43,9 @@ RUN		echo "\n\n--- Main stuff ---" \
 		&&	rm -Rf /var/lib/apt/lists/* \
 		# Remove the apt cache:
 		&&	ldconfig \
-		# Make g++-14 the default:
-		&&	update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 50 \
-		&&	update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 50 \
+		# Make g++-15 the default:
+		&&	update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-15 50 \
+		&&	update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-15 50 \
 		#
 		&&	echo "\n\n--- PDAL ---\n\n" \
 		&&	git clone https://github.com/PDAL/PDAL.git \
