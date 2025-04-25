@@ -5,7 +5,7 @@
 #pragma once
 
 
-#if ( defined( __cpp_lib_mdspan ) && ( __cpp_lib_mdspan >= 202207L ) || false )
+#if __has_include( <mdspan> )
 #	include <mdspan>
 #else
 	//	https://github.com/kokkos/mdspan
