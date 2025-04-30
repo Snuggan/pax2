@@ -60,13 +60,12 @@ namespace pax {
 			std::integer_sequence< Size, I... >
 		) const {
 			const auto						idxs = m_header.index( meta_.names() );
-			Size		 					r{};		// The predicator needs the row number.
+			Size		 					r{};	// The predicator needs the row number.
 			std::vector< T >				result;
 			result.reserve( m_table.rows() );
-			try {	// Potentially create and push a value for each row.
-				for( auto itr{ m_table.begin() }; r < m_table.rows(); ++r, itr+= m_table.cols() ) {
+			try {									// Create and push a T value for each row.
+				for( auto itr{ m_table.begin() }; r < m_table.rows(); ++r, itr+= m_table.cols() ) 
 					if( pred_( r ) )		result.emplace_back( from_string< U...[ I ] >( itr[ idxs[ I ] ] )... );
-				}
 			} catch( const std::exception & error_ ) {
 				throw error_message( std20::format( 
 					"{} (Text_table row {}: Creating type '{}' from columns {}.)", 
@@ -144,8 +143,8 @@ namespace pax {
 			std::vector< Size > 			cols_to_add{};
 			for( Size i{}; i<other_.m_table.cols(); ++i ) {
 				const auto c			  = m_header.add( other_.m_header[ i ] );
-				if( c >= m_table.cols() )	cols_to_add.push_back( i );
-				else						std::copy_n( other_.m_table.begin_col( i ), m_table.rows(), m_table.begin_col( c ) );
+				if( c < m_table.cols() )	std::copy_n( other_.m_table.begin_col( i ), m_table.rows(), m_table.begin_col( c ) );
+				else						cols_to_add.push_back( i );
 			}
 			
 			// Add the columns with new header. 
