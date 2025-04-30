@@ -382,7 +382,7 @@ namespace pax {
 			if( metadata2cout_ ) {
 				std::cerr << std20::format( 
 					"\nTable: \"{}\"\n"
-					"  Column separator: {:?}\n"
+					"  Column separator: {:?}\n"	// gcc reacts that {:?} (output escaped characters) " "...
 					"  Rows:             {}{}\n"
 					"  Columns:          {}\n",
 					title_, 
