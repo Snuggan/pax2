@@ -72,9 +72,8 @@ namespace pax {
 		if( srce_step < dest_step ) {						// Expoand: copy from last to first.
 			Ptr			srce		 = data + srce_step*iters;
 			Ptr			dest		 = data + dest_step*iters;
-			const Ptr	srce_end	 = data;
 			const Size	remains		 = dest_step - srce_step;
-			while( srce	!= srce_end ) {
+			while( srce	!= data ) {
 				std::copy_n( srce	-= srce_step, srce_step, dest -= dest_step );
 				std::fill_n( dest	+  srce_step, remains, T{} );
 			}
