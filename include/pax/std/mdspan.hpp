@@ -57,8 +57,8 @@ namespace pax {
 		assert( dest_.is_strided() );
 		assert( data_.data() == srce_.data_handle() );		// Not strictly necessary, but for consistency...
 		assert( data_.data() == dest_.data_handle() );		// Not strictly necessary, but for consistency...
-		assert( data_.size() >= srce_.size() );				// Must have a sufficient size.
-		assert( data_.size() >= dest_.size() );				// Must have a sufficient size.
+		assert( data_.size() >= srce_.size() );				// data_ must have a sufficient size.
+		assert( data_.size() >= dest_.size() );				// data_ must have a sufficient size.
 		if( srce_.empty() || dest_.empty() )	return;		// If either is empty, there is nothing to copy...
 
 		using Ptr					 = T*;
