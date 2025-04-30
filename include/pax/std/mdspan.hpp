@@ -34,48 +34,62 @@ namespace std {
 }
 
 namespace pax {
+	
+	template< typename Layout >	struct is_layout_right;
+	template< typename Layout >	constexpr bool is_layout_right_v	= is_layout_right< Layout >::value;
+	template<>	struct is_layout_right< std::layout_left >			: std::bool_constant< false >{};
+	template<>	struct is_layout_right< std::layout_right >			: std::bool_constant< true >{};
+	// template<>	struct is_layout_right< std::layout_left_padded >	: std::bool_constant< false >{};
+	// template<>	struct is_layout_right< std::layout_right_padded >	: std::bool_constant< true >{};
 
+
+	/// Rearranges the items of data_ so that they correspond to the destination extent.
+	/// For consistency, data_.data() and srce_.data_handle() and dest_.data_handle() must all be the same.
+	/// Obviously, data_.size >= max( srce_.size() dest_.size() ).
 	template< typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy >
 	static void resize(
-		const std::span< T >											data_, 		///< The actual data items.
-		const std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy >	srce_map_, 	///< The source extents.
-		const std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy >	dest_map_ 	///< The destination extents. 
+		const std::span< T >											data_, 	///< The actual data items.
+		const std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy >	srce_, 	///< The source extents.
+		const std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy >	dest_ 	///< The destination extents. 
 	) {
-		// If either source or destination is empty, there is nothing to copy.
-		if( !srce_map_.size() || !dest_map_.size() )					return;
-
 		static_assert( Extents::rank() );
-		assert( data_.size() >= srce_map_.size() );
-		assert( data_.size() >= dest_map_.size() );
+		assert( srce_.is_strided() );
+		assert( dest_.is_strided() );
+		assert( data_.data() == srce_.data_handle() );		// Not strictly necessary, but for consistency...
+		assert( data_.data() == dest_.data_handle() );		// Not strictly necessary, but for consistency...
+		assert( data_.size() >= srce_.size() );				// Must have a sufficient size.
+		assert( data_.size() >= dest_.size() );				// Must have a sufficient size.
+		if( srce_.empty() || dest_.empty() )	return;		// If either is empty, there is nothing to copy...
 
-		using Ptr					 	  = T*;
-		static constexpr std::size_t D	  = Extents::rank() - 1;	// What dimension has contiguous elements? (Either 0 or rank-1.)
+		using Ptr					 = T*;
+		using Size					 = std::size_t;
+		static constexpr Size contig = is_layout_right_v< LayoutPolicy >*( Extents::rank() - 1 );
+		const Ptr		data		 = data_.data();
+		const Size		srce_step	 = srce_.extent( contig );
+		const Size		dest_step	 = dest_.extent( contig );
+		const Size		iters		 = std::min( srce_.size()/srce_step, dest_.size()/dest_step );
 
-		const auto		  & srce_step  = srce_map_.extent( D );
-		const auto		  & dest_step  = dest_map_.extent( D );
-		const std::size_t	iters	  = std::min( srce_map_.size()/srce_step, dest_map_.size()/dest_step );
-
-		if( srce_step < dest_step ) {				// Expoand: copy from last to first.
-			Ptr				srce	  = data_.data() + srce_step*iters;
-			Ptr				dest	  = data_.data() + dest_step*iters;
-			const Ptr		srce_end  = data_.data();
-			const auto		remains	  = dest_step - srce_step;
+		if( srce_step < dest_step ) {						// Expoand: copy from last to first.
+			Ptr			srce		 = data + srce_step*iters;
+			Ptr			dest		 = data + dest_step*iters;
+			const Ptr	srce_end	 = data;
+			const Size	remains		 = dest_step - srce_step;
 			while( srce	!= srce_end ) {
-				std::copy_n( srce -= srce_step, srce_step, dest -= dest_step );
-				std::fill_n( dest +  srce_step, remains, T{} );
+				std::copy_n( srce	-= srce_step, srce_step, dest -= dest_step );
+				std::fill_n( dest	+  srce_step, remains, T{} );
 			}
-		} else if( srce_step > dest_step ) {		// Shrink:  copy from first to last.
-			Ptr				srce	  = data_.data();
-			Ptr				dest	  = data_.data();
-			const Ptr		srce_end  = data_.data() + srce_step*iters;
+		} else if( srce_step > dest_step ) {				// Shrink:  copy from first to last.
+			Ptr			srce		 = data;
+			Ptr			dest		 = data;
+			const Ptr	srce_end	 = data + srce_step*iters;
 			while( srce	!= srce_end ) {
 				std::copy_n( srce, dest_step, dest );
-				srce += srce_step;
-				dest += dest_step;
+				srce				+= srce_step;
+				dest				+= dest_step;
 			}
 		}
-		if( dest_step*iters < dest_map_.size() )	// Zero-out trailing values, if any.
-			std::fill_n( data_.data() + dest_step*iters, dest_map_.size() - dest_step*iters, T{} );
+		if( dest_step*iters < dest_.size() )				// Zero-out trailing values, if any.
+			std::fill_n( data + dest_step*iters, dest_.size() - dest_step*iters, T{} );
 	}
 
 
