@@ -4,12 +4,11 @@
 
 #pragma once
 
-
-// Using std::format works well with clang 18. It does not work with gcc 13.2 or 14, however.
-// So I stick with fmt::format until gcc implements std::runtime_format as defined in C++26.
 #include <format>
 #define std20 std
 
+
+// Using std::format works well with clang 18. It does not work with gcc 13.2 or 14, however.
 #if defined( __GNUC__ ) && !defined( __clang__ ) && true
 	//	https://fmt.dev/latest/index.html
 	//	https://github.com/fmtlib/fmt
@@ -21,9 +20,9 @@
 #	undef std20
 #	define std20 fmt
 
-	namespace fmt {
+	namespace std20 {
 		/// When the format string is not known at compile time, std::format may not be used as usual.
-		/** Instead the format argument signals this case by having a specific type.		**/
-		inline auto runtime_format( const std::string_view fmt_ )	{	return fmt::runtime( fmt_ );		}
-	}	// namespace std20
+		/// Instead the format argument signals this case by having a specific type.
+		inline auto runtime_format( const std::string_view fmt_ )	{	return runtime( fmt_ );		}
+	}
 #endif
