@@ -198,25 +198,25 @@ namespace pax {
 	DOCTEST_TEST_CASE( "Table print" ) { 
 		{	// Not csv
 			{	// Rank 1
-				constexpr std::string_view		result{ "-----------------------------------------------------\nrank 1, size 5, extents [ 5 ], strides [ 1 ]\n[ 0, 1, 2, 3, 4 ]\n-----------------------------------------------------\n" };
+				constexpr std::string_view		result{ "rank 1, size 5, layout_right, extents [ 5 ], strides [ 1 ]\n" };
 				std::stringstream				temp{};
 				pax::print_meta( temp, mdspan< std::layout_right, 1 >( arr, 5 ) );
 				DOCTEST_FAST_CHECK_EQ( temp.str(), result );
 			}
 			{	// Rank 2
-				constexpr std::string_view		result{ "-----------------------------------------------------\nrank 2, size 15, extents [ 3, 5 ], strides [ 5, 1 ]\n[ 0, 1, 2, 3, 4 ]\n[ 5, 6, 7, 8, 9 ]\n[ 10, 11, 12, 13, 14 ]\n-----------------------------------------------------\n" };
+				constexpr std::string_view		result{ "rank 2, size 15, layout_right, extents [ 3, 5 ], strides [ 5, 1 ]\n" };
 				std::stringstream				temp{};
 				pax::print_meta( temp, mdspan< std::layout_right, 2 >( arr, 3, 5 ) );
 				DOCTEST_FAST_CHECK_EQ( temp.str(), result );
 			}
 			{	// Rank 3
-				constexpr std::string_view		result{ "-----------------------------------------------------\nrank 3, size 30, extents [ 2, 3, 5 ], strides [ 15, 5, 1 ]\n[ 0, 1, 2, 3, 4 ]\t[ 15, 16, 17, 18, 19 ]\n[ 5, 6, 7, 8, 9 ]\t[ 20, 21, 22, 23, 24 ]\n[ 10, 11, 12, 13, 14 ]\t[ 25, 26, 27, 28, 29 ]\n-----------------------------------------------------\n" };
+				constexpr std::string_view		result{ "rank 3, size 30, layout_right, extents [ 2, 3, 5 ], strides [ 15, 5, 1 ]\n" };
 				std::stringstream				temp{};
 				pax::print_meta( temp, mdspan< std::layout_right, 3 >( arr, 2, 3, 5 ) );
 				DOCTEST_FAST_CHECK_EQ( temp.str(), result );
 			}
 			{	// Rank 4
-				constexpr std::string_view		result{ "-----------------------------------------------------\nrank 4, size 60, extents [ 2, 2, 3, 5 ], strides [ 30, 15, 5, 1 ]\n[ 0, 1, 2, 3, 4 ]\t[ 15, 16, 17, 18, 19 ]\n[ 5, 6, 7, 8, 9 ]\t[ 20, 21, 22, 23, 24 ]\n[ 10, 11, 12, 13, 14 ]\t[ 25, 26, 27, 28, 29 ]\n\n[ 30, 31, 32, 33, 34 ]\t[ 45, 46, 47, 48, 49 ]\n[ 35, 36, 37, 38, 39 ]\t[ 50, 51, 52, 53, 54 ]\n[ 40, 41, 42, 43, 44 ]\t[ 55, 56, 57, 58, 59 ]\n-----------------------------------------------------\n" };
+				constexpr std::string_view		result{ "rank 4, size 60, layout_right, extents [ 2, 2, 3, 5 ], strides [ 30, 15, 5, 1 ]\n" };
 				std::stringstream				temp{};
 				pax::print_meta( temp, mdspan< std::layout_right, 4 >( arr, 2, 2, 3, 5 ) );
 				DOCTEST_FAST_CHECK_EQ( temp.str(), result );

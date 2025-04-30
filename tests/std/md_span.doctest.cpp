@@ -13,9 +13,9 @@
 
 namespace pax {
 
-	constexpr std::array		extents{ 8u, 4u };
-	constexpr auto		 		cols = extents[ 0 ];
-	constexpr auto		 		rows = extents[ 1 ];
+	constexpr auto		 		cols = 8u;
+	constexpr auto		 		rows = 4u;
+	constexpr std::array		extents{ cols, rows };
 	constexpr std::array		arr{
 		 0,  1,  2,  3,  4,  5,  6,  7,		// 0
 		 8,  9, 10, 11, 12, 13, 14, 15,		// 1
@@ -30,8 +30,8 @@ namespace pax {
 
 	DOCTEST_TEST_CASE( "layout" ) { 
 		{	// layout_right
-			using Right		  = std::mdspan< const int, std::dextents< std::size_t, 2 >, std::layout_right >;
-			const Right			md( sp.data(), extents );
+			using MD		  = std::mdspan< const int, std::dextents< std::size_t, 2 >, std::layout_right >;
+			const MD			md( sp.data(), extents );
 			DOCTEST_FAST_CHECK_EQ( md.extent( 0 ),	cols );
 			DOCTEST_FAST_CHECK_EQ( md.extent( 1 ),	rows );
 			DOCTEST_FAST_CHECK_EQ( md[ 0, 0 ],		 0 );
@@ -40,8 +40,8 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( md[ 7, 3 ],		3*cols + 7 );
 		}
 		{	// layout_left
-			using Right		  = std::mdspan< const int, std::dextents< std::size_t, 2 >, std::layout_left >;
-			const Right			md( sp.data(), extents );
+			using MD		  = std::mdspan< const int, std::dextents< std::size_t, 2 >, std::layout_left >;
+			const MD			md( sp.data(), extents );
 			DOCTEST_FAST_CHECK_EQ( md.extent( 0 ),	cols );
 			DOCTEST_FAST_CHECK_EQ( md.extent( 1 ),	rows );
 			DOCTEST_FAST_CHECK_EQ( md[ 0, 0 ],		 0 );
@@ -50,15 +50,169 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( md[ 7, 3 ],		3 + rows*7 );
 		}
 	}
+	DOCTEST_TEST_CASE( "begin/end dim 2" ) { 
+		constexpr std::array	extents2{ 3, 4 };
+		{	// layout_right
+			using MD		  = std::mdspan< const int, std::dextents< std::size_t, 2 >, std::layout_right >;
+			const MD			md( sp.data(), extents2 );
+
+			DOCTEST_FAST_CHECK_EQ( md.extent( 0 ),	extents2[ 0 ] );
+			DOCTEST_FAST_CHECK_EQ( md.extent( 1 ),	extents2[ 1 ] );
+			{
+				auto			b = begin< 0 >( md, 1 );
+				DOCTEST_FAST_CHECK_EQ( b.stride(),	1 );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ), 	md[ 1, 0 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 2 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 3 ] );
+				DOCTEST_FAST_CHECK_EQ( end< 0 >( md, 1 ) - b,	0 );
+			} {
+				auto			b = begin< 1 >( md, 1 );
+				DOCTEST_FAST_CHECK_EQ( b.stride(),	4 );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ), 	md[ 0, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 2, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( end< 1 >( md, 1 ) - b,	0 );
+			}
+		}
+		{	// layout_left
+			using MD		  = std::mdspan< const int, std::dextents< std::size_t, 2 >, std::layout_left >;
+			const MD			md( sp.data(), extents2 );
+
+			DOCTEST_FAST_CHECK_EQ( md.extent( 0 ),	extents2[ 0 ] );
+			DOCTEST_FAST_CHECK_EQ( md.extent( 1 ),	extents2[ 1 ] );
+			{
+				auto			b = begin< 0 >( md, 1 );
+				DOCTEST_FAST_CHECK_EQ( b.stride(),	3 );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ), 	md[ 1, 0 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 2 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 3 ] );
+				DOCTEST_FAST_CHECK_EQ( end< 0 >( md, 1 ) - b,	0 );
+			} {
+				auto			b = begin< 1 >( md, 1 );
+				DOCTEST_FAST_CHECK_EQ( b.stride(),	1 );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ), 	md[ 0, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 2, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( end< 1 >( md, 1 ) - b,	0 );
+			}
+		}
+	}
+	DOCTEST_TEST_CASE( "begin/end dim 3" ) { 
+		constexpr std::array	extents3{ 3, 4, 2 };
+		{	// layout_right
+			using MD		  = std::mdspan< const int, std::dextents< std::size_t, 3 >, std::layout_right >;
+			const MD			md( sp.data(), extents3 );
+			DOCTEST_FAST_CHECK_EQ( md.extent( 0 ),	extents3[ 0 ] );
+			DOCTEST_FAST_CHECK_EQ( md.extent( 1 ),	extents3[ 1 ] );
+			DOCTEST_FAST_CHECK_EQ( md.extent( 2 ),	extents3[ 2 ] );
+			{	// Dim 0
+				auto				b = begin< 0 >( md, 1 );
+				DOCTEST_FAST_CHECK_EQ( b.stride(),	1 );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ), 	md[ 1, 0, 0 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 0, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 1, 0 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 1, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 2, 0 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 2, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 3, 0 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 3, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( end< 0 >( md, 1 ) - b,	0 );
+			}
+			{	// Dim 1
+				// print_meta( md );
+				// auto				b = begin< 1 >( md, 1 );
+				// DOCTEST_FAST_CHECK_EQ( &md[ 1, 1, 0 ] - &md[ 0, 1, 0 ], 0 );
+				// DOCTEST_FAST_CHECK_EQ( &md[ 0, 1, 1 ] - &md[ 0, 1, 0 ], 0 );
+				// DOCTEST_FAST_CHECK_EQ( b.stride(),	8 );
+				// DOCTEST_FAST_CHECK_EQ( *( b++ ), 	md[ 0, 1, 0 ] );
+				// DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 1, 0 ] );
+				// DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 2, 1, 0 ] );
+				// DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 0, 1, 1 ] );
+				// DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 1, 1 ] );
+				// DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 2, 1, 1 ] );
+				// DOCTEST_FAST_CHECK_EQ( end< 1 >( md, 1 ) - b,	0 );
+			}
+			{	// Dim 2
+				auto				b = begin< 2 >( md, 1 );
+				DOCTEST_FAST_CHECK_EQ( b.stride(),	2 );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ), 	md[ 0, 0, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 0, 1, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 0, 2, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 0, 3, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 0, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 1, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 2, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 3, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 2, 0, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 2, 1, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 2, 2, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 2, 3, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( end< 2 >( md, 1 ) - b,	0 );
+			}
+		}
+		{	// layout_left
+			using MD		  = std::mdspan< const int, std::dextents< std::size_t, 3 >, std::layout_left >;
+			const MD			md( sp.data(), extents3 );
+			DOCTEST_FAST_CHECK_EQ( md.extent( 0 ),	extents3[ 0 ] );
+			DOCTEST_FAST_CHECK_EQ( md.extent( 1 ),	extents3[ 1 ] );
+			DOCTEST_FAST_CHECK_EQ( md.extent( 2 ),	extents3[ 2 ] );
+			{	// Dim 0
+				auto				b = begin< 0 >( md, 1 );
+				DOCTEST_FAST_CHECK_EQ( b.stride(),	3 );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ), 	md[ 1, 0, 0 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 1, 0 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 2, 0 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 3, 0 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 0, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 1, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 2, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 3, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( end< 0 >( md, 1 ) - b,	0 );
+			}
+			{	// Dim 1
+				// print_meta( md );
+				// auto				b = begin< 1 >( md, 1 );
+				// DOCTEST_FAST_CHECK_EQ( &md[ 1, 1, 0 ] - &md[ 0, 1, 0 ], b.stride() );
+				// DOCTEST_FAST_CHECK_EQ( &md[ 0, 1, 1 ] - &md[ 0, 1, 0 ], b.stride() );
+				// DOCTEST_FAST_CHECK_EQ( b.stride(),	8 );
+				// DOCTEST_FAST_CHECK_EQ( *( b++ ), 	md[ 0, 1, 0 ] );
+				// DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 1, 0 ] );
+				// DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 2, 1, 0 ] );
+				// DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 0, 1, 1 ] );
+				// DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 1, 1 ] );
+				// DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 2, 1, 1 ] );
+				// DOCTEST_FAST_CHECK_EQ( end< 1 >( md, 1 ) - b,	0 );
+			}
+			{	// Dim 2
+				auto				b = begin< 2 >( md, 1 );
+				DOCTEST_FAST_CHECK_EQ( b.stride(),	1 );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ), 	md[ 0, 0, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 0, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 2, 0, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 0, 1, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 1, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 2, 1, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 0, 2, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 2, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 2, 2, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 0, 3, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 3, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 2, 3, 1 ] );
+				DOCTEST_FAST_CHECK_EQ( end< 2 >( md, 1 ) - b,	0 );
+			}
+		}
+	}
 	DOCTEST_TEST_CASE( "resize" ) { 
 		constexpr std::array	downsize { cols - 2, rows - 1 };
 		constexpr std::array	upsize_r { cols,     rows + 2 };
-		constexpr std::array	upsize_c { cols + 2, rows };
+		constexpr std::array	upsize_c { cols + 2, rows     };
 		constexpr std::array	upsize_rc{ cols + 2, rows + 2 };
 
 		{	// layout_right
 			using MDspan	  = std::mdspan< int, std::dextents< std::size_t, 2 >, std::layout_right >;
-			constexpr int		in01{ arr[ 1 ] }, in10{ arr[ rows ] }, in25{ 2 + rows*5 };
+			constexpr int		in01{ sp[ 1 ] }, in10{ sp[ rows ] }, in25{ sp[ 2 + rows*5 ] };
 
 			{	// Downsize
 				constexpr auto						new_extent = downsize;
@@ -147,11 +301,12 @@ namespace pax {
 				DOCTEST_FAST_CHECK_EQ( dest[ 5, 2 ],		in25 );
 				DOCTEST_FAST_CHECK_EQ( dest[ 0, rows ],		 0 );
 				DOCTEST_FAST_CHECK_EQ( dest[ cols, 0 ],		 0 );
+				DOCTEST_FAST_CHECK_EQ( dest[ cols, rows ],	 0 );
 			}
 		}
 		{	// layout_left
 			using MDspan	  = std::mdspan< int, std::dextents< std::size_t, 2 >, std::layout_left >;
-			constexpr int		in01{ arr[ cols ] }, in10{ arr[ 1 ] }, in25{ arr[ cols*2 + 5 ] };
+			constexpr int		in01{ sp[ cols ] }, in10{ sp[ 1 ] }, in25{ sp[ cols*2 + 5 ] };
 
 			{	// Downsize
 				constexpr auto						new_extent = downsize;
@@ -240,6 +395,7 @@ namespace pax {
 				DOCTEST_FAST_CHECK_EQ( dest[ 5, 2 ],		in25 );
 				DOCTEST_FAST_CHECK_EQ( dest[ 0, rows ],		 0 );
 				DOCTEST_FAST_CHECK_EQ( dest[ cols, 0 ],		 0 );
+				DOCTEST_FAST_CHECK_EQ( dest[ cols, rows ],	 0 );
 			}
 		}
 	}

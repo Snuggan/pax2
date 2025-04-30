@@ -71,6 +71,7 @@ elseif( ${CMAKE_CXX_COMPILER_ID} MATCHES "GNU" )
 	list( APPEND PAX_FLAGS
 		-Wno-maybe-uninitialized
 		-Wno-deprecated-declarations
+		-fdiagnostics-all-candidates
 	)
 	list( REMOVE_ITEM PAX_SANITIZE
 		-fsanitize=nullability			# Not available in my gcc.
