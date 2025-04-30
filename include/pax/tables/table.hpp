@@ -37,8 +37,9 @@ namespace pax {
 
 		template< typename ...Indeces >
 		void adjust_size( Indeces && ...indeces_ )								  noexcept	{
-			mdspan::operator=( ( true && ... && indeces_ ) ? mdspan{ m_cells.data(), std::array{ std::forward< Indeces >( indeces_ )... } } : mdspan{} );
-			m_cells.resize( mdspan::size() );
+			m_cells.resize( ( 1 * ... *indeces_ ) );
+			mdspan::operator=( m_cells.empty() ? mdspan{}
+				: mdspan{ m_cells.data(), std::array{ std::forward< Indeces >( indeces_ )... } } );
 		}
 		
 		constexpr auto strider( const Size offset_, const Size stride_ )	const noexcept	{
@@ -109,10 +110,13 @@ namespace pax {
 		/// If the table is enlarged, old values are retained and new items are set to T{}.
 		/// If the table is decreased, the values within the new size are retained. 
 		constexpr void resize( const Size rows_, const Size cols_ ) {
-			const mdspan		  dest{ m_cells.data(), std::array{ rows_, cols_ } };
-			if( m_cells.size() <  dest.size() )	m_cells.resize( dest.size() );
-			pax::resize( std::span( data(), m_cells.size() ), *this, dest );
-			if( m_cells.size() != dest.size() )	m_cells.resize( dest.size() );
+			const Size			new_size{ rows_ * cols_ };
+			if( m_cells.size() <  new_size )	m_cells.resize( new_size );
+			pax::resize( 
+				std::span( m_cells ), 
+				mdspan{ m_cells.data(), mdspan::extents() }, 
+				mdspan{ m_cells.data(), std::array{ rows_, cols_ } } 
+			);
 			adjust_size( rows_, cols_ );
 		}
 
