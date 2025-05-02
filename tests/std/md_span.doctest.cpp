@@ -55,10 +55,7 @@ namespace pax {
 		{	// layout_right
 			using MD		  = std::mdspan< const int, std::dextents< std::size_t, 2 >, std::layout_right >;
 			const MD			md( sp.data(), extents2 );
-
-			DOCTEST_FAST_CHECK_EQ( md.extent( 0 ),	extents2[ 0 ] );
-			DOCTEST_FAST_CHECK_EQ( md.extent( 1 ),	extents2[ 1 ] );
-			{
+			{	// Dim 0
 				auto			b = begin< 0 >( md, 1 );
 				DOCTEST_FAST_CHECK_EQ( b.stride(),	1 );
 				DOCTEST_FAST_CHECK_EQ( *( b++ ), 	md[ 1, 0 ] );
@@ -66,7 +63,8 @@ namespace pax {
 				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 2 ] );
 				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 3 ] );
 				DOCTEST_FAST_CHECK_EQ( end< 0 >( md, 1 ) - b,	0 );
-			} {
+			}
+			{	// Dim 1
 				auto			b = begin< 1 >( md, 1 );
 				DOCTEST_FAST_CHECK_EQ( b.stride(),	4 );
 				DOCTEST_FAST_CHECK_EQ( *( b++ ), 	md[ 0, 1 ] );
@@ -78,10 +76,7 @@ namespace pax {
 		{	// layout_left
 			using MD		  = std::mdspan< const int, std::dextents< std::size_t, 2 >, std::layout_left >;
 			const MD			md( sp.data(), extents2 );
-
-			DOCTEST_FAST_CHECK_EQ( md.extent( 0 ),	extents2[ 0 ] );
-			DOCTEST_FAST_CHECK_EQ( md.extent( 1 ),	extents2[ 1 ] );
-			{
+			{	// Dim 0
 				auto			b = begin< 0 >( md, 1 );
 				DOCTEST_FAST_CHECK_EQ( b.stride(),	3 );
 				DOCTEST_FAST_CHECK_EQ( *( b++ ), 	md[ 1, 0 ] );
@@ -89,7 +84,8 @@ namespace pax {
 				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 2 ] );
 				DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 3 ] );
 				DOCTEST_FAST_CHECK_EQ( end< 0 >( md, 1 ) - b,	0 );
-			} {
+			}
+			{	// Dim 1
 				auto			b = begin< 1 >( md, 1 );
 				DOCTEST_FAST_CHECK_EQ( b.stride(),	1 );
 				DOCTEST_FAST_CHECK_EQ( *( b++ ), 	md[ 0, 1 ] );
@@ -104,9 +100,6 @@ namespace pax {
 		{	// layout_right
 			using MD		  = std::mdspan< const int, std::dextents< std::size_t, 3 >, std::layout_right >;
 			const MD			md( sp.data(), extents3 );
-			DOCTEST_FAST_CHECK_EQ( md.extent( 0 ),	extents3[ 0 ] );
-			DOCTEST_FAST_CHECK_EQ( md.extent( 1 ),	extents3[ 1 ] );
-			DOCTEST_FAST_CHECK_EQ( md.extent( 2 ),	extents3[ 2 ] );
 			{	// Dim 0
 				auto				b = begin< 0 >( md, 1 );
 				DOCTEST_FAST_CHECK_EQ( b.stride(),	1 );
@@ -121,18 +114,15 @@ namespace pax {
 				DOCTEST_FAST_CHECK_EQ( end< 0 >( md, 1 ) - b,	0 );
 			}
 			{	// Dim 1
-				// print_meta( md );
-				// auto				b = begin< 1 >( md, 1 );
-				// DOCTEST_FAST_CHECK_EQ( &md[ 1, 1, 0 ] - &md[ 0, 1, 0 ], 0 );
-				// DOCTEST_FAST_CHECK_EQ( &md[ 0, 1, 1 ] - &md[ 0, 1, 0 ], 0 );
-				// DOCTEST_FAST_CHECK_EQ( b.stride(),	8 );
-				// DOCTEST_FAST_CHECK_EQ( *( b++ ), 	md[ 0, 1, 0 ] );
-				// DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 1, 0 ] );
-				// DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 2, 1, 0 ] );
-				// DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 0, 1, 1 ] );
-				// DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 1, 1 ] );
-				// DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 2, 1, 1 ] );
-				// DOCTEST_FAST_CHECK_EQ( end< 1 >( md, 1 ) - b,	0 );
+				// // Items are not sequencial
+				// std::vector 	test{	&md[ 0, 1, 0 ] - &md[ 0, 1, 0 ],
+				// 						&md[ 1, 1, 0 ] - &md[ 0, 1, 0 ],
+				// 						&md[ 2, 1, 0 ] - &md[ 0, 1, 0 ],
+				// 						&md[ 0, 1, 1 ] - &md[ 0, 1, 0 ],
+				// 						&md[ 1, 1, 1 ] - &md[ 0, 1, 0 ],
+				// 						&md[ 2, 1, 1 ] - &md[ 0, 1, 0 ] };
+				// std::sort( test.begin(), test.end() );
+				// std::println( "Items are not sequencial: {}", test );
 			}
 			{	// Dim 2
 				auto				b = begin< 2 >( md, 1 );
@@ -155,9 +145,6 @@ namespace pax {
 		{	// layout_left
 			using MD		  = std::mdspan< const int, std::dextents< std::size_t, 3 >, std::layout_left >;
 			const MD			md( sp.data(), extents3 );
-			DOCTEST_FAST_CHECK_EQ( md.extent( 0 ),	extents3[ 0 ] );
-			DOCTEST_FAST_CHECK_EQ( md.extent( 1 ),	extents3[ 1 ] );
-			DOCTEST_FAST_CHECK_EQ( md.extent( 2 ),	extents3[ 2 ] );
 			{	// Dim 0
 				auto				b = begin< 0 >( md, 1 );
 				DOCTEST_FAST_CHECK_EQ( b.stride(),	3 );
@@ -172,18 +159,15 @@ namespace pax {
 				DOCTEST_FAST_CHECK_EQ( end< 0 >( md, 1 ) - b,	0 );
 			}
 			{	// Dim 1
-				// print_meta( md );
-				// auto				b = begin< 1 >( md, 1 );
-				// DOCTEST_FAST_CHECK_EQ( &md[ 1, 1, 0 ] - &md[ 0, 1, 0 ], b.stride() );
-				// DOCTEST_FAST_CHECK_EQ( &md[ 0, 1, 1 ] - &md[ 0, 1, 0 ], b.stride() );
-				// DOCTEST_FAST_CHECK_EQ( b.stride(),	8 );
-				// DOCTEST_FAST_CHECK_EQ( *( b++ ), 	md[ 0, 1, 0 ] );
-				// DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 1, 0 ] );
-				// DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 2, 1, 0 ] );
-				// DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 0, 1, 1 ] );
-				// DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 1, 1, 1 ] );
-				// DOCTEST_FAST_CHECK_EQ( *( b++ ),	md[ 2, 1, 1 ] );
-				// DOCTEST_FAST_CHECK_EQ( end< 1 >( md, 1 ) - b,	0 );
+				// // Items are not sequencial
+				// std::vector 	test{	&md[ 0, 1, 0 ] - &md[ 0, 1, 0 ],
+				// 						&md[ 1, 1, 0 ] - &md[ 0, 1, 0 ],
+				// 						&md[ 2, 1, 0 ] - &md[ 0, 1, 0 ],
+				// 						&md[ 0, 1, 1 ] - &md[ 0, 1, 0 ],
+				// 						&md[ 1, 1, 1 ] - &md[ 0, 1, 0 ],
+				// 						&md[ 2, 1, 1 ] - &md[ 0, 1, 0 ] };
+				// std::sort( test.begin(), test.end() );
+				// std::println( "Items are not sequencial: {}", test );
 			}
 			{	// Dim 2
 				auto				b = begin< 2 >( md, 1 );
@@ -213,7 +197,6 @@ namespace pax {
 		{	// layout_right
 			using MDspan	  = std::mdspan< int, std::dextents< std::size_t, 2 >, std::layout_right >;
 			constexpr int		in01{ sp[ 1 ] }, in10{ sp[ rows ] }, in25{ sp[ 2 + rows*5 ] };
-
 			{	// Downsize
 				constexpr auto						new_extent = downsize;
 				std::vector< int >					data( sp0.begin(),  sp0.end() );
@@ -307,7 +290,6 @@ namespace pax {
 		{	// layout_left
 			using MDspan	  = std::mdspan< int, std::dextents< std::size_t, 2 >, std::layout_left >;
 			constexpr int		in01{ sp[ cols ] }, in10{ sp[ 1 ] }, in25{ sp[ cols*2 + 5 ] };
-
 			{	// Downsize
 				constexpr auto						new_extent = downsize;
 				std::vector< int >					data( sp0.begin(),  sp0.end() );

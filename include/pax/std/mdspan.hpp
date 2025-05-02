@@ -32,59 +32,14 @@ namespace std {
 						md1_.data_handle(), md1_.data_handle() + md1_.size() );
 	}
 
-}
+}	// namespace std
 
 namespace pax {
 
-
-
-	template< std::size_t Dim, typename MDspan >	struct lesser_dim;
-	template< std::size_t Dim, typename MDspan >	constexpr std::size_t lesser_dim_v	= lesser_dim< Dim, MDspan >::value;
-	
-	template< std::size_t Dim, typename T, typename Extents, typename Accessor >
-	struct lesser_dim< Dim, std::mdspan< T, Extents, std::layout_right, Accessor > > 
-		: std::integral_constant< std::size_t, Dim ? ( Dim - 1 ) : Extents::rank() - 1 > {};
-	
-	template< std::size_t Dim, typename T, typename Extents, typename Accessor >
-	struct lesser_dim< Dim, std::mdspan< T, Extents, std::layout_left, Accessor > > 
-		: std::integral_constant< std::size_t, ( Dim + 1 < Extents::rank() ) ? ( Dim + 1 ) : 0 > {};
-	
-
-	/// Returns an iterator to first item at index offset_ in dimension Dim of md_.
-	/// Only tested wit rank 2. 
-	template< std::size_t Dim, typename T, typename Extents, typename Layout, typename Accessor >
-		// requires( ( Dim == 0 ) || ( Dim == Extents::rank() - 1 ) )
-	constexpr Strided_iterator< T > begin( 
-		const std::mdspan< T, Extents, Layout, Accessor >		md_,
-		const std::size_t 										offset_
-	) {
-		assert( md_.extent( Dim ) > offset_ );
-		assert( md_.is_strided() );
-		static constexpr std::size_t 	Lesser = lesser_dim_v< Dim, std::mdspan< T, Extents, Layout, Accessor > >;
-		return Strided_iterator< T >( md_.data_handle() + offset_*md_.stride( Dim ), md_.stride( Lesser ) );
-	};
-
-	/// Returns an iterator to next after last item at index offset_ in dimension Dim of md_.
-	/// Only tested wit rank 2. 
-	template< std::size_t Dim, typename T, typename Extents, typename Layout, typename Accessor >
-		requires( Dim < Extents::rank() )
-	constexpr Strided_iterator< T > end( 
-		const std::mdspan< T, Extents, Layout, Accessor >		md_,
-		const std::size_t 										offset_
-	) {
-		assert( md_.extent( Dim ) > offset_ );
-		assert( md_.is_strided() );
-		return begin< Dim >( md_, offset_ ) + md_.size()/md_.extent( Dim );
-	};
-
-
-	
 	template< typename Layout >	struct is_layout_right;
 	template< typename Layout >	constexpr bool is_layout_right_v	= is_layout_right< Layout >::value;
 	template<>	struct is_layout_right< std::layout_right >			: std::bool_constant< true >{};
 	template<>	struct is_layout_right< std::layout_left >			: std::bool_constant< false >{};
-	// template<>	struct is_layout_right< std::layout_right_padded >	: is_layout_right< std::layout_right >{};
-	// template<>	struct is_layout_right< std::layout_left_padded >	: is_layout_right< std::layout_left >{};
 
 
 	/// Rearranges the items of data_ so that they correspond to the destination extent.
@@ -133,6 +88,44 @@ namespace pax {
 		if( dest_step*iters < dest_.size() )				// Zero-out trailing values, if any.
 			std::fill_n( data + dest_step*iters, dest_.size() - dest_step*iters, T{} );
 	}
+
+
+
+	template< std::size_t Dim, typename MDspan >	struct lesser_dim;
+	template< std::size_t Dim, typename MDspan >	constexpr std::size_t lesser_dim_v	= lesser_dim< Dim, MDspan >::value;
+	
+	template< std::size_t Dim, typename T, typename Extents, typename Accessor >
+	struct lesser_dim< Dim, std::mdspan< T, Extents, std::layout_right, Accessor > > 
+		: std::integral_constant< std::size_t, Dim ? ( Dim - 1 ) : Extents::rank() - 1 > {};
+	
+	template< std::size_t Dim, typename T, typename Extents, typename Accessor >
+	struct lesser_dim< Dim, std::mdspan< T, Extents, std::layout_left, Accessor > > 
+		: std::integral_constant< std::size_t, ( Dim + 1 < Extents::rank() ) ? ( Dim + 1 ) : 0 > {};
+	
+
+	/// Returns an iterator to first item at index offset_ in dimension Dim of md_.
+	/// Only tested wit rank 2. 
+	template< std::size_t Dim, typename T, typename Extents, typename Layout, typename Accessor >
+		requires( ( Dim == 0 ) || ( Dim == Extents::rank() - 1 ) )	// Other dims are not sequencial.
+	constexpr Strided_iterator< T > begin( 
+		const std::mdspan< T, Extents, Layout, Accessor >		md_,
+		const std::size_t 										offset_
+	) {
+		assert( md_.extent( Dim ) > offset_ );
+		assert( md_.is_strided() );
+		static constexpr std::size_t 	Lesser = lesser_dim_v< Dim, std::mdspan< T, Extents, Layout, Accessor > >;
+		return Strided_iterator< T >( md_.data_handle() + offset_*md_.stride( Dim ), md_.stride( Lesser ) );
+	};
+
+	/// Returns an iterator to next after last item at index offset_ in dimension Dim of md_.
+	/// Only tested wit rank 2. 
+	template< std::size_t Dim, typename T, typename Extents, typename Layout, typename Accessor >
+	constexpr Strided_iterator< T > end( 
+		const std::mdspan< T, Extents, Layout, Accessor >		md_,
+		const std::size_t 										offset_
+	) {
+		return begin< Dim >( md_, offset_ ) + md_.size()/md_.extent( Dim );
+	};
 
 
 
