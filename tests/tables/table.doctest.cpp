@@ -50,6 +50,57 @@ namespace pax {
 	}
 
 
+	DOCTEST_TEST_CASE( "Test consistency of ::data() and ::data_handle" ) { 
+		Table< int >			table{ 10, 12 };
+		{	// Preliminaries.
+			table[ 2, 3 ] = 23;
+			DOCTEST_FAST_CHECK_EQ( table.data(),	table.data_handle() );
+			DOCTEST_FAST_CHECK_EQ( table[ 2, 3 ],	23 );
+		}
+		{	// Resize.
+			table.resize( 8, 9 );
+			DOCTEST_FAST_CHECK_EQ( table.data(),	table.data_handle() );
+			DOCTEST_FAST_CHECK_EQ( table[ 2, 3 ],	23 );
+		}
+		{	// Copy constructor.
+			Table< int >		table2{ table };
+			table2[ 2, 3 ]	  = -3;
+			
+			DOCTEST_FAST_CHECK_EQ( table .data(),	table .data_handle() );
+			DOCTEST_FAST_CHECK_EQ( table [ 2, 3 ],	23 );
+			DOCTEST_FAST_CHECK_EQ( table2.data(),	table2.data_handle() );
+			DOCTEST_FAST_CHECK_EQ( table2[ 2, 3 ],	-3 );
+			table[ 2, 3 ]	  = 23;
+		}
+		{	// Copy operator.
+			Table< int >		table2{};
+			table2			  = table;
+			table2[ 2, 3 ]	  = -3;
+			
+			DOCTEST_FAST_CHECK_EQ( table .data(),	table .data_handle() );
+			DOCTEST_FAST_CHECK_EQ( table [ 2, 3 ],	23 );
+			DOCTEST_FAST_CHECK_EQ( table2.data(),	table2.data_handle() );
+			DOCTEST_FAST_CHECK_EQ( table2[ 2, 3 ],	-3 );
+			table[ 2, 3 ]	  = 23;
+		}
+		{	// Move operator.
+			Table< int >		table2{ table };
+			table2[ 2, 3 ]	  = -3;
+			table			  = std::move( table2 );
+			
+			DOCTEST_FAST_CHECK_EQ( table .data(),	table .data_handle() );
+			DOCTEST_FAST_CHECK_EQ( table [ 2, 3 ],	-3 );
+			table[ 2, 3 ]	  = 23;
+		}
+		{	// Move constructor.
+			Table< int >		table2{ std::move( table ) };
+			table2[ 2, 3 ]	  = -3;
+			
+			DOCTEST_FAST_CHECK_EQ( table2.data(),	table2.data_handle() );
+			DOCTEST_FAST_CHECK_EQ( table2[ 2, 3 ],	-3 );
+			table			  = table2;
+		}
+	}
 	DOCTEST_TEST_CASE( "Table basics, constructed with rows and cols" ) { 
 		{
 			Table< int >		   table{ 0, 0 };

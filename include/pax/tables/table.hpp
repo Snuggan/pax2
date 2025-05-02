@@ -13,13 +13,13 @@
 namespace pax {
 
 	/// Handle 2-dimensional data. 
-	/// With time, use md_span?
+	/// With time, use mdarray?
 	template< 
 		typename T, 
 		typename Extents		  = std::dextents< std::size_t, 2 >,
 		typename LayoutPolicy	  = std::layout_right,
 		typename AccessorPolicy	  = std::default_accessor< T >
-	>
+	>	requires( Extents::rank() == 2 )
 	class Table : public std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy > {
 		using mdspan			  = std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy >;
 		using element_type		  = T;
@@ -28,54 +28,64 @@ namespace pax {
 		using cspan_type		  = std::span< const value_type >;
 		using index_type		  = typename Extents::index_type;
 		using Size				  = std::make_unsigned_t< index_type >;
-		static_assert( mdspan::rank() == 2 );
-		
 		static constexpr Size		rowR = 0;
 		static constexpr Size		colR = 1;
 
-		std::vector< value_type >	m_cells{};
+		std::vector< value_type >	m_data{};
 
-		template< typename ...Indeces >
-		void adjust_size( Indeces && ...indeces_ )								  noexcept	{
-			m_cells.resize( ( 1 * ... *indeces_ ) );
-			mdspan::operator=( m_cells.empty() ? mdspan{}
-				: mdspan{ m_cells.data(), std::array{ std::forward< Indeces >( indeces_ )... } } );
+		template< typename ...Sz >
+		void adjust_size( Sz && ...sz_ )							{
+			m_data.resize( ( 1 * ... *sz_ ) );
+			mdspan::operator=( m_data.empty() ? mdspan{}
+				: mdspan{ m_data.data(), std::array{ std::forward< Sz >( sz_ )... } } );
 		}
 
 	public:
 		constexpr Table()											=	default;
-		constexpr Table( const Table & )							=	default;
-		constexpr Table( Table && )									=	default;
-		constexpr Table & operator=( const Table & )				=	default;
-		constexpr Table & operator=( Table && )						=	default;
+
+		constexpr Table( const Table & other_ ) : mdspan{}			{	*this = other_;									}
+
+		constexpr Table( Table && other_ )				noexcept	{	*this = std::move( other_ );					}
+
+		constexpr Table & operator=( const Table & other_ )			{
+			m_data				  = other_.m_data;
+			mdspan::operator=( mdspan( m_data.data(), other_.extents() ) );
+			return *this;
+		}
+
+		constexpr Table & operator=( Table && other_ )	noexcept	{
+			m_data				  = std::move( other_.m_data );
+			mdspan::operator=( mdspan( m_data.data(), other_.extents() ) );
+			return *this;
+		}
 
 		constexpr Table(
 			const Size		 		rows_, 
 			const Size		 		cols_
-		) : m_cells( rows_*cols_ )									{	adjust_size( rows_, cols_ );					}
+		)															{	adjust_size( rows_, cols_ );					}
 
 		template< typename U, Size N >
 			requires std::is_same_v< value_type, std::remove_cv_t< U > >
 		constexpr Table(
-			const std::span< U, N >	cells_, 
+			const std::span< U, N >	data_, 
 			const Size		 		cols_
-		) : m_cells{ cells_.begin(), cells_.end() }					{	adjust_size( cells_.size() / cols_, cols_ );	}
+		) : m_data( data_.begin(), data_.end() )					{	adjust_size( data_.size()/cols_, cols_ );		}
 
 		using mdspan::extent;
 		using mdspan::size;
 		using mdspan::stride;
 		constexpr Size rows()						const noexcept	{	return extent( rowR );							}
 		constexpr Size cols()						const noexcept	{	return extent( colR );							}
-		constexpr const value_type * data()			const noexcept	{	return mdspan::data_handle();					}
-		constexpr value_type * data()					  noexcept	{	return m_cells.data();							}
+		constexpr const value_type * data()			const noexcept	{	return m_data.data();							}
+		constexpr value_type * data()					  noexcept	{	return m_data.data();							}
 
 		constexpr auto span()						const noexcept	{	return std::span( data(), size() );				}
 		constexpr auto span()							  noexcept	{	return std::span( data(), size() );				}
 
-		constexpr auto begin()						const noexcept	{	return m_cells.begin();							}
-		constexpr auto begin()							  noexcept	{	return m_cells.begin();							}
-		constexpr auto end  ()						const noexcept	{	return m_cells.end();							}
-		constexpr auto end  ()							  noexcept	{	return m_cells.end();							}
+		constexpr auto begin()						const noexcept	{	return m_data.begin();							}
+		constexpr auto begin()							  noexcept	{	return m_data.begin();							}
+		constexpr auto end  ()						const noexcept	{	return m_data.end();							}
+		constexpr auto end  ()							  noexcept	{	return m_data.end();							}
 
 		constexpr auto begin_row( const Size r_ )	const noexcept	{	return pax::begin< rowR >( *this, r_ );			}
 		constexpr auto begin_row( const Size r_ )		  noexcept	{	return pax::begin< rowR >( *this, r_ );			}
@@ -104,11 +114,11 @@ namespace pax {
 		/// If the table is decreased, the values within the new size are retained. 
 		constexpr void resize( const Size rows_, const Size cols_ ) {
 			const Size			new_size{ rows_ * cols_ };
-			if( m_cells.size() <  new_size )	m_cells.resize( new_size );
+			if( m_data.size() <  new_size )	m_data.resize( new_size );
 			pax::resize( 
-				std::span( m_cells ), 
-				mdspan{ m_cells.data(), mdspan::extents() }, 
-				mdspan{ m_cells.data(), std::array{ rows_, cols_ } } 
+				std::span( m_data ), 
+				mdspan{ m_data.data(), mdspan::extents() }, 
+				mdspan{ m_data.data(), std::array{ rows_, cols_ } } 
 			);
 			adjust_size( rows_, cols_ );
 		}
