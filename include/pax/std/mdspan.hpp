@@ -104,7 +104,7 @@ namespace pax {
 	
 
 	/// Returns an iterator to first item at index offset_ in dimension Dim of md_.
-	/// Only tested wit rank 2. 
+	/// Returns the default Strided_iterator if offset_ is to large.
 	template< std::size_t Dim, typename T, typename Extents, typename Layout, typename Accessor >
 		requires( ( Dim == 0 ) || ( Dim == Extents::rank() - 1 ) )	// Other dims are not sequencial.
 	constexpr Strided_iterator< T > begin( 
@@ -114,17 +114,21 @@ namespace pax {
 		assert( md_.extent( Dim ) > offset_ );
 		assert( md_.is_strided() );
 		static constexpr std::size_t 	Lesser = lesser_dim_v< Dim, std::mdspan< T, Extents, Layout, Accessor > >;
-		return Strided_iterator< T >( md_.data_handle() + offset_*md_.stride( Dim ), md_.stride( Lesser ) );
+		return ( offset_ < md_.extent( Dim ) ) 
+			? Strided_iterator< T >( md_.data_handle() + offset_*md_.stride( Dim ), md_.stride( Lesser ) )
+			: Strided_iterator< T >{};
 	};
 
 	/// Returns an iterator to next after last item at index offset_ in dimension Dim of md_.
-	/// Only tested wit rank 2. 
+	/// Returns the default Strided_iterator if offset_ is to large.
 	template< std::size_t Dim, typename T, typename Extents, typename Layout, typename Accessor >
 	constexpr Strided_iterator< T > end( 
 		const std::mdspan< T, Extents, Layout, Accessor >		md_,
 		const std::size_t 										offset_
 	) {
-		return begin< Dim >( md_, offset_ ) + md_.size()/md_.extent( Dim );
+		return ( offset_ < md_.extent( Dim ) ) 
+			? begin< Dim >( md_, offset_ ) + md_.size()/md_.extent( Dim )
+			: Strided_iterator< T >{};
 	};
 
 

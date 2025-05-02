@@ -42,6 +42,7 @@ namespace pax {
 		) noexcept : m_ptr{ ptr_ }, m_stride{ stride_ } {}
 
 		constexpr stride_type stride()							const noexcept	{	return m_stride;						}
+		constexpr pointer   ptr()								const noexcept	{	return m_ptr;							}
 		constexpr pointer   operator->()						const noexcept	{	return m_ptr;							}
 		constexpr reference operator*()							const noexcept	{	return *m_ptr;							}
 		constexpr reference operator[]( const stride_type o_ )	const noexcept	{	return *( m_ptr + stride()*o_ );		}

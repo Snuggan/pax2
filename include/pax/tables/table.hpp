@@ -17,36 +17,38 @@ namespace pax {
 	template< 
 		typename T, 
 		typename Extents		  = std::dextents< std::size_t, 2 >,
-		typename LayoutPolicy	  = std::layout_right,
-		typename AccessorPolicy	  = std::default_accessor< T >
+		typename Layout			  = std::layout_right,
+		typename Accessor		  = std::default_accessor< T >
 	>	requires( Extents::rank() == 2 )
-	class Table : public std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy > {
-		using mdspan			  = std::mdspan< T, Extents, LayoutPolicy, AccessorPolicy >;
-		using element_type		  = T;
-		using value_type		  = std::remove_cv_t< element_type >;
+	class Table : public std::mdspan< T, Extents, Layout, Accessor > {
+		using mdspan			  = std::mdspan< T, Extents, Layout, Accessor >;
+		using value_type		  = std::remove_cv_t< T >;
 		using span_type			  = std::span< value_type >;
 		using cspan_type		  = std::span< const value_type >;
-		using index_type		  = typename Extents::index_type;
-		using Size				  = std::make_unsigned_t< index_type >;
-		static constexpr Size		rowR = 0;
-		static constexpr Size		colR = 1;
+		using Index				  = std::make_unsigned_t< typename Extents::index_type >;
+		static constexpr Index		Row = 0;
+		static constexpr Index		Col = 1;
 
 		std::vector< value_type >	m_data{};
-
-		template< typename ...Sz >
-		void adjust_size( Sz && ...sz_ )							{
-			m_data.resize( ( 1 * ... *sz_ ) );
-			mdspan::operator=( m_data.empty() ? mdspan{}
-				: mdspan{ m_data.data(), std::array{ std::forward< Sz >( sz_ )... } } );
-		}
 
 		constexpr void m_copy( const mdspan & other_ )				{
 			m_data.assign( other_.data_handle(), other_.data_handle() + other_.size() );
 			mdspan::operator=( mdspan( m_data.data(), other_.extents() ) );
 		}
 
+		template< typename ...Sz >
+		void m_adjust( Sz && ...sz_ )								{
+			m_data.resize( ( 1 * ... *sz_ ) );
+			mdspan::operator=( m_data.empty() ? mdspan{} : mdspan( m_data.data(), std::array{ sz_... } ) );
+		}
+
 	public:
+		static constexpr bool		is_layout_right = std::is_same_v< Layout, std::layout_right >;
+		static constexpr bool		is_layout_left  = std::is_same_v< Layout, std::layout_left  >;
+		static_assert( is_layout_right || is_layout_left );
+
 		constexpr Table()											=	default;
+		constexpr Table( const Index rows_, const Index cols_ )		{	m_adjust( rows_, cols_ );						}
 		constexpr Table( const Table  & other_ ) : mdspan{}			{	m_copy( other_ );								}
 		constexpr Table( const mdspan & other_ )					{	m_copy( other_ );								}
 		constexpr Table( Table && other_ )				noexcept	{	*this = std::move( other_ );					}
@@ -59,103 +61,106 @@ namespace pax {
 			return *this;
 		}
 
-		constexpr Table(
-			const Size		 		rows_, 
-			const Size		 		cols_
-		)															{	adjust_size( rows_, cols_ );					}
-
-		template< typename U, Size N >
+		template< typename U, Index N >
 			requires std::is_same_v< value_type, std::remove_cv_t< U > >
 		constexpr Table(
 			const std::span< U, N >	data_, 
-			const Size		 		cols_
-		) : m_data( data_.begin(), data_.end() )					{	adjust_size( data_.size()/cols_, cols_ );		}
+			const Index		 		cols_
+		) : m_data( data_.begin(), data_.end() )					{	m_adjust( data_.size()/cols_, cols_ );			}
 
 		using mdspan::extent;
 		using mdspan::size;
-		constexpr Size rows()						const noexcept	{	return extent( rowR );							}
-		constexpr Size cols()						const noexcept	{	return extent( colR );							}
+		constexpr Index rows()						const noexcept	{	return extent( Row );							}
+		constexpr Index cols()						const noexcept	{	return extent( Col );							}
 		constexpr const value_type * data()			const noexcept	{	return m_data.data();							}
 		constexpr value_type * data()					  noexcept	{	return m_data.data();							}
 
-		constexpr auto span()						const noexcept	{	return std::span( data(), size() );				}
-		constexpr auto span()							  noexcept	{	return std::span( data(), size() );				}
+		constexpr auto span()						const noexcept	{	return span_type ( data(), size() );			}
+		constexpr auto span()							  noexcept	{	return cspan_type( data(), size() );			}
 
 		constexpr auto begin()						const noexcept	{	return m_data.begin();							}
 		constexpr auto begin()							  noexcept	{	return m_data.begin();							}
 		constexpr auto end  ()						const noexcept	{	return m_data.end();							}
 		constexpr auto end  ()							  noexcept	{	return m_data.end();							}
 
-		constexpr auto begin_row( const Size r_ )	const noexcept	{	return pax::begin< rowR >( *this, r_ );			}
-		constexpr auto begin_row( const Size r_ )		  noexcept	{	return pax::begin< rowR >( *this, r_ );			}
-		constexpr auto end_row  ( const Size r_ )	const noexcept	{	return pax::end  < rowR >( *this, r_ );			}
-		constexpr auto end_row  ( const Size r_ )		  noexcept	{	return pax::end  < rowR >( *this, r_ );			}
+		constexpr auto begin_row( const Index r_ )	const noexcept	{	return pax::begin< Row >( *this, r_ );			}
+		constexpr auto begin_row( const Index r_ )		  noexcept	{	return pax::begin< Row >( *this, r_ );			}
+		constexpr auto end_row  ( const Index r_ )	const noexcept	{	return pax::end  < Row >( *this, r_ );			}
+		constexpr auto end_row  ( const Index r_ )		  noexcept	{	return pax::end  < Row >( *this, r_ );			}
 
-		constexpr auto begin_col( const Size c_ )	const noexcept	{	return pax::begin< colR >( *this, c_ );			}
-		constexpr auto begin_col( const Size c_ )		  noexcept	{	return pax::begin< colR >( *this, c_ );			}
-		constexpr auto end_col  ( const Size c_ )	const noexcept	{	return pax::end  < colR >( *this, c_ );			}
-		constexpr auto end_col  ( const Size c_ )		  noexcept	{	return pax::end  < colR >( *this, c_ );			}
+		constexpr auto begin_col( const Index c_ )	const noexcept	{	return pax::begin< Col >( *this, c_ );			}
+		constexpr auto begin_col( const Index c_ )		  noexcept	{	return pax::begin< Col >( *this, c_ );			}
+		constexpr auto end_col  ( const Index c_ )	const noexcept	{	return pax::end  < Col >( *this, c_ );			}
+		constexpr auto end_col  ( const Index c_ )		  noexcept	{	return pax::end  < Col >( *this, c_ );			}
 
-		/// Return row r_ as a span.
-		///
-		constexpr cspan_type row( const Size r_ )	const noexcept	{
-			return ( r_ < rows() ) ? cspan_type{ data() + cols()*r_, cols() } : cspan_type{};
+		/// Return row r_ as a span (returns an empty span if r_ is to large).
+		constexpr cspan_type row( const Index r_ )	const noexcept	requires( is_layout_right )	{
+			return cspan_type{ begin_row( r_ ).ptr(), end_row( r_ ).ptr() };
 		}
 
-		/// Return row r_ as a span.
-		///
-		constexpr span_type row( const Size r_ )		  			{
-			return ( r_ < rows() ) ? span_type{ data() + cols()*r_, cols() } : span_type{};
+		/// Return row r_ as a span (returns an empty span if r_ is to large).
+		constexpr span_type row( const Index r_ )		  noexcept	requires( is_layout_right )	{
+			return  span_type{ begin_row( r_ ).ptr(), end_row( r_ ).ptr() };
 		}
 
-		/// Resize the tablen.
+		/// Return column c_ as a span (returns an empty span if c_ is to large).
+		constexpr cspan_type row( const Index c_ )	const noexcept	requires( is_layout_left )	{
+			return cspan_type{ begin_col( c_ ).ptr(), end_col( c_ ).ptr() };
+		}
+
+		/// Return column c_ as a span (returns an empty span if c_ is to large).
+		constexpr span_type row( const Index c_ )		  noexcept	requires( is_layout_left )	{
+			return  span_type{ begin_col( c_ ).ptr(), end_col( c_ ).ptr() };
+		}
+
+		/// Resize the table.
 		/// If the table is enlarged, old values are retained and new items are set to T{}.
 		/// If the table is decreased, the values within the new size are retained. 
-		constexpr void resize( const Size rows_, const Size cols_ ) {
-			const Size			new_size{ rows_ * cols_ };
-			if( m_data.size() <  new_size )	m_data.resize( new_size );
+		template< typename ...Sz >
+		constexpr void resize( Sz && ...sz_ ) requires( sizeof...( Sz ) == Extents::rank() )	{
+			const Index			new_size( ( 1 * ... *sz_ ) );
+			if( m_data.size() < new_size )	m_data.resize( new_size );
 			pax::resize( 
-				std::span( m_data ), 
+				span_type( m_data ), 
 				mdspan{ m_data.data(), mdspan::extents() }, 
-				mdspan{ m_data.data(), std::array{ rows_, cols_ } } 
+				mdspan{ m_data.data(), std::array{ sz_... } } 
 			);
-			adjust_size( rows_, cols_ );
+			m_adjust( sz_... );
 		}
 
 		/// Remove a column.
-		/// 
-		constexpr void remove_column( const Size col_ ) 			{
-			if( ( col_ < extent( colR ) ) && size() ) {
+		constexpr void remove_column( const Index col_ )			requires( is_layout_right )	{
+			if( ( col_ < cols() ) && size() ) {
 				// We leave be the elements before the first column item to remove.
-				const auto		new_cols = extent( colR ) - 1;
+				const auto		new_cols = cols() - 1;
 				T			  * dest = data() + col_;
 				T			  * srce = dest + 1;
-				const T		  * send = dest + extent( colR ) * ( extent( rowR ) - 1 );
+				const T		  * send = dest + cols() * ( rows() - 1 );
 
 				// Copy the rows from behind one column item to remove to just before the next. 
 				while( srce < send ) {
 					std::copy_n( srce, new_cols, dest );
-					srce	 += extent( colR );
+					srce	 += cols();
 					dest	 += new_cols;
 				}
 
 				// Copy the elements behind the last column item to remove, the trailing elements of the last row. 
 				std::copy_n( srce, new_cols - col_, dest );
 
-				adjust_size( extent( rowR ), extent( colR ) - 1 );
+				m_adjust( rows(), cols() - 1 );
 			}
 		}
 
 		/// Stream the rows for which predicate_[ i ] is true to out_ using col_mark_ as column deligneater. 
 		/// Row deligneator is '\n'.
 		template< typename Out, typename Predicate >
-			requires( std::is_invocable_r_v< bool, Predicate, Size > )
+			requires( std::is_invocable_r_v< bool, Predicate, Index > )
 		void print(
 			Out							  & out_,
 			Predicate					 && row_predicate_, 
 			const char 						separator_ = 0
 		) const {
-			for( Size r{}; r<rows(); ++r ) {
+			for( Index r{}; r<rows(); ++r ) {
 				if( row_predicate_( r ) ) {
 					pax::print( out_, begin_row( r ), end_row( r ), separator_ );
 					std::println( out_, "" );
