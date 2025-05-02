@@ -83,6 +83,33 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( table2[ 2, 3 ],	-3 );
 			table[ 2, 3 ]	  = 23;
 		}
+		{	// Copy mdspan constructor.
+			mdspan< std::layout_right, 2 >	md( arr, 5, 6 );
+			DOCTEST_FAST_CHECK_EQ( md[ 3, 4 ],		22 );
+			DOCTEST_FAST_CHECK_EQ( md.size(),		30 );
+
+			Table< int >		table2{ md };
+			table2[ 2, 3 ]	  = -3;
+			
+			DOCTEST_FAST_CHECK_EQ( table2.size(),	md.size() );
+			DOCTEST_FAST_CHECK_EQ( table2.data(),	table2.data_handle() );
+			DOCTEST_FAST_CHECK_EQ( table2[ 2, 3 ],	-3 );
+			DOCTEST_FAST_CHECK_EQ( table2[ 3, 4 ],	md[ 3, 4 ] );
+		}
+		{	// Copy mdspan operator.
+			mdspan< std::layout_right, 2 >	md( arr, 5, 6 );
+			DOCTEST_FAST_CHECK_EQ( md[ 3, 4 ],		22 );
+			DOCTEST_FAST_CHECK_EQ( md.size(),		30 );
+
+			Table< int >		table2{};
+			table2			  = md;
+			table2[ 2, 3 ]	  = -3;
+			
+			DOCTEST_FAST_CHECK_EQ( table2.size(),	md.size() );
+			DOCTEST_FAST_CHECK_EQ( table2.data(),	table2.data_handle() );
+			DOCTEST_FAST_CHECK_EQ( table2[ 2, 3 ],	-3 );
+			DOCTEST_FAST_CHECK_EQ( table2[ 3, 4 ],	md[ 3, 4 ] );
+		}
 		{	// Move operator.
 			Table< int >		table2{ table };
 			table2[ 2, 3 ]	  = -3;

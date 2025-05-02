@@ -40,18 +40,18 @@ namespace pax {
 				: mdspan{ m_data.data(), std::array{ std::forward< Sz >( sz_ )... } } );
 		}
 
+		constexpr void m_copy( const mdspan & other_ )				{
+			m_data.assign( other_.data_handle(), other_.data_handle() + other_.size() );
+			mdspan::operator=( mdspan( m_data.data(), other_.extents() ) );
+		}
+
 	public:
 		constexpr Table()											=	default;
-
-		constexpr Table( const Table & other_ ) : mdspan{}			{	*this = other_;									}
-
+		constexpr Table( const Table  & other_ ) : mdspan{}			{	m_copy( other_ );								}
+		constexpr Table( const mdspan & other_ )					{	m_copy( other_ );								}
 		constexpr Table( Table && other_ )				noexcept	{	*this = std::move( other_ );					}
-
-		constexpr Table & operator=( const Table & other_ )			{
-			m_data				  = other_.m_data;
-			mdspan::operator=( mdspan( m_data.data(), other_.extents() ) );
-			return *this;
-		}
+		constexpr Table & operator=( const Table & other_ )			{	m_copy( other_ );		return *this;			}
+		constexpr Table & operator=( const mdspan & other_ )		{	m_copy( other_ );		return *this;			}
 
 		constexpr Table & operator=( Table && other_ )	noexcept	{
 			m_data				  = std::move( other_.m_data );
@@ -73,7 +73,6 @@ namespace pax {
 
 		using mdspan::extent;
 		using mdspan::size;
-		using mdspan::stride;
 		constexpr Size rows()						const noexcept	{	return extent( rowR );							}
 		constexpr Size cols()						const noexcept	{	return extent( colR );							}
 		constexpr const value_type * data()			const noexcept	{	return m_data.data();							}
