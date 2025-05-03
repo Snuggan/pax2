@@ -35,6 +35,13 @@ namespace pax {
 		return result;
 	}
 	
+	template< typename T >
+	constexpr T sum( Strider< T > str_ ) {
+		std::remove_cv_t< T >	result{};
+		for( auto item : str_ )	result += item;
+		return result;
+	}
+	
 	
 	template< typename T >
 	void resize_check(
@@ -156,8 +163,8 @@ namespace pax {
 		{	// row( i ).
 			const auto r	  = table.row( 2 );
 			DOCTEST_FAST_CHECK_EQ( sum( r ),			38 );
-			DOCTEST_FAST_CHECK_EQ( r.front(),			 8 );
-			DOCTEST_FAST_CHECK_EQ( r.back(),			11 );
+			DOCTEST_FAST_CHECK_EQ( r[ 0 ],				 8 );
+			DOCTEST_FAST_CHECK_EQ( r[ cols - 1 ],		11 );
 		}
 		{	// Change a row.
 			auto itr		  = table.begin_row( 3 );
@@ -246,30 +253,59 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( table[ 0, 0 ],		42 );
 		}
 	}
-	DOCTEST_TEST_CASE( "Table remove_column" ) { 
+	DOCTEST_TEST_CASE( "Table remove_rows" ) { 
+		Table table( sp, 8 );
+		DOCTEST_FAST_CHECK_EQ( table.rows(),		 4 );
+		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 8 );
+		DOCTEST_FAST_CHECK_EQ( table[ 1, 7 ],		15 );
+		DOCTEST_FAST_CHECK_EQ( table[ 2, 7 ],		23 );
+		
+		// table.print( std::cout, []( int ){ return true; } );
+		// table.remove_rows( 2 );
+		// DOCTEST_FAST_CHECK_EQ( table.rows(),		 3 );
+		// DOCTEST_FAST_CHECK_EQ( table.cols(), 		 8 );
+		// DOCTEST_FAST_CHECK_EQ( table[ 1, 7 ],		15 );
+		// DOCTEST_FAST_CHECK_EQ( table[ 2, 7 ],		31 );
+		// table.print( std::cout, []( int ){ return true; } );
+		//
+		// table.remove_rows( 2 );
+		// DOCTEST_FAST_CHECK_EQ( table.rows(),		 2 );
+		// DOCTEST_FAST_CHECK_EQ( table.cols(), 		 8 );
+		// DOCTEST_FAST_CHECK_EQ( table[ 0, 7 ],		 7 );
+		//
+		// table.remove_rows( 1 );
+		// DOCTEST_FAST_CHECK_EQ( table.rows(),		 1 );
+		// DOCTEST_FAST_CHECK_EQ( table.cols(), 		 8 );
+		// DOCTEST_FAST_CHECK_EQ( table[ 0, 7 ],		 7 );
+		//
+		// table.remove_rows( 0 );
+		// DOCTEST_FAST_CHECK_EQ( table.rows(),		 0 );
+		// DOCTEST_FAST_CHECK_EQ( table.cols(), 		 0 );
+	}
+	DOCTEST_TEST_CASE( "Table remove_cols" ) { 
 		Table table( sp, 4 );
 		DOCTEST_FAST_CHECK_EQ( table.rows(),		 8 );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 4 );
 		DOCTEST_FAST_CHECK_EQ( table[ 7, 1 ],		29 );
 		DOCTEST_FAST_CHECK_EQ( table[ 7, 2 ],		30 );
 		
-		table.remove_column( 2 );
+		table.remove_cols( 2 );
 		DOCTEST_FAST_CHECK_EQ( table.rows(),		 8 );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 3 );
 		DOCTEST_FAST_CHECK_EQ( table[ 7, 1 ],		29 );
 		DOCTEST_FAST_CHECK_EQ( table[ 7, 2 ],		31 );
 		
-		table.remove_column( 2 );
+		table.remove_cols( 2 );
 		DOCTEST_FAST_CHECK_EQ( table.rows(),		 8 );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 2 );
 		DOCTEST_FAST_CHECK_EQ( table[ 7, 0 ],		28 );
 		
-		table.remove_column( 1 );
+		table.remove_cols( 1 );
 		DOCTEST_FAST_CHECK_EQ( table.rows(),		 8 );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 1 );
 		DOCTEST_FAST_CHECK_EQ( table[ 7, 0 ],		28 );
 		
-		table.remove_column( 0 );
+		table.remove_cols( 0 );
 		DOCTEST_FAST_CHECK_EQ( table.rows(),		 0 );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 0 );
 	}

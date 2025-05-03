@@ -26,8 +26,8 @@ namespace pax {
 		using span_type			  = std::span< value_type >;
 		using cspan_type		  = std::span< const value_type >;
 		using Index				  = std::make_unsigned_t< typename Extents::index_type >;
-		static constexpr Index		Row = 0;
-		static constexpr Index		Col = 1;
+		static constexpr Index		Row = !is_layout_right_v< Layout >;
+		static constexpr Index		Col =  is_layout_right_v< Layout >;
 
 		std::vector< value_type >	m_data{};
 
@@ -48,12 +48,12 @@ namespace pax {
 		static_assert( is_layout_right || is_layout_left );
 
 		constexpr Table()											=	default;
-		constexpr Table( const Index rows_, const Index cols_ )		{	m_adjust( rows_, cols_ );						}
-		constexpr Table( const Table  & other_ ) : mdspan{}			{	m_copy( other_ );								}
-		constexpr Table( const mdspan & other_ )					{	m_copy( other_ );								}
-		constexpr Table( Table && other_ )				noexcept	{	*this = std::move( other_ );					}
-		constexpr Table & operator=( const Table & other_ )			{	m_copy( other_ );		return *this;			}
-		constexpr Table & operator=( const mdspan & other_ )		{	m_copy( other_ );		return *this;			}
+		constexpr Table( const Index rows_, const Index cols_ )		{	m_adjust( rows_, cols_ );					}
+		constexpr Table( const Table  & other_ ) : mdspan{}			{	m_copy( other_ );							}
+		constexpr Table( const mdspan & other_ )					{	m_copy( other_ );							}
+		constexpr Table( Table && other_ )				noexcept	{	*this = std::move( other_ );				}
+		constexpr Table & operator=( const Table & other_ )			{	m_copy( other_ );		return *this;		}
+		constexpr Table & operator=( const mdspan & other_ )		{	m_copy( other_ );		return *this;		}
 
 		constexpr Table & operator=( Table && other_ )	noexcept	{
 			m_data				  = std::move( other_.m_data );
@@ -66,58 +66,50 @@ namespace pax {
 		constexpr Table(
 			const std::span< U, N >	data_, 
 			const Index		 		cols_
-		) : m_data( data_.begin(), data_.end() )					{	m_adjust( data_.size()/cols_, cols_ );			}
+		) : m_data( data_.begin(), data_.end() )					{	m_adjust( data_.size()/cols_, cols_ );		}
 
 		using mdspan::extent;
 		using mdspan::size;
-		constexpr Index rows()						const noexcept	{	return extent( Row );							}
-		constexpr Index cols()						const noexcept	{	return extent( Col );							}
-		constexpr const value_type * data()			const noexcept	{	return m_data.data();							}
-		constexpr value_type * data()					  noexcept	{	return m_data.data();							}
+		constexpr Index rows()						const noexcept	{	return extent( Row );						}
+		constexpr Index cols()						const noexcept	{	return extent( Col );						}
+		constexpr const value_type * data()			const noexcept	{	return m_data.data();						}
+		constexpr value_type * data()					  noexcept	{	return m_data.data();						}
 
-		constexpr auto span()						const noexcept	{	return span_type ( data(), size() );			}
-		constexpr auto span()							  noexcept	{	return cspan_type( data(), size() );			}
+		constexpr auto span()						const noexcept	{	return cspan_type( data(), size() );		}
+		constexpr auto span()							  noexcept	{	return  span_type( data(), size() );		}
 
-		constexpr auto begin()						const noexcept	{	return m_data.begin();							}
-		constexpr auto begin()							  noexcept	{	return m_data.begin();							}
-		constexpr auto end  ()						const noexcept	{	return m_data.end();							}
-		constexpr auto end  ()							  noexcept	{	return m_data.end();							}
+		constexpr auto begin()						const noexcept	{	return m_data.begin();						}
+		constexpr auto begin()							  noexcept	{	return m_data.begin();						}
+		constexpr auto end  ()						const noexcept	{	return m_data.end();						}
+		constexpr auto end  ()							  noexcept	{	return m_data.end();						}
 
-		constexpr auto begin_row( const Index r_ )	const noexcept	{	return pax::begin< Row >( *this, r_ );			}
-		constexpr auto begin_row( const Index r_ )		  noexcept	{	return pax::begin< Row >( *this, r_ );			}
-		constexpr auto end_row  ( const Index r_ )	const noexcept	{	return pax::end  < Row >( *this, r_ );			}
-		constexpr auto end_row  ( const Index r_ )		  noexcept	{	return pax::end  < Row >( *this, r_ );			}
+		constexpr auto begin_row( const Index r_ )	const noexcept	{	return pax::begin< Row >( *this, r_ );		}
+		constexpr auto begin_row( const Index r_ )		  noexcept	{	return pax::begin< Row >( *this, r_ );		}
+		constexpr auto end_row  ( const Index r_ )	const noexcept	{	return pax::end  < Row >( *this, r_ );		}
+		constexpr auto end_row  ( const Index r_ )		  noexcept	{	return pax::end  < Row >( *this, r_ );		}
 
-		constexpr auto begin_col( const Index c_ )	const noexcept	{	return pax::begin< Col >( *this, c_ );			}
-		constexpr auto begin_col( const Index c_ )		  noexcept	{	return pax::begin< Col >( *this, c_ );			}
-		constexpr auto end_col  ( const Index c_ )	const noexcept	{	return pax::end  < Col >( *this, c_ );			}
-		constexpr auto end_col  ( const Index c_ )		  noexcept	{	return pax::end  < Col >( *this, c_ );			}
+		constexpr auto begin_col( const Index c_ )	const noexcept	{	return pax::begin< Col >( *this, c_ );		}
+		constexpr auto begin_col( const Index c_ )		  noexcept	{	return pax::begin< Col >( *this, c_ );		}
+		constexpr auto end_col  ( const Index c_ )	const noexcept	{	return pax::end  < Col >( *this, c_ );		}
+		constexpr auto end_col  ( const Index c_ )		  noexcept	{	return pax::end  < Col >( *this, c_ );		}
 
-		/// Return row r_ as a span (returns an empty span if r_ is to large).
-		constexpr cspan_type row( const Index r_ )	const noexcept	requires( is_layout_right )	{
-			return cspan_type{ begin_row( r_ ).ptr(), end_row( r_ ).ptr() };
-		}
+		/// Return row r_ as a Strider.
+		constexpr auto row( const Index r_ )		const noexcept	{	return Strider( begin_row( r_ ), cols() );	}
 
-		/// Return row r_ as a span (returns an empty span if r_ is to large).
-		constexpr span_type row( const Index r_ )		  noexcept	requires( is_layout_right )	{
-			return  span_type{ begin_row( r_ ).ptr(), end_row( r_ ).ptr() };
-		}
+		/// Return row r_ as a Strider.
+		constexpr auto row( const Index r_ )			  noexcept	{	return Strider( begin_row( r_ ), cols() );	}
 
-		/// Return column c_ as a span (returns an empty span if c_ is to large).
-		constexpr cspan_type row( const Index c_ )	const noexcept	requires( is_layout_left )	{
-			return cspan_type{ begin_col( c_ ).ptr(), end_col( c_ ).ptr() };
-		}
+		/// Return column c_ as a Strider.
+		constexpr auto col( const Index c_ )		const noexcept	{	return Strider{ begin_col( c_ ), rows() };	}
 
-		/// Return column c_ as a span (returns an empty span if c_ is to large).
-		constexpr span_type row( const Index c_ )		  noexcept	requires( is_layout_left )	{
-			return  span_type{ begin_col( c_ ).ptr(), end_col( c_ ).ptr() };
-		}
+		/// Return column c_ as a Strider.
+		constexpr auto col( const Index c_ )			  noexcept	{	return Strider{ begin_col( c_ ), rows() };	}
 
 		/// Resize the table.
 		/// If the table is enlarged, old values are retained and new items are set to T{}.
 		/// If the table is decreased, the values within the new size are retained. 
 		template< typename ...Sz >
-		constexpr void resize( Sz && ...sz_ ) requires( sizeof...( Sz ) == Extents::rank() )	{
+		constexpr void resize( Sz && ...sz_ ) 		requires( sizeof...( Sz ) == Extents::rank() ) {
 			const Index			new_size( ( 1 * ... *sz_ ) );
 			if( m_data.size() < new_size )	m_data.resize( new_size );
 			pax::resize( 
@@ -128,27 +120,18 @@ namespace pax {
 			m_adjust( sz_... );
 		}
 
-		/// Remove a column.
-		constexpr void remove_column( const Index col_ )			requires( is_layout_right )	{
-			if( ( col_ < cols() ) && size() ) {
-				// We leave be the elements before the first column item to remove.
-				const auto		new_cols = cols() - 1;
-				T			  * dest = data() + col_;
-				T			  * srce = dest + 1;
-				const T		  * send = dest + cols() * ( rows() - 1 );
+		// /// Remove rows.
+		// constexpr void remove_rows( const Index r_, const Index qtity_ = 1 )					{
+		// 	const auto			extents = remove< Row >( span(), mdspan{ m_data.data(), mdspan::extents() }, r_, qtity_ );
+		// 	m_data.resize( extents[ 0 ]*extents[ 1 ] );
+		// 	mdspan::operator=( m_data.empty() ? mdspan{} : mdspan( m_data.data(), extents ) );
+		// }
 
-				// Copy the rows from behind one column item to remove to just before the next. 
-				while( srce < send ) {
-					std::copy_n( srce, new_cols, dest );
-					srce	 += cols();
-					dest	 += new_cols;
-				}
-
-				// Copy the elements behind the last column item to remove, the trailing elements of the last row. 
-				std::copy_n( srce, new_cols - col_, dest );
-
-				m_adjust( rows(), cols() - 1 );
-			}
+		/// Remove columns.
+		constexpr void remove_cols( const Index c_, const Index qtity_ = 1 )					{
+			const auto			extents = remove< Col >( span(), mdspan{ m_data.data(), mdspan::extents() }, c_, qtity_ );
+			m_data.resize( extents[ 0 ]*extents[ 1 ] );
+			mdspan::operator=( m_data.empty() ? mdspan{} : mdspan( m_data.data(), extents ) );
 		}
 
 		/// Stream the rows for which predicate_[ i ] is true to out_ using col_mark_ as column deligneater. 

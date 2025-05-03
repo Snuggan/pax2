@@ -42,52 +42,101 @@ namespace pax {
 	template<>	struct is_layout_right< std::layout_left >			: std::bool_constant< false >{};
 
 
-	/// Rearranges the items of data_ so that they correspond to the destination extent.
-	/// For consistency, data_.data() and srce_.data_handle() and dest_.data_handle() must all be the same.
-	/// Obviously, data_.size >= max( srce_.size() dest_.size() ).
-	template< typename T, typename Extents, typename Layout, typename Accessor >
-		requires( Extents::rank() >  0 )
-	static void resize(
-		const std::span< T >								data_, 	///< The actual data items.
-		const std::mdspan< T, Extents, Layout, Accessor >	srce_, 	///< The source extents.
-		const std::mdspan< T, Extents, Layout, Accessor >	dest_ 	///< The destination extents. 
-	) {
-		assert( srce_.is_strided() );
-		assert( dest_.is_strided() );
-		assert( data_.data() == srce_.data_handle() );		// Not strictly necessary, but for consistency...
-		assert( data_.data() == dest_.data_handle() );		// Not strictly necessary, but for consistency...
-		assert( data_.size() >= srce_.size() );				// data_ must have a sufficient size.
-		assert( data_.size() >= dest_.size() );				// data_ must have a sufficient size.
-		if( srce_.empty() || dest_.empty() )	return;		// If either is empty, there is nothing to copy...
+/// Rearranges the items of data_ so that they correspond to the destination extent.
+/// For consistency, data_.data() and srce_.data_handle() and dest_.data_handle() must all be the same.
+/// Obviously, data_.size >= max( srce_.size() dest_.size() ).
+template< typename T, typename Extents, typename Layout, typename Accessor >
+	requires( Extents::rank() >  0 )
+static void resize(
+	const std::span< T >								data_, 	///< The actual data items.
+	const std::mdspan< T, Extents, Layout, Accessor >	srce_, 	///< The source extents.
+	const std::mdspan< T, Extents, Layout, Accessor >	dest_ 	///< The destination extents. 
+) {
+	assert( srce_.is_strided() );
+	assert( dest_.is_strided() );
+	assert( data_.data() == srce_.data_handle() );		// Not strictly necessary, but for consistency...
+	assert( data_.data() == dest_.data_handle() );		// Not strictly necessary, but for consistency...
+	assert( data_.size() >= srce_.size() );				// data_ must have a sufficient size.
+	assert( data_.size() >= dest_.size() );				// data_ must have a sufficient size.
+	if( srce_.empty() || dest_.empty() )	return;		// If either is empty, there is nothing to copy...
 
-		using Ptr					 = T*;
-		using Size					 = std::size_t;
-		const Ptr		data		 = data_.data();
-		const Size		srce_step	 = srce_.extent( is_layout_right_v< Layout >*( Extents::rank() - 1 ) );
-		const Size		dest_step	 = dest_.extent( is_layout_right_v< Layout >*( Extents::rank() - 1 ) );
-		const Size		iters		 = std::min( srce_.size()/srce_step, dest_.size()/dest_step );
+	using Ptr					 = T*;
+	using Size					 = std::size_t;
+	const Ptr		data		 = data_.data();
+	const Size		srce_step	 = srce_.extent( is_layout_right_v< Layout >*( srce_.rank() - 1 ) );
+	const Size		dest_step	 = dest_.extent( is_layout_right_v< Layout >*( dest_.rank() - 1 ) );
+	const Size		iters		 = std::min( srce_.size()/srce_step, dest_.size()/dest_step );
 
-		if( srce_step < dest_step ) {						// Expand: copy from last to first.
-			Ptr			srce		 = data + srce_step*iters;
-			Ptr			dest		 = data + dest_step*iters;
-			const Size	remains		 = dest_step - srce_step;
-			while( srce	!= data ) {
-				std::copy_n( srce	-= srce_step, srce_step, dest -= dest_step );
-				std::fill_n( dest	+  srce_step, remains, T{} );
-			}
-		} else if( srce_step > dest_step ) {				// Shrink:  copy from first to last.
-			Ptr			srce		 = data;
-			Ptr			dest		 = data;
-			const Ptr	srce_end	 = data + srce_step*iters;
-			while( srce	!= srce_end ) {
-				std::copy_n( srce, dest_step, dest );
-				srce				+= srce_step;
-				dest				+= dest_step;
-			}
+	if( srce_step < dest_step ) {						// Expand: copy from last to first.
+		Ptr			srce		 = data + srce_step*iters;
+		Ptr			dest		 = data + dest_step*iters;
+		const Size	remains		 = dest_step - srce_step;
+		while( srce	!= data ) {
+			std::copy_n( srce	-= srce_step, srce_step, dest -= dest_step );
+			std::fill_n( dest	+  srce_step, remains, T{} );
 		}
-		if( dest_step*iters < dest_.size() )				// Zero-out trailing values, if any.
-			std::fill_n( data + dest_step*iters, dest_.size() - dest_step*iters, T{} );
+	} else if( srce_step > dest_step ) {				// Shrink:  copy from first to last.
+		Ptr			srce		 = data;
+		Ptr			dest		 = data;
+		const Ptr	srce_end	 = data + srce_step*iters;
+		while( srce	!= srce_end ) {
+			std::copy_n( srce, dest_step, dest );
+			srce				+= srce_step;
+			dest				+= dest_step;
+		}
 	}
+	if( dest_step*iters < dest_.size() )				// Zero-out trailing values, if any.
+		std::fill_n( data + dest_step*iters, dest_.size() - dest_step*iters, T{} );
+}
+
+
+
+/// Rearranges the items of data_ so that size of extension first_ is decreased by qtity_.
+template< std::size_t Dim, typename T, typename Extents, typename Layout, typename Accessor >
+	requires( Extents::rank() > 0 )
+static auto remove(
+	const std::span< T >								data_, 		///< The actual data items.
+	const std::mdspan< T, Extents, Layout, Accessor >	md_, 		///< The extents etc.
+	const std::size_t 									first_, 	///< Index to items to remove.
+	const std::size_t 									qtity_ = 1 	///< Number of additional indeces to remove.
+) {
+	assert( md_.is_strided() );
+	assert( data_.size() >= md_.size() );				// data_ must have a sufficient size.
+	std::array< std::size_t, Extents::rank() >			extents;
+	for( std::size_t i{}; i<Extents::rank(); ++i )
+		extents[ i ]				  = md_.extent( i );
+
+	if( md_.size() && ( first_ < md_.extent( Dim ) ) ) {
+		using Ptr					  = T*;
+		using Size					  = std::size_t;
+
+		if( qtity_ >= md_.extent( Dim ) - first_ ) {	// We are de facto resizing, so call resize.
+			extents[ Dim ]			  = first_;
+			resize(	data_, md_, std::mdspan< T, Extents, Layout, Accessor >( data_.data(), extents ) );
+		} else {
+			extents[ Dim ]			 -= qtity_;
+			Ptr			srce		  = data_.data();
+			const Size	srce_step	  = md_.extent( is_layout_right_v< Layout >*( Extents::rank() - 1 ) );
+			const Size	iters		  = md_.size()/srce_step;
+			Ptr			dest		  = data_.data();
+			const Size	dest_step	  = srce_step - qtity_;
+			const Ptr	dest_end	  = dest + dest_step*iters;
+			const Size	gap			  = first_ + qtity_;
+			const Size	tail		  = dest_step - first_;
+
+			while( dest	!= dest_end ) {
+				std::copy_n( srce,		 first_, dest          );
+				std::copy_n( srce + gap, tail,   dest + first_ );
+				srce				 += srce_step;
+				dest				 += dest_step;
+			}
+
+			// Zero-out trailing values.
+			std::fill_n( dest, data_.data() + data_.size() - dest, T{} );
+		}
+	}
+	return extents;
+}
 
 
 
