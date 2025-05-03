@@ -45,7 +45,7 @@ namespace pax {
 		constexpr pointer   ptr()								const noexcept	{	return m_ptr;							}
 		constexpr pointer   operator->()						const noexcept	{	return m_ptr;							}
 		constexpr reference operator*()							const noexcept	{	return *m_ptr;							}
-		constexpr reference operator[]( const stride_type o_ )	const noexcept	{	return *( m_ptr + stride()*o_ );		}
+		constexpr reference operator[]( const stride_type n_ )	const noexcept	{	return *( m_ptr + stride()*n_ );		}
 		constexpr Strided & operator++()							  noexcept	{	return offset(  stride() );				}
 		constexpr Strided & operator+=( const stride_type o_ )		  noexcept	{	return offset(  stride()*o_ );			}
 		constexpr Strided   operator+ ( const stride_type o_ ) 	const noexcept	{	return Strided{ *this }+= o_;			}
@@ -89,6 +89,7 @@ namespace pax {
 		constexpr auto end()									const noexcept	{	return m_end;							}
 		constexpr auto size()									const noexcept	{	return end() - begin();					}
 		constexpr auto stride()									const noexcept	{	return m_begin.stride();				}
+		constexpr auto & operator[]( const std::size_t n_ )		const noexcept	{	return *( begin().ptr() + stride()*n_ );}
 	};
 
 	template< typename T >
