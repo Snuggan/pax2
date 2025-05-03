@@ -357,6 +357,7 @@ FOREACH( include_dir ${INCLUDE_DIRS0} )
 			# Comment the next line to impede tests to run automagically. 
 			add_custom_command( TARGET ${doctest_name} COMMENT "Run doctest in ${doctest_name}" POST_BUILD COMMAND ${doctest_name} )
 			list( APPEND DOCTEST_PROJS ${doctest_name} )
+			# set_target_properties( ${doctest_name} PROPERTIES UNITY_BUILD ON )
 			message( STATUS "${doctest_name}" )
 		endif()
 	endif()
@@ -377,6 +378,7 @@ foreach( pax_tool_source ${PAX_TOOL_SOURCES} )
 	target_link_libraries( ${pax_tool} ${PAX_TOOL_LIBS} )			# Removed libpax2
 	install( TARGETS ${pax_tool} DESTINATION /usr/local/bin )
 	set( PAX_TOOLS ${PAX_TOOLS} ${pax_tool} )
+	set_target_properties( ${pax_tool} PROPERTIES UNITY_BUILD ON )
 	message( STATUS "${pax_tool}" )
 endforeach( pax_tool_source )
 
@@ -395,6 +397,7 @@ foreach( pax_pdal_source ${PAX_PDAL_SOURCES} )
 	target_link_directories( ${pax_pdal_tool} PRIVATE ${PDAL_LIBRARY_DIRS} )
 	install( TARGETS ${pax_pdal_tool} DESTINATION ${PDAL_LIBRARY_DIRS_FIRST} )
 	set( PAX_PDAL ${PAX_PDAL} ${pax_pdal_tool} )
+	set_target_properties( ${pax_pdal_tool} PROPERTIES UNITY_BUILD ON )
 	message( STATUS "${pax_pdal_tool}" )
 endforeach( pax_pdal_source )
 
