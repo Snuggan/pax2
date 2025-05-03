@@ -39,10 +39,6 @@ RUN		echo "\n\n--- Main stuff ---" \
 				r-cran-raster \
 				r-cran-sf \
 				r-cran-terra \
-		# Remove the apt-get cache, as it is needed no longer:
-		&&	rm -Rf /var/lib/apt/lists/* \
-		# Remove the apt cache:
-		&&	ldconfig \
 		# Make g++-15 the default:
 		&&	update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-15 50 \
 		&&	update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-15 50 \
@@ -60,6 +56,12 @@ RUN		echo "\n\n--- Main stuff ---" \
 		&&	hash pdal \
 		&&	cd ../.. \
 		&&	rm -rf PDAL
+
+RUN		apt-get install ninja-build/plucky \
+		# Remove the apt-get cache, as it is needed no longer:
+		&&	rm -Rf /var/lib/apt/lists/* \
+		# Remove the apt cache:
+		&&	ldconfig 
 
 
 # Copy stuff related to running the pax tools.
