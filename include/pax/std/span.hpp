@@ -94,12 +94,12 @@ namespace pax {
 	) {
 		const char						temp[ 2 ] = { separator_ };
 		const char					  * separator = separator_ ? temp : ", ";
-		if( !separator_ )				std::print( out_, "[ " );
+		if( !separator_ )				std::print( out_, "[" );
 		if( itr_ != end_ ) {
 			std::print( out_, "{}", *itr_ );
 			while( ++itr_ != end_ )		std::print( out_, "{}{}", separator, *itr_ );
 		}
-		if( !separator_ )				std::print( out_, " ]" );
+		if( !separator_ )				std::print( out_, "]" );
 	}
 
 	template< typename Itr, typename Ch = char >

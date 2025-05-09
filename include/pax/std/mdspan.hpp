@@ -235,14 +235,14 @@ namespace pax {
 	) {
 		using meta = mdmeta< std::mdspan< T, Extents, Layout, Accessor > >;
 
-		static const auto f = [ &out_ ](
+		static const auto f = [ &out_, &delimiter_ ](
 			const std::mdspan< T, Extents, Layout, Accessor >	md_,
-			std::array< std::size_t, Extents::rank() >		  & idx_
+			std::array< std::size_t, meta::rank >			  & idx_
 		) {
 			if constexpr( meta::rank > 2 )
 				if( std::get< meta::first + meta::inc >( idx_ ) == 0 ) {
 					if constexpr( meta::is_right ) {
-						std::print( out_, "\n[", idx_ );
+						std::print( out_, "\n[" );
 						for( std::size_t i{}; i<meta::rank-2; ++i )
 							std::print( out_, "{}, ", idx_[ i ] );
 						std::println( out_, "c, r]:" );
@@ -253,23 +253,11 @@ namespace pax {
 						std::println( out_, "]:" );
 					}
 				}
-			std::println( out_, "{}", std::span( &md_[ idx_ ], md_.extent( meta::first ) ) );
+			pax::print( out_, &md_[ idx_ ], &md_[ idx_ ] + md_.extent( meta::first ), delimiter_ );
+			std::println( out_ );
 		};
 
-		static const auto f2 = [ &out_, &delimiter_ ](
-			const std::mdspan< T, Extents, Layout, Accessor >	md_,
-			std::array< std::size_t, Extents::rank() >		  & idx_
-		) {
-			const std::span			sp( &md_[ idx_ ], md_.extent( meta::first ) );
-			for( const auto & item : sp.first( sp.size() - 1 ) )
-				std::print( out_, "{}{}", item, delimiter_ );
-			std::println( out_, "{}", sp.back() );
-		};
-
-		if constexpr( meta::rank <= 2 ) {
-			if( delimiter_ && md_.size() )	meta::on_all_first_extents( md_, f2 );
-			else							meta::on_all_first_extents( md_, f  );
-		} else								meta::on_all_first_extents( md_, f  );
+		meta::on_all_first_extents( md_, f  );
 	}
 
 	template< typename T, typename Extents, typename Layout, typename Accessor >
