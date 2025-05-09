@@ -9,7 +9,7 @@
 
 
 // Using std::format works well with clang 18. It does not work with gcc 13.2 or 14, however.
-#if defined( __GNUC__ ) && !defined( __clang__ ) && true
+#if ( defined( __GNUC__ ) && !defined( __clang__ ) && true ) || false
 	//	https://fmt.dev/latest/index.html
 	//	https://github.com/fmtlib/fmt
 #	define FMT_HEADER_ONLY
