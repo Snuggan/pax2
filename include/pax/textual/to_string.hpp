@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../std/format.hpp"
+#include <string_view>
 #include <iterator>		// std::input_iterator
 
 
