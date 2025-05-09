@@ -27,6 +27,88 @@ namespace pax {
 	constexpr std::span			sp0{ arr };
 	constexpr std::span			sp { sp0.first( cols*rows ) };
 
+	template< typename Layout, std::size_t Rank = 4 >
+	using mdspan = std::mdspan< const int, std::dextents< std::size_t, Rank >, Layout >;
+
+
+	DOCTEST_TEST_CASE( "Table print" ) { 
+		{	// Not csv
+			{	// Rank 1
+				constexpr std::string_view		result{ "[0, 1, 2, 3, 4]\n" };
+				std::stringstream				temp{};
+				pax::print( temp, mdspan< std::layout_right, 1 >( sp0.data(), 5 ) );
+				DOCTEST_FAST_CHECK_EQ( temp.str(), result );
+			}
+			{	// Rank 2 right
+				constexpr std::string_view		result{ "[0, 1, 2, 3, 4]\n[5, 6, 7, 8, 9]\n[10, 11, 12, 13, 14]\n" };
+				std::stringstream				temp{};
+				pax::print( temp, mdspan< std::layout_right, 2 >( sp0.data(), 3, 5 ) );
+				DOCTEST_FAST_CHECK_EQ( temp.str(), result );
+			}
+			{	// Rank 2 left
+				constexpr std::string_view		result{ "[0, 1, 2]\n[3, 4, 5]\n[6, 7, 8]\n[9, 10, 11]\n[12, 13, 14]\n" };
+				std::stringstream				temp{};
+				pax::print( temp, mdspan< std::layout_left, 2 >( sp0.data(), 3, 5 ) );
+				DOCTEST_FAST_CHECK_EQ( temp.str(), result );
+			}
+			{	// Rank 3
+				constexpr std::string_view		result{ "\n[0, c, r]:\n[0, 1, 2, 3, 4]\n[5, 6, 7, 8, 9]\n[10, 11, 12, 13, 14]\n\n[1, c, r]:\n[15, 16, 17, 18, 19]\n[20, 21, 22, 23, 24]\n[25, 26, 27, 28, 29]\n" };
+				std::stringstream				temp{};
+				pax::print( temp, mdspan< std::layout_right, 3 >( sp0.data(), 2, 3, 5 ) );
+				DOCTEST_FAST_CHECK_EQ( temp.str(), result );
+			}
+			{	// Rank 4 right
+				constexpr std::string_view		result{ "\n[0, 0, c, r]:\n[0, 1, 2, 3, 4]\n[5, 6, 7, 8, 9]\n[10, 11, 12, 13, 14]\n\n[0, 1, c, r]:\n[15, 16, 17, 18, 19]\n[20, 21, 22, 23, 24]\n[25, 26, 27, 28, 29]\n\n[1, 0, c, r]:\n[30, 31, 32, 33, 34]\n[35, 36, 37, 38, 39]\n[40, 41, 42, 43, 44]\n\n[1, 1, c, r]:\n[45, 46, 47, 48, 49]\n[50, 51, 52, 53, 54]\n[55, 56, 57, 58, 59]\n" };
+				std::stringstream				temp{};
+				pax::print( temp, mdspan< std::layout_right, 4 >( sp0.data(), 2, 2, 3, 5 ) );
+				DOCTEST_FAST_CHECK_EQ( temp.str(), result );
+			}
+			{	// Rank 4 left
+				constexpr std::string_view		result{ "\n[r, c, 0, 0]:\n[0, 1]\n[2, 3]\n\n[r, c, 1, 0]:\n[4, 5]\n[6, 7]\n\n[r, c, 2, 0]:\n[8, 9]\n[10, 11]\n\n[r, c, 0, 1]:\n[12, 13]\n[14, 15]\n\n[r, c, 1, 1]:\n[16, 17]\n[18, 19]\n\n[r, c, 2, 1]:\n[20, 21]\n[22, 23]\n\n[r, c, 0, 2]:\n[24, 25]\n[26, 27]\n\n[r, c, 1, 2]:\n[28, 29]\n[30, 31]\n\n[r, c, 2, 2]:\n[32, 33]\n[34, 35]\n\n[r, c, 0, 3]:\n[36, 37]\n[38, 39]\n\n[r, c, 1, 3]:\n[40, 41]\n[42, 43]\n\n[r, c, 2, 3]:\n[44, 45]\n[46, 47]\n\n[r, c, 0, 4]:\n[48, 49]\n[50, 51]\n\n[r, c, 1, 4]:\n[52, 53]\n[54, 55]\n\n[r, c, 2, 4]:\n[56, 57]\n[58, 59]\n" };
+				std::stringstream				temp{};
+				pax::print( temp, mdspan< std::layout_left, 4 >( sp0.data(), 2, 2, 3, 5 ) );
+				DOCTEST_FAST_CHECK_EQ( temp.str(), result );
+			}
+		}
+		{	// csv
+			{	// Rank 1
+				constexpr std::string_view		result{ "0;1;2;3;4\n" };
+				std::stringstream				temp{};
+				pax::print( temp, mdspan< std::layout_right, 1 >( sp0.data(), 5 ), ';' );
+				DOCTEST_FAST_CHECK_EQ( temp.str(), result );
+			}
+			{	// Rank 2 right
+				constexpr std::string_view		result{ "0;1;2;3;4\n5;6;7;8;9\n10;11;12;13;14\n" };
+				std::stringstream				temp{};
+				pax::print( temp, mdspan< std::layout_right, 2 >( sp0.data(), 3, 5 ), ';' );
+				DOCTEST_FAST_CHECK_EQ( temp.str(), result );
+			}
+			{	// Rank 2 left
+				constexpr std::string_view		result{ "0;1;2\n3;4;5\n6;7;8\n9;10;11\n12;13;14\n" };
+				std::stringstream				temp{};
+				pax::print( temp, mdspan< std::layout_left, 2 >( sp0.data(), 3, 5 ), ';' );
+				DOCTEST_FAST_CHECK_EQ( temp.str(), result );
+			}
+			{	// Rank 3
+				constexpr std::string_view		result{ "\n[0, c, r]:\n[0, 1, 2, 3, 4]\n[5, 6, 7, 8, 9]\n[10, 11, 12, 13, 14]\n\n[1, c, r]:\n[15, 16, 17, 18, 19]\n[20, 21, 22, 23, 24]\n[25, 26, 27, 28, 29]\n" };
+				std::stringstream				temp{};
+				pax::print( temp, mdspan< std::layout_right, 3 >( sp0.data(), 2, 3, 5 ), ';' );
+				DOCTEST_FAST_CHECK_EQ( temp.str(), result );
+			}
+			{	// Rank 4 right
+				constexpr std::string_view		result{ "\n[0, 0, c, r]:\n[0, 1, 2, 3, 4]\n[5, 6, 7, 8, 9]\n[10, 11, 12, 13, 14]\n\n[0, 1, c, r]:\n[15, 16, 17, 18, 19]\n[20, 21, 22, 23, 24]\n[25, 26, 27, 28, 29]\n\n[1, 0, c, r]:\n[30, 31, 32, 33, 34]\n[35, 36, 37, 38, 39]\n[40, 41, 42, 43, 44]\n\n[1, 1, c, r]:\n[45, 46, 47, 48, 49]\n[50, 51, 52, 53, 54]\n[55, 56, 57, 58, 59]\n" };
+				std::stringstream				temp{};
+				pax::print( temp, mdspan< std::layout_right, 4 >( sp0.data(), 2, 2, 3, 5 ), ';' );
+				DOCTEST_FAST_CHECK_EQ( temp.str(), result );
+			}
+			{	// Rank 4 left
+				constexpr std::string_view		result{ "\n[r, c, 0, 0]:\n[0, 1]\n[2, 3]\n\n[r, c, 1, 0]:\n[4, 5]\n[6, 7]\n\n[r, c, 2, 0]:\n[8, 9]\n[10, 11]\n\n[r, c, 0, 1]:\n[12, 13]\n[14, 15]\n\n[r, c, 1, 1]:\n[16, 17]\n[18, 19]\n\n[r, c, 2, 1]:\n[20, 21]\n[22, 23]\n\n[r, c, 0, 2]:\n[24, 25]\n[26, 27]\n\n[r, c, 1, 2]:\n[28, 29]\n[30, 31]\n\n[r, c, 2, 2]:\n[32, 33]\n[34, 35]\n\n[r, c, 0, 3]:\n[36, 37]\n[38, 39]\n\n[r, c, 1, 3]:\n[40, 41]\n[42, 43]\n\n[r, c, 2, 3]:\n[44, 45]\n[46, 47]\n\n[r, c, 0, 4]:\n[48, 49]\n[50, 51]\n\n[r, c, 1, 4]:\n[52, 53]\n[54, 55]\n\n[r, c, 2, 4]:\n[56, 57]\n[58, 59]\n" };
+				std::stringstream				temp{};
+				pax::print( temp, mdspan< std::layout_left, 4 >( sp0.data(), 2, 2, 3, 5 ), ';' );
+				DOCTEST_FAST_CHECK_EQ( temp.str(), result );
+			}
+		}
+	}
 
 	DOCTEST_TEST_CASE( "layout" ) { 
 		{	// layout_right
