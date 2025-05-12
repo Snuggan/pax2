@@ -92,8 +92,8 @@ namespace pax {
 		const Itr						end_, 
 		const char						separator_ = 0
 	) {
-		const char						temp[ 2 ] = { separator_ };
-		const char					  * separator = separator_ ? temp : ", ";
+		const char						temp[]	  = { separator_, 0 };
+		const char					  * separator =   separator_ ? temp : ", ";
 		if( !separator_ )				std::print( out_, "[" );
 		if( itr_ != end_ ) {
 			std::print( out_, "{}", *itr_ );

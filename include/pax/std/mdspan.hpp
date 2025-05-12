@@ -23,7 +23,7 @@ namespace std {
 
 	template< typename T0, typename T1, typename Extents0, typename Extents1, typename Layout, typename Accessor >
 		requires( Extents0::rank() == Extents1::rank() )
-	bool operator==( 
+	constexpr bool operator==( 
 		const std::mdspan< T0, Extents0, Layout, Accessor >	md0_,
 		const std::mdspan< T1, Extents1, Layout, Accessor >	md1_
 	) {
@@ -95,7 +95,7 @@ namespace pax {
 	/// Obviously it requires data_.size >= max( srce_.size() dest_.size() ).
 	template< typename T, typename Extents, typename Layout, typename Accessor >
 		requires( Extents::rank() >  0 )
-	static void resize(
+	constexpr void resize(
 		const std::span< T >								data_, 	///< The actual data items.
 		const std::mdspan< T, Extents, Layout, Accessor >	srce_, 	///< The source extents.
 		const std::mdspan< T, Extents, Layout, Accessor >	dest_ 	///< The destination extents. 
@@ -145,7 +145,7 @@ namespace pax {
 	/// Rearranges the items of data_ so that size of extension first_ is decreased by qtity_.
 	template< std::size_t Dim, typename T, typename Extents, typename Layout, typename Accessor >
 		requires( Extents::rank() > 0 )
-	static auto remove(
+	constexpr auto remove(
 		const std::span< T >								data_, 		///< The actual data items.
 		const std::mdspan< T, Extents, Layout, Accessor >	md_, 		///< The extents etc.
 		const std::size_t 									first_, 	///< Index to items to remove.
@@ -197,6 +197,28 @@ namespace pax {
 
 
 
+	/// Rearranges the items of data_ so that size of extension first_ is decreased by qtity_.
+	template< std::size_t Dim, typename T, typename Extents, typename Layout, typename Accessor, typename Function >
+		requires( Extents::rank() > 0 )
+	constexpr auto remove2(
+		const std::span< T >								, 		///< The actual data items.
+		const std::mdspan< T, Extents, Layout, Accessor >	md_, 		///< The extents etc.
+		Function										 && 		 	///< What indeces to remove in Dim.
+	) {
+		using meta = mdmeta< std::mdspan< T, Extents, Layout, Accessor > >;
+
+		static const auto f = [](
+			const std::mdspan< T, Extents, Layout, Accessor >	,
+			std::array< std::size_t, meta::rank >			  & 
+		) {
+
+		};
+
+		meta::on_all_first_extents( md_, f );
+	}
+
+
+
 	/// Returns an iterator to first item at index offset_ in dimension Dim of md_.
 	/// Returns the default Strided_iterator if offset_ is to large.
 	template< std::size_t Dim, typename T, typename Extents, typename Layout, typename Accessor >
@@ -228,14 +250,15 @@ namespace pax {
 
 
 	template< typename Out, typename T, typename Extents, typename Layout, typename Accessor >
-	void print( 
+	constexpr void print( 
 		Out													  & out_, 
 		const std::mdspan< T, Extents, Layout, Accessor >		md_, 
 		const char												delimiter_ = 0
 	) {
 		using meta = mdmeta< std::mdspan< T, Extents, Layout, Accessor > >;
 
-		static const auto f = [ &out_, &delimiter_ ](
+		// Due to rules of lambda capture, the next line must not be static.
+		const auto f = [ &out_, delimiter_ ](
 			const std::mdspan< T, Extents, Layout, Accessor >	md_,
 			std::array< std::size_t, meta::rank >			  & idx_
 		) {
@@ -248,7 +271,7 @@ namespace pax {
 						std::println( out_, "c, r]:" );
 					} else {
 						std::print( out_, "\n[r, c" );
-						for( std::size_t i{ 2*!meta::is_right }; i<meta::rank; ++i )
+						for( std::size_t i{ 2 }; i<meta::rank; ++i )
 							std::print( out_, ", {}", idx_[ i ] );
 						std::println( out_, "]:" );
 					}
@@ -256,18 +279,17 @@ namespace pax {
 			pax::print( out_, &md_[ idx_ ], &md_[ idx_ ] + md_.extent( meta::first ), delimiter_ );
 			std::println( out_ );
 		};
-
-		meta::on_all_first_extents( md_, f  );
+		meta::on_all_first_extents( md_, f );
 	}
 
 	template< typename T, typename Extents, typename Layout, typename Accessor >
-	void print( 
+	constexpr void print( 
 		const std::mdspan< T, Extents, Layout, Accessor > md_, 
 		const char												delimiter_ = 0
 	) {	return print( std::cout, md_, delimiter_ );										}
 
 	template< typename Out, typename T, typename Extents, typename Layout, typename Accessor >
-	void print_meta( 
+	constexpr void print_meta( 
 		Out													  & out_, 
 		const std::mdspan< T, Extents, Layout, Accessor >		md_
 	) {
@@ -281,7 +303,7 @@ namespace pax {
 	}
 
 	template< typename T, typename Extents, typename Layout, typename Accessor >
-	void print_meta( const std::mdspan< T, Extents, Layout, Accessor > md_ ) 
+	constexpr void print_meta( const std::mdspan< T, Extents, Layout, Accessor > md_ ) 
 	{	print_meta( std::cout, md_ );												}
 
 }	// namespace pax
