@@ -48,16 +48,16 @@ namespace pax {
 	class mdmeta< std::mdspan< T, Extents, Layout, Accessor > > {
 		using mdspan = std::mdspan< T, Extents, Layout, Accessor >;
 
-		template< std::size_t Dim, typename Function >
+		template< std::size_t Atdim, std::size_t Dim, typename Function >
 		static constexpr void on_all_first_extents(
 			const mdspan								md_,
 			std::array< std::size_t, Extents::rank() >  & idx_,
 			Function								 && f_
 		) {
-			if constexpr( Dim == first )				f_( md_, idx_ );
+			if constexpr( Atdim == Dim )				f_( md_, idx_ );
 			else {	// We are not at the final Dim, so loop on.
 				while( std::get< Dim >( idx_ ) < md_.extent( Dim ) ) {
-					on_all_first_extents< Dim - inc >( md_, idx_, f_ );
+					on_all_first_extents< Atdim, Dim - inc >( md_, idx_, f_ );
 					++std::get< Dim >( idx_ );
 				}
 			}
@@ -78,13 +78,13 @@ namespace pax {
 
 		/// A recursive function to loop through a mdspan, chunk by chunk.
 		/// f_ will be called for each contiguous lump, e.g. row. 
-		template< typename Function >
+		template< std::size_t Atdim, typename Function >
 		static constexpr void on_all_first_extents(
 			const mdspan								md_,
 			Function								 && f_
 		) {
 			std::array< std::size_t, rank >				idx{};
-			on_all_first_extents< last >( md_, idx, std::forward< Function >( f_ ) );
+			on_all_first_extents< Atdim, last >( md_, idx, std::forward< Function >( f_ ) );
 		}
 	};
 
@@ -100,6 +100,10 @@ namespace pax {
 		const std::mdspan< T, Extents, Layout, Accessor >	srce_, 	///< The source extents.
 		const std::mdspan< T, Extents, Layout, Accessor >	dest_ 	///< The destination extents. 
 	) {
+		using Ptr					 = T*;
+		using Size					 = std::size_t;
+		using meta					 = mdmeta< std::mdspan< T, Extents, Layout, Accessor > >;
+
 		assert( srce_.is_strided() );
 		assert( dest_.is_strided() );
 		assert( data_.data() == srce_.data_handle() );		// Not strictly necessary, but for consistency...
@@ -111,11 +115,9 @@ namespace pax {
 			return;
 		}
 
-		using Ptr					 = T*;
-		using Size					 = std::size_t;
 		const Ptr		data		 = data_.data();
-		const Size		srce_step	 = srce_.extent( is_layout_right_v< Layout >*( srce_.rank() - 1 ) );
-		const Size		dest_step	 = dest_.extent( is_layout_right_v< Layout >*( dest_.rank() - 1 ) );
+		const Size		srce_step	 = srce_.extent( meta::first );
+		const Size		dest_step	 = dest_.extent( meta::first );
 		const Size		iters		 = std::min( srce_.size()/srce_step, dest_.size()/dest_step );
 
 		if( srce_step < dest_step ) {						// Expand: copy from last to first.
@@ -195,10 +197,34 @@ namespace pax {
 		return extents;
 	}
 
+	template< std::size_t Atdim, typename F, typename T, typename Extents, typename Layout, typename Accessor >
+		requires( Extents::rank() > 0 )
+	constexpr auto remove2(
+		const std::span< T >								data_, 		///< The actual data items.
+		const std::mdspan< T, Extents, Layout, Accessor >	md_, 		///< The extents etc.
+		F				 								 && f_
+	) {
+		using	meta = mdmeta< std::mdspan< T, Extents, Layout, Accessor > >;
+		assert( md_.is_strided() );
+		assert( data_.data() == md_.data_handle() );		// Not strictly necessary, but for consistency...
+		assert( data_.size() >= md_.size() );				// data_ must have a sufficient size.
+
+		auto	source{ data_.data() }, dest{ data_.data() };
+
+		// Due to rules of lambda capture, the next line must not be static.
+		const auto f = [ source, dest, f_ ](
+			const std::mdspan< T, Extents, Layout, Accessor >	,
+			std::array< std::size_t, meta::rank >			  & 
+		) {
+			
+		};
+		meta::template on_all_first_extents< Atdim >( md_, f_ );
+	}
+
 
 
 	/// Rearranges the items of data_ so that size of extension first_ is decreased by qtity_.
-	template< std::size_t Dim, typename T, typename Extents, typename Layout, typename Accessor, typename Function >
+	template< std::size_t Atdim, typename T, typename Extents, typename Layout, typename Accessor, typename Function >
 		requires( Extents::rank() > 0 )
 	constexpr auto remove2(
 		const std::span< T >								, 		///< The actual data items.
@@ -214,7 +240,7 @@ namespace pax {
 
 		};
 
-		meta::on_all_first_extents( md_, f );
+		meta::template on_all_first_extents< Atdim >( md_, f );
 	}
 
 
@@ -229,9 +255,8 @@ namespace pax {
 	) {
 		assert( md_.is_strided() );
 		using meta = mdmeta< std::mdspan< T, Extents, Layout, Accessor > >;
-		static constexpr std::size_t 	Lesser = meta::template lesser< Dim >;
 		return ( offset_ < md_.extent( Dim ) ) 
-			? Strided_iterator< T >( md_.data_handle() + offset_*md_.stride( Dim ), md_.stride( Lesser ) )
+			? Strided_iterator< T >( md_.data_handle() + offset_*md_.stride( Dim ), md_.stride( meta::template lesser< Dim > ) )
 			: Strided_iterator< T >{};
 	};
 
@@ -264,22 +289,16 @@ namespace pax {
 		) {
 			if constexpr( meta::rank > 2 )
 				if( std::get< meta::first + meta::inc >( idx_ ) == 0 ) {
-					if constexpr( meta::is_right ) {
-						std::print( out_, "\n[" );
-						for( std::size_t i{}; i<meta::rank-2; ++i )
-							std::print( out_, "{}, ", idx_[ i ] );
-						std::println( out_, "c, r]:" );
-					} else {
-						std::print( out_, "\n[r, c" );
-						for( std::size_t i{ 2 }; i<meta::rank; ++i )
-							std::print( out_, ", {}", idx_[ i ] );
-						std::println( out_, "]:" );
-					}
+					constexpr std::size_t 	end	= meta::rank - ( meta::is_right ? 2 : 0 );
+					std::print(   out_, meta::is_right ? "\n[" : "\n[r, c" );
+					for( std::size_t i = meta::is_right ? 0 : 2; i < end; ++i )
+						std::print( out_, meta::is_right ? "{}, " : ", {}", idx_[ i ] );
+					std::println( out_, meta::is_right ? "c, r]:" : "]:" );
 				}
 			pax::print( out_, &md_[ idx_ ], &md_[ idx_ ] + md_.extent( meta::first ), delimiter_ );
 			std::println( out_ );
 		};
-		meta::on_all_first_extents( md_, f );
+		meta::template on_all_first_extents< meta::first >( md_, f );
 	}
 
 	template< typename T, typename Extents, typename Layout, typename Accessor >
