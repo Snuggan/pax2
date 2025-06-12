@@ -4,12 +4,18 @@
 
 #pragma once
 
+#if defined( __cpp_lib_stacktrace )	// __has_include( <stacktrace> )
+#	include <stacktrace>			// https://biowpn.github.io/bioweapon/2025/05/13/improve-diagnostics-with-std-stacktrace.html
+#	define PAX_SOURCE stacktrace
+#else
+#	define PAX_SOURCE source_location
+#endif
+
 #include "../std/format.hpp"
 #include <string_view>
 #include <source_location>
 #include <exception>
 #include <iostream>
-// #include <stacktrace>
 
 
 namespace pax {
@@ -50,8 +56,10 @@ namespace pax {
 	inline auto error_message( 
 		const std::string_view			message_,
 		const std::error_code			ec_ = std::error_code{},
-		const std::source_location	  & sl_ = std::source_location::current()
-	) {	return user_error_message( std20::format( "{}: {}", to_string( sl_ ), message_ ), ec_ );					}
+		const std::PAX_SOURCE		  & src_ = std::PAX_SOURCE::current()
+	) {
+		return user_error_message( std20::format( "{}: {}", to_string( src_ ), message_ ), ec_ );
+	}
 
 
 
