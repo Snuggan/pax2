@@ -113,7 +113,6 @@ namespace pax {
 			const Index			new_size( ( 1 * ... *sz_ ) );
 			if( m_data.size() < new_size )	m_data.resize( new_size );
 			pax::resize( 
-				span_type( m_data ), 
 				mdspan{ m_data.data(), mdspan::extents() }, 
 				mdspan{ m_data.data(), std::array{ sz_... } } 
 			);
@@ -122,16 +121,16 @@ namespace pax {
 
 		// /// Remove rows.
 		// constexpr void remove_rows( const Index r_, const Index qtity_ = 1 )					{
-		// 	const auto			extents = remove< Row >( span(), mdspan{ m_data.data(), mdspan::extents() }, r_, qtity_ );
+		// 	const auto			extents = remove< Row >( mdspan{ m_data.data(), mdspan::extents() }, r_, qtity_ );
 		// 	m_data.resize( extents[ 0 ]*extents[ 1 ] );
 		// 	mdspan::operator=( m_data.empty() ? mdspan{} : mdspan( m_data.data(), extents ) );
 		// }
 
 		/// Remove columns.
-		constexpr void remove_cols( const Index c_, const Index qtity_ = 1 )					{
-			const auto			extents = remove< Col >( span(), mdspan{ m_data.data(), mdspan::extents() }, c_, qtity_ );
-			m_data.resize( extents[ 0 ]*extents[ 1 ] );
-			mdspan::operator=( m_data.empty() ? mdspan{} : mdspan( m_data.data(), extents ) );
+		constexpr void remove_cols( const Index c_, const Index qtity_ = 1 ) {
+			const auto			exts = extents( remove< Col >( mdspan{ m_data.data(), mdspan::extents() }, c_, qtity_ ) );
+			m_data.resize( exts[ 0 ]*exts[ 1 ] );
+			mdspan::operator=( m_data.empty() ? mdspan{} : mdspan( m_data.data(), exts ) );
 		}
 
 		/// Stream the rows for which predicate_[ i ] is true to out_ using col_mark_ as column deligneater. 

@@ -43,15 +43,24 @@ namespace pax {
 	template<>	struct is_layout_right< std::layout_left >			: std::bool_constant< false >{};
 
 
+	/// Return the extents as a std::array. 
+	template< typename T, typename Extents, typename Layout, typename Accessor >
+	static constexpr auto extents( const std::mdspan< T, Extents, Layout, Accessor > md_ ) {
+		std::array< std::size_t, md_.rank() >			exts;
+		for( std::size_t i{}; i<md_.rank(); ++i )		exts[ i ] = md_.extent( i );
+		return exts;
+	}
+
 	template< typename T > class mdmeta;
 	template< typename T, typename Extents, typename Layout, typename Accessor >
 	class mdmeta< std::mdspan< T, Extents, Layout, Accessor > > {
-		using mdspan = std::mdspan< T, Extents, Layout, Accessor >;
+		using Size					  = std::size_t;
+		using mdspan				  = std::mdspan< T, Extents, Layout, Accessor >;
 
-		template< std::size_t Atdim, std::size_t Dim, typename Function >
+		template< Size Atdim, Size Dim, typename Function >
 		static constexpr void on_all_first_extents(
 			const mdspan								md_,
-			std::array< std::size_t, Extents::rank() >  & idx_,
+			std::array< Size, Extents::rank() >		  & idx_,
 			Function								 && f_
 		) {
 			if constexpr( Atdim == Dim )				f_( md_, idx_ );
@@ -66,118 +75,170 @@ namespace pax {
 
 	public:
 		static constexpr bool			is_right	  = is_layout_right_v< Layout >;
-		static constexpr std::size_t 	rank		  = Extents::rank();
-		static constexpr std::size_t 	first		  = is_right ? rank -1 :  0;
+		static constexpr Size 			rank		  = Extents::rank();
+		static constexpr Size		 	first		  = is_right ? rank -1 :  0;
 		static constexpr int			inc			  = is_right ?      -1 : +1;
-		static constexpr std::size_t 	last		  = is_right ? 0 : rank - 1;
+		static constexpr Size		 	last		  = is_right ? 0 : rank - 1;
 
 		/// What is the dimention "lesser" than DIM (either Dim - 1 or Extents::rank() - 1).
-		template< std::size_t Dim >
-		static constexpr std::size_t 	lesser		  = is_right	? ( Dim ? Dim : rank ) - 1
+		template< Size Dim >
+		static constexpr Size 			lesser		  = is_right	? ( Dim ? Dim : rank ) - 1
 																	: ( Dim + 1 < rank ) ? ( Dim + 1 ) : 0;
 
 		/// A recursive function to loop through a mdspan, chunk by chunk.
 		/// f_ will be called for each contiguous lump, e.g. row. 
-		template< std::size_t Atdim, typename Function >
+		template< Size Atdim, typename Function >
 		static constexpr void on_all_first_extents(
 			const mdspan								md_,
 			Function								 && f_
 		) {
-			std::array< std::size_t, rank >				idx{};
+			std::array< Size, rank >					idx{};
 			on_all_first_extents< Atdim, last >( md_, idx, std::forward< Function >( f_ ) );
 		}
 	};
 
 
+	/// A new (more efficient?) remove...
+	template< std::size_t Dim, typename T, typename Extents, typename Layout, typename Accessor >
+		requires( ( Extents::rank() > 0 ) && ( Dim < Extents::rank() ) )
+	constexpr auto remove2(
+		const std::mdspan< T, Extents, Layout, Accessor >	md_, 		///< The extents etc.
+		const std::size_t 									first_, 	///< Index to items to remove.
+		const std::size_t 									qtity_ = 1 	///< Number of additional indeces to remove.
+	) -> std::mdspan< T, Extents, Layout, Accessor > {
+		using Ptr						  = T*;
+		using Size						  = std::size_t;
+		using Mdspan					  = std::mdspan< T, Extents, Layout, Accessor >;
+		using meta						  = mdmeta< Mdspan >;
 
-	/// Rearranges the items of data_ so that they correspond to the destination extent.
-	/// For consistency, data_.data() and srce_.data_handle() and dest_.data_handle() must all be the same.
-	/// Obviously it requires data_.size >= max( srce_.size() dest_.size() ).
+		const Ptr	data				  = md_.data_handle();
+		auto		exts				  = extents( md_ );
+		assert( first_ + qtity_ <= exts[ Dim ] );			// Items to remove must be within rage. .
+		assert( md_.is_strided() );							// Items must be stored contigously.
+		if( md_.empty() )					return md_;		// If md_ is empty, there is nothing to do...
+
+		exts[ Dim ]						 -= qtity_;
+		const Mdspan						new_md( data, exts );
+
+		if constexpr( Dim == meta::last ) {
+			// Remove the last data of the last dim by just shortening the array.
+			// ...we don't need to do anything, new_md already has the correct extents.
+		} else if( first_ + qtity_ == md_.extent( Dim ) ) {
+			// Remove the last data of dim Dim by just resizeing.
+			resize(	md_, new_md );
+		} else {
+			// The general case, that entails lots of iterations.
+			std::array< Size, meta::rank >	index{};
+			index[ Dim ]				  = first_;
+			Ptr			dest			  = &md_[ index ];
+			index[ Dim ]				  = first_ + qtity_;
+			Ptr			srce			  = &md_[ index ];
+			const Ptr	end				  = data + md_.size();
+
+			const Size	small_step		  = ( srce - dest )/qtity_;
+			const Size	step			  = srce - dest;
+			const Size	chunk			  = step - qtity_;
+			while( srce < end ) {
+				for( auto i = qtity_ + 1; --i > 0; ) {
+					std::copy_n( srce, chunk, dest );
+					srce				 += small_step;
+					dest				 += small_step;	// Wrong! Must include general tightening.
+				}
+				srce					 += step;
+				dest					 += step;
+			}
+		}
+		return new_md;
+	}
+
+
+
+	/// Rearranges the items of srce_ so that they correspond to the destination extent.
 	template< typename T, typename Extents, typename Layout, typename Accessor >
 		requires( Extents::rank() >  0 )
 	constexpr void resize(
-		const std::span< T >								data_, 	///< The actual data items.
 		const std::mdspan< T, Extents, Layout, Accessor >	srce_, 	///< The source extents.
 		const std::mdspan< T, Extents, Layout, Accessor >	dest_ 	///< The destination extents. 
 	) {
-		using Ptr					 = T*;
-		using Size					 = std::size_t;
-		using meta					 = mdmeta< std::mdspan< T, Extents, Layout, Accessor > >;
+		using Ptr						 = T*;
+		using Size						 = std::size_t;
+		using meta						 = mdmeta< std::mdspan< T, Extents, Layout, Accessor > >;
+		
+		// Items must be stored contigously.
+		static_assert( std::mdspan< T, Extents, Layout, Accessor >::is_always_strided() );
+		assert( srce_.is_strided() && dest_.is_strided() );
 
-		assert( srce_.is_strided() );
-		assert( dest_.is_strided() );
-		assert( data_.data() == srce_.data_handle() );		// Not strictly necessary, but for consistency...
-		assert( data_.data() == dest_.data_handle() );		// Not strictly necessary, but for consistency...
-		assert( data_.size() >= srce_.size() );				// data_ must have a sufficient size.
-		assert( data_.size() >= dest_.size() );				// data_ must have a sufficient size.
-		if( srce_.empty() || dest_.empty() ) {				// If either is empty, there is nothing to copy...
-			std::fill( data_.begin(), data_.end(), T{} );
-			return;
-		}
+		const Ptr			srce_data	 = srce_.data_handle();
+		const Ptr			dest_data	 = dest_.data_handle();
 
-		const Ptr		data		 = data_.data();
-		const Size		srce_step	 = srce_.extent( meta::first );
-		const Size		dest_step	 = dest_.extent( meta::first );
-		const Size		iters		 = std::min( srce_.size()/srce_step, dest_.size()/dest_step );
+		if( srce_.empty() || dest_.empty() ) {		// If either is empty, there is nothing to copy...
+			std::fill( dest_data, dest_data + srce_.size(), T{} );
 
-		if( srce_step < dest_step ) {						// Expand: copy from last to first.
-			Ptr			srce		 = data + srce_step*iters;
-			Ptr			dest		 = data + dest_step*iters;
-			const Size	remains		 = dest_step - srce_step;
-			while( srce	!= data ) {
-				std::copy_n( srce	-= srce_step, srce_step, dest -= dest_step );
-				std::fill_n( dest	+  srce_step, remains, T{} );
+		} else {
+			const Size		srce_step	 = srce_.extent( meta::first );
+			const Size		dest_step	 = dest_.extent( meta::first );
+			const Size		iters		 = std::min( srce_.size()/srce_step, dest_.size()/dest_step );
+
+			if( srce_step < dest_step ) {			// Expand: copy from last to first.
+				Ptr			srce		 = srce_data + srce_step*iters;
+				Ptr			dest		 = dest_data + dest_step*iters;
+				const Size	remains		 = dest_step - srce_step;
+				while( srce	!= srce_data ) {
+					std::copy_n( srce	-= srce_step, srce_step, dest -= dest_step );
+					std::fill_n( dest	+  srce_step, remains, T{} );
+				}
+			} else if( srce_step > dest_step ) {	// Shrink: copy from first to last.
+				Ptr			srce		 = srce_data;
+				Ptr			dest		 = dest_data;
+				const Ptr	srce_end	 = srce_data + srce_step*iters;
+				while( srce	!= srce_end ) {
+					std::copy_n( srce, dest_step, dest );
+					srce				+= srce_step;
+					dest				+= dest_step;
+				}
 			}
-		} else if( srce_step > dest_step ) {				// Shrink:  copy from first to last.
-			Ptr			srce		 = data;
-			Ptr			dest		 = data;
-			const Ptr	srce_end	 = data + srce_step*iters;
-			while( srce	!= srce_end ) {
-				std::copy_n( srce, dest_step, dest );
-				srce				+= srce_step;
-				dest				+= dest_step;
-			}
+			if( dest_step*iters < dest_.size() )	// Zero-out trailing values, if any.
+				std::fill_n( dest_data + dest_step*iters, dest_.size() - dest_step*iters, T{} );
 		}
-		if( dest_step*iters < dest_.size() )				// Zero-out trailing values, if any.
-			std::fill_n( data + dest_step*iters, dest_.size() - dest_step*iters, T{} );
 	}
 
 
 
 	/// Rearranges the items of data_ so that size of extension first_ is decreased by qtity_.
 	template< std::size_t Dim, typename T, typename Extents, typename Layout, typename Accessor >
-		requires( Extents::rank() > 0 )
+		requires( ( Extents::rank() > 0 ) && ( Dim < Extents::rank() ) )
 	constexpr auto remove(
-		const std::span< T >								data_, 		///< The actual data items.
 		const std::mdspan< T, Extents, Layout, Accessor >	md_, 		///< The extents etc.
 		const std::size_t 									first_, 	///< Index to items to remove.
 		const std::size_t 									qtity_ = 1 	///< Number of additional indeces to remove.
 	) {
-		assert( md_.is_strided() );
-		assert( data_.size() >= md_.size() );				// data_ must have a sufficient size.
-		std::array< std::size_t, Extents::rank() >			extents;
-		for( std::size_t i{}; i<Extents::rank(); ++i )
-			extents[ i ]				  = md_.extent( i );
+		using Ptr						  = T*;
+		using Size						  = std::size_t;
+		using Mdspan					  = std::mdspan< T, Extents, Layout, Accessor >;
+		using meta						  = mdmeta< Mdspan >;
+		
+		const Ptr	data				  = md_.data_handle();
+		auto		exts				  = extents( md_ );
+		assert( first_ + qtity_ <= exts[ Dim ] );			// Items to remove must be within rage. .
+		assert( md_.is_strided() );							// Items must be stored contigously.
+		if( md_.empty() )					return md_;		// If md_ is empty, there is nothing to do...
+
+		exts[ Dim ]						 -= qtity_;
+		const Mdspan						new_md( data, exts );
 
 		if( md_.size() && ( first_ < md_.extent( Dim ) ) ) {
-			using Ptr					  = T*;
-			using Size					  = std::size_t;
-			
-			/*	Two cases:
-				1. If Dim == (Extent::rank() - 1 )*is_layout_right< Layout >: Whole sequences may be removed.
-				2. Otherwise: loop through all extents, but when dimension Dim is in [first_, first_+qtity_)
-				   that should be removed. 
-			*/
-
-			if( qtity_ >= md_.extent( Dim ) - first_ ) {	// We are de facto resizing, so call resize.
-				extents[ Dim ]			  = first_;
-				resize(	data_, md_, std::mdspan< T, Extents, Layout, Accessor >( data_.data(), extents ) );
+			if constexpr( Dim == meta::last ) {
+				// Remove the last data of the last dim by just shortening the array.
+				// ...we don't need to do anything, new_md already has the correct extents.
+			} else if( first_ + qtity_ == md_.extent( Dim ) ) {
+				// Remove the last data of dim Dim by just resizeing.
+				resize(	md_, new_md );
 			} else {
-				extents[ Dim ]			 -= qtity_;
-				Ptr			srce		  = data_.data();
+				// Remove the data by iteration and copy.
+				Ptr			srce		  = data;
 				const Size	srce_step	  = md_.extent( is_layout_right_v< Layout >*( Extents::rank() - 1 ) );
 				const Size	iters		  = md_.size()/srce_step;
-				Ptr			dest		  = data_.data();
+				Ptr			dest		  = data;
 				const Size	dest_step	  = srce_step - qtity_;
 				const Ptr	dest_end	  = dest + dest_step*iters;
 				const Size	gap			  = first_ + qtity_;
@@ -191,56 +252,10 @@ namespace pax {
 				}
 
 				// Zero-out trailing values.
-				std::fill_n( dest, data_.data() + data_.size() - dest, T{} );
+				std::fill_n( dest, data + md_.size() - dest, T{} );
 			}
 		}
-		return extents;
-	}
-
-	template< std::size_t Atdim, typename F, typename T, typename Extents, typename Layout, typename Accessor >
-		requires( Extents::rank() > 0 )
-	constexpr auto remove2(
-		const std::span< T >								data_, 		///< The actual data items.
-		const std::mdspan< T, Extents, Layout, Accessor >	md_, 		///< The extents etc.
-		F				 								 && f_
-	) {
-		using	meta = mdmeta< std::mdspan< T, Extents, Layout, Accessor > >;
-		assert( md_.is_strided() );
-		assert( data_.data() == md_.data_handle() );		// Not strictly necessary, but for consistency...
-		assert( data_.size() >= md_.size() );				// data_ must have a sufficient size.
-
-		auto	source{ data_.data() }, dest{ data_.data() };
-
-		// Due to rules of lambda capture, the next line must not be static.
-		const auto f = [ source, dest, f_ ](
-			const std::mdspan< T, Extents, Layout, Accessor >	,
-			std::array< std::size_t, meta::rank >			  & 
-		) {
-			
-		};
-		meta::template on_all_first_extents< Atdim >( md_, f_ );
-	}
-
-
-
-	/// Rearranges the items of data_ so that size of extension first_ is decreased by qtity_.
-	template< std::size_t Atdim, typename T, typename Extents, typename Layout, typename Accessor, typename Function >
-		requires( Extents::rank() > 0 )
-	constexpr auto remove2(
-		const std::span< T >								, 		///< The actual data items.
-		const std::mdspan< T, Extents, Layout, Accessor >	md_, 		///< The extents etc.
-		Function										 && 		 	///< What indeces to remove in Dim.
-	) {
-		using meta = mdmeta< std::mdspan< T, Extents, Layout, Accessor > >;
-
-		static const auto f = [](
-			const std::mdspan< T, Extents, Layout, Accessor >	,
-			std::array< std::size_t, meta::rank >			  & 
-		) {
-
-		};
-
-		meta::template on_all_first_extents< Atdim >( md_, f );
+		return new_md;
 	}
 
 

@@ -15,7 +15,7 @@ namespace pax {
 
 	constexpr auto		 		cols = 8u;
 	constexpr auto		 		rows = 4u;
-	constexpr std::array		extents{ cols, rows };
+	constexpr std::array		exts{ cols, rows };
 	constexpr std::array		arr{
 		 0,  1,  2,  3,  4,  5,  6,  7,		// 0
 		 8,  9, 10, 11, 12, 13, 14, 15,		// 1
@@ -98,15 +98,19 @@ namespace pax {
 			}
 			{	// Rank 4 right
 				constexpr std::string_view		result{ "\n[0, 0, c, r]:\n0;1;2;3;4\n5;6;7;8;9\n10;11;12;13;14\n\n[0, 1, c, r]:\n15;16;17;18;19\n20;21;22;23;24\n25;26;27;28;29\n\n[1, 0, c, r]:\n30;31;32;33;34\n35;36;37;38;39\n40;41;42;43;44\n\n[1, 1, c, r]:\n45;46;47;48;49\n50;51;52;53;54\n55;56;57;58;59\n" };
+				constexpr auto					mdsp = mdspan< std::layout_right, 4 >( sp0.data(), 2, 2, 3, 5 );
 				std::stringstream				temp{};
-				pax::print( temp, mdspan< std::layout_right, 4 >( sp0.data(), 2, 2, 3, 5 ), ';' );
+				pax::print( temp, mdsp, ';' );
 				DOCTEST_FAST_CHECK_EQ( temp.str(), result );
+				pax::print_meta( std::cout, mdsp );
 			}
 			{	// Rank 4 left
 				constexpr std::string_view		result{ "\n[r, c, 0, 0]:\n0;1\n2;3\n\n[r, c, 1, 0]:\n4;5\n6;7\n\n[r, c, 2, 0]:\n8;9\n10;11\n\n[r, c, 0, 1]:\n12;13\n14;15\n\n[r, c, 1, 1]:\n16;17\n18;19\n\n[r, c, 2, 1]:\n20;21\n22;23\n\n[r, c, 0, 2]:\n24;25\n26;27\n\n[r, c, 1, 2]:\n28;29\n30;31\n\n[r, c, 2, 2]:\n32;33\n34;35\n\n[r, c, 0, 3]:\n36;37\n38;39\n\n[r, c, 1, 3]:\n40;41\n42;43\n\n[r, c, 2, 3]:\n44;45\n46;47\n\n[r, c, 0, 4]:\n48;49\n50;51\n\n[r, c, 1, 4]:\n52;53\n54;55\n\n[r, c, 2, 4]:\n56;57\n58;59\n" };
+				constexpr auto					mdsp = mdspan< std::layout_left, 4 >( sp0.data(), 2, 2, 3, 5 );
 				std::stringstream				temp{};
-				pax::print( temp, mdspan< std::layout_left, 4 >( sp0.data(), 2, 2, 3, 5 ), ';' );
+				pax::print( temp, mdsp, ';' );
 				DOCTEST_FAST_CHECK_EQ( temp.str(), result );
+				pax::print_meta( std::cout, mdsp );
 			}
 		}
 	}
@@ -114,7 +118,7 @@ namespace pax {
 	DOCTEST_TEST_CASE( "layout" ) { 
 		{	// layout_right
 			using MD		  = std::mdspan< const int, std::dextents< std::size_t, 2 >, std::layout_right >;
-			const MD			md( sp.data(), extents );
+			const MD			md( sp.data(), exts );
 			DOCTEST_FAST_CHECK_EQ( md.extent( 0 ),	cols );
 			DOCTEST_FAST_CHECK_EQ( md.extent( 1 ),	rows );
 			DOCTEST_FAST_CHECK_EQ( md[ 0, 0 ],		 0 );
@@ -124,7 +128,7 @@ namespace pax {
 		}
 		{	// layout_left
 			using MD		  = std::mdspan< const int, std::dextents< std::size_t, 2 >, std::layout_left >;
-			const MD			md( sp.data(), extents );
+			const MD			md( sp.data(), exts );
 			DOCTEST_FAST_CHECK_EQ( md.extent( 0 ),	cols );
 			DOCTEST_FAST_CHECK_EQ( md.extent( 1 ),	rows );
 			DOCTEST_FAST_CHECK_EQ( md[ 0, 0 ],		 0 );
@@ -134,10 +138,10 @@ namespace pax {
 		}
 	}
 	DOCTEST_TEST_CASE( "begin/end dim 2" ) { 
-		constexpr std::array	extents2{ 3, 4 };
+		constexpr std::array	exts2{ 3, 4 };
 		{	// layout_right
 			using MD		  = std::mdspan< const int, std::dextents< std::size_t, 2 >, std::layout_right >;
-			const MD			md( sp.data(), extents2 );
+			const MD			md( sp.data(), exts2 );
 			{	// Dim 0
 				auto			b = begin< 0 >( md, 1 );
 				DOCTEST_FAST_CHECK_EQ( b.stride(),	1 );
@@ -158,7 +162,7 @@ namespace pax {
 		}
 		{	// layout_left
 			using MD		  = std::mdspan< const int, std::dextents< std::size_t, 2 >, std::layout_left >;
-			const MD			md( sp.data(), extents2 );
+			const MD			md( sp.data(), exts2 );
 			{	// Dim 0
 				auto			b = begin< 0 >( md, 1 );
 				DOCTEST_FAST_CHECK_EQ( b.stride(),	3 );
@@ -179,10 +183,10 @@ namespace pax {
 		}
 	}
 	DOCTEST_TEST_CASE( "begin/end dim 3" ) { 
-		constexpr std::array	extents3{ 3, 4, 2 };
+		constexpr std::array	exts3{ 3, 4, 2 };
 		{	// layout_right
 			using MD		  = std::mdspan< const int, std::dextents< std::size_t, 3 >, std::layout_right >;
-			const MD			md( sp.data(), extents3 );
+			const MD			md( sp.data(), exts3 );
 			{	// Dim 0
 				auto				b = begin< 0 >( md, 1 );
 				DOCTEST_FAST_CHECK_EQ( b.stride(),	1 );
@@ -227,7 +231,7 @@ namespace pax {
 		}
 		{	// layout_left
 			using MD		  = std::mdspan< const int, std::dextents< std::size_t, 3 >, std::layout_left >;
-			const MD			md( sp.data(), extents3 );
+			const MD			md( sp.data(), exts3 );
 			{	// Dim 0
 				auto				b = begin< 0 >( md, 1 );
 				DOCTEST_FAST_CHECK_EQ( b.stride(),	3 );
@@ -281,39 +285,51 @@ namespace pax {
 			using MDspan	  = std::mdspan< int, std::dextents< std::size_t, 2 >, std::layout_right >;
 			constexpr int		in01{ sp[ 1 ] }, in10{ sp[ rows ] }, in25{ sp[ 2 + rows*5 ] };
 			{	// Downsize
-				constexpr auto						new_extent = downsize;
-				std::vector< int >					data( sp0.begin(),  sp0.end() );
+				constexpr auto							new_extent = downsize;
+				std::vector< int >						data( sp0.begin(),  sp0.end() );
 				DOCTEST_FAST_CHECK_LE( new_extent[ 0 ]*new_extent[ 1 ], data.size() );
 
-				MDspan								srce{ data.data(), extents };
-				DOCTEST_FAST_CHECK_EQ( srce[ 0, 0 ],		 0 );
-				DOCTEST_FAST_CHECK_EQ( srce[ 0, 1 ],		in01 );
-				DOCTEST_FAST_CHECK_EQ( srce[ 1, 0 ],		in10 );
-				DOCTEST_FAST_CHECK_EQ( srce[ 5, 2 ],		in25 );
+				MDspan									srce{ data.data(), exts };
+				DOCTEST_FAST_CHECK_EQ( srce[ 0, 0 ],			 0 );
+				DOCTEST_FAST_CHECK_EQ( srce[ 0, 1 ],			in01 );
+				DOCTEST_FAST_CHECK_EQ( srce[ 1, 0 ],			in10 );
+				DOCTEST_FAST_CHECK_EQ( srce[ 5, 2 ],			in25 );
 
-				MDspan								dest{ data.data(), new_extent };
-				resize( std::span( data ), srce, dest );
-				DOCTEST_FAST_CHECK_EQ( dest.data_handle(),	data.data() );
-				DOCTEST_FAST_CHECK_EQ( dest.extent( 0 ),	new_extent[ 0 ] );
-				DOCTEST_FAST_CHECK_EQ( dest.extent( 1 ),	new_extent[ 1 ] );
-				DOCTEST_FAST_CHECK_EQ( dest[ 0, 0 ],		 0 );
-				DOCTEST_FAST_CHECK_EQ( dest[ 0, 1 ],		in01 );
-				DOCTEST_FAST_CHECK_EQ( dest[ 1, 0 ],		in10 );
-				DOCTEST_FAST_CHECK_EQ( dest[ 5, 2 ],		in25 );
+				{
+					std::vector< int >					dest_data( data.size() );
+					MDspan								dest{ dest_data.data(), new_extent };
+					resize( srce, dest );
+					DOCTEST_FAST_CHECK_EQ( dest.extent( 0 ),	new_extent[ 0 ] );
+					DOCTEST_FAST_CHECK_EQ( dest.extent( 1 ),	new_extent[ 1 ] );
+					DOCTEST_FAST_CHECK_EQ( dest[ 0, 0 ],		 0 );
+					DOCTEST_FAST_CHECK_EQ( dest[ 0, 1 ],		in01 );
+					DOCTEST_FAST_CHECK_EQ( dest[ 1, 0 ],		in10 );
+					DOCTEST_FAST_CHECK_EQ( dest[ 5, 2 ],		in25 );
+				} {
+					MDspan								dest{ data.data(), new_extent };
+					resize( srce, dest );
+					DOCTEST_FAST_CHECK_EQ( dest.data_handle(),	data.data() );
+					DOCTEST_FAST_CHECK_EQ( dest.extent( 0 ),	new_extent[ 0 ] );
+					DOCTEST_FAST_CHECK_EQ( dest.extent( 1 ),	new_extent[ 1 ] );
+					DOCTEST_FAST_CHECK_EQ( dest[ 0, 0 ],		 0 );
+					DOCTEST_FAST_CHECK_EQ( dest[ 0, 1 ],		in01 );
+					DOCTEST_FAST_CHECK_EQ( dest[ 1, 0 ],		in10 );
+					DOCTEST_FAST_CHECK_EQ( dest[ 5, 2 ],		in25 );
+				}
 			}
 			{	// Upsize rows
 				constexpr auto						new_extent = upsize_r;
 				std::vector< int >					data( sp0.begin(),  sp0.end() );
 				DOCTEST_FAST_CHECK_LE( new_extent[ 0 ]*new_extent[ 1 ], data.size() );
 
-				MDspan								srce{ data.data(), extents };
+				MDspan								srce{ data.data(), exts };
 				DOCTEST_FAST_CHECK_EQ( srce[ 0, 0 ],		 0 );
 				DOCTEST_FAST_CHECK_EQ( srce[ 0, 1 ],		in01 );
 				DOCTEST_FAST_CHECK_EQ( srce[ 1, 0 ],		in10 );
 				DOCTEST_FAST_CHECK_EQ( srce[ 5, 2 ],		in25 );
 
 				MDspan								dest{ data.data(), new_extent };
-				resize( std::span( data ), srce, dest );
+				resize( srce, dest );
 				DOCTEST_FAST_CHECK_EQ( dest.data_handle(),	data.data() );
 				DOCTEST_FAST_CHECK_EQ( dest.extent( 0 ),	new_extent[ 0 ] );
 				DOCTEST_FAST_CHECK_EQ( dest.extent( 1 ),	new_extent[ 1 ] );
@@ -328,14 +344,14 @@ namespace pax {
 				std::vector< int >					data( sp0.begin(),  sp0.end() );
 				DOCTEST_FAST_CHECK_LE( new_extent[ 0 ]*new_extent[ 1 ], data.size() );
 
-				MDspan								srce{ data.data(), extents };
+				MDspan								srce{ data.data(), exts };
 				DOCTEST_FAST_CHECK_EQ( srce[ 0, 0 ],		 0 );
 				DOCTEST_FAST_CHECK_EQ( srce[ 0, 1 ],		in01 );
 				DOCTEST_FAST_CHECK_EQ( srce[ 1, 0 ],		in10 );
 				DOCTEST_FAST_CHECK_EQ( srce[ 5, 2 ],		in25 );
 
 				MDspan								dest{ data.data(), new_extent };
-				resize( std::span( data ), srce, dest );
+				resize( srce, dest );
 				DOCTEST_FAST_CHECK_EQ( dest.data_handle(),	data.data() );
 				DOCTEST_FAST_CHECK_EQ( dest.extent( 0 ),	new_extent[ 0 ] );
 				DOCTEST_FAST_CHECK_EQ( dest.extent( 1 ),	new_extent[ 1 ] );
@@ -350,24 +366,39 @@ namespace pax {
 				std::vector< int >					data( sp0.begin(),  sp0.end() );
 				DOCTEST_FAST_CHECK_LE( new_extent[ 0 ]*new_extent[ 1 ], data.size() );
 
-				MDspan								srce{ data.data(), extents };
+				MDspan								srce{ data.data(), exts };
 				DOCTEST_FAST_CHECK_EQ( srce[ 0, 0 ],		 0 );
 				DOCTEST_FAST_CHECK_EQ( srce[ 0, 1 ],		in01 );
 				DOCTEST_FAST_CHECK_EQ( srce[ 1, 0 ],		in10 );
 				DOCTEST_FAST_CHECK_EQ( srce[ 5, 2 ],		in25 );
 
-				MDspan								dest{ data.data(), new_extent };
-				resize( std::span( data ), srce, dest );
-				DOCTEST_FAST_CHECK_EQ( dest.data_handle(),	data.data() );
-				DOCTEST_FAST_CHECK_EQ( dest.extent( 0 ),	new_extent[ 0 ] );
-				DOCTEST_FAST_CHECK_EQ( dest.extent( 1 ),	new_extent[ 1 ] );
-				DOCTEST_FAST_CHECK_EQ( dest[ 0, 0 ],		 0 );
-				DOCTEST_FAST_CHECK_EQ( dest[ 0, 1 ],		in01 );
-				DOCTEST_FAST_CHECK_EQ( dest[ 1, 0 ],		in10 );
-				DOCTEST_FAST_CHECK_EQ( dest[ 5, 2 ],		in25 );
-				DOCTEST_FAST_CHECK_EQ( dest[ 0, rows ],		 0 );
-				DOCTEST_FAST_CHECK_EQ( dest[ cols, 0 ],		 0 );
-				DOCTEST_FAST_CHECK_EQ( dest[ cols, rows ],	 0 );
+				{
+					std::vector< int >					dest_data( data.size() );
+					MDspan								dest{ dest_data.data(), new_extent };
+					resize( srce, dest );
+					DOCTEST_FAST_CHECK_EQ( dest.extent( 0 ),	new_extent[ 0 ] );
+					DOCTEST_FAST_CHECK_EQ( dest.extent( 1 ),	new_extent[ 1 ] );
+					DOCTEST_FAST_CHECK_EQ( dest[ 0, 0 ],		 0 );
+					DOCTEST_FAST_CHECK_EQ( dest[ 0, 1 ],		in01 );
+					DOCTEST_FAST_CHECK_EQ( dest[ 1, 0 ],		in10 );
+					DOCTEST_FAST_CHECK_EQ( dest[ 5, 2 ],		in25 );
+					DOCTEST_FAST_CHECK_EQ( dest[ 0, rows ],		 0 );
+					DOCTEST_FAST_CHECK_EQ( dest[ cols, 0 ],		 0 );
+					DOCTEST_FAST_CHECK_EQ( dest[ cols, rows ],	 0 );
+				} {
+					MDspan								dest{ data.data(), new_extent };
+					resize( srce, dest );
+					DOCTEST_FAST_CHECK_EQ( dest.data_handle(),	data.data() );
+					DOCTEST_FAST_CHECK_EQ( dest.extent( 0 ),	new_extent[ 0 ] );
+					DOCTEST_FAST_CHECK_EQ( dest.extent( 1 ),	new_extent[ 1 ] );
+					DOCTEST_FAST_CHECK_EQ( dest[ 0, 0 ],		 0 );
+					DOCTEST_FAST_CHECK_EQ( dest[ 0, 1 ],		in01 );
+					DOCTEST_FAST_CHECK_EQ( dest[ 1, 0 ],		in10 );
+					DOCTEST_FAST_CHECK_EQ( dest[ 5, 2 ],		in25 );
+					DOCTEST_FAST_CHECK_EQ( dest[ 0, rows ],		 0 );
+					DOCTEST_FAST_CHECK_EQ( dest[ cols, 0 ],		 0 );
+					DOCTEST_FAST_CHECK_EQ( dest[ cols, rows ],	 0 );
+				}
 			}
 		}
 		{	// layout_left
@@ -378,14 +409,14 @@ namespace pax {
 				std::vector< int >					data( sp0.begin(),  sp0.end() );
 				DOCTEST_FAST_CHECK_LE( new_extent[ 0 ]*new_extent[ 1 ], data.size() );
 
-				MDspan								srce{ data.data(), extents };
+				MDspan								srce{ data.data(), exts };
 				DOCTEST_FAST_CHECK_EQ( srce[ 0, 0 ],		 0 );
 				DOCTEST_FAST_CHECK_EQ( srce[ 0, 1 ],		in01 );
 				DOCTEST_FAST_CHECK_EQ( srce[ 1, 0 ],		in10 );
 				DOCTEST_FAST_CHECK_EQ( srce[ 5, 2 ],		in25 );
 
 				MDspan								dest{ data.data(), new_extent };
-				resize( std::span( data ), srce, dest );
+				resize( srce, dest );
 				DOCTEST_FAST_CHECK_EQ( dest.data_handle(),	data.data() );
 				DOCTEST_FAST_CHECK_EQ( dest.extent( 0 ),	new_extent[ 0 ] );
 				DOCTEST_FAST_CHECK_EQ( dest.extent( 1 ),	new_extent[ 1 ] );
@@ -399,14 +430,14 @@ namespace pax {
 				std::vector< int >					data( sp0.begin(),  sp0.end() );
 				DOCTEST_FAST_CHECK_LE( new_extent[ 0 ]*new_extent[ 1 ], data.size() );
 
-				MDspan								srce{ data.data(), extents };
+				MDspan								srce{ data.data(), exts };
 				DOCTEST_FAST_CHECK_EQ( srce[ 0, 0 ],		 0 );
 				DOCTEST_FAST_CHECK_EQ( srce[ 0, 1 ],		in01 );
 				DOCTEST_FAST_CHECK_EQ( srce[ 1, 0 ],		in10 );
 				DOCTEST_FAST_CHECK_EQ( srce[ 5, 2 ],		in25 );
 
 				MDspan								dest{ data.data(), new_extent };
-				resize( std::span( data ), srce, dest );
+				resize( srce, dest );
 				DOCTEST_FAST_CHECK_EQ( dest.data_handle(),	data.data() );
 				DOCTEST_FAST_CHECK_EQ( dest.extent( 0 ),	new_extent[ 0 ] );
 				DOCTEST_FAST_CHECK_EQ( dest.extent( 1 ),	new_extent[ 1 ] );
@@ -421,14 +452,14 @@ namespace pax {
 				std::vector< int >					data( sp0.begin(),  sp0.end() );
 				DOCTEST_FAST_CHECK_LE( new_extent[ 0 ]*new_extent[ 1 ], data.size() );
 
-				MDspan								srce{ data.data(), extents };
+				MDspan								srce{ data.data(), exts };
 				DOCTEST_FAST_CHECK_EQ( srce[ 0, 0 ],		 0 );
 				DOCTEST_FAST_CHECK_EQ( srce[ 0, 1 ],		in01 );
 				DOCTEST_FAST_CHECK_EQ( srce[ 1, 0 ],		in10 );
 				DOCTEST_FAST_CHECK_EQ( srce[ 5, 2 ],		in25 );
 
 				MDspan								dest{ data.data(), new_extent };
-				resize( std::span( data ), srce, dest );
+				resize( srce, dest );
 				DOCTEST_FAST_CHECK_EQ( dest.data_handle(),	data.data() );
 				DOCTEST_FAST_CHECK_EQ( dest.extent( 0 ),	new_extent[ 0 ] );
 				DOCTEST_FAST_CHECK_EQ( dest.extent( 1 ),	new_extent[ 1 ] );
@@ -443,14 +474,14 @@ namespace pax {
 				std::vector< int >					data( sp0.begin(),  sp0.end() );
 				DOCTEST_FAST_CHECK_LE( new_extent[ 0 ]*new_extent[ 1 ], data.size() );
 
-				MDspan								srce{ data.data(), extents };
+				MDspan								srce{ data.data(), exts };
 				DOCTEST_FAST_CHECK_EQ( srce[ 0, 0 ],		 0 );
 				DOCTEST_FAST_CHECK_EQ( srce[ 0, 1 ],		in01 );
 				DOCTEST_FAST_CHECK_EQ( srce[ 1, 0 ],		in10 );
 				DOCTEST_FAST_CHECK_EQ( srce[ 5, 2 ],		in25 );
 
 				MDspan								dest{ data.data(), new_extent };
-				resize( std::span( data ), srce, dest );
+				resize( srce, dest );
 				DOCTEST_FAST_CHECK_EQ( dest.data_handle(),	data.data() );
 				DOCTEST_FAST_CHECK_EQ( dest.extent( 0 ),	new_extent[ 0 ] );
 				DOCTEST_FAST_CHECK_EQ( dest.extent( 1 ),	new_extent[ 1 ] );
