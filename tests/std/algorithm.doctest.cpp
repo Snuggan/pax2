@@ -1063,7 +1063,11 @@ namespace pax {
 		constexpr auto						abd = "abddefffijkl";
 
 		{	// sort
-			
+			int 							v[ 12 ] = { 0, 1, 2, 33, 4, 5, 6, 7, 8, 9, 10, 11 };
+			DOCTEST_FAST_CHECK_EQ( v[  3 ], 33 );
+			sort( v );
+			DOCTEST_FAST_CHECK_EQ( v[  3 ],  4 );
+			DOCTEST_FAST_CHECK_EQ( v[ 11 ], 33 );
 		}
 		{	// all_of
 			static_assert(  all_of ( "abcdefghijkl", []( auto c ){ return c != '\0'; } ) );

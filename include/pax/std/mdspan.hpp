@@ -17,6 +17,8 @@
 #include "span.hpp"
 #include <cassert>
 #include <algorithm>	// std::copy_n, std::fill_n, std::min
+#include <numeric>		// std::accumulate
+#include <functional>	// std::multiplies
 
 
 namespace std {
@@ -131,16 +133,16 @@ namespace pax {
 			std::array< Size, meta::rank >	index{};
 			index[ Dim ]				  = first_;
 			Ptr			dest			  = &md_[ index ];
-			index[ Dim ]				  = first_ + qtity_;
+			index[ Dim ]				  = first_ + 1;
 			Ptr			srce			  = &md_[ index ];
+			const Size	small_step		  = srce - dest;
 			const Ptr	end				  = data + md_.size();
 
-			const Size	small_step		  = ( srce - dest )/qtity_;
-			const Size	step			  = srce - dest;
-			const Size	chunk			  = step - qtity_;
+			const Size	step			  = md_.stride( Dim );
+			const Size	small_chunk		  = ( srce - dest )/qtity_;
 			while( srce < end ) {
 				for( auto i = qtity_ + 1; --i > 0; ) {
-					std::copy_n( srce, chunk, dest );
+					std::copy_n( srce, small_chunk, dest );
 					srce				 += small_step;
 					dest				 += small_step;	// Wrong! Must include general tightening.
 				}
@@ -163,7 +165,7 @@ namespace pax {
 		using Ptr						 = T*;
 		using Size						 = std::size_t;
 		using meta						 = mdmeta< std::mdspan< T, Extents, Layout, Accessor > >;
-		
+	
 		// Items must be stored contigously.
 		static_assert( std::mdspan< T, Extents, Layout, Accessor >::is_always_strided() );
 		assert( srce_.is_strided() && dest_.is_strided() );
@@ -171,15 +173,14 @@ namespace pax {
 		const Ptr			srce_data	 = srce_.data_handle();
 		const Ptr			dest_data	 = dest_.data_handle();
 
-		if( srce_.empty() || dest_.empty() ) {		// If either is empty, there is nothing to copy...
+		if( srce_.empty() || dest_.empty() ) {	// If either is empty, there is nothing to copy...
 			std::fill( dest_data, dest_data + srce_.size(), T{} );
-
 		} else {
 			const Size		srce_step	 = srce_.extent( meta::first );
 			const Size		dest_step	 = dest_.extent( meta::first );
 			const Size		iters		 = std::min( srce_.size()/srce_step, dest_.size()/dest_step );
 
-			if( srce_step < dest_step ) {			// Expand: copy from last to first.
+			if( srce_step < dest_step ) {				// Expand: copy from last to first.
 				Ptr			srce		 = srce_data + srce_step*iters;
 				Ptr			dest		 = dest_data + dest_step*iters;
 				const Size	remains		 = dest_step - srce_step;
@@ -187,7 +188,7 @@ namespace pax {
 					std::copy_n( srce	-= srce_step, srce_step, dest -= dest_step );
 					std::fill_n( dest	+  srce_step, remains, T{} );
 				}
-			} else if( srce_step > dest_step ) {	// Shrink: copy from first to last.
+			} else if( srce_step > dest_step ) {		// Shrink: copy from first to last.
 				Ptr			srce		 = srce_data;
 				Ptr			dest		 = dest_data;
 				const Ptr	srce_end	 = srce_data + srce_step*iters;
@@ -197,9 +198,24 @@ namespace pax {
 					dest				+= dest_step;
 				}
 			}
-			if( dest_step*iters < dest_.size() )	// Zero-out trailing values, if any.
+			if( dest_step*iters < dest_.size() )		// Zero-out trailing values, if any.
 				std::fill_n( dest_data + dest_step*iters, dest_.size() - dest_step*iters, T{} );
 		}
+	}
+
+
+
+	/// Rearranges the items of srce_ so that they correspond to the destination extent.
+	template< typename T, typename Extents, typename Layout, typename Accessor, std::unsigned_integral UI >
+		requires( Extents::rank() >  0 )
+	constexpr void resize(
+		const std::mdspan< T, Extents, Layout, Accessor >	srce_, 	///< The source extents.
+		const std::span< UI, Extents::rank() >				exts_ 	///< The new extents. 
+	) {
+		return resize(
+			srce_,
+			std::mdspan< T, Extents, Layout, Accessor >( srce_.data_handle(), exts_ )
+		);
 	}
 
 
