@@ -24,13 +24,13 @@ namespace pax {
 		constexpr Tagged() 						   			noexcept : m_value{} {}
 		constexpr Tagged( const Tagged & ) 				  = default;
 		constexpr Tagged & operator=( const Tagged & )	  = default;
-		constexpr Tagged( const value_type v_ )				noexcept : m_value{  v_ } {}
+		explicit constexpr Tagged( const value_type v_ )	noexcept : m_value{  v_ } {}
 		constexpr Tagged & operator=( const value_type v_ )	noexcept { m_value = v_;			return *this;	 }
 
 		/// Return m_value when specifically const-accessing. 
 		constexpr value_type value()				const   noexcept						{	return m_value;	 }
 		
-		/// Return m_value when indirectly const-accessing. Set Strict to false to use it.
+		/// Return m_value when implicitly const-accessing. Set Strict to false to use it.
 		constexpr operator value_type()				const   noexcept requires( !is_strict )	{ 	return m_value;	 }
 	
 	private:
