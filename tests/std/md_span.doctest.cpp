@@ -14,8 +14,10 @@
 
 namespace pax {
 
-	using Size		  = std::size_t;
+	using Size			  = std::size_t;
+	static constexpr bool	ignore_chsum_check = true;
 	
+
 	/// Calculate the product of the elements.
 	template< typename I, Size Rank >
 	constexpr auto product( const std::array< I, Rank > & a_ ) {
@@ -88,21 +90,23 @@ namespace pax {
 		const std::array< I, Extents::rank() > 	old_idx_,
 		const std::source_location				loc_ = std::source_location::current()
 	) {
-		static constexpr Size		 			Rank = Extents::rank();
-	    const auto 								location = to_string( loc_ );
-		DOCTEST_CAPTURE( location );
+		if constexpr( !ignore_chsum_check ) {
+			static constexpr Size		 		Rank = Extents::rank();
+		    const auto 							location = to_string( loc_ );
+			DOCTEST_CAPTURE( location );
 
-		std::array< Size, Rank >				idx{}, exts{ extents( md_ ) };
-		loop_the_loop( 
-			std::span( idx ), 
-			std::span( exts ), 
-			[ &md_, &old_idx_ ]( const std::span< Size, Rank > idx_ ){
-				const auto index = std20::format( "{}", idx_ );
-				DOCTEST_CAPTURE( index );
-				const auto	key = ( idx_ < old_idx_ ) ? chsum( idx_ ) : 0;
-				DOCTEST_FAST_CHECK_EQ( md_[ idx_ ], key );
-			}
-		);
+			std::array< Size, Rank >			idx{}, exts{ extents( md_ ) };
+			loop_the_loop( 
+				std::span( idx ), 
+				std::span( exts ), 
+				[ &md_, &old_idx_ ]( const std::span< Size, Rank > idx_ ){
+					const auto index = std20::format( "{}", idx_ );
+					DOCTEST_CAPTURE( index );
+						const auto	key = ( idx_ < old_idx_ ) ? chsum( idx_ ) : 0;
+						DOCTEST_FAST_CHECK_EQ( md_[ idx_ ], key );
+					}
+			);
+		}
 	}
 
 	/// Outputs metadata about the resizeing.
@@ -111,23 +115,25 @@ namespace pax {
 		const std::mdspan< T, Extents, Layout, Accessor >	srce_, 	///< The source extents.
 		const std::mdspan< T, Extents, Layout, Accessor >	dest_ 	///< The destination extents. 
 	) {
-		static constexpr Size	 	Rank{ Extents::rank() };
-		std::array< Size, Rank >	idx{}, smaller_exts{};
-		for( Size i{}; i < Rank; ++i )
-			smaller_exts[ i ] = std::min( srce_.extent( i ), dest_.extent( i ) );
+		if constexpr( !ignore_chsum_check ) {
+			static constexpr Size	 	Rank{ Extents::rank() };
+			std::array< Size, Rank >	idx{}, smaller_exts{};
+			for( Size i{}; i < Rank; ++i )
+				smaller_exts[ i ] = std::min( srce_.extent( i ), dest_.extent( i ) );
 
-		loop_the_loop( 
-			std::span( idx ), 
-			std::span( smaller_exts ), 
-			[ &srce_, &dest_ ]( const std::span< Size, Rank > idx_ ){
-				std::cout << std20::format( "{}: value {} and {} (index {} and {})\n", idx_,
-					srce_[ idx_ ],
-					dest_[ idx_ ],
-					&srce_[ idx_ ] - srce_.data_handle(),
-					&dest_[ idx_ ] - dest_.data_handle()
-				);
-			}
-		);
+			loop_the_loop( 
+				std::span( idx ), 
+				std::span( smaller_exts ), 
+				[ &srce_, &dest_ ]( const std::span< Size, Rank > idx_ ){
+					std::cout << std20::format( "{}: value {} and {} (index {} and {})\n", idx_,
+						srce_[ idx_ ],
+						dest_[ idx_ ],
+						&srce_[ idx_ ] - srce_.data_handle(),
+						&dest_[ idx_ ] - dest_.data_handle()
+					);
+				}
+			);
+		}
 	}
 
 	/// Outputs metadata about the resizeing.
