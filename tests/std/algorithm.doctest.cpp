@@ -180,38 +180,6 @@ namespace pax {
 		}
 	}
 	DOCTEST_TEST_CASE( "view_type, make_span" ) {
-		{	// make_span
-			{
-				const std::vector< int >		arr{ 1, 2, 3 };
-				const auto						sp = make_span( arr );
-				DOCTEST_FAST_CHECK_EQ( size( sp ),	3 );
-				DOCTEST_FAST_CHECK_EQ( sp.extent,	std::dynamic_extent );
-			} {
-				static constexpr std::array< int, 3 >	arr{ 1, 2, 3 };
-				constexpr auto					sp = make_span( arr );
-				static_assert( size( sp )	==	3 );
-				static_assert( sp.extent	==	3 );
-			} {
-				static constexpr int			arr[ 3 ] = { 1, 2, 3 };
-				constexpr auto					sp = make_span( arr );
-				static_assert( size( sp )	==	3 );
-				static_assert( sp.extent	==	3 );
-			} {
-				constexpr auto					sp = make_span( "abc" );
-				static_assert( size( sp )	==	3 );
-				static_assert( sp.extent	==	3 );
-			} {
-				static constexpr const char		arr[ 4 ] = "abc";
-				constexpr auto					sp = make_span( arr );
-				static_assert( size( sp )	==	3 );
-				static_assert( sp.extent	==	3 );
-			} {
-				constexpr const char		  * arr = "abc";
-				constexpr auto					sp = make_span( arr );
-				static_assert( size( sp )	==	3 );
-				static_assert( sp.extent	==	std::dynamic_extent );
-			}
-		}
 	}
 	DOCTEST_TEST_CASE( "specials" ) {
 		{	// valid
@@ -243,6 +211,38 @@ namespace pax {
 			static_assert(  empty( std::array< int, 0 >{} ) );
 			static_assert( !empty( ints ) );
 			static_assert( !empty( intsN ) );
+		}
+		{	// make_span
+			{
+				const std::vector< int >		arr{ 1, 2, 3 };
+				const auto						sp = make_span( arr );
+				DOCTEST_FAST_CHECK_EQ( size( sp ),	3 );
+				DOCTEST_FAST_CHECK_EQ( sp.extent,	std::dynamic_extent );
+			} {
+				static constexpr std::array< int, 3 >	arr{ 1, 2, 3 };
+				constexpr auto					sp = make_span( arr );
+				static_assert( size( sp )	==	3 );
+				static_assert( sp.extent	==	3 );
+			} {
+				static constexpr int			arr[ 3 ] = { 1, 2, 3 };
+				constexpr auto					sp = make_span( arr );
+				static_assert( size( sp )	==	3 );
+				static_assert( sp.extent	==	3 );
+			} {
+				constexpr auto					sp = make_span( "abc" );
+				static_assert( size( sp )	==	3 );
+				static_assert( sp.extent	==	3 );
+			} {
+				static constexpr const char		arr[ 4 ] = "abc";
+				constexpr auto					sp = make_span( arr );
+				static_assert( size( sp )	==	3 );
+				static_assert( sp.extent	==	3 );
+			} {
+				constexpr const char		  * arr = "abc";
+				constexpr auto					sp = make_span( arr );
+				static_assert( size( sp )	==	3 );
+				static_assert( sp.extent	==	std::dynamic_extent );
+			}
 		}
 		{	// make_const_span
 			int					sp0[ 3 ] = { 0, 1, 2 };

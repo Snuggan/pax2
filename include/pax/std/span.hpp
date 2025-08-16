@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../concepts.hpp"
+#include "format.hpp"
 #include <span>
 #include <algorithm>
 #include <print>
@@ -19,7 +20,42 @@ namespace pax {
 	template< typename T >
 	concept Not_string			  = Contiguous_elements< T > && !String< T >;
 
+	template< typename T, std::size_t N >
+	struct span2 {
+		std::span< T, N >			m_span;
+		constexpr span2( const std::span< T, N > sp_ ) : m_span( sp_ ) {}
+	};
 }
+
+
+template< typename T, std::size_t N >
+struct std20::formatter< pax::span2< T, N > > : std20::formatter< std::remove_cv_t< T > > {
+	using Base					  = std20::formatter< std::remove_cv_t< T > >;
+	using Base::parse;
+
+	template< typename FmtContext >
+	constexpr FmtContext::iterator format(
+		const pax::span2< T, N >  & span2_,
+		FmtContext				  & format_context_
+	) const {
+		const auto span_		  = span2_.m_span;
+		format_context_.advance_to( std20::format_to( format_context_.out(), "[" ) );
+		if constexpr( N > 0 ) if( span_.size() > 0 ) {
+			if constexpr( pax::Character< T > ) {
+				Base::format( std::string( span_.begin(), span_.end() ), format_context_ );
+			} else {
+				Base::format( span_.front(), format_context_ );
+				if constexpr( N > 1 ) if( span_.size() > 1 ) 
+					for( const auto & item : span_.template subspan< 1 >() ) {
+						format_context_.advance_to( std20::format_to( format_context_.out(), ", " ) );
+						Base::format( item, format_context_ );
+					}
+			}
+		}
+		format_context_.advance_to( std20::format_to( format_context_.out(), "]" ) );
+		return format_context_.out();
+	}
+};
 
 
 namespace std {
@@ -113,27 +149,27 @@ namespace pax {
 
 	/// Returns a std::span.
 	template< Not_character_array A >
-	constexpr auto make_span( A && a_ ) 											noexcept {
+	[[nodiscard]] constexpr auto make_span( A && a_ ) 								noexcept {
 		using std::begin, std::end;
 		return std::span< Value_type_t< A >, extent_v< A > >{ begin( a_ ), end( a_ ) };
 	}
 
 	/// Returns a std::span.
 	template< typename T, std::size_t N >
-	constexpr auto make_span( T( & c_ )[ N ] ) 										noexcept {
+	[[nodiscard]] constexpr auto make_span( T( & c_ )[ N ] ) 						noexcept {
 		return std::span< std::remove_reference_t< T >, N >{ c_, N };
 	}
 
 	/// Returns a std::span.
 	template< Character Ch, std::size_t N >
-	constexpr auto make_span( Ch( & c_ )[ N ] ) 									noexcept {
+	[[nodiscard]] constexpr auto make_span( Ch( & c_ )[ N ] ) 						noexcept {
 		constexpr std::size_t 	sz = ( N == 0 ) ? 0u : N-1u;
 		return std::span< std::remove_reference_t< Ch >, sz >{ c_, sz };
 	}
 
 	/// Returns a std::span.
 	template< Character Ch >
-	constexpr auto make_span( Ch * const & c_ ) 									noexcept {
+	[[nodiscard]] constexpr auto make_span( Ch * const & c_ ) 						noexcept {
 		using std::size;
 		return std::span< std::remove_reference_t< Ch > >{ c_, size( c_ ) };
 	}
@@ -170,7 +206,7 @@ namespace pax {
 	/// Returns a reference to the last item. 
 	/// UB, if v_ has a dynamic size that is zero.
 	template< typename V >
-	[[nodiscard]] constexpr auto & back( V && v_ ) 							noexcept {
+	[[nodiscard]] constexpr auto & back( V && v_ ) 									noexcept {
 		using std::data, std::size;
 		static_assert( extent_v< V > != 0, "back( v_ ) requires size( v_ ) > 0" );
 		if constexpr ( extent_v< V > == dynamic_extent ) {
