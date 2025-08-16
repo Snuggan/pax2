@@ -24,8 +24,8 @@ namespace pax {
 		constexpr Tagged() 						   			noexcept : m_value{} {}
 		constexpr Tagged( const Tagged & ) 				  = default;
 		constexpr Tagged & operator=( const Tagged & )	  = default;
-		explicit constexpr Tagged( const value_type v_ )	noexcept : m_value{  v_ } {}
-		constexpr Tagged & operator=( const value_type v_ )	noexcept { m_value = v_;			return *this;	 }
+		explicit constexpr Tagged( value_type && v_ )		noexcept : m_value{  v_ } {}
+		constexpr Tagged & operator=( value_type && v_ )	noexcept { m_value = v_;			return *this;	 }
 
 		/// Return m_value when specifically const-accessing. 
 		constexpr value_type value()				const   noexcept						{	return m_value;	 }
