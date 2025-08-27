@@ -37,7 +37,7 @@
 namespace pax { 
 	const Meta2			meta2 {
 		"pax-table2html",
-		"pax-table2html <directory path>", 
+		"pax-table2html <csv text file (or similar) path>", 
 		"Convert a csv-like file into a fully conformant html table."
 		"\n- If 'title' is not specified the filename without file suffix is used."
 	};
@@ -55,6 +55,11 @@ namespace pax {
 				;
 
 			const auto args			  = parameters.parse( argc, argv );
+			if( args().empty() )
+				throw std::runtime_error( 
+					"You must supply a path to a csv text file (or similar).\n"
+					"See 'pax-table2html --help'.\n" 
+				);
 			source_path				  = args().front();
 			dest_path				  = args.cast< std::filesystem::path >( "dest" );
 			auto title				  = args.cast< std::string           >( "title" );
