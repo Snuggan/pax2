@@ -140,7 +140,7 @@ namespace pax {
 
 			if( std::is_const_v< T > )					cats+= "const, ";
 			if( std::is_volatile_v< T > )				cats+= "volatile, ";
-			if( std::is_trivial_v< T > )				cats+= "trivial, ";
+			if( std::is_trivially_default_constructible_v< T > )	cats+= "trivially default constructable, ";
 			if( std::is_trivially_copyable_v< T > )		cats+= "trivially copyable, ";
 			if( std::is_standard_layout_v< T > )		cats+= "standard layout, ";
 			if( std::is_empty_v< T > )					cats+= "empty, ";
