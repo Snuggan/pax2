@@ -4,7 +4,7 @@
 #pragma once
 
 #include <type_traits>
-
+#include <cstdint>
 
 namespace pax {
 
@@ -43,7 +43,7 @@ namespace pax {
 	template< typename Tag, bool Strict = true >	using Double	= Tagged< double,		 Tag, Strict >;
 	template< typename Tag, bool Strict = true >	using Double2	= Tagged< long double,	 Tag, Strict >;
 	template< typename Tag, bool Strict = true >	using Size		= Tagged< std::size_t,	 Tag, Strict >;
-	template< typename Tag, bool Strict = true >	using Int64		= Tagged< std::int64_t,	 Tag, Strict >;
+	template< typename Tag, bool Strict = true >	using Int64		= Tagged< std::int64_t,  Tag, Strict >;
 	template< typename Tag, bool Strict = true >	using Uint64	= Tagged< std::uint64_t, Tag, Strict >;
 
 
