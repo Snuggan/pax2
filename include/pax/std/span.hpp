@@ -20,30 +20,20 @@ namespace pax {
 	template< typename T >
 	concept Not_string			  = Contiguous_elements< T > && !String< T >;
 
-	template< typename T, std::size_t N >
-	struct span2 {
-		std::span< T, N >			m_span;
-		constexpr span2( const std::span< T, N > sp_ ) : m_span( sp_ ) {}
-	};
-}
+	/// Specialisation for the std::format stuff.
+	template< typename T, typename CharT = char >
+	struct formatter : std20::formatter< std::remove_cv_t< T >, CharT > {
+		using Value					  =  std::remove_cv_t< T >;
+		using Base					  = std20::formatter< Value, CharT >;
+		using Base::parse;
 
-
-template< typename T, std::size_t N >
-struct std20::formatter< pax::span2< T, N > > : std20::formatter< std::remove_cv_t< T > > {
-	using Base					  = std20::formatter< std::remove_cv_t< T > >;
-	using Base::parse;
-
-	template< typename FmtContext >
-	constexpr FmtContext::iterator format(
-		const pax::span2< T, N >  & span2_,
-		FmtContext				  & format_context_
-	) const {
-		const auto span_		  = span2_.m_span;
-		format_context_.advance_to( std20::format_to( format_context_.out(), "[" ) );
-		if constexpr( N > 0 ) if( span_.size() > 0 ) {
-			if constexpr( pax::Character< T > ) {
-				Base::format( std::string( span_.begin(), span_.end() ), format_context_ );
-			} else {
+		template< typename FmtContext, std::size_t N >
+		constexpr FmtContext::iterator format(
+			const std::span< T, N >	  & span_,
+			FmtContext				  & format_context_
+		) const {
+			format_context_.advance_to( std20::format_to( format_context_.out(), "[" ) );
+			if constexpr( N > 0 ) if( span_.size() > 0 ) {
 				Base::format( span_.front(), format_context_ );
 				if constexpr( N > 1 ) if( span_.size() > 1 ) 
 					for( const auto & item : span_.template subspan< 1 >() ) {
@@ -51,9 +41,53 @@ struct std20::formatter< pax::span2< T, N > > : std20::formatter< std::remove_cv
 						Base::format( item, format_context_ );
 					}
 			}
+			format_context_.advance_to( std20::format_to( format_context_.out(), "]" ) );
+			return format_context_.out();
 		}
-		format_context_.advance_to( std20::format_to( format_context_.out(), "]" ) );
-		return format_context_.out();
+	};
+
+	template< typename T, typename CharT >
+		requires Character< T >
+	struct formatter< T, CharT > : std20::formatter< std::basic_string_view< std::remove_cv_t< T > >, CharT > {
+		using View					  = std::basic_string_view< std::remove_cv_t< T > >;
+		using Base					  = std20::formatter< View, CharT >;
+		using Base::parse;
+
+		template< typename FmtContext, std::size_t N >
+		constexpr FmtContext::iterator format(
+			const std::span< T, N >	  & span_,
+			FmtContext				  & format_context_
+		) const {
+			return Base::format( View( span_.begin(), span_.end() ), format_context_ );
+		}
+	};
+
+	template< typename T, std::size_t N >
+	struct spanWr {
+		std::span< T, N >			m_span;
+		constexpr spanWr( const std::span< T, N > sp_ ) : m_span( sp_ ) {}
+	};
+}
+
+// template< typename T, std::size_t N >
+// struct std20::formatter< std::span< T, N > > : pax::formatter< T > {
+// 	template< typename FmtContext >
+// 	constexpr FmtContext::iterator format(
+// 		const std::span< T, N >	  & span_,
+// 		FmtContext				  & format_context_
+// 	) const {
+// 		return pax::formatter< T >::format( span_, format_context_ );
+// 	}
+// };
+
+template< typename T, std::size_t N >
+struct std20::formatter< pax::spanWr< T, N > > : pax::formatter< T > {
+	template< typename FmtContext >
+	constexpr FmtContext::iterator format(
+		const pax::spanWr< T, N >  & spanWr_,
+		FmtContext				  & format_context_
+	) const {
+		return pax::formatter< T >::format( spanWr_.m_span, format_context_ );
 	}
 };
 
@@ -67,21 +101,7 @@ namespace std {
 		Dest					  & dest_,
 		const std::span< T, N >		sp_
 	) {
-		if constexpr( !pax::Character< T > ) {
-			constexpr auto			delimit  = pax::String< T > ? "\", \"" : ", ";
-			dest_ << '[';
-			if constexpr( N > 0 ) if( sp_.size() > 0 ) {
-				if constexpr( pax::String< T > )	dest_ << '"' << sp_.front();
-				else								dest_ << sp_.front();
-				if constexpr( N > 1 ) if( sp_.size() > 1 ) 
-					for( const auto & item : sp_.template subspan< 1 >() ) 
-						dest_ << delimit << item;
-				if constexpr( pax::String< T > )	dest_ << '"';
-			}
-			dest_ << ']';
-		} else if constexpr( N > 0 ) if( sp_.size() > 0 ) {
-			dest_.write( sp_.data(), sp_.size() - !sp_.back() );
-		}
+		dest_ << std20::format( "{}", pax::spanWr( sp_ ) );
 		return dest_;
 	}
 

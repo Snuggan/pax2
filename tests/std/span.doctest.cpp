@@ -81,25 +81,28 @@ namespace pax {
 			{
 				constexpr std::span< const int >		ints( ints0 );
 
-				DOCTEST_FAST_CHECK_EQ( std20::format( "{}", span2( first( ints, 0 ) ) ),		"[]" );
-				DOCTEST_FAST_CHECK_EQ( std20::format( "{}", span2( first( ints, 1 ) ) ),		"[0]" );
-				DOCTEST_FAST_CHECK_EQ( std20::format( "{}", span2( first( ints, 3 ) ) ),		"[0, 1, 2]" );
+				DOCTEST_FAST_CHECK_EQ( std20::format( "{}", spanWr( first( ints, 0 ) ) ),		"[]" );
+				DOCTEST_FAST_CHECK_EQ( std20::format( "{}", spanWr( first( ints, 1 ) ) ),		"[0]" );
+				DOCTEST_FAST_CHECK_EQ( std20::format( "{}", spanWr( first( ints, 3 ) ) ),		"[0, 1, 2]" );
 			}
 			{
 				constexpr std::span< const double >		doubles( doubles0 );
 
-				DOCTEST_FAST_CHECK_EQ( std20::format( "{}", span2( first( doubles, 0 ) ) ),		"[]" );
-				DOCTEST_FAST_CHECK_EQ( std20::format( "{}", span2( first( doubles, 1 ) ) ),		"[0]" );
-				DOCTEST_FAST_CHECK_EQ( std20::format( "{}", span2( first( doubles, 3 ) ) ),		"[0, 1, 2]" );
+				DOCTEST_FAST_CHECK_EQ( std20::format( "{}", spanWr( first( doubles, 0 ) ) ),		"[]" );
+				DOCTEST_FAST_CHECK_EQ( std20::format( "{}", spanWr( first( doubles, 1 ) ) ),		"[0]" );
+				DOCTEST_FAST_CHECK_EQ( std20::format( "{}", spanWr( first( doubles, 3 ) ) ),		"[0, 1, 2]" );
 
 				DOCTEST_FAST_CHECK_EQ( std20::format( "{:.3f}", 3.14 ),	"3.140" );
-				DOCTEST_FAST_CHECK_EQ( std20::format( "{:.3f}", span2( first( doubles, 0 ) ) ),	"[]" );
-				DOCTEST_FAST_CHECK_EQ( std20::format( "{:.3f}", span2( first( doubles, 1 ) ) ),	"[0.000]" );
-				DOCTEST_FAST_CHECK_EQ( std20::format( "{:.3f}", span2( first( doubles, 3 ) ) ),	"[0.000, 1.000, 2.000]" );
+				DOCTEST_FAST_CHECK_EQ( std20::format( "{:.3f}", spanWr( first( doubles, 0 ) ) ),	"[]" );
+				DOCTEST_FAST_CHECK_EQ( std20::format( "{:.3f}", spanWr( first( doubles, 1 ) ) ),	"[0.000]" );
+				DOCTEST_FAST_CHECK_EQ( std20::format( "{:.3f}", spanWr( first( doubles, 3 ) ) ),	"[0.000, 1.000, 2.000]" );
+
+				// DOCTEST_FAST_CHECK_EQ( std20::format( "{:.3f}", first( doubles, 3 ) ),	"[0.000, 1.000, 2.000]" );
 			}
 			{
-				constexpr char const	  * strs[] = { "abc", "def", "ghi" };
-				DOCTEST_FAST_CHECK_EQ( std20::format( "{}", span2( first( strs, 3 ) ) ),		"[\"abc\", \"def\", \"ghi\"]" );
+				constexpr char const	  * strs[] = { "abc", "def", "ghi", ">\t<" };
+				DOCTEST_FAST_CHECK_EQ( std20::format( "{}",   spanWr( first( strs, 4 ) ) ),		"[abc, def, ghi, >\t<]" );
+				DOCTEST_FAST_CHECK_EQ( std20::format( "{:?}", spanWr( first( strs, 4 ) ) ),		"[\"abc\", \"def\", \"ghi\", \">\\t<\"]" );
 			}
 		}
 	}

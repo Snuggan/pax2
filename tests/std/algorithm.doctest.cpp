@@ -1063,7 +1063,7 @@ namespace pax {
 		constexpr auto						abd = "abddefffijkl";
 
 		{	// sort
-			int 							v[ 12 ] = { 0, 1, 2, 33, 4, 5, 6, 7, 8, 9, 10, 11 };
+			std::vector< int >				v{ 0, 1, 2, 33, 4, 5, 6, 7, 8, 9, 10, 11 };
 			DOCTEST_FAST_CHECK_EQ( v[  3 ], 33 );
 			sort( v );
 			DOCTEST_FAST_CHECK_EQ( v[  3 ],  4 );
@@ -1171,8 +1171,8 @@ namespace pax {
 				std::ostringstream		os;
 				const char *			strings[ 5 ] = { "Hej", " ", "hela", " ", "varlden" };
 				os << std::span( strings );
-				DOCTEST_FAST_CHECK_EQ( os.str().size(), 36 );
-				DOCTEST_FAST_CHECK_EQ( os.str(), "[\"Hej\", \" \", \"hela\", \" \", \"varlden\"]" );
+				DOCTEST_FAST_CHECK_EQ( os.str().size(), 26 );
+				DOCTEST_FAST_CHECK_EQ( os.str(), "[Hej,  , hela,  , varlden]" );
 			}
 		}
 	}
