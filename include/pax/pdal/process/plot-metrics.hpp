@@ -19,7 +19,6 @@ namespace pax {
 	
 	/// A simple container for the spacial data of a plot.
 	class Plot_metrics : public Plot_base, public metrics::Point_aggregator {
-		Plot_base::coord_type				m_max_distance{};
 		using Meta = class_meta< Plot_metrics, coord_type, coord_type, coord_type >;
 		
 	public:
@@ -29,19 +28,19 @@ namespace pax {
 		template< std::size_t I >
         [[nodiscard]] friend auto get( const Plot_metrics & me_ )		  noexcept	{
 			if constexpr( I < 2 )			return get< I >( me_ );
-			else if constexpr( I == 2 )		return me_.m_max_distance;
+			else if constexpr( I == 2 )		return me_.radius();
 		}
 
 		constexpr Plot_metrics(
 			const coord_type				east_, 
 			const coord_type				north_, 
 			const coord_type				radius_
-		) noexcept : Plot_base{ east_, north_ }, m_max_distance{ radius_ } {}
+		) noexcept : Plot_base{ east_, north_, radius_ } {}
 
 		/// Should the plot recieve points from file_ (with the bbox_)?
 		template< typename BBox >
         [[nodiscard]] constexpr bool in_box( const BBox & bbox_ )	const noexcept	{
-            return Plot_base::in_box( bbox_, m_max_distance );
+            return Plot_base::in_box( bbox_ );
         }
 
 		/// Was this plot processed during this run?
@@ -51,7 +50,7 @@ namespace pax {
 
 		/// Is pt_ inside the plot?
 		[[nodiscard]] bool contains( const pdal::PointRef pt_ ) 	const noexcept	{
-            return Plot_base::contains( pt_, m_max_distance );
+            return Plot_base::contains( pt_ );
         }
 	};
 

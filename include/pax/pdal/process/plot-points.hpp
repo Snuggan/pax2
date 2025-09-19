@@ -36,23 +36,20 @@ namespace pax {
 
 	public:
 		using Plot_base::coord_type;
-		using Meta = class_meta< Plot_points, std::string, coord_type, coord_type >;
 
 		Plot_points(
 			const string_view			id_, 
 			const coord_type			east_, 
-			const coord_type			north_
-		) noexcept : Plot_base{ east_, north_ }, m_id{ id_.data(), id_.size() } {}
+			const coord_type			north_, 
+			const coord_type			radius_
+		) noexcept : Plot_base{ east_, north_, radius_ }, m_id{ id_.data(), id_.size() } {}
 
 		/// Was this plot processed during this run?
 		bool empty()											const noexcept	{	return m_points_idx.empty();	}
 
 		/// Process a point.
-		bool process(
-			pdal::PointRef			  * pt_ptr_, 
-			const coord_type			max_distance_
-		) noexcept {
-			const bool					inside = Plot_base::contains( *pt_ptr_, max_distance_ );
+		bool process( pdal::PointRef * pt_ptr_ ) noexcept {
+			const bool					inside = Plot_base::contains( *pt_ptr_ );
 			if( inside )				m_points_idx.push_back( pt_ptr_->pointId() );
 			return inside;
 		}
@@ -113,17 +110,23 @@ namespace pax {
 
 		pdal::PointViewPtr							m_view_ptr;
 		std::vector< Plot_points >					m_plots;				// Binary "table" of plots.
-		coord_type									m_max_distance;			// The point cloud radius around each plot.
 		std::size_t									m_processed_plots{};	// Number of plots processed.
 
 		// Read a plot file and return the resulting text table.
 		[[nodiscard]] static std::vector< Plot_points > read_plots(
 			const file_path						  & plots_source_, 
-			const string_view						id_column_
+			const string_view						id_column_,
+			const coord_type						max_disdance_
 		) {
 			try {
+				using Meta = class_meta< Plot_points, std::string, coord_type, coord_type, coord_type >;
 				Text_table< char >					plots_table{ plots_source_ };
-				return plots_table.export_values( Plot_points::Meta{ id_column_, "east", "north" } );
+				auto all_plots = plots_table.export_values( Meta{ id_column_, "east", "north", "radius" } );
+				if( max_disdance_ > 0 ) {
+					for( auto plot : all_plots )	// Set all radiuses to max_diustance_.
+						plot.set_radius( max_disdance_ );
+				}
+				return all_plots;
 			} catch( const std::exception & error_ ) {
 				throw error_message( std20::format( "Plot_points: {}. (Reading text table '{}'.)",
 					error_.what(), to_string( plots_source_ ) 
@@ -137,10 +140,7 @@ namespace pax {
 			const coord_type						max_disdance_, 
 			const pdal::PointViewPtr				view_ptr_, 
 			const string_view						id_column_
-		) : m_view_ptr{ view_ptr_ }, 
-			m_plots{ read_plots( plots_source_, id_column_ ) }, 
-			m_max_distance{ max_disdance_ }
-		{}
+		) : m_view_ptr{ view_ptr_ }, m_plots{ read_plots( plots_source_, id_column_, max_disdance_ ) } {}
 
 		/// Process an individual point cloud file. 
 		template< typename BBox >
@@ -149,8 +149,7 @@ namespace pax {
 			if( !empty( bbox_ ) ) {
 				std::vector< Plot_points * >		active_plots;
 				for( Plot_points & plot : m_plots )
-					if( plot.in_box( bbox_, m_max_distance ) ) 
-						active_plots.push_back( &plot );
+					if( plot.in_box( bbox_ ) )		active_plots.push_back( &plot );
 
 				// Accumulate points at the activated plots (if there are any).
 				if( !active_plots.empty() ) {
@@ -159,7 +158,7 @@ namespace pax {
 					for( pdal::PointId idx{}; idx < m_view_ptr->size(); ++idx ) {
 						pt.setPointId( idx );
 						for( auto plot_ptr : active_plots ) 
-							plot_ptr->process( &pt, m_max_distance );
+							plot_ptr->process( &pt );
 					}
 				} 
 			}

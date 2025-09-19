@@ -101,7 +101,7 @@ namespace pax {
 		}
 
 		/// Construct from file contents.
-		Text_table( const std::filesystem::path & path_ ) : Text_table{ read_string( path_ ) } {}
+		explicit Text_table( const std::filesystem::path & path_ ) : Text_table{ read_string( path_ ) } {}
 
 
 		/// Dimensions.
@@ -112,7 +112,7 @@ namespace pax {
 		/// Access the cell at row r_, column c_.
 		constexpr auto operator[]( Size r_, Size c_ )	const			{	return m_table[ r_, c_ ];		}
 		
-		/// Access the cell at row r_, column c_.
+		/// Access the header row.
 		constexpr const auto & header()					const noexcept	{	return m_header;				}
 		
 		/// Get row r_ as a span.

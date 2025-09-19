@@ -29,8 +29,9 @@ nilsson_level							:= 1.5
 # Resolution of raster metrics.
 metric_resolution						:= 12.5
 
-# Resolution of raster metrics.
-plots_individual_points_dir_max_dist	:= 12
+# Use this radius for all plots:
+# (Set to zero if you want to use the actual plots, as stored in the text fiule.)
+plots_individual_points_dir_max_dist	:= 0
 
 # In the regression part, how many plot candidates should be given to the outlier reduction.
 number_of_candidates					:= 350

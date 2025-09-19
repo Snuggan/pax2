@@ -36,6 +36,8 @@ namespace pax {
 		using point_type			  = std::array< coord_type, 2 >;
 		
 	private:
+		coord_type						m_radius{};
+		
 		enum class Inclusion			{	overlapped, contained, 	};
 		static constexpr Inclusion		inclusion{ Inclusion::contained };
 		static constexpr const char *	inclusion_id_[ 2 ] =	{	"overlapped", "contained"	};
@@ -46,63 +48,63 @@ namespace pax {
 	
 		/// Does the plot overlap any part of box_?
 		template< typename BBox >
-		constexpr bool overlapped(
-			const BBox			  & bbox_, 
-			const coord_type		max_distance_
-		) const noexcept {
+		constexpr bool overlapped( const BBox & bbox_ ) const noexcept {
 			using std::get;
-			return	( lower_x( bbox_ ) <  get< 0 >( *this ) + max_distance_ )
-				&&	( lower_y( bbox_ ) <  get< 1 >( *this ) + max_distance_ )
-				&&	( upper_x( bbox_ ) >  get< 0 >( *this ) - max_distance_ )
-				&&	( upper_y( bbox_ ) >  get< 1 >( *this ) - max_distance_ );
+			return	( lower_x( bbox_ ) <  get< 0 >( *this ) + radius() )
+				&&	( lower_y( bbox_ ) <  get< 1 >( *this ) + radius() )
+				&&	( upper_x( bbox_ ) >  get< 0 >( *this ) - radius() )
+				&&	( upper_y( bbox_ ) >  get< 1 >( *this ) - radius() );
 		}
 
 		/// Is the plot completely inside box_?
 		template< typename BBox >
-		constexpr bool contained(
-			const BBox			  & bbox_, 
-			const coord_type		max_distance_
-		) const noexcept {
+		constexpr bool contained( const BBox & bbox_ ) const noexcept {
 			using std::get;
-			return	( lower_x( bbox_ ) <= get< 0 >( *this ) - max_distance_ )
-				&&	( lower_y( bbox_ ) <= get< 1 >( *this ) - max_distance_ )
-				&&	( upper_x( bbox_ ) >= get< 0 >( *this ) + max_distance_ )
-				&&	( upper_y( bbox_ ) >= get< 1 >( *this ) + max_distance_ );
+			return	( lower_x( bbox_ ) <= get< 0 >( *this ) - radius() )
+				&&	( lower_y( bbox_ ) <= get< 1 >( *this ) - radius() )
+				&&	( upper_x( bbox_ ) >= get< 0 >( *this ) + radius() )
+				&&	( upper_y( bbox_ ) >= get< 1 >( *this ) + radius() );
 		}
 
 	public:
 		constexpr Plot_base(
 			const coord_type		east_, 
-			const coord_type		north_
-		) noexcept : point_type{ east_, north_ } {}
+			const coord_type		north_,
+			const coord_type		radius_
+		) noexcept : point_type{ east_, north_ }, m_radius{ radius_ } {}
 
 
 		/// 
 		static constexpr auto inclusion_id() noexcept {
 			return inclusion_id_[ std::size_t( inclusion ) ];
 		}
+		
+		
+		/// Return the radius.
+		constexpr coord_type radius() const noexcept {
+			return m_radius;
+		}
+
+		/// Return the radius.
+		constexpr void set_radius( const coord_type radius_ ) noexcept {
+			m_radius = radius_;
+		}
 
 
 		/// Should the plot recieve points from file_ (with the bbox_)?
 		template< typename BBox >
-		constexpr bool in_box( 
-			const BBox			  & bbox_, 
-			const coord_type		max_distance_
-		) const noexcept {
-			if      constexpr( inclusion == Inclusion::overlapped )		return overlapped( bbox_, max_distance_ );
-			else if constexpr( inclusion == Inclusion::contained )		return contained ( bbox_, max_distance_ );
+		constexpr bool in_box( const BBox & bbox_ ) const noexcept {
+			if      constexpr( inclusion == Inclusion::overlapped )		return overlapped( bbox_ );
+			else if constexpr( inclusion == Inclusion::contained )		return contained ( bbox_ );
 		}
 
 
 		/// Is pt_ inside the area?
-		bool contains(
-			const pdal::PointRef	pt_, 
-			const coord_type		max_distance_
-		) const noexcept {
+		bool contains( const pdal::PointRef	pt_ ) const noexcept {
 			using std::get;
 			return	square( get< 0 >( *this ) - pt_.getFieldAs< coord_type >( pdal::Dimension::Id::X ) ) 
 				+	square( get< 1 >( *this ) - pt_.getFieldAs< coord_type >( pdal::Dimension::Id::Y ) ) 
-				<=  max_distance_*max_distance_;
+				<=  square( radius() );
 		}
 	};
 
