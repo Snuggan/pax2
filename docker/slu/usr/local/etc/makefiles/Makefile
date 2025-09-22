@@ -17,17 +17,17 @@
 
 # This specifies what metrics to calculate.
 # Lots and lots of extra metrics:
-metrics_set								:= extra-allt
+#metrics_set								:= extra-allt
 
 # Necessary metrics only:
-#metrics_set							:= basic-linear
+metrics_set								:= basic-linear
 
 
 # This specifies the nilsson height filter value.
 nilsson_level							:= 1.5
 
 # Resolution of raster metrics.
-metric_resolution						:= 12.5
+metric_resolution						:= 10
 
 # Use this radius for all plots:
 # (Set to zero if you want to use the actual plots, as stored in the text fiule.)
