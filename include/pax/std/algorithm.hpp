@@ -124,7 +124,7 @@ namespace pax {
 		using std::size;
 		auto			s = size( v_ );
 		if constexpr( Character_array< V > ) 
-			s -= bool( s ) && !v_[ s - 1 ];		// To remove possible trailing '\0'.
+			s -= bool( s ) && !v_[ s - 1 ];			// To remove possible trailing '\0'.
 
 		return s && ( v_[ 0 ] == t_ );
 	}
@@ -158,7 +158,7 @@ namespace pax {
 		using std::size;
 		auto			s = size( v_ );
 		if constexpr( Character_array< V > ) 
-			s -= bool( s ) && !v_[ s - 1 ];					// To remove possible trailing '\0'.
+			s -= bool( s ) && !v_[ s - 1 ];			// To remove possible trailing '\0'.
 
 		return s && ( v_[ s - 1 ] == t_ );
 	}
@@ -262,7 +262,7 @@ namespace pax {
 		using std::size;
 		auto			s = size( v_ );
 		if constexpr( Character_array< V > ) 
-			s -= bool( s ) && !v_[ s - 1 ];		// To remove possible trailing '\0'.
+			s -= bool( s ) && !v_[ s - 1 ];			// To remove possible trailing '\0'.
 
 		return find( v_, x_ ) < size( v_ );
 	}
@@ -405,7 +405,7 @@ namespace pax {
 		const auto		b = begin( v_ );
 		auto			e = end  ( v_ );
 		if constexpr( Character_array< V > ) 
-			e -= ( b != e ) && !*( e - 1 );		// To remove possible trailing '\0'.
+			e -= ( b != e ) && !*( e - 1 );			// To remove possible trailing '\0'.
 
 		return std::all_of( b, e, p_ );
 	}
@@ -440,7 +440,7 @@ namespace pax {
 		const auto		b = begin( v_ );
 		auto			e = end  ( v_ );
 		if constexpr( Character_array< V > ) 
-			e -= ( b != e ) && !*( e - 1 );		// To remove possible trailing '\0'.
+			e -= ( b != e ) && !*( e - 1 );			// To remove possible trailing '\0'.
 
 		return std::any_of( b, e, p_ );
 	}
@@ -475,7 +475,7 @@ namespace pax {
 		const auto		b = begin( v_ );
 		auto			e = end  ( v_ );
 		if constexpr( Character_array< V > ) 
-			e -= ( b != e ) && !*( e - 1 );		// To remove possible trailing '\0'.
+			e -= ( b != e ) && !*( e - 1 );			// To remove possible trailing '\0'.
 
 		return std::none_of( b, e, p_ );
 	}
