@@ -11,26 +11,19 @@ RUN		echo "\n\n--- Main stuff ---" \
 		&&	apt-get install -y --no-install-recommends \
 				git \
 				curl \
-				# XZ-format compression utilities:
+			# Compilation and related tools:
 				xz-utils \
-				# Informational list of build-essential packages:
 				build-essential \
-				gcc-15 \
-				g++-15 \
-				doctest-dev \
-				libgdal-dev \
 				gdb \
-				# gfortran is used by some R modules:
 				gfortran \
 				cmake \
+				ninja-build \
 				doctest-dev \
 				libboost-all-dev \
-				# libfmt-dev \
+			# Special libraries, necessary for the pax tools and plugins:
 				libgdal-dev gdal-bin \
 				### pdal libpdal-dev libpdal-plugins \
-				# Light and feature-rich C++ testing framework:
-				# doctest-dev \
-				# GNU R core of statistical computation and graphics system + needed packages:
+			# R core of statistical computation and graphics system + needed packages:
 				r-base-core \
 				r-cran-codetools \
 				r-cran-robustbase \
@@ -40,28 +33,28 @@ RUN		echo "\n\n--- Main stuff ---" \
 				r-cran-sf \
 				r-cran-terra \
 		# Make g++-15 the default:
+				gcc-15 \
+				g++-15 \
 		&&	update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-15 50 \
 		&&	update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-15 50 \
-		#
-		&&	echo "\n\n--- PDAL ---\n\n" \
+		# Remove the apt-get cache, as it is needed no longer:
+		&&	rm -Rf /var/lib/apt/lists/* \
+		&&	ldconfig 
+
+
+RUN		echo "\n\n--- PDAL ---\n\n" \
 		&&	git clone https://github.com/PDAL/PDAL.git \
 		&&	cd PDAL \
+		# The latest version (2.9.n) has a bug and don't compile with gcc++-15...
+		&&	git checkout 2.8.4 \
 		&&	mkdir build \
 		&&	cd build \
-		&&	cmake .. \
-		&&	make -j10 -k \
-		&&	make \
-		&&	make install \
+		&&	cmake -G Ninja .. \
+		&&	ninja install \
 		&&	ln -s /usr/lib/x86_64-linux-gnu/libgdal.so /usr/local/lib/libgdal.so \
 		&&	hash pdal \
 		&&	cd ../.. \
 		&&	rm -rf PDAL
-
-RUN		apt-get install ninja-build/plucky \
-		# Remove the apt-get cache, as it is needed no longer:
-		&&	rm -Rf /var/lib/apt/lists/* \
-		# Remove the apt cache:
-		&&	ldconfig 
 
 
 # Copy stuff related to running the pax tools.
