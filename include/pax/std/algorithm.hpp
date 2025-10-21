@@ -34,22 +34,19 @@ namespace pax {
 
 
 	/// Returns false. 
-	[[nodiscard]] constexpr bool valid( std::nullptr_t ) 	noexcept {
-		return false;
-	}
+	[[nodiscard]] constexpr bool valid( std::nullptr_t ) 	noexcept	{	return false;				}
 
 	/// Returns ptr_ != nullptr. 
 	template< typename T >
-	[[nodiscard]] constexpr bool valid( T * ptr_ ) 			noexcept {
-		return ptr_ != nullptr;
-	}
+	[[nodiscard]] constexpr bool valid( T * ptr_ ) 			noexcept	{	return ptr_ != nullptr;		}
 
 	/// Returns sp_.data() != nullptr. 
 	template< Contiguous_elements V >
-	[[nodiscard]] constexpr bool valid( const V & v_ ) 		noexcept {
+	[[nodiscard]] constexpr bool valid( const V & v_ ) 		noexcept	{
 		using std::data;
 		return valid( data( v_ ) );
 	}
+
 
 	/// Return true iff both data() and size() are equal between the two std::spans.
 	template< Contiguous_elements V0, Contiguous_elements V1 >
@@ -91,13 +88,12 @@ namespace pax {
 		// Return true iff copying to dest_ requires backward copy.
 		template< Contiguous_elements V, typename Itr >
 		[[nodiscard]] constexpr bool requires_backward( 
-			V			 && sp_,
-			Itr 			dst_ 
+			V							 && sp_,
+			Itr 							dst_ 
 		) noexcept {
 			static constexpr bool same = std::is_same_v< 
 				std::remove_cvref_t< Value_type_t< V > >, std::remove_cvref_t< Value_type_t< Itr > > >;
-			if constexpr( same )	return ( dst_ >= sp_.begin() ) && ( dst_ < sp_.end() );
-			else					return false;
+			return same && ( dst_ >= sp_.begin() ) && ( dst_ < sp_.end() );
 		}
 
 		template< Contiguous_elements V0, Contiguous_elements V1 >
