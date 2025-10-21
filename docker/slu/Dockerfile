@@ -1,4 +1,4 @@
-FROM	ubuntu:25.04
+FROM	ubuntu:25.10
 LABEL	url="https://hub.docker.com/repository/docker/axensten/slu" \
 		organiusation="SLU, Swedish University of Agricultural Sciences" \
 		maintainer="Peder Axensten <peder.axensten@slu.se>"
@@ -32,11 +32,11 @@ RUN		echo "\n\n--- Main stuff ---" \
 				r-cran-raster \
 				r-cran-sf \
 				r-cran-terra \
-		# Make g++-15 the default:
-				gcc-15 \
-				g++-15 \
-		&&	update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-15 50 \
-		&&	update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-15 50 \
+		# # Make g++-15 the default:
+		# 		gcc-15 \
+		# 		g++-15 \
+		# &&	update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-15 50 \
+		# &&	update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-15 50 \
 		# Remove the apt-get cache, as it is needed no longer:
 		&&	rm -Rf /var/lib/apt/lists/* \
 		&&	ldconfig 
