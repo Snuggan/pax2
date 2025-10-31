@@ -15,9 +15,10 @@
 #include "format.h"
 
 FMT_BEGIN_NAMESPACE
+FMT_BEGIN_EXPORT
 
 // A compile-time string which is compiled into fast formatting code.
-FMT_EXPORT class compiled_string {};
+class compiled_string {};
 
 template <typename S>
 struct is_compiled_string : std::is_base_of<compiled_string, S> {};
@@ -58,6 +59,8 @@ template <detail::fixed_string Str> constexpr auto operator""_cf() {
 }
 }  // namespace literals
 #endif
+
+FMT_END_EXPORT
 
 namespace detail {
 
@@ -556,8 +559,8 @@ template <size_t N> class static_format_result {
     *fmt::format_to(data, fmt, std::forward<T>(args)...) = '\0';
   }
 
-  auto str() const -> fmt::string_view { return {data, N - 1}; }
-  auto c_str() const -> const char* { return data; }
+  FMT_CONSTEXPR auto str() const -> fmt::string_view { return {data, N - 1}; }
+  FMT_CONSTEXPR auto c_str() const -> const char* { return data; }
 };
 
 /**
