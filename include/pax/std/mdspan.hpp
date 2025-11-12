@@ -19,6 +19,8 @@
 #include <algorithm>	// std::copy_n, std::fill_n, std::min
 #include <numeric>		// std::accumulate
 #include <functional>	// std::multiplies
+#include <print>		// std::print
+#include <iostream>		// std*::cout
 
 
 namespace std {
@@ -37,6 +39,35 @@ namespace std {
 }	// namespace std
 
 namespace pax {
+
+	/// Stream the header items to out_ using col_mark_ as column deligneater. 
+	///
+	template< typename Out, typename Itr >
+	void print(
+		Out							  & out_,
+		Itr								itr_, 
+		const Itr						end_, 
+		const char						separator_ = 0
+	) {
+		// std::print( out_, "{}", pax::spanWr( itr_, end_ ) );
+		const char						temp[]	  = { separator_, 0 };
+		const char					  * separator =   separator_ ? temp : ", ";
+		if( !separator_ )				std::print( out_, "[" );
+		if( itr_ != end_ ) {
+			std::print( out_, "{}", *itr_ );
+			while( ++itr_ != end_ )		std::print( out_, "{}{}", separator, *itr_ );
+		}
+		if( !separator_ )				std::print( out_, "]" );
+	}
+
+	template< typename Itr, typename Ch = char >
+	void print(
+		Itr								itr_, 
+		const Itr						end_, 
+		const char 						separator_ = 0
+	) {	return print( std::cout, itr_, end_, separator_ );				}
+
+
 
 	/// Find what type of layout it is.
 	template< typename Layout >	struct is_layout_right;

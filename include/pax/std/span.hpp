@@ -7,9 +7,8 @@
 #include "../concepts.hpp"
 #include "format.hpp"
 #include <span>
+#include <string_view>
 #include <algorithm>
-#include <print>
-#include <iostream>
 
 
 namespace pax {
@@ -20,74 +19,68 @@ namespace pax {
 	template< typename T >
 	concept Not_string			  = Contiguous_elements< T > && !String< T >;
 
-	/// Specialisation for the std::format stuff.
-	template< typename T, typename CharT = char >
-	struct formatter : std20::formatter< std::remove_cv_t< T >, CharT > {
-		using Value					  =  std::remove_cv_t< T >;
-		using Base					  = std20::formatter< Value, CharT >;
-		using Base::parse;
-
-		template< typename FmtContext, std::size_t N >
-		constexpr FmtContext::iterator format(
-			const std::span< T, N >	  & span_,
-			FmtContext				  & format_context_
-		) const {
-			format_context_.advance_to( std20::format_to( format_context_.out(), "[" ) );
-			if constexpr( N > 0 ) if( span_.size() > 0 ) {
-				Base::format( span_.front(), format_context_ );
-				if constexpr( N > 1 ) if( span_.size() > 1 ) 
-					for( const auto & item : span_.template subspan< 1 >() ) {
-						format_context_.advance_to( std20::format_to( format_context_.out(), ", " ) );
-						Base::format( item, format_context_ );
-					}
-			}
-			format_context_.advance_to( std20::format_to( format_context_.out(), "]" ) );
-			return format_context_.out();
-		}
-	};
-
-	template< typename T, typename CharT >
-		requires Character< T >
-	struct formatter< T, CharT > : std20::formatter< std::basic_string_view< std::remove_cv_t< T > >, CharT > {
-		using View					  = std::basic_string_view< std::remove_cv_t< T > >;
-		using Base					  = std20::formatter< View, CharT >;
-		using Base::parse;
-
-		template< typename FmtContext, std::size_t N >
-		constexpr FmtContext::iterator format(
-			const std::span< T, N >	  & span_,
-			FmtContext				  & format_context_
-		) const {
-			return Base::format( View( span_.begin(), span_.end() ), format_context_ );
-		}
-	};
-
-	template< typename T, std::size_t N >
+	template< typename T, std::size_t N = std::dynamic_extent >
 	struct spanWr {
-		std::span< T, N >			m_span;
-		constexpr spanWr( const std::span< T, N > sp_ ) : m_span( sp_ ) {}
+		std::span< T, N >				m_span;
+		constexpr spanWr( const std::span< T, N > sp_ ) 					: m_span( sp_ ) {}
+
+		template< class It >
+			requires( std::is_convertible_v< std::remove_reference_t< std::iter_reference_t< It > >, T > )
+		constexpr spanWr( const It begin_, const std::ptrdiff_t size_ ) 	: m_span( begin_, size_ ) {}
+		
+		template< class It, class End >
+			requires( std::is_convertible_v< std::remove_reference_t< std::iter_reference_t< It > >, T > )
+		constexpr spanWr( const It begin_, const End end_ ) 				: m_span( begin_, end_ ) {}
 	};
+	
+	template< class It >
+	spanWr( const It, const std::ptrdiff_t )	-> spanWr< std::remove_reference_t< std::iter_reference_t< It > > >;
+	
+	template< class It, class End >
+	spanWr( const It, const End )				-> spanWr< std::remove_reference_t< std::iter_reference_t< It > > >;
 }
 
-// template< typename T, std::size_t N >
-// struct std20::formatter< std::span< T, N > > : pax::formatter< T > {
-// 	template< typename FmtContext >
-// 	constexpr FmtContext::iterator format(
-// 		const std::span< T, N >	  & span_,
-// 		FmtContext				  & format_context_
-// 	) const {
-// 		return pax::formatter< T >::format( span_, format_context_ );
-// 	}
-// };
-
+/// Specialisation for the std::format stuff.
+/// With pax::spanWr you use the same format as with scalars of its item type.
+/// Exception is if the item type is some kind of character type. 
 template< typename T, std::size_t N >
-struct std20::formatter< pax::spanWr< T, N > > : pax::formatter< T > {
+struct std20::formatter< pax::spanWr< T, N > > : std20::formatter< std::remove_cv_t< T >, char > {
+	using CharT						  = char;
+	using Value						  = std::remove_cv_t< T >;
+	using Base						  = std20::formatter< Value, CharT >;
+	using Base::parse;
+
 	template< typename FmtContext >
 	constexpr FmtContext::iterator format(
-		const pax::spanWr< T, N >  & spanWr_,
-		FmtContext				  & format_context_
+		const pax::spanWr< T, N >	  & span_,
+		FmtContext					  & format_context_
 	) const {
-		return pax::formatter< T >::format( spanWr_.m_span, format_context_ );
+		format_context_.advance_to( std20::format_to( format_context_.out(), "[" ) );
+		if constexpr( N > 0 ) if( span_.m_span.size() > 0 ) {
+			Base::format( span_.m_span.front(), format_context_ );
+			if constexpr( N > 1 ) if( span_.m_span.size() > 1 ) 
+				for( const auto & item : span_.m_span.template subspan< 1 >() ) {
+					format_context_.advance_to( std20::format_to( format_context_.out(), ", " ) );
+					Base::format( item, format_context_ );
+				}
+		}
+		format_context_.advance_to( std20::format_to( format_context_.out(), "]" ) );
+		return format_context_.out();
+	}
+};
+template< pax::Character T, std::size_t N >
+struct std20::formatter< pax::spanWr< T, N > > : std20::formatter< std::basic_string_view< std::remove_cv_t< T > >, char > {
+	using CharT						  = char;
+	using View						  = std::basic_string_view< std::remove_cv_t< T > >;
+	using Base						  = std20::formatter< View, CharT >;
+	using Base::parse;
+
+	template< typename FmtContext >
+	constexpr FmtContext::iterator format(
+		const pax::spanWr< T, N >	  & span_,
+		FmtContext					  & format_context_
+	) const {
+		return Base::format( View( span_.m_span.begin(), span_.m_span.end() ), format_context_ );
 	}
 };
 
@@ -138,34 +131,6 @@ namespace std {
 
 
 namespace pax {
-
-	/// Stream the header items to out_ using col_mark_ as column deligneater. 
-	///
-	template< typename Out, typename Itr >
-	void print(
-		Out							  & out_,
-		Itr								itr_, 
-		const Itr						end_, 
-		const char						separator_ = 0
-	) {
-		const char						temp[]	  = { separator_, 0 };
-		const char					  * separator =   separator_ ? temp : ", ";
-		if( !separator_ )				std::print( out_, "[" );
-		if( itr_ != end_ ) {
-			std::print( out_, "{}", *itr_ );
-			while( ++itr_ != end_ )		std::print( out_, "{}{}", separator, *itr_ );
-		}
-		if( !separator_ )				std::print( out_, "]" );
-	}
-
-	template< typename Itr, typename Ch = char >
-	void print(
-		Itr								itr_, 
-		const Itr						end_, 
-		const char 						separator_ = 0
-	) {	return print( std::cout, itr_, end_, separator_ );				}
-
-
 
 	/// Returns a std::span.
 	template< Not_character_array A >
