@@ -77,13 +77,20 @@ namespace pax {
 
 
 	DOCTEST_TEST_CASE( "textual" ) {
+		{	// Testa the spanWr implementation.
+			constexpr std::span< const int >		ints( ints0 );
+
+			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", spanWr( first( ints, 3 ) ) ),			"[0, 1, 2]" );
+			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", spanWr( ints.data(), 3 ) ),				"[0, 1, 2]" );
+			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", spanWr( ints.begin(), ints.end() ) ),	"[0, 1, 2]" );
+		}
 		{	// std::format output
 			{
 				constexpr std::span< const int >		ints( ints0 );
 
-				DOCTEST_FAST_CHECK_EQ( std20::format( "{}", spanWr( first( ints, 0 ) ) ),		"[]" );
-				DOCTEST_FAST_CHECK_EQ( std20::format( "{}", spanWr( first( ints, 1 ) ) ),		"[0]" );
-				DOCTEST_FAST_CHECK_EQ( std20::format( "{}", spanWr( first( ints, 3 ) ) ),		"[0, 1, 2]" );
+				DOCTEST_FAST_CHECK_EQ( std20::format( "{}", spanWr( first( ints, 0 ) ) ),			"[]" );
+				DOCTEST_FAST_CHECK_EQ( std20::format( "{}", spanWr( first( ints, 1 ) ) ),			"[0]" );
+				DOCTEST_FAST_CHECK_EQ( std20::format( "{}", spanWr( first( ints, 3 ) ) ),			"[0, 1, 2]" );
 			}
 			{
 				constexpr std::span< const double >		doubles( doubles0 );

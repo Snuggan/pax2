@@ -8,7 +8,6 @@
 #include "format.hpp"
 #include <span>
 #include <string_view>
-#include <algorithm>
 
 
 namespace pax {
@@ -19,35 +18,29 @@ namespace pax {
 	template< typename T >
 	concept Not_string			  = Contiguous_elements< T > && !String< T >;
 
-	template< typename T, std::size_t N = std::dynamic_extent >
-	struct spanWr {
-		std::span< T, N >				m_span;
-		constexpr spanWr( const std::span< T, N > sp_ ) 					: m_span( sp_ ) {}
-
-		template< class It >
-			requires( std::is_convertible_v< std::remove_reference_t< std::iter_reference_t< It > >, T > )
-		constexpr spanWr( const It begin_, const std::ptrdiff_t size_ ) 	: m_span( begin_, size_ ) {}
-		
-		template< class It, class End >
-			requires( std::is_convertible_v< std::remove_reference_t< std::iter_reference_t< It > >, T > )
-		constexpr spanWr( const It begin_, const End end_ ) 				: m_span( begin_, end_ ) {}
-	};
-	
 	template< class It >
-	spanWr( const It, const std::ptrdiff_t )	-> spanWr< std::remove_reference_t< std::iter_reference_t< It > > >;
-	
+	using Element_t 			  = std::remove_reference_t< std::iter_reference_t< It > >;
+
+	/// Use thid wrapper for mor control at std::format output. 
+	/// With pax::spanWr you use the same format as with scalars of its item type.
+	/// Exception is if the item type is some kind of character type. 
+	template< typename T, std::size_t N = std::dynamic_extent >
+	struct spanWr : std::span< T, N > {
+		using std::span< T, N >::span;
+		constexpr spanWr( const std::span< T, N > sp_ ) : std::span< T, N >( sp_ ) {}
+	};
+
+	template< class It >
+	spanWr( const It, const std::ptrdiff_t ) -> spanWr< Element_t< It >, std::dynamic_extent >;
+
 	template< class It, class End >
-	spanWr( const It, const End )				-> spanWr< std::remove_reference_t< std::iter_reference_t< It > > >;
+	spanWr( const It, const End )			 -> spanWr< Element_t< It >, std::dynamic_extent >;
 }
 
-/// Specialisation for the std::format stuff.
-/// With pax::spanWr you use the same format as with scalars of its item type.
-/// Exception is if the item type is some kind of character type. 
+//	Specialisation for the std::format stuff.
 template< typename T, std::size_t N >
-struct std20::formatter< pax::spanWr< T, N > > : std20::formatter< std::remove_cv_t< T >, char > {
-	using CharT						  = char;
-	using Value						  = std::remove_cv_t< T >;
-	using Base						  = std20::formatter< Value, CharT >;
+struct std20::formatter< pax::spanWr< T, N > > : std20::formatter< std::remove_cv_t< T > > {
+	using Base						  = std20::formatter< std::remove_cv_t< T > >;
 	using Base::parse;
 
 	template< typename FmtContext >
@@ -56,23 +49,21 @@ struct std20::formatter< pax::spanWr< T, N > > : std20::formatter< std::remove_c
 		FmtContext					  & format_context_
 	) const {
 		format_context_.advance_to( std20::format_to( format_context_.out(), "[" ) );
-		if constexpr( N > 0 ) if( span_.m_span.size() > 0 ) {
-			Base::format( span_.m_span.front(), format_context_ );
-			if constexpr( N > 1 ) if( span_.m_span.size() > 1 ) 
-				for( const auto & item : span_.m_span.template subspan< 1 >() ) {
-					format_context_.advance_to( std20::format_to( format_context_.out(), ", " ) );
-					Base::format( item, format_context_ );
-				}
+		if constexpr( N > 0 ) if( span_.size() > 0 ) {
+			Base::format( span_.front(), format_context_ );
+			for( const auto & item : span_.template subspan< 1 >() ) {
+				format_context_.advance_to( std20::format_to( format_context_.out(), ", " ) );
+				Base::format( item, format_context_ );
+			}
 		}
 		format_context_.advance_to( std20::format_to( format_context_.out(), "]" ) );
 		return format_context_.out();
 	}
 };
 template< pax::Character T, std::size_t N >
-struct std20::formatter< pax::spanWr< T, N > > : std20::formatter< std::basic_string_view< std::remove_cv_t< T > >, char > {
-	using CharT						  = char;
+struct std20::formatter< pax::spanWr< T, N > > : std20::formatter< std::basic_string_view< std::remove_cv_t< T > > > {
 	using View						  = std::basic_string_view< std::remove_cv_t< T > >;
-	using Base						  = std20::formatter< View, CharT >;
+	using Base						  = std20::formatter< View >;
 	using Base::parse;
 
 	template< typename FmtContext >
@@ -80,7 +71,7 @@ struct std20::formatter< pax::spanWr< T, N > > : std20::formatter< std::basic_st
 		const pax::spanWr< T, N >	  & span_,
 		FmtContext					  & format_context_
 	) const {
-		return Base::format( View( span_.m_span.begin(), span_.m_span.end() ), format_context_ );
+		return Base::format( View( span_.begin(), span_.end() ), format_context_ );
 	}
 };
 
