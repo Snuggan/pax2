@@ -1150,29 +1150,29 @@ namespace pax {
 			{	// with int
 				{
 					std::ostringstream		os;
-					os << std::span< int >{};
+					std::print( os, "{}", std::span< int >{} );
 					DOCTEST_FAST_CHECK_EQ( os.str(), "[]" );
 					DOCTEST_FAST_CHECK_EQ( os.str().size(), 2 );
 				} {
 					const int				hej[ 3 ] = { 0, 6, 7 };
 					std::ostringstream		os;
-					os << std::span( hej );
+					std::print( os, "{}", std::span( hej ) );
 					DOCTEST_FAST_CHECK_EQ( os.str(), "[0, 6, 7]" );
 					DOCTEST_FAST_CHECK_EQ( os.str().size(), 9 );
 				}
 			}
 			{	// with text
 				std::ostringstream		os;
-				os << std::span( "abcd" ).first( 3 );
-				DOCTEST_FAST_CHECK_EQ( os.str().size(), 5 );
-				DOCTEST_FAST_CHECK_EQ( os.str(), "[abc]" );
+				std::print( os, "{}", std::span( "abcd" ).first( 3 ) );
+				DOCTEST_FAST_CHECK_EQ( os.str().size(), 15 );
+				DOCTEST_FAST_CHECK_EQ( os.str(), "['a', 'b', 'c']" );
 			}
 			{	// with texts
 				std::ostringstream		os;
 				const char *			strings[ 5 ] = { "Hej", " ", "hela", " ", "varlden" };
-				os << std::span( strings );
-				DOCTEST_FAST_CHECK_EQ( os.str().size(), 26 );
-				DOCTEST_FAST_CHECK_EQ( os.str(), "[Hej,  , hela,  , varlden]" );
+				std::print( os, "{}", std::span( strings ) );
+				DOCTEST_FAST_CHECK_EQ( os.str().size(), 36 );
+				DOCTEST_FAST_CHECK_EQ( os.str(), "[\"Hej\", \" \", \"hela\", \" \", \"varlden\"]" );
 			}
 		}
 	}

@@ -5,96 +5,11 @@
 #pragma once
 
 #include "../concepts.hpp"
-#include "format.hpp"
 #include <span>
-#include <string_view>
-
-
-namespace pax {
-
-	template< typename T >
-	concept Not_character_array	  = Contiguous_elements< T > && !Character_array< T >;
-
-	template< typename T >
-	concept Not_string			  = Contiguous_elements< T > && !String< T >;
-
-	template< class It >
-	using Element_t 			  = std::remove_reference_t< std::iter_reference_t< It > >;
-
-	/// Use thid wrapper for mor control at std::format output. 
-	/// With pax::spanWr you use the same format as with scalars of its item type.
-	/// Exception is if the item type is some kind of character type. 
-	template< typename T, std::size_t N = std::dynamic_extent >
-	struct spanWr : std::span< T, N > {
-		template< typename ...Args >	// Using 'using std::span< T, N >::std::span;' leads to ambiguity in gcc.
-		constexpr spanWr( Args && ...args_ ) : std::span< T, N >{ std::forward< Args >( args_ )... } {}
-	};
-
-	template< typename T, std::size_t N >
-	spanWr( std::span< T, N > )				-> spanWr< T, N >;
-
-	template< typename It >
-	spanWr( It, std::ptrdiff_t )			-> spanWr< Element_t< It >, std::dynamic_extent >;
-
-	template< typename It, typename End >
-	spanWr( const It, End )					-> spanWr< Element_t< It >, std::dynamic_extent >;
-}
-
-//	Specialisation for the std::format stuff.
-template< typename T, std::size_t N >
-struct std20::formatter< pax::spanWr< T, N > > : std20::formatter< std::remove_cv_t< T > > {
-	using Base						  = std20::formatter< std::remove_cv_t< T > >;
-	using Base::parse;
-
-	template< typename FmtContext >
-	constexpr FmtContext::iterator format(
-		const pax::spanWr< T, N >	  & span_,
-		FmtContext					  & format_context_
-	) const {
-		format_context_.advance_to( std20::format_to( format_context_.out(), "[" ) );
-		if constexpr( N > 0 ) if( span_.size() > 0 ) {
-			Base::format( span_.front(), format_context_ );
-			for( const auto & item : span_.template subspan< 1 >() ) {
-				format_context_.advance_to( std20::format_to( format_context_.out(), ", " ) );
-				Base::format( item, format_context_ );
-			}
-		}
-		format_context_.advance_to( std20::format_to( format_context_.out(), "]" ) );
-		return format_context_.out();
-	}
-};
-template< pax::Character T, std::size_t N >
-struct std20::formatter< pax::spanWr< T, N > > : std20::formatter< std::basic_string_view< std::remove_cv_t< T > > > {
-	using View						  = std::basic_string_view< std::remove_cv_t< T > >;
-	using Base						  = std20::formatter< View >;
-	using Base::parse;
-
-	template< typename FmtContext >
-	constexpr FmtContext::iterator format(
-		const pax::spanWr< T, N >	  & span_,
-		FmtContext					  & format_context_
-	) const {
-		format_context_.advance_to( std20::format_to( format_context_.out(), "[" ) );
-		Base::format( View( span_.begin(), span_.end() ), format_context_ );
-		format_context_.advance_to( std20::format_to( format_context_.out(), "]" ) );
-		return format_context_.out();
-	}
-};
+#include <algorithm>	// std::equal, std::lexicographical_compare_three_way etc.
 
 
 namespace std {
-
-	/// Stream the contents of `sp_` to `dest_` in the form `[i0, i1, ...]`.
-	/// - If T is a string type, each item is surrounded by '"'.
-	template< typename Dest, typename T, std::size_t N >
-	constexpr Dest & operator<<(
-		Dest					  & dest_,
-		const std::span< T, N >		sp_
-	) {
-		dest_ << std20::format( "{}", pax::spanWr( sp_ ) );
-		return dest_;
-	}
-
 	/// Check if all elements of `sp_` are equal to the corresponding elements of `v_`.
 	template< typename T, std::size_t N, pax::Contiguous_elements V >
 	[[nodiscard]] constexpr bool operator==(
@@ -122,12 +37,17 @@ namespace std {
 	[[nodiscard]] constexpr T & get( const std::span< T, N > v_ )  					noexcept	{
 		return *( v_.data() + ( ( I >= 0 ) ? I : I + N ) );
 	}
-
 }	// namespace std
 
 
-
 namespace pax {
+
+	template< typename T >
+	concept Not_character_array	  = Contiguous_elements< T > && !Character_array< T >;
+
+	template< typename T >
+	concept Not_string			  = Contiguous_elements< T > && !String< T >;
+
 
 	/// Returns a std::span.
 	template< Not_character_array A >
@@ -184,7 +104,6 @@ namespace pax {
 	}
 
 
-
 	/// Returns a reference to the last item. 
 	/// UB, if v_ has a dynamic size that is zero.
 	template< typename V >
@@ -232,7 +151,6 @@ namespace pax {
 	}
 
 
-
 	/// Returns a dynamically sized span of the last i_ elements of v_.
 	///	- If i_ > size( v_ ), span( v_ ) is returned.
 	template< Not_string V >
@@ -267,7 +185,6 @@ namespace pax {
 	}
 
 
-
 	/// Returns a span of all elements of v_ but the first i_.
 	///	- If i_ > size( v_ ), an empty span( end( v_ ) ) is returned.
 	template< Not_string V >
@@ -292,7 +209,6 @@ namespace pax {
 	}
 
 
-
 	/// Returns a view of all elements of v_ except the last i_.
 	///	- If i_ > size( v_ ), an empty view( begin( v_ ) ) is returned.
 	template< Not_string V >
@@ -313,7 +229,6 @@ namespace pax {
 		static constexpr std::size_t	sz = ( extent_v< V > > I ) ? extent_v< V > - I : 0;
 		return std::span< Value_type_t< V >, sz >( data( v_ ), sz );
 	}
-
 
 
 	namespace detail {
@@ -384,7 +299,6 @@ namespace pax {
 		assert( offset + Len <= size( v_ ) && "subview< Offset, Len >( v_ ) requires Offset + Len <= size( v_ )." );
 		return std::span< Value_type_t< V >, Len >( data( v_ ) + offset, Len );
 	}
-
 
 
 	/// Return the beginning of v_ up to but not including the first until_this_.
