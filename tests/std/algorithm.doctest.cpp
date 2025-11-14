@@ -1164,8 +1164,8 @@ namespace pax {
 			{	// with text
 				std::ostringstream		os;
 				os << std::span( "abcd" ).first( 3 );
-				DOCTEST_FAST_CHECK_EQ( os.str().size(), 3 );
-				DOCTEST_FAST_CHECK_EQ( os.str(), "abc" );
+				DOCTEST_FAST_CHECK_EQ( os.str().size(), 5 );
+				DOCTEST_FAST_CHECK_EQ( os.str(), "[abc]" );
 			}
 			{	// with texts
 				std::ostringstream		os;

@@ -26,15 +26,18 @@ namespace pax {
 	/// Exception is if the item type is some kind of character type. 
 	template< typename T, std::size_t N = std::dynamic_extent >
 	struct spanWr : std::span< T, N > {
-		using std::span< T, N >::span;
-		constexpr spanWr( const std::span< T, N > sp_ ) : std::span< T, N >( sp_ ) {}
+		template< typename ...Args >	// Using 'using std::span< T, N >::std::span;' leads to ambiguity in gcc.
+		constexpr spanWr( Args && ...args_ ) : std::span< T, N >{ std::forward< Args >( args_ )... } {}
 	};
 
-	template< class It >
-	spanWr( const It, const std::ptrdiff_t ) -> spanWr< Element_t< It >, std::dynamic_extent >;
+	template< typename T, std::size_t N >
+	spanWr( std::span< T, N > )				-> spanWr< T, N >;
 
-	template< class It, class End >
-	spanWr( const It, const End )			 -> spanWr< Element_t< It >, std::dynamic_extent >;
+	template< typename It >
+	spanWr( It, std::ptrdiff_t )			-> spanWr< Element_t< It >, std::dynamic_extent >;
+
+	template< typename It, typename End >
+	spanWr( const It, End )					-> spanWr< Element_t< It >, std::dynamic_extent >;
 }
 
 //	Specialisation for the std::format stuff.
@@ -71,7 +74,10 @@ struct std20::formatter< pax::spanWr< T, N > > : std20::formatter< std::basic_st
 		const pax::spanWr< T, N >	  & span_,
 		FmtContext					  & format_context_
 	) const {
-		return Base::format( View( span_.begin(), span_.end() ), format_context_ );
+		format_context_.advance_to( std20::format_to( format_context_.out(), "[" ) );
+		Base::format( View( span_.begin(), span_.end() ), format_context_ );
+		format_context_.advance_to( std20::format_to( format_context_.out(), "]" ) );
+		return format_context_.out();
 	}
 };
 
