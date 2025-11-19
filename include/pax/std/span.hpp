@@ -311,4 +311,29 @@ namespace pax {
 		return first( v_, find( v_, until_this_ ) );
 	}
 
+
+	/// Returns a span of the part of sp_ that contains item_. 
+	/// If item_ is not found, std::span< T >{ sp_.end(), 0u } is returned. 
+	template< typename T, std::size_t N, typename T2 >
+	[[nodiscard]] constexpr std::span< T > find_span( std::span< T, N > sp_, const T2 item_ ) noexcept;
+
+	/// Returns a span of the part of sp_ that contains items_. 
+	/// If items_ is not found, std::span< T >{ sp_.end(), 0u } is returned. 
+	template< typename T, std::size_t N, typename T2, std::size_t N2 >
+	[[nodiscard]] constexpr std::span< T > find_span( std::span< T, N > sp_, const std::span< T2, N2 > items_ ) noexcept;
+
+	/// Used as the return type of split().
+	template< typename T > using span_pair = std::pair< std::span< T >, std::span< T > >;
+
+	/// Returns a pair of std::span: before respectively after splitter_.
+	/// If items_ is not found, span_pair< T >{ { sp_.end(), 0u }, { sp_.end(), 0u } } is returned. 
+	template< typename T, std::size_t N, typename T2, std::size_t N2 >
+	[[nodiscard]] constexpr span_pair< T > split( std::span< T, N > sp_, const std::span< T2, N2 > splitter_ ) noexcept {
+		const bool	inside = ( sp_.begin() <= splitter_.begin() ) && ( sp_.end() >= splitter_.end() ) && splitter_.size();
+		return inside ? span_pair< T >{
+			std::span< T >{ ( splitter_.empty() ? splitter_.begin() : sp_.begin() ), splitter_.begin() },
+			std::span< T >{ splitter_.end(), sp_.end() }
+		} : span_pair< T >{ std::span< T >{ sp_.end(), 0u }, std::span< T >{ sp_.end(), 0u } };
+	}
+
 }	// namespace pax
