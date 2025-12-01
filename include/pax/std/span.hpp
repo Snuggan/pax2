@@ -7,6 +7,7 @@
 #include "../concepts.hpp"
 #include <span>
 #include <algorithm>	// std::equal, std::lexicographical_compare_three_way etc.
+#include <cassert>		// assert
 
 
 namespace std {

@@ -5,9 +5,7 @@
 #pragma once
 
 #include "algorithm.hpp"	// struct Newline
-#include "../concepts.hpp"
 #include <string_view>
-#include <cassert>			// assert
 
 
 #define DOCTEST_ASCII_CHECK_EQ( __1__, __2__ )	DOCTEST_FAST_CHECK_EQ( pax::as_ascii( __1__ ), pax::as_ascii( __2__ ) )

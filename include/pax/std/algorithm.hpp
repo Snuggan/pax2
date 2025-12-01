@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <cassert>			// assert
-#include <algorithm>		// std::min, std::equal, std::lexicographical_compare_three_way
 #include "../concepts.hpp"	// pax::Character, pax::String, pax::Contiguous_elements
+#include <algorithm>		// std::min, std::equal, std::lexicographical_compare_three_way
+#include <cassert>			// assert
 
 
 // From https://lemire.me/blog/2024/07/26/safer-code-in-c-with-lifetime-bounds/
@@ -29,9 +29,6 @@ namespace pax {
 
 	/// Tag for use when doing stuff with newlines. 
 	struct Newline{};
-
-
-
 
 	/// Returns false. 
 	[[nodiscard]] constexpr bool valid( std::nullptr_t ) 	noexcept	{	return false;				}
