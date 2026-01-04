@@ -350,6 +350,11 @@ namespace pax {
 			static_assert( identic( first<  5 >( strN ), safe_first( strN,  5 ) ) );
 			static_assert( identic( first< 12 >( strN ), safe_first( strN, 12 ) ) );
 			static_assert( identic( first< 22 >( strN ), safe_first( strN, 22 ) ) );
+
+			static_assert( identic( first( strN, Stat<  0u > ), safe_first( strN,  0 ) ) );
+			static_assert( identic( first( strN, Stat<  5u > ), safe_first( strN,  5 ) ) );
+			static_assert( identic( first( strN, Stat< 12u > ), safe_first( strN, 12 ) ) );
+			static_assert( identic( first( strN, Stat< 22u > ), safe_first( strN, 22 ) ) );
 		}
 		{	// first (int)
 			static_assert( identic( first( ints,   0 ), safe_first( ints,   0 ) ) );

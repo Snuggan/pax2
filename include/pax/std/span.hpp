@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../concepts.hpp"
+#include "constant_type.hpp"
 #include <span>
 #include <algorithm>	// std::equal, std::lexicographical_compare_three_way etc.
 #include <cassert>		// assert
@@ -148,6 +149,16 @@ namespace pax {
 	[[nodiscard]] constexpr auto first( V const & v_ ) 								noexcept {
 		using std::data;
 		static constexpr std::size_t	sz  = std::min( I, extent_v< V > );
+		return std::span< Value_type_t< V >, sz >( data( v_ ), sz );
+	}
+	template< auto I, Not_character_array V >
+		requires( std::is_unsigned_v< decltype( I ) > && ( I != dynamic_extent ) && ( extent_v< V > != dynamic_extent ) )
+	[[nodiscard]] constexpr auto first( 
+		V					 && v_,
+		Statique< I >	
+	) noexcept {
+		using std::data;
+		static constexpr std::size_t	sz  = std::min( std::size_t( I ), extent_v< V > );
 		return std::span< Value_type_t< V >, sz >( data( v_ ), sz );
 	}
 
