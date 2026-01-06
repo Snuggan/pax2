@@ -21,7 +21,7 @@ namespace pax::meta {
 		DOCTEST_CHECK_EQ( meta.description(), 	"Description" );
 
 		DOCTEST_CHECK_EQ( metadata::license, 	"The 2-Clause BSD License" );
-		DOCTEST_CHECK_EQ( metadata::copyright, 	"©2014–2025, Peder Axensten" );
+		DOCTEST_CHECK_EQ( metadata::copyright, 	"©2014–2026, Peder Axensten" );
 		DOCTEST_CHECK_EQ( metadata::author, 	"Peder Axensten, peder#axensten.se" );
 		DOCTEST_CHECK_EQ( metadata::maintainer, "Peder Axensten, peder#axensten.se" );
 

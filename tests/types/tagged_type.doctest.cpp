@@ -2,7 +2,8 @@
 //	Contact: peder ( at ) axensten.se
 
 
-#include <pax/std/constant_type.hpp>
+#include <pax/types/litteral.hpp>
+#include <pax/types/tagged_type.hpp>
 #include <pax/doctest.hpp>
 
 
@@ -27,6 +28,7 @@ namespace pax {
 		static_assert( Stat< 3 >.value	== 3 );
 		static_assert( Stat< 2 >   < Stat< 3 > );
 		static_assert( Stat< 2.5 > + Stat< 4 > == 6.5 );
+		static_assert( "Hej" == Stat< Litt{ "Hej" } > );
 	
 		DOCTEST_FAST_CHECK_EQ( test( Stat< 1 >			),	1 );	// Not an unsigned value.
 		DOCTEST_FAST_CHECK_EQ( test( Statique2< 1u >{}	),	3 );	// Not the general tag.
@@ -45,6 +47,7 @@ namespace pax {
 		static_assert( tagged( true ) );
 		static_assert( tagged( 42ul ) == tagged( 42u ) );
 		static_assert( tagged< struct specific >( 42ul ) == tagged( 42u ) );
+		static_assert( "Hej" == tagged( "Hej" ) );
 
 		DOCTEST_FAST_CHECK_EQ( test( tagged< struct general  >( false ) ),	1 );
 		DOCTEST_FAST_CHECK_EQ( test( tagged< struct specific >( false ) ),	3 );

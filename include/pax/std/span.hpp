@@ -5,7 +5,7 @@
 #pragma once
 
 #include "../concepts.hpp"
-#include "constant_type.hpp"
+#include "../types/tagged_type.hpp"
 #include <span>
 #include <algorithm>	// std::equal, std::lexicographical_compare_three_way etc.
 #include <cassert>		// assert
