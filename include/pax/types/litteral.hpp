@@ -14,13 +14,14 @@ namespace pax {
 	template< typename Char, size_t N, typename Traits = std::char_traits< Char > >
 	struct Litt {
 		using value_type		  = std::remove_cv_t< Char >;
+		using traits_type		  = Traits;
 		using pointer			  = value_type const *;
 		using iterator			  = pointer;
 		using const_iterator	  = pointer;
 		using size_type			  = std::size_t;
 		using difference_type	  = std::ptrdiff_t;
-		using view				  = std::basic_string_view< value_type, Traits >;
-		static constexpr size_type extent  = N - 1u;
+		using view				  = std::basic_string_view< value_type, traits_type >;
+		static constexpr size_type extent = N - 1u;
 
 	    constexpr Litt( value_type const ( & str_ )[ N ] )	{	std::copy_n( str_, N, value );	}
  
