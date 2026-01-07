@@ -2,7 +2,7 @@
 //	Contact: peder ( at ) axensten.se
 
 
-#include <pax/types/litteral.hpp>
+#include <pax/types/shadow.hpp>
 #include <pax/types/tagged_type.hpp>
 #include <pax/doctest.hpp>
 #include <print>
@@ -30,8 +30,8 @@ namespace pax {
 		static_assert( Stat< 2 >   < Stat< 3 > );
 		static_assert( Stat< 2.5 > + Stat< 4 > == 6.5 );
 
-		static_assert( "Hej" == Stat< Litt{ "Hej" } > );
-		static_assert( "Hej" == Stat< Litt{ "Hej" }, struct litt > );
+		static_assert( "Hej" == Stat< litt( "Hej" ) > );
+		static_assert( "Hej" == Stat< litt( "Hej" ), struct litt > );
 	
 		DOCTEST_FAST_CHECK_EQ( test( Stat< 1 >			),	1 );	// Not an unsigned value.
 		DOCTEST_FAST_CHECK_EQ( test( Statique2< 1u >{}	),	3 );	// Not the general tag.

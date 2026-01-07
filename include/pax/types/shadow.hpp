@@ -184,5 +184,16 @@ namespace pax {
 
 	template< Character Char, std::size_t N, typename Traits = std::char_traits< Char > >
 	constexpr litteral< Char, N, Traits > litt( Char ( & source_ )[ N ] ) {	return { source_ };		}
+
+
+	template< typename Tag, typename T >	struct Tagged;
+
+	template< typename Char, size_t N >
+	constexpr Tagged< struct general, litteral< Char, N > > tagged( Char const ( & str_ )[ N ] )
+	{	return { str_ };							}
+
+	template< typename Tag, typename Char, size_t N >
+	constexpr Tagged< Tag, litteral< Char, N > > tagged( Char const ( & str_ )[ N ] )
+	{	return { str_ };							}
 	
 }	// namespace pax
