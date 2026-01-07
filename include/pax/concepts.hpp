@@ -10,6 +10,22 @@
 
 namespace pax {
 
+	/// This function might be needed in some classes, in the constructor.
+	template< typename T >
+	constexpr auto get_data( const T & source_ ) noexcept {
+		using std::data;
+		return data( source_ );
+	}
+	
+	/// This function might be needed in some classes, in the constructor.
+	template< typename T >
+	constexpr auto get_size( const T & source_ ) noexcept {
+		using std::size;
+		return size( source_ );
+	}
+
+
+
 	constexpr std::size_t dynamic_extent( -1 );
 
 	
