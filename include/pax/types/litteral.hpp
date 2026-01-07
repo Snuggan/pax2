@@ -30,7 +30,7 @@ namespace pax {
 	    constexpr value_type operator[]( const size_type i_ )		const noexcept
 		{	return ( i_ < extent ) ? data()[ i_ ] : '\0';										}
 		
-	    constexpr const_iterator begin()		const noexcept	{	return data();;				}
+	    constexpr const_iterator begin()		const noexcept	{	return data();				}
 	    constexpr const_iterator end()			const noexcept	{	return begin() + extent;	}
 		
 	    constexpr value_type front()			const noexcept	{	return operator[]( 0 );		}
@@ -78,13 +78,13 @@ namespace pax {
 	    constexpr size_type find( U && ...u_ )						const noexcept
 		{	return operator view().find( std::forward< U >( u_ )... );							}
 
-		constexpr value_type const * data()		const noexcept	{	return value;				}
+		constexpr pointer data()				const noexcept	{	return value;				}
 
 		static constexpr bool empty()			noexcept		{	return extent == 0;			}
 		static constexpr size_type size()		noexcept		{	return extent;				}
 
 		template< typename Out >
-		friend std::ostream & operator<<( Out & out_, const Litt & str_ ) 
+		friend Out & operator<<( Out & out_, const Litt & str_ ) 
 		{	return out_.write( str_.value, extent );											}
 		
 		value_type		value[ N ];

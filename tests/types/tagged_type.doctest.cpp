@@ -5,6 +5,7 @@
 #include <pax/types/litteral.hpp>
 #include <pax/types/tagged_type.hpp>
 #include <pax/doctest.hpp>
+#include <print>
 
 
 namespace pax {
