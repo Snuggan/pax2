@@ -7,15 +7,14 @@
 #include <algorithm>			// std::equal, std::lexicographical_compare_three_way
 
 
-// To do:
-
-
 namespace pax {
 
 	// It would be preferable to use the standard library for this, but I have not found a trait.
 	template< typename T >
 	using element_type_t = std::remove_reference_t< decltype( *std::begin( std::declval< T& >() ) ) >;
 		
+
+
 	/// Implements the core for span-like utilities. Static or dynamic size.
 	/// Is a minimal std::ranges::contiguous_range.
 	template< typename T, std::size_t N = dynamic_extent >
@@ -72,16 +71,16 @@ namespace pax {
 	};
 
 	template< typename T >
-	range( T *, std::size_t ) -> range< T, dynamic_extent >;
+	range( T *, std::size_t )			 -> range< T, dynamic_extent >;
 
 	template< typename T >
-	range( T *, T * ) -> range< T, dynamic_extent >;
+	range( T *, T * )					 -> range< T, dynamic_extent >;
 
 	template< typename T, std::size_t N >
-	range( T ( & )[ N ] ) -> range< T, N >;
+	range( T ( & )[ N ] )				 -> range< T, N >;
 
 	template< std::ranges::contiguous_range Cont >
-	range( Cont & ) -> range< element_type_t< Cont >, extent_v< Cont > >;
+	range( Cont & )						 -> range< element_type_t< Cont >, extent_v< Cont > >;
 
 	
 
@@ -191,17 +190,17 @@ namespace pax {
 	template< typename T, std::size_t N = dynamic_extent >
 	using shadow = base_shadow< range< T, N > >;
 
+	template< typename T >
+	base_shadow( T *, std::size_t )		 -> base_shadow< range< T, dynamic_extent > >;
+
+	template< typename T >
+	base_shadow( T *, T * )				 -> base_shadow< range< T, dynamic_extent > >;
+
 	template< typename T, std::size_t N >
-	base_shadow( T ( & )[ N ] ) -> base_shadow< range< T, N > >;
-
-	template< typename T >
-	base_shadow( T *, std::size_t ) -> base_shadow< range< T, dynamic_extent > >;
-
-	template< typename T >
-	base_shadow( T *, T * ) -> base_shadow< range< T, dynamic_extent > >;
+	base_shadow( T ( & )[ N ] )			 -> base_shadow< range< T, N > >;
 
 	template< std::ranges::contiguous_range Cont >
-	base_shadow( Cont & ) -> base_shadow< range< element_type_t< Cont >, extent_v< Cont > > >;
+	base_shadow( Cont & )				 -> base_shadow< range< element_type_t< Cont >, extent_v< Cont > > >;
 
 
 
