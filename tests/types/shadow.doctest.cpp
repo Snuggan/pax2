@@ -107,8 +107,6 @@ namespace pax {
 		const auto sh = shadow( str );
 		sh[ 2 ]	= 'a';
 		DOCTEST_FAST_CHECK_EQ( str[ 2 ], 'a' );
-		
-		println( "{}", requires( typename std::char_traits< int > ) );
 	}
 	DOCTEST_TEST_CASE( "shadow numbers static size" ) {
 		static constexpr std::array			nums0{ 0, 1, 2, 3, 4, 5, 0 };
