@@ -4,7 +4,11 @@
 #pragma once
 
 #include <pax/concepts.hpp>		// Character
-#include <algorithm>			// std::equal, std::lexicographical_compare_three_way
+#include <algorithm>			// std::ranges::equal, std::lexicographical_compare_three_way, etc.
+
+// To Do:
+// – Remove std:: from std::begin, below.
+// – Add statically sized variants of first, not_first, etc.
 
 
 namespace pax {
