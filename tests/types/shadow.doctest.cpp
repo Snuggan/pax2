@@ -97,8 +97,7 @@ namespace pax {
 		text_test( shadow( "text" ), "shadow( \"text\" )" );
 	}
 	DOCTEST_TEST_CASE( "shadow numbers" ) {
-		static constexpr int				nums[] = { 0, 1, 2, 3, 4, 5, 0 };
-		// static constexpr std::array			nums{ 0, 1, 2, 3, 4, 5, 0 };
+		static constexpr std::array			nums{ 0, 1, 2, 3, 4, 5, 0 };
 		static_assert( shadow( nums ).last( 2 ) == std::array{ 5, 0 } );
 		num_test( shadow( nums ), "shadow( nums )" );
 	}

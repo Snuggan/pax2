@@ -8,38 +8,76 @@
 
 
 // To do:
-// – Implement a struct hard_shadow, where the size is static. 
+// – Check if a contiguous_range type has static size, i.e. std::array, and chose range accordingly.. 
+// – Remove 'const' in the deduction guide for a contiguous_range type. 
 
 
 namespace pax {
 	
-	/// Implements the core for span-like utilities.
-	template< typename T >
-	struct soft_shadow {
-		using element_type		  = T;
-		using value_type		  = std::remove_cv_t< element_type >;
-		using pointer			  = value_type const *;
+	/// Implements the core for span-like utilities. Static or dynamic size.
+	/// Is a std::ranges::contiguous_range.
+	template< typename T, std::size_t N = dynamic_extent >
+	struct range {
+		using element_type				  = T;
+		using value_type				  = std::remove_cv_t< element_type >;
+		using pointer					  = element_type const *;
+		
+		// Some types of strings may have a '\0' at the end that we want to ignore...
+		static constexpr std::size_t 		extent = 
+			N - ( Character< value_type > && N && std::is_const_v< element_type > ); 
 
-	    constexpr soft_shadow()		noexcept {};
+	    constexpr range() noexcept {};
+	    constexpr range( pointer source_ ) noexcept : m_source{ source_ } {}
 
-	    constexpr soft_shadow( const pointer source_, const std::size_t size_ ) noexcept 
-			:	m_source{ source_ }, m_size{ source_ ? size_ : 0u } {}
-
-		template< std::size_t N >
-	    constexpr soft_shadow( value_type const ( & source_ )[ N ] ) noexcept
-			:	soft_shadow{ source_, N - ( Character< value_type > && N>0 && !source_[ N - 1 ] ) } {}
-
-		template< Contiguous_elements_object U >
-		constexpr soft_shadow( const U & source_ ) noexcept 
-			:	soft_shadow{ get_data( source_ ), get_size( source_ ) } {}
-
-		constexpr auto data()		const noexcept	{	return m_source;				}
-		constexpr auto size()		const noexcept	{	return m_size;					}
+		constexpr auto data()				const noexcept	{	return m_source;			}
+		static constexpr auto size()		noexcept		{	return extent;				}
+		constexpr auto begin()				const noexcept	{	return data();				}
+		constexpr auto end()				const noexcept	{	return data() + size();		}
 
 	private:
-		pointer						m_source{};
-		std::size_t					m_size{};
+		pointer								m_source{};
 	};
+
+	template< typename T >
+	struct range< T, dynamic_extent > {
+		using element_type				  = T;
+		using value_type				  = std::remove_cv_t< element_type >;
+		using pointer					  = element_type *;
+		static constexpr std::size_t 		extent = dynamic_extent;
+
+	    constexpr range() noexcept {};
+
+	    constexpr range( pointer source_, const std::size_t size_ ) noexcept 
+			:	m_source{ source_ }, m_size{ source_ ? size_ : 0u } {}
+
+	    constexpr range( pointer begin_, pointer end_ ) noexcept 
+			:	range{ begin_, end_ - begin_ } {}
+
+		template< std::ranges::contiguous_range U >
+		constexpr range( const U & source_ ) noexcept 
+			:	range{ get_data( source_ ), get_size( source_ ) } {}
+
+		constexpr auto data()				const noexcept	{	return m_source;			}
+		constexpr auto size()				const noexcept	{	return m_size;				}
+		constexpr auto begin()				const noexcept	{	return data();				}
+		constexpr auto end()				const noexcept	{	return data() + size();		}
+
+	private:
+		pointer								m_source{};
+		std::size_t							m_size{};
+	};
+
+	template< typename T >
+	range( T *, std::size_t ) -> range< T, dynamic_extent >;
+
+	template< typename T >
+	range( T *, T * ) -> range< T, dynamic_extent >;
+
+	template< typename T, std::size_t N >
+	range( T ( & )[ N ] ) -> range< T, N >;
+
+	template< std::ranges::contiguous_range Cont >
+	range( Cont & ) -> range< const std::ranges::range_value_t< Cont >, dynamic_extent >;
 
 	
 
@@ -49,62 +87,61 @@ namespace pax {
 	/// and difference_type.
 	template< typename Core >
 	struct base_shadow : Core {
-		using element_type			  = typename Core::element_type;
-		using value_type			  = typename Core::value_type;
-		using pointer				  = value_type const *;
-		using iterator				  = pointer;
-		using size_type				  = std::size_t;
-		using difference_type		  = std::ptrdiff_t;
-		using shadow				  = base_shadow< soft_shadow< element_type > >;
+		using element_type				  = typename Core::element_type;
+		using value_type				  = typename Core::value_type;
+		using pointer					  = element_type *;
+		using reference					  = element_type &;
+		using iterator					  = pointer;
+		using const_iterator			  = element_type const *;
+		using size_type					  = std::size_t;
+		using difference_type			  = std::ptrdiff_t;
+
+		template< size_type N >
+		using shadowN					  = base_shadow< range< element_type, N > >;
+		using shadow					  = shadowN< dynamic_extent >;
 		
-		static constexpr bool			is_string{ Character< value_type > };
+		static constexpr bool				is_string{ Character< value_type > };
 
 	    using Core::Core, Core::data, Core::size;
- 
-	    constexpr value_type operator[]( const size_type i_ )		const noexcept
-		{	return ( i_ < size() ) ? data()[ i_ ] : value_type{};							}
-		
-	    constexpr iterator begin()		const noexcept	{	return data();					}
-	    constexpr iterator end()		const noexcept	{	return begin() + size();		}
-		
-	    constexpr value_type front()	const noexcept	{	return operator[]( 0 );			}
-	    constexpr value_type back()		const noexcept	{	return operator[]( size()-1 );	}
 
-		constexpr bool empty()			const noexcept	{	return size() == 0;				}
- 
-		template< typename Itr > // Shorten by one if a string and not empty and ends in zero.
-		static constexpr auto ender( const Itr b, const Itr e )
-		{	return e - ( is_string && ( b != e ) && ( *( e - 1 ) == 0 ) );					}
+		constexpr bool empty()				const noexcept	{	return size() == 0;				}
+
+		/// Element access, possibly mutable if the element type is not const.
+	    constexpr		iterator  begin()	const noexcept	{	return data();					}
+	    constexpr		iterator  end()		const noexcept	{	return begin() + size();		}
+	    constexpr const_iterator  cbegin()	const noexcept	{	return data();					}
+	    constexpr const_iterator  cend()	const noexcept	{	return begin() + size();		}
+	    constexpr		reference front()	const noexcept	{	return *data();					}
+	    constexpr		reference back()	const noexcept	{	return operator[]( size()-1 );	}
+	    constexpr		reference operator[]( const size_type i_ )	const noexcept
+		{	return data()[ i_ ];																}
 
  	    template< typename U >
-	    constexpr bool operator==( const U & u_ )					const noexcept			{
-	    	using std::begin, std::end;
-			const auto b = begin( u_ );
-			return std::equal( this->begin(), this->end(), b, ender( b, end( u_ ) ) );
-	    }
+	    constexpr bool operator==( const U & u_ )						const noexcept
+		{	return std::ranges::equal( *this, range{ u_ } );								    }
 		
  	    template< typename U >
-	    constexpr auto operator<=>( const U & u_ )					const noexcept			{
-	    	using std::begin, std::end;
-			const auto b = begin( u_ );
-	    	return std::lexicographical_compare_three_way( this->begin(), this->end(), b, ender( b, end( u_ ) ) );
+	    constexpr auto operator<=>( const U & u_ )						const noexcept			{
+			const auto other = range{ u_ };
+	    	// return std::ranges::lexicographical_compare_three_way( *this, range{ u_ } );
+	    	return std::lexicographical_compare_three_way( this->begin(), this->end(), other.begin(), other.end() );
 	    }
 		
-		constexpr shadow first( const size_type n_ )				const noexcept
-		{	return { data(), ( size() >= n_ ) ? n_ : size() };								}
+		constexpr shadow first( const size_type n_ )					const noexcept
+		{	return { data(), ( size() >= n_ ) ? n_ : size() };									}
  
-		constexpr shadow not_first( size_type n_ )					const noexcept			{
+		constexpr shadow not_first( size_type n_ )						const noexcept			{
 			n_ = ( size() > n_ ) ? n_ : size();
 			return shadow{ data() + n_, size() - n_ };
 		}
  
-		constexpr shadow last( size_type n_ )						const noexcept			{
+		constexpr shadow last( size_type n_ )							const noexcept			{
 			n_ = ( size() > n_ ) ? n_ : size();
 			return shadow{ data() + size() - n_, n_ };
 		}
  
-		constexpr shadow not_last( const size_type n_ )				const noexcept
-		{	return shadow{ data(), size() - ( ( size() > n_ ) ? n_ : size() ) };			}
+		constexpr shadow not_last( const size_type n_ )					const noexcept
+		{	return shadow{ data(), size() - ( ( size() > n_ ) ? n_ : size() ) };				}
  
 		constexpr shadow part( difference_type offs_, const size_type n_ ) const noexcept	{
 			offs_ =	( offs_ >= 0 )					  ? std::min( size_type(  offs_ ), size() ) 
@@ -113,29 +150,26 @@ namespace pax {
 		}
 
  	    template< typename U >
-	    constexpr bool starts_with( const U & u_ )					const noexcept			{
-			const shadow		vw( u_ );
+	    constexpr bool starts_with( const U & u_ )						const noexcept			{
+			const range		vw( u_ );
 			return first( vw.size() ) == vw;
 		}
 
  	    template< typename U >
-	    constexpr bool ends_with( const U & u_ )					const noexcept			{
-			const shadow		vw( u_ );
+	    constexpr bool ends_with( const U & u_ )						const noexcept			{
+			const range		vw( u_ );
 			return last( vw.size() ) == vw;
 		}
  
-	    constexpr bool contains( const value_type t_ )				const noexcept
-		{	return std::ranges::contains( this->begin(), this->end(), t_ );				    }
+	    constexpr bool contains( const value_type t_ )					const noexcept
+		{	return std::ranges::contains( this->begin(), this->end(), t_ );				   		}
 
  	    template< typename U >
-	    constexpr bool contains( const U & u_ )						const noexcept			{
-	    	using std::begin, std::end;
-			const auto b = begin( u_ );
-	    	return std::ranges::contains_subrange( this->begin(), this->end(), b, ender( b, end( u_ ) ) );
-	    }
+	    constexpr bool contains( const U & u_ )							const noexcept
+		{	return std::ranges::contains_subrange( *this, range{ u_ } );					    }
  
 		template< typename Out >
-		friend Out & operator<<( Out & out_, const base_shadow & sh_ )						{
+		friend Out & operator<<( Out & out_, const base_shadow & sh_ )							{
 			if constexpr ( is_string )
 				return out_.write( sh_.data(), sh_.size() );
 			else {
@@ -150,17 +184,20 @@ namespace pax {
 		}
 	};
 	
-	template< typename T >
-	using shadow = base_shadow< soft_shadow< T > >;
+	template< typename T, std::size_t N = dynamic_extent >
+	using shadow = base_shadow< range< T, N > >;
 
 	template< typename T, std::size_t N >
-	base_shadow( T ( & )[ N ] ) -> base_shadow< soft_shadow< T > >;
+	base_shadow( T ( & )[ N ] ) -> base_shadow< range< T, N > >;
 
 	template< typename T >
-	base_shadow( T const *, std::size_t ) -> base_shadow< soft_shadow< T > >;
+	base_shadow( T *, std::size_t ) -> base_shadow< range< T, dynamic_extent > >;
 
-	template< Contiguous_elements_object Cont >
-	base_shadow( const Cont & ) -> base_shadow< soft_shadow< typename Cont::data_type > >;
+	template< typename T >
+	base_shadow( T *, T * ) -> base_shadow< range< T, dynamic_extent > >;
+
+	template< std::ranges::contiguous_range Cont >
+	base_shadow( Cont & ) -> base_shadow< range< const std::ranges::range_value_t< Cont >, dynamic_extent > >;
 
 
 
@@ -168,10 +205,10 @@ namespace pax {
 	struct core_litteral {
 		using element_type					  = Char;
 		using value_type					  = std::remove_cv_t< element_type >;
-		using pointer						  = value_type const *;
+		using pointer						  = element_type *;
 		using traits_type					  = Traits;
 
-	    constexpr core_litteral( value_type const ( & str_ )[ N ] )	{	std::copy_n( str_, N, value );	}
+	    constexpr core_litteral( element_type ( & str_ )[ N ] )	{	std::copy_n( str_, N, value );	}
 
 		constexpr pointer data()				const noexcept	{	return value;					}
 		static constexpr std::size_t size()		noexcept		{	return N - ( N > 0 );			}
@@ -189,11 +226,11 @@ namespace pax {
 	template< typename Tag, typename T >	struct Tagged;
 
 	template< typename Char, size_t N >
-	constexpr Tagged< struct general, litteral< Char, N > > tagged( Char const ( & str_ )[ N ] )
+	constexpr Tagged< struct general, litteral< Char, N > > tagged( Char ( & str_ )[ N ] )
 	{	return { str_ };							}
 
 	template< typename Tag, typename Char, size_t N >
-	constexpr Tagged< Tag, litteral< Char, N > > tagged( Char const ( & str_ )[ N ] )
+	constexpr Tagged< Tag, litteral< Char, N > > tagged( Char ( & str_ )[ N ] )
 	{	return { str_ };							}
 	
 }	// namespace pax
