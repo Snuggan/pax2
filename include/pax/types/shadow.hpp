@@ -8,12 +8,14 @@
 
 
 // To do:
-// – Check if a contiguous_range type has static size, i.e. std::array, and chose range accordingly.. 
-// – Remove 'const' in the deduction guide for a contiguous_range type. 
 
 
 namespace pax {
-	
+
+	// It would be preferable to use the standard library for this, but I have not found a trait.
+	template< typename T >
+	using element_type_t = std::remove_reference_t< decltype( *std::begin( std::declval< T& >() ) ) >;
+		
 	/// Implements the core for span-like utilities. Static or dynamic size.
 	/// Is a minimal std::ranges::contiguous_range.
 	template< typename T, std::size_t N = dynamic_extent >
@@ -28,6 +30,9 @@ namespace pax {
 
 	    constexpr range() noexcept {};
 	    constexpr range( pointer source_ ) noexcept : m_source{ source_ } {}
+
+		template< std::ranges::contiguous_range U >
+		constexpr range( U & source_ ) noexcept : range{ std::ranges::data( source_ ) } {}
 
 		constexpr pointer data()			const noexcept	{	return m_source;			}
 		static constexpr std::size_t size()	noexcept		{	return extent;				}
@@ -54,8 +59,7 @@ namespace pax {
 			:	range{ begin_, end_ - begin_ } {}
 
 		template< std::ranges::contiguous_range U >
-		constexpr range( const U & source_ ) noexcept 
-			:	range{ get_data( source_ ), get_size( source_ ) } {}
+		constexpr range( U & src_ ) noexcept : range{ std::ranges::data( src_ ), std::ranges::size( src_ ) } {}
 
 		constexpr pointer data()			const noexcept	{	return m_source;			}
 		constexpr std::size_t size()		const noexcept	{	return m_size;				}
@@ -77,7 +81,7 @@ namespace pax {
 	range( T ( & )[ N ] ) -> range< T, N >;
 
 	template< std::ranges::contiguous_range Cont >
-	range( Cont & ) -> range< const std::ranges::range_value_t< Cont >, dynamic_extent >;
+	range( Cont & ) -> range< element_type_t< Cont >, extent_v< Cont > >;
 
 	
 
@@ -197,7 +201,7 @@ namespace pax {
 	base_shadow( T *, T * ) -> base_shadow< range< T, dynamic_extent > >;
 
 	template< std::ranges::contiguous_range Cont >
-	base_shadow( Cont & ) -> base_shadow< range< const std::ranges::range_value_t< Cont >, dynamic_extent > >;
+	base_shadow( Cont & ) -> base_shadow< range< element_type_t< Cont >, extent_v< Cont > > >;
 
 
 

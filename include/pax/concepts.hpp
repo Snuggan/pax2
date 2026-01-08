@@ -10,22 +10,6 @@
 
 namespace pax {
 
-	/// This function might be needed in some classes, in the constructor.
-	template< typename T >
-	constexpr auto get_data( const T & source_ ) noexcept {
-		using std::data;
-		return data( source_ );
-	}
-	
-	/// This function might be needed in some classes, in the constructor.
-	template< typename T >
-	constexpr auto get_size( const T & source_ ) noexcept {
-		using std::size;
-		return size( source_ );
-	}
-
-
-
 	constexpr std::size_t dynamic_extent( -1 );
 
 	
@@ -50,13 +34,7 @@ namespace pax {
 
 	/// A concept to match structs that "handles" contigous elements, i.e. std::array, std::string, std::span etc.
 	template< typename T >
-	concept Contiguous_elements_object	= 
-			Iterable< T > 
-		&&	requires( T t ) {
-				{ size( t ) } -> std::convertible_to< std::size_t >;
-				std::is_pointer_v< decltype( data( t ) ) >;
-				requires std::contiguous_iterator< decltype( begin( t ) ) >;
-			};
+	concept Contiguous_elements_object	= std::ranges::contiguous_range< std::remove_const_t< T > >;
 
 	/// A concept to match "handlers" of contigous elements, i.e. pointer, Contiguous_elements_object etc.
 	template< typename T >
@@ -133,11 +111,11 @@ namespace pax {
 	template< typename T >	struct Value_type< volatile T >		{	using type = volatile Value_type_t< T >;	};
 
 	template< Contiguous_elements_object T >
-		requires( has_element_type< T > )
+		requires(  has_element_type< T > && !std::is_array_v< T > )
 	struct Value_type< T >	{	using type = typename T::element_type;											};
 
 	template< Contiguous_elements_object T >
-		requires( !has_element_type< T > )
+		requires( !has_element_type< T > && !std::is_array_v< T > )
 	struct Value_type< T >	{
 		using type = std::conditional_t< std::is_same_v< typename T::iterator, typename T::const_iterator >,
 			std::add_const_t< typename T::value_type >,		// std::string_view needs it...

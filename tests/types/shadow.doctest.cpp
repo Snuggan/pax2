@@ -4,12 +4,15 @@
 
 #include <pax/types/shadow.hpp>
 #include <pax/doctest.hpp>
+#include <string>
+#include <array>
+#include <vector>
 #include <span>
 #include <print>
 
 
-namespace pax {
-
+namespace pax { 
+	
 	template< auto V >	struct litteral_test	{	static constexpr decltype( V ) v = V;	};
 	
 	template< typename Sh >
@@ -91,23 +94,41 @@ namespace pax {
 #endif
 	}
 
-	DOCTEST_TEST_CASE( "shadow text" ) {
+	DOCTEST_TEST_CASE( "shadow text static size" ) {
 		static_assert( shadow( "text" ).last( 2 ) == "xt" );
-		DOCTEST_FAST_CHECK_EQ ( std::format( "{:?s}", shadow( "1\t2\n3\"4" ) ), "\"1\\t2\\n3\\\"4\"" );
+		DOCTEST_FAST_CHECK_EQ( std::format( "{:?s}", shadow( "1\t2\n3\"4" ) ), "\"1\\t2\\n3\\\"4\"" );
 		text_test( shadow( "text" ), "shadow( \"text\" )" );
 	}
-	DOCTEST_TEST_CASE( "shadow numbers" ) {
-		static constexpr std::array			nums{ 0, 1, 2, 3, 4, 5, 0 };
-		static_assert( shadow( nums ).last( 2 ) == std::array{ 5, 0 } );
+	DOCTEST_TEST_CASE( "shadow text dynamic size" ) {
+		const std::string		str0{ "1\t2\n3\"4" };
+		DOCTEST_FAST_CHECK_EQ( std::format( "{:?s}", shadow( str0 ) ), "\"1\\t2\\n3\\\"4\"" );
+		std::string				str{ "text" };
+		text_test( shadow( str ), "shadow( \"text\" )" );
+		const auto sh = shadow( str );
+		sh[ 2 ]	= 'a';
+		DOCTEST_FAST_CHECK_EQ( str[ 2 ], 'a' );
+	}
+	DOCTEST_TEST_CASE( "shadow numbers static size" ) {
+		static constexpr std::array			nums0{ 0, 1, 2, 3, 4, 5, 0 };
+		static_assert( shadow( nums0 ).last( 2 ) == std::array{ 5, 0 } );
+		std::array							nums{ nums0 };
+		num_test( shadow( nums ), "shadow( nums )" );
+		const auto sh = shadow( nums );
+		sh[ 2 ]	= 99;
+		DOCTEST_FAST_CHECK_EQ( nums[ 2 ], 99 );
+	}
+	DOCTEST_TEST_CASE( "shadow numbers dynamic size" ) {
+		static constexpr std::array			nums0{ 0, 1, 2, 3, 4, 5, 0 };
+		const std::vector< int >			nums{ nums0.begin(), nums0.end() };
 		num_test( shadow( nums ), "shadow( nums )" );
 	}
 	DOCTEST_TEST_CASE( "litteral text" ) {
 		static_assert( litt( "text" ).last( 2 ) == "xt" );
-		DOCTEST_FAST_CHECK_EQ ( std::format( "{:?s}", shadow( "1\t2\n3\"4" ) ), "\"1\\t2\\n3\\\"4\"" );
+		DOCTEST_FAST_CHECK_EQ( std::format( "{:?s}", shadow( "1\t2\n3\"4" ) ), "\"1\\t2\\n3\\\"4\"" );
 		text_test( litt( "text" ), "litt( \"text\" )" );
 
 		// Test template usage.
-		static_assert( litteral_test< litt( "text" ) >::v	== "text" );
+		DOCTEST_FAST_CHECK_EQ( Contiguous_elements_object< decltype( "text" ) >, true );
 	}
 
 }
