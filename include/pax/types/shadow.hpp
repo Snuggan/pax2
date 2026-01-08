@@ -28,10 +28,10 @@ namespace pax {
 			N - ( Character< value_type > && N && std::is_const_v< element_type > ); 
 
 	    constexpr range() noexcept {};
-	    constexpr range( pointer source_ ) noexcept : m_source{ source_ } {}
+	    constexpr range( pointer src_ )		noexcept : m_source{ src_ } {}
 
 		template< std::ranges::contiguous_range U >
-		constexpr range( U & source_ ) noexcept : range{ std::ranges::data( source_ ) } {}
+		constexpr range( U & src_ )			noexcept : range{ std::ranges::data( src_ ) } {}
 
 		constexpr pointer data()			const noexcept	{	return m_source;			}
 		static constexpr std::size_t size()	noexcept		{	return extent;				}
@@ -51,14 +51,15 @@ namespace pax {
 
 	    constexpr range() noexcept {};
 
-	    constexpr range( pointer source_, const std::size_t size_ ) noexcept 
-			:	m_source{ source_ }, m_size{ source_ ? size_ : 0u } {}
+	    constexpr range( pointer src_, const std::size_t size_ ) noexcept 
+			:	m_source{ src_ }, m_size{ src_ ? size_ : 0u } {}
 
 	    constexpr range( pointer begin_, pointer end_ ) noexcept 
 			:	range{ begin_, end_ - begin_ } {}
 
 		template< std::ranges::contiguous_range U >
-		constexpr range( U & src_ ) noexcept : range{ std::ranges::data( src_ ), std::ranges::size( src_ ) } {}
+		constexpr range( U & src_ ) 		noexcept
+			:	range{ std::ranges::data( src_ ), std::ranges::size( src_ ) } {}
 
 		constexpr pointer data()			const noexcept	{	return m_source;			}
 		constexpr std::size_t size()		const noexcept	{	return m_size;				}
@@ -225,7 +226,7 @@ namespace pax {
 	using litteral = base_shadow< core_litteral< Char, N, Traits > >;
 
 	template< Character Char, std::size_t N, typename Traits = std::char_traits< Char > >
-	constexpr litteral< Char, N, Traits > litt( Char ( & source_ )[ N ] ) {	return { source_ };	}
+	constexpr litteral< Char, N, Traits > litt( Char ( & src_ )[ N ] ) {	return { src_ };	}
 
 
 	template< typename Tag, typename T >	struct Tagged;
