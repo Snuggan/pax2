@@ -15,12 +15,12 @@
 namespace pax {
 	
 	/// Implements the core for span-like utilities. Static or dynamic size.
-	/// Is a std::ranges::contiguous_range.
+	/// Is a minimal std::ranges::contiguous_range.
 	template< typename T, std::size_t N = dynamic_extent >
 	struct range {
 		using element_type				  = T;
 		using value_type				  = std::remove_cv_t< element_type >;
-		using pointer					  = element_type const *;
+		using pointer					  = element_type *;
 		
 		// Some types of strings may have a '\0' at the end that we want to ignore...
 		static constexpr std::size_t 		extent = 
@@ -29,10 +29,10 @@ namespace pax {
 	    constexpr range() noexcept {};
 	    constexpr range( pointer source_ ) noexcept : m_source{ source_ } {}
 
-		constexpr auto data()				const noexcept	{	return m_source;			}
-		static constexpr auto size()		noexcept		{	return extent;				}
-		constexpr auto begin()				const noexcept	{	return data();				}
-		constexpr auto end()				const noexcept	{	return data() + size();		}
+		constexpr pointer data()			const noexcept	{	return m_source;			}
+		static constexpr std::size_t size()	noexcept		{	return extent;				}
+		constexpr pointer begin()			const noexcept	{	return data();				}
+		constexpr pointer end()				const noexcept	{	return data() + size();		}
 
 	private:
 		pointer								m_source{};
@@ -57,10 +57,10 @@ namespace pax {
 		constexpr range( const U & source_ ) noexcept 
 			:	range{ get_data( source_ ), get_size( source_ ) } {}
 
-		constexpr auto data()				const noexcept	{	return m_source;			}
-		constexpr auto size()				const noexcept	{	return m_size;				}
-		constexpr auto begin()				const noexcept	{	return data();				}
-		constexpr auto end()				const noexcept	{	return data() + size();		}
+		constexpr pointer data()			const noexcept	{	return m_source;			}
+		constexpr std::size_t size()		const noexcept	{	return m_size;				}
+		constexpr pointer begin()			const noexcept	{	return data();				}
+		constexpr pointer end()				const noexcept	{	return data() + size();		}
 
 	private:
 		pointer								m_source{};
@@ -203,24 +203,26 @@ namespace pax {
 
 	template< Character Char, std::size_t N, typename Traits = std::char_traits< Char > >
 	struct core_litteral {
-		using element_type					  = Char;
-		using value_type					  = std::remove_cv_t< element_type >;
-		using pointer						  = element_type *;
-		using traits_type					  = Traits;
+		using element_type				  = Char;
+		using value_type				  = std::remove_cv_t< element_type >;
+		using pointer					  = element_type *;
+		using traits_type				  = Traits;
 
 	    constexpr core_litteral( element_type ( & str_ )[ N ] )	{	std::copy_n( str_, N, value );	}
 
-		constexpr pointer data()				const noexcept	{	return value;					}
-		static constexpr std::size_t size()		noexcept		{	return N - ( N > 0 );			}
+		constexpr pointer data()			const noexcept	{	return value;				}
+		static constexpr std::size_t size()	noexcept		{	return N - ( N > 0 );		}
+		constexpr pointer begin()			const noexcept	{	return data();				}
+		constexpr pointer end()				const noexcept	{	return data() + size();		}
 		
-		value_type								value[ N ];
+		value_type							value[ N ];
 	};
 
 	template< Character Char, std::size_t N, typename Traits = std::char_traits< Char > >
 	using litteral = base_shadow< core_litteral< Char, N, Traits > >;
 
 	template< Character Char, std::size_t N, typename Traits = std::char_traits< Char > >
-	constexpr litteral< Char, N, Traits > litt( Char ( & source_ )[ N ] ) {	return { source_ };		}
+	constexpr litteral< Char, N, Traits > litt( Char ( & source_ )[ N ] ) {	return { source_ };	}
 
 
 	template< typename Tag, typename T >	struct Tagged;
