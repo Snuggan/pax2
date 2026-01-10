@@ -105,7 +105,8 @@ namespace pax {
 			}
 			named_output( out_, "type",					typestr );
 			named_output( out_, "size",					sizeof( T ) );
-			named_output( out_, "extent",				extent_v< T > );
+			if constexpr( traits::has_size< T > )
+				named_output( out_, "extent",			traits::extent_v< T > );
 			
 			std::string		cats{};
 			if( std::is_arithmetic_v< T > )				cats+= "arithmetic, ";

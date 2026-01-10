@@ -46,7 +46,7 @@ namespace pax::cmd_args {
 		static constexpr auto one_or_more_values()	  noexcept	{	return Parameter_type{ Type::one_or_more };		}
 
 		/// Delimiter for delimiting is_multiple() argument values (--.multi==1,2,3). 
-		template< Character Char >
+		template< traits::character Char >
 		static constexpr auto					delimiter{ Char( ',' ) };
 	};
 
@@ -57,7 +57,7 @@ namespace pax::cmd_args {
 
 	/// Class used to set the default value via the Param constructor.
 	/** A parameter is 'required' iif it has no default value.					**/
-	template< Character Char >
+	template< traits::character Char >
 	struct Default_value {
 		using String_view					  = std::basic_string_view< Char >;
 
@@ -89,7 +89,7 @@ namespace pax::cmd_args {
 		You define a Parameter set by stating what Parameters and Groups it contains. You parse it and use the resulting Arguments in your code. 
 		Parameters and Groups can be definied individually and used by more than one Parameter_set. 
 	**/
-	template< Character Char >
+	template< traits::character Char >
 	class Parameter_set {
 		using Arguments_type			  = Arguments< Char >;
 		using String					  = std::basic_string< Char >;
@@ -189,7 +189,7 @@ namespace pax::cmd_args {
 
 	
 	/// Group values together.
-	template< Character Char >
+	template< traits::character Char >
 	class Parameter_set< Char >::Group {
 		using value_type					  = Parameter;
 		std::basic_string< Char >				m_description;
@@ -252,7 +252,7 @@ namespace pax::cmd_args {
 		The consteuctor accepts Is_flag{}, Zero_or_more_values{}, One_or_more_values{}, Invisible{}, and 
 		Default_value{ "value" } to set the above properties. 
 	**/
-	template< Character Char >
+	template< traits::character Char >
 	class Parameter_set< Char >::Parameter : public Parameter_type {
 		using String						  = std::basic_string< Char >;
 		String									m_id, m_description;
@@ -386,7 +386,7 @@ namespace pax::cmd_args {
 	
 	
 	/// Output a description.
-	template< Character Char >
+	template< traits::character Char >
 	auto & operator<<( std::basic_ostream< Char > & out_, const Parameter_set< Char > & parameters_ ) {
 		parameters_.parameters( out_ );
 		return out_;
@@ -396,7 +396,7 @@ namespace pax::cmd_args {
 
 
 	/// Parse the arguments using the 'rules' of the Parameter_set. 
-	template< Character Char >
+	template< traits::character Char >
 	template< std::size_t N >
 	Arguments< Char > Parameter_set< Char >::parse( const std::span< const Char * const, N > argv_ ) const {
 		struct All_id {
@@ -484,7 +484,7 @@ namespace pax::cmd_args {
 
 
 	/// Parse the arguments using the 'rules' of the Parameter_set. 
-	template< Character Char >
+	template< traits::character Char >
 	template< typename Container, typename Short2long >
 	void Parameter_set< Char >::parse(
 		const Container							  & args_,

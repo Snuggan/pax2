@@ -32,9 +32,9 @@ namespace pax {
 
 	/// Handles string-like objects. Just returns them. 
 	///
-	template< String Str >
+	template< traits::string Str >
 	struct From_string< Str > {
-		template< String Str2 >
+		template< traits::string Str2 >
 		static constexpr Str from_string( const Str2 & str_ )	noexcept	{	return Str( str_ );		}
 	};
 
@@ -51,7 +51,7 @@ namespace pax {
 		}
 
 	public:
-		template< String Str >
+		template< traits::string Str >
 		static constexpr Num from_string( const Str & str_ ) {
 			std::string_view				text{ str_ };
 
@@ -71,13 +71,13 @@ namespace pax {
 	
 	/// Handles tuple-like objects. 
 	///
-	template< Has_static_size Tuple >
+	template< traits::has_extent Tuple >
 	struct From_string< Tuple > {
 	private:
 		static constexpr std::size_t rank	  = std::tuple_size_v< Tuple >;
 		using Indices						  = std::make_index_sequence< rank >;
 
-		template< String Str, std::size_t ...I >
+		template< traits::string Str, std::size_t ...I >
 		static constexpr Tuple from_string(
 			const std::span< Str, rank >	strs_,
 			std::integer_sequence< std::size_t, I... >
@@ -90,14 +90,14 @@ namespace pax {
 	public:
 		/// Convert from a string formed like "{ value1, value2, ... }". 
 		///
-		template< Character Ch, std::size_t N >
+		template< traits::character Ch, std::size_t N >
 		static constexpr Tuple from_string( 
 			const std::span< Ch, N >		str_ 
 		);
 
 		/// Convert from a set of strings "value1", "value2", ...
 		///
-		template< String Str, std::size_t N >
+		template< traits::string Str, std::size_t N >
 		static constexpr Tuple from_string( 
 			const std::span< Str, N >		strs_ 
 		) {

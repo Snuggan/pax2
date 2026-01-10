@@ -58,7 +58,7 @@ namespace pax {
 
 		/// Returns the indeces corresponding to col_ids_.
 		/// Throws if any item in col_ids_ is not in the header.
-		template< String Str, std::size_t N >
+		template< traits::string Str, std::size_t N >
 		constexpr std::vector< std::size_t > index( const std::span< Str, N > col_ids_ ) const {
 			std::string						missing;
 			std::vector< std::size_t >		idxs;

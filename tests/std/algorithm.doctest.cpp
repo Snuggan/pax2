@@ -17,9 +17,9 @@ namespace pax {
 
 	/// What std::span or std::string_view is suitable for a type?
 	/// Candidates are std::span< T >, std::span< T, N >, or std::string_view< T >.
-	template< Contiguous_elements C, bool Dynamic = false >
+	template< traits::has_contiguous C, bool Dynamic = false >
 	struct view_type {
-		using type = std::span< Value_type_t< C >, Dynamic ? std::dynamic_extent : extent_v< C > >;
+		using type = std::span< traits::element_type_t< C >, Dynamic ? std::dynamic_extent : traits::extent_v< C > >;
 	};
 
 	template< typename T, std::size_t N, bool Dynamic >
@@ -27,15 +27,15 @@ namespace pax {
 		using type = std::span< T, Dynamic ? std::dynamic_extent : N >;
 	};
 
-	template< String S, bool Dynamic >
+	template< traits::string S, bool Dynamic >
 	struct view_type< S, Dynamic > {
-		using type = std::basic_string_view< std::remove_cvref_t< Value_type_t< S > > >;
+		using type = std::basic_string_view< traits::value_type_t< S > >;
 	};
 
-	template< String S, bool Dynamic >
+	template< traits::string S, bool Dynamic >
 		requires( std::remove_cvref_t< S >::traits_type )
 	struct view_type< S, Dynamic > {
-		using Ch = std::remove_cvref_t< Value_type_t< S > >;
+		using Ch = traits::value_type_t< S >;
 		using Tr = typename std::remove_cvref_t< S >::traits_type;
 		using type = std::basic_string_view< Ch, Tr >;
 	};
@@ -43,7 +43,7 @@ namespace pax {
 	template< typename T, bool Dynamic >
 	struct view_type< const T, Dynamic > : view_type< T, Dynamic > {};
 
-	template< Contiguous_elements C, bool Dynamic = false >
+	template< traits::has_contiguous C, bool Dynamic = false >
 	using view_type_t = typename view_type< C, Dynamic >::type;
 
 
@@ -60,7 +60,7 @@ namespace pax {
 	constexpr const auto						abc		= std::span< const char >{ str, 12 };
 	
 	template< typename T >
-	constexpr bool is_value_const = std::is_const_v< std::remove_reference_t< Value_type_t< T > > >;
+	constexpr bool is_value_const = std::is_const_v< std::remove_reference_t< traits::element_type_t< T > > >;
 	
 	template< typename T >
 	constexpr auto safe_first( T && t_, std::size_t sz_ ) {
@@ -246,11 +246,13 @@ namespace pax {
 		}
 		{	// make_const_span
 			int					sp0[ 3 ] = { 0, 1, 2 };
-			const std::span		sp( sp0 );
+			std::span			sp( sp0 );
 
-			static_assert(  is_value_const< std::string_view > );
-			static_assert( !is_value_const< decltype( sp.front() ) > );
-			static_assert(  is_value_const< decltype( make_const_span( sp ).front() ) > );
+			static_assert(  is_value_const < std::string_view > );
+			static_assert( !is_value_const < decltype( sp ) > );
+			static_assert( !std::is_const_v< decltype( sp.front() ) > );
+			static_assert(  is_value_const < decltype( make_const_span( sp ) ) > );
+			// static_assert(  std::is_const_v< decltype( make_const_span( sp ).front() ) > );	// error
 		}
 		{	// make_dynamic_span
 			static_assert( make_dynamic_span( std::string_view{} ).extent	== dynamic_extent );
@@ -1021,7 +1023,7 @@ namespace pax {
 				static_assert( trim_back( text, '-' )			==	text );
 			}
 			{	// trim_first
-				{	// Character
+				{	// traits::character
 					static_assert( trim_first( "abc", '+' )		==	"abc" );
 					static_assert( trim_first( text, '+' )		==	not_first( text, 4 ) );
 				}
@@ -1040,7 +1042,7 @@ namespace pax {
 				}
 			}
 			{	// trim_last
-				{	// Character
+				{	// traits::character
 					static_assert( trim_last( "abc", '+' )		==	"abc" );
 					static_assert( trim_last( text, '+' )		==	not_last( text, 2 ) );
 				}

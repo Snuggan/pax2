@@ -165,7 +165,7 @@ namespace pax {
 
 	/// Open the file for writing in the safest way possible.
 	/// Then stream conts_ to this stream and close it.
-	template< typename Contents, Character Ch = char, typename Traits = std::char_traits< Ch > >
+	template< typename Contents, traits::character Ch = char, typename Traits = std::char_traits< Ch > >
 	void stream( 
 		const std::filesystem::path		  & dest_, 
 		const Contents					  & conts_ 
@@ -173,7 +173,7 @@ namespace pax {
 
 	/// Stream conts_ to dest_. 
 	/// Specialisation for character stuff. 
-	template< Character Ch, typename Traits >
+	template< traits::character Ch, typename Traits >
 	void stream( 
 		std::basic_ostream< Ch, Traits >  & dest_, 
 		const std::basic_string_view< Ch > 	conts_ 
@@ -181,54 +181,12 @@ namespace pax {
 		dest_.write( conts_.data(), conts_.size() );
 	}
 
-	/// Stream conts_ to dest_. 
-	/// Specialisation for floating point values uses more precise format/print.
-	template< Character Ch, typename Traits, Iterable iterable >
-		// std::formattable not supported by docker-gcc yet.
-		// requires( std::formattable< typename iterable::value_type, Ch > )
-		requires( std::is_arithmetic_v< typename iterable::value_type > )
-	void stream( 
-		std::basic_ostream< Ch, Traits >  & dest_, 
-		const iterable			 		  & conts_
-	) {
-		if( conts_.size() ) {
-			auto							itr = conts_.begin();
-											dest_ << std20::format( "{}",   *itr );	//std20::print( dest_, "{}",   *itr );
-			while( ++itr < conts_.end() )	dest_ << std20::format( ", {}", *itr );	//std20::print( dest_, ", {}", *itr )
-		}
-	}
-
-	/// Stream conts_ to dest_. 
-	/// General case, using operator<<.
-	template< Character Ch, typename Traits, Iterable iterable >
-	void stream( 
-		std::basic_ostream< Ch, Traits >  & dest_, 
-		const iterable					  & conts_
-	) {
-		if( conts_.size() ) {
-			auto							itr = conts_.begin();
-											dest_ <<         *itr;
-			while( ++itr < conts_.end() )	dest_ << ", " << *itr;
-		}
-	}
-
-	/// Append conts_ to dest_ in the safest way possiblke. 
-	template< Iterable iterable, Character Ch = char >
-	void append( 
-		const file_path					  & dest_, 
-		const iterable					  & conts_ 
-	) {
-		std::basic_ofstream< Ch >			out( dest_, std::ios_base::app );
-		stream( out, conts_ );
-		out.close();
-	}
-
 
 
 	/// Read a complete text file and return it as a file.
 	/// Emphasis on efficiency and, in case of a problem, reporting. 
 	template< 
-	    Character Char	 		  = char,		///< The character type.
+	    traits::character Char	  = char,		///< The character type.
 	    typename Traits			  = std::char_traits< Char >, 
 	    typename Allocator		  = std::allocator< Char >
 	> 
@@ -362,7 +320,7 @@ namespace pax {
 
 
 	/// Use Temppath to first save to a temporary path and then at .close() move it to the final destination. 
-	template< Character Ch = char, typename Traits = std::char_traits< Ch > >
+	template< traits::character Ch = char, typename Traits = std::char_traits< Ch > >
 	class Safe_ofstream : public std::basic_ofstream< Ch, Traits > {
 		using stream_type				  = std::basic_ofstream< Ch, Traits >;
 		Temppath							m_temp;
@@ -411,7 +369,7 @@ namespace pax {
 
 
 
-	template< typename Contents, Character Ch, typename Traits >
+	template< typename Contents, traits::character Ch, typename Traits >
 	void stream( 
 		const std::filesystem::path		  & dest_, 
 		const Contents					  & conts_ 

@@ -3,21 +3,14 @@
 
 #pragma once
 
-#include <pax/concepts.hpp>		// Character
+#include <pax/concepts.hpp>		// traits::character
 #include <algorithm>			// std::ranges::equal, std::lexicographical_compare_three_way, etc.
 
 // To Do:
-// – Remove std:: from std::begin, below.
 // – Add statically sized variants of first, not_first, etc.
 
 
 namespace pax {
-
-	// It would be preferable to use the standard library for this, but I have not found a trait.
-	template< typename T >
-	using element_type_t = std::remove_reference_t< decltype( *std::begin( std::declval< T& >() ) ) >;
-		
-
 
 	/// Implements the core for span-like utilities. Static or dynamic size.
 	/// Is a minimal std::ranges::contiguous_range.
@@ -29,7 +22,7 @@ namespace pax {
 		
 		// Some types of strings may have a '\0' at the end that we want to ignore...
 		static constexpr std::size_t 		extent = 
-			N - ( Character< value_type > && N && std::is_const_v< element_type > ); 
+			N - ( traits::character< value_type > && N && std::is_const_v< element_type > ); 
 
 	    constexpr range() noexcept {};
 	    constexpr range( pointer src_ )		noexcept : m_source{ src_ } {}
@@ -85,7 +78,7 @@ namespace pax {
 	range( T ( & )[ N ] )				 -> range< T, N >;
 
 	template< std::ranges::contiguous_range Cont >
-	range( Cont & )						 -> range< element_type_t< Cont >, extent_v< Cont > >;
+	range( Cont & )						 -> range< traits::element_type_t< Cont >, traits::extent_v< Cont > >;
 
 	
 
@@ -108,7 +101,7 @@ namespace pax {
 		using shadowN					  = base_shadow< range< element_type, N > >;
 		using shadow					  = shadowN< dynamic_extent >;
 		
-		static constexpr bool				is_string{ Character< value_type > };
+		static constexpr bool				is_string{ traits::character< value_type > };
 
 	    using Core::Core, Core::data, Core::size;
 
@@ -205,11 +198,11 @@ namespace pax {
 	base_shadow( T ( & )[ N ] )			 -> base_shadow< range< T, N > >;
 
 	template< std::ranges::contiguous_range Cont >
-	base_shadow( Cont & )				 -> base_shadow< range< element_type_t< Cont >, extent_v< Cont > > >;
+	base_shadow( Cont & )				 -> base_shadow< range< traits::element_type_t< Cont >, traits::extent_v< Cont > > >;
 
 
 
-	template< Character Char, std::size_t N, typename Traits = std::char_traits< Char > >
+	template< traits::character Char, std::size_t N, typename Traits = std::char_traits< Char > >
 	struct core_litteral {
 		using element_type				  = Char;
 		using value_type				  = std::remove_cv_t< element_type >;
@@ -226,10 +219,10 @@ namespace pax {
 		value_type							value[ N ];
 	};
 
-	template< Character Char, std::size_t N, typename Traits = std::char_traits< Char > >
+	template< traits::character Char, std::size_t N, typename Traits = std::char_traits< Char > >
 	using litteral = base_shadow< core_litteral< Char, N, Traits > >;
 
-	template< Character Char, std::size_t N, typename Traits = std::char_traits< Char > >
+	template< traits::character Char, std::size_t N, typename Traits = std::char_traits< Char > >
 	constexpr litteral< Char, N, Traits > litt( Char ( & src_ )[ N ] ) {	return { src_ };	}
 
 

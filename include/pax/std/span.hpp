@@ -13,7 +13,7 @@
 
 namespace std {
 	/// Check if all elements of `sp_` are equal to the corresponding elements of `v_`.
-	template< typename T, std::size_t N, pax::Contiguous_elements V >
+	template< typename T, std::size_t N, pax::traits::has_contiguous V >
 	[[nodiscard]] constexpr bool operator==(
 		const std::span< T, N >	sp_,
 		V					 && v_
@@ -23,7 +23,7 @@ namespace std {
 	}
 
 	/// Lexicographically compare `sp_` with `v_` using three-way comparison.
-	template< typename T, std::size_t N, pax::Contiguous_elements V >
+	template< typename T, std::size_t N, pax::traits::has_contiguous V >
 	[[nodiscard]] constexpr auto operator<=>(
 		const std::span< T, N >	sp_,
 		V					 && v_
@@ -45,17 +45,17 @@ namespace std {
 namespace pax {
 
 	template< typename T >
-	concept Not_character_array = Contiguous_elements< T > && !Character_array< T >;
+	concept Not_character_array = traits::has_contiguous< T > && !traits::character_array< T >;
 
 	template< typename T >
-	concept Not_string			= Contiguous_elements< T > && !String< T >;
+	concept Not_string			= traits::has_contiguous< T > && !traits::string< T >;
 
 
 	/// Returns a std::span.
 	template< Not_character_array A >
 	[[nodiscard]] constexpr auto make_span( A && a_ ) 								noexcept {
 		using std::begin, std::end;
-		return std::span< Value_type_t< A >, extent_v< A > >{ begin( a_ ), end( a_ ) };
+		return std::span< traits::element_type_t< A >, traits::extent_v< A > >{ begin( a_ ), end( a_ ) };
 	}
 
 	/// Returns a std::span.
@@ -65,14 +65,14 @@ namespace pax {
 	}
 
 	/// Returns a std::span.
-	template< Character Ch, std::size_t N >
+	template< traits::character Ch, std::size_t N >
 	[[nodiscard]] constexpr auto make_span( Ch( & c_ )[ N ] ) 						noexcept {
 		constexpr std::size_t 	sz = ( N == 0 ) ? 0u : N-1u;
 		return std::span< std::remove_reference_t< Ch >, sz >{ c_, sz };
 	}
 
 	/// Returns a std::span.
-	template< Character Ch >
+	template< traits::character Ch >
 	[[nodiscard]] constexpr auto make_span( Ch * const & c_ ) 						noexcept {
 		using std::size;
 		return std::span< std::remove_reference_t< Ch > >{ c_, size( c_ ) };
@@ -89,7 +89,7 @@ namespace pax {
 	template< Not_character_array V >
 	[[nodiscard]] constexpr auto make_const_span( V && v_ ) 						noexcept {
 		using std::data, std::size;
-		return std::span< const Value_type_t< V >, extent_v< V > >( data( v_ ), size( v_ ) );
+		return std::span< const traits::element_type_t< V >, traits::extent_v< V > >( data( v_ ), size( v_ ) );
 	}
 
 	/// Returns a dynamically sized std::span.
@@ -100,7 +100,7 @@ namespace pax {
 	}
 
 	/// Returns a dynamically sized std::span.
-	template< Contiguous_elements V >
+	template< traits::has_contiguous V >
 	[[nodiscard]] constexpr auto make_dynamic_span( V && v_ ) 						noexcept {
 		return make_dynamic_span( make_span( v_ ) );
 	}
@@ -111,12 +111,12 @@ namespace pax {
 	template< typename V >
 	[[nodiscard]] constexpr auto & back( V && v_ ) 									noexcept {
 		using std::data, std::size;
-		static_assert( extent_v< V > != 0, "back( v_ ) requires size( v_ ) > 0" );
-		if constexpr ( extent_v< V > == dynamic_extent ) {
+		static_assert( traits::extent_v< V > != 0, "back( v_ ) requires size( v_ ) > 0" );
+		if constexpr ( traits::extent_v< V > == dynamic_extent ) {
 			assert( size( v_ ) && "back( v_ ) requires size( v_ ) > 0" );
 			return *( data( v_ ) + size( v_ ) - 1 );
 		} else {
-			return *( data( v_ ) + ( extent_v< V > - 1 ) );
+			return *( data( v_ ) + ( traits::extent_v< V > - 1 ) );
 		}
 	}
 
@@ -135,31 +135,31 @@ namespace pax {
 	/// Returns a statically sized span of the first I elements of v_.
 	///	- There is an assert( I <= size( v_ ) ).
 	template< std::size_t I, Not_character_array V >
-		requires( ( I != dynamic_extent ) && ( extent_v< V > == dynamic_extent ) )
+		requires( ( I != dynamic_extent ) && ( traits::extent_v< V > == dynamic_extent ) )
 	[[nodiscard]] constexpr auto first( V const & v_ )								noexcept {
 		using std::data, std::size;
 		assert( I <= size( v_ ) && "first< I >( v_ ) requires I <= size( v_ )." );
-		return std::span< Value_type_t< V >, I >{ data( v_ ), I };
+		return std::span< traits::element_type_t< V >, I >{ data( v_ ), I };
 	}
 
 	/// Returns a statically sized span of the first I elements of v_.
 	///	- If I > size( v_ ), a span of all v_ is returned.
 	template< std::size_t I, Not_character_array V >
-		requires( ( I != dynamic_extent ) && ( extent_v< V > != dynamic_extent ) )
+		requires( ( I != dynamic_extent ) && ( traits::extent_v< V > != dynamic_extent ) )
 	[[nodiscard]] constexpr auto first( V const & v_ ) 								noexcept {
 		using std::data;
-		static constexpr std::size_t	sz  = std::min( I, extent_v< V > );
-		return std::span< Value_type_t< V >, sz >( data( v_ ), sz );
+		static constexpr std::size_t	sz  = std::min( I, traits::extent_v< V > );
+		return std::span< traits::element_type_t< V >, sz >( data( v_ ), sz );
 	}
 	template< auto I, Not_character_array V >
-		requires( std::is_unsigned_v< decltype( I ) > && ( I != dynamic_extent ) && ( extent_v< V > != dynamic_extent ) )
+		requires( std::is_unsigned_v< decltype( I ) > && ( I != dynamic_extent ) && ( traits::extent_v< V > != dynamic_extent ) )
 	[[nodiscard]] constexpr auto first( 
 		V					 && v_,
 		Statique< I >	
 	) noexcept {
 		using std::data;
-		static constexpr std::size_t	sz  = std::min( std::size_t( I ), extent_v< V > );
-		return std::span< Value_type_t< V >, sz >( data( v_ ), sz );
+		static constexpr std::size_t	sz  = std::min( std::size_t( I ), traits::extent_v< V > );
+		return std::span< traits::element_type_t< V >, sz >( data( v_ ), sz );
 	}
 
 
@@ -178,22 +178,22 @@ namespace pax {
 	/// Returns a statically sized span of the last I elements of v_.
 	///	- There is an assert( I <= size( v_ ) ).
 	template< std::size_t I, Not_character_array V >
-		requires( ( I != dynamic_extent ) && ( extent_v< V > == dynamic_extent ) )
+		requires( ( I != dynamic_extent ) && ( traits::extent_v< V > == dynamic_extent ) )
 	[[nodiscard]] constexpr auto last( V && v_ ) 									noexcept {
 		using std::data, std::size;
 		assert( I <= size( v_ ) && "last< I >( v_ ) requires I <= size( v_ )." );
-		return std::span< Value_type_t< V >, I >( data( v_ ) + size( v_ ) - I, I );
+		return std::span< traits::element_type_t< V >, I >( data( v_ ) + size( v_ ) - I, I );
 	}
 
 	/// Returns a statically sized span of the last I elements of v_.
 	///	- If i_ > size( v_ ), a span of all v_ is returned.
 	template< std::size_t I, Not_character_array V >
-		requires( ( I != dynamic_extent ) && ( extent_v< V > != dynamic_extent ) )
+		requires( ( I != dynamic_extent ) && ( traits::extent_v< V > != dynamic_extent ) )
 	[[nodiscard]] constexpr auto last( V && v_ ) 									noexcept {
 		using std::data;
-		static constexpr std::size_t	sz = extent_v< V >;
+		static constexpr std::size_t	sz = traits::extent_v< V >;
 		static constexpr std::size_t	offset = ( I < sz ) ? sz - I : 0u;
-		return std::span< Value_type_t< V >, sz - offset >( data( v_ ) + offset, sz - offset );
+		return std::span< traits::element_type_t< V >, sz - offset >( data( v_ ) + offset, sz - offset );
 	}
 
 
@@ -212,12 +212,12 @@ namespace pax {
 	/// Returns a statically sized span of all elements of v_ except the first I.
 	///	- If I > size( v_ ), span< 0 >( end( v_ ) ) is returned.
 	template< std::size_t I, Not_character_array V >
-		requires( ( I != dynamic_extent ) && ( extent_v< V > != dynamic_extent ) )
+		requires( ( I != dynamic_extent ) && ( traits::extent_v< V > != dynamic_extent ) )
 	[[nodiscard]] constexpr auto not_first( V && v_ ) 								noexcept {
 		using std::data;
-		static constexpr std::size_t	offset = ( I < extent_v< V > ) ? I : extent_v< V >;
-		static constexpr std::size_t	sz = extent_v< V > - offset;
-		return std::span< Value_type_t< V >, sz >( data( v_ ) + offset, sz );
+		static constexpr std::size_t	offset = ( I < traits::extent_v< V > ) ? I : traits::extent_v< V >;
+		static constexpr std::size_t	sz = traits::extent_v< V > - offset;
+		return std::span< traits::element_type_t< V >, sz >( data( v_ ) + offset, sz );
 	}
 
 
@@ -235,11 +235,11 @@ namespace pax {
 	/// Returns a statically sized span of all elements of v_ except the first I.
 	///	- If I > size( v_ ), span< 0 >( begin( v_ ) ) is returned.
 	template< std::size_t I, Not_character_array V >
-		requires( ( I != dynamic_extent ) && ( extent_v< V > != dynamic_extent ) )
+		requires( ( I != dynamic_extent ) && ( traits::extent_v< V > != dynamic_extent ) )
 	[[nodiscard]] constexpr auto not_last( V && v_ ) 								noexcept {
 		using std::data;
-		static constexpr std::size_t	sz = ( extent_v< V > > I ) ? extent_v< V > - I : 0;
-		return std::span< Value_type_t< V >, sz >( data( v_ ), sz );
+		static constexpr std::size_t	sz = ( traits::extent_v< V > > I ) ? traits::extent_v< V > - I : 0;
+		return std::span< traits::element_type_t< V >, sz >( data( v_ ), sz );
 	}
 
 
@@ -285,37 +285,37 @@ namespace pax {
 		using std::size, std::data;
 		const auto 				offset = detail::subview_offset( offset_, size( v_ ) );
 		assert( offset + Len <= size( v_ )  && "subview< Len >( v_, offset_ ) requires offset_ + Len <= size( v_ )." );
-		return std::span< Value_type_t< V >, Len >( data( v_ ) + offset, Len );
+		return std::span< traits::element_type_t< V >, Len >( data( v_ ) + offset, Len );
 	}
 
 	/// Returns a statically sized span of Len elements of v_ starting ay Offset.
 	///	- If Offset < 0, an offset = Offset + size( v_ ) is used (the offset is seen from the back), 
 	///	- If Offset + Len > size( v_ ), returns not_first< offset >( v_ ).
 	template< std::ptrdiff_t Offset, std::size_t Len, Not_character_array V >	
-		requires( ( Len != dynamic_extent ) && ( extent_v< V > != dynamic_extent ) )
+		requires( ( Len != dynamic_extent ) && ( traits::extent_v< V > != dynamic_extent ) )
 	[[nodiscard]] constexpr auto subview( V && v_ ) 								noexcept {
 		using std::data;
-		static constexpr auto 			offset = detail::subview_offset( Offset, extent_v< V > );
-		static constexpr std::size_t 	sz = std::min( extent_v< V > - offset, Len );
-		return std::span< Value_type_t< V >, sz >( data( v_ ) + offset, sz );
+		static constexpr auto 			offset = detail::subview_offset( Offset, traits::extent_v< V > );
+		static constexpr std::size_t 	sz = std::min( traits::extent_v< V > - offset, Len );
+		return std::span< traits::element_type_t< V >, sz >( data( v_ ) + offset, sz );
 	}
 
 	/// Returns a statically sized span of Len elements of v_ starting with Offset.
 	///	- If Offset < 0, an offset = Offset + size( v_ ) is used (the offset is seen from the back), 
 	///	- There is an assert( offset + Len <= size( v_ ).
 	template< std::ptrdiff_t Offset, std::size_t Len, Not_character_array V >
-		requires( ( Len != dynamic_extent ) && ( extent_v< V > == dynamic_extent ) )
+		requires( ( Len != dynamic_extent ) && ( traits::extent_v< V > == dynamic_extent ) )
 	[[nodiscard]] constexpr auto subview( V && v_ ) 								noexcept {
 		using std::data, std::size;
 		const auto 						offset = detail::subview_offset( Offset, size( v_ ) );
 		assert( offset + Len <= size( v_ ) && "subview< Offset, Len >( v_ ) requires Offset + Len <= size( v_ )." );
-		return std::span< Value_type_t< V >, Len >( data( v_ ) + offset, Len );
+		return std::span< traits::element_type_t< V >, Len >( data( v_ ) + offset, Len );
 	}
 
 
 	/// Return the beginning of v_ up to but not including the first until_this_.
 	/// - If no until_this_ is found, v_ is returned.
-	template< Contiguous_elements V, typename U >
+	template< traits::has_contiguous V, typename U >
 	constexpr auto until(  
 		V					 && v_, 
 		U					 && until_this_ 

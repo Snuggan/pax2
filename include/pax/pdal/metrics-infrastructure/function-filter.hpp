@@ -160,7 +160,7 @@ namespace pax::metrics {
 		}
 
 
-		template< String S, std::size_t N >
+		template< traits::string S, std::size_t N >
 		static std::vector< Function_filter > create_set( const std::span< S, N > ids_, const metrics_value_type nilsson_ ) {
 			std::vector< Function_filter >	collection;
 			for( auto id : ids_ ) {

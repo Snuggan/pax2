@@ -23,18 +23,18 @@ namespace pax { namespace cmd_args {
 	constexpr std::string_view id_flag_off	  = "false";
 	constexpr std::string_view id_anonymous   = "";
 
-	template< Character Char >
+	template< traits::character Char >
 	constexpr bool is_flag_on ( std::basic_string_view< Char > tv_ )	noexcept	{	return tv_ == id_flag_on;		}
 
-	template< Character Char >
+	template< traits::character Char >
 	constexpr bool is_flag_off( std::basic_string_view< Char > tv_ )	noexcept	{	return tv_ == id_flag_off;		}
 
-	template< Character Char >
+	template< traits::character Char >
 	constexpr bool is_anonymous( std::basic_string_view< Char > tv_ )	noexcept	{	return tv_ == id_anonymous;		}
 
 	
 
-	template< Character Char = char >
+	template< traits::character Char = char >
 	class Parameter_set;
 	
 	using Parameters = Parameter_set< char >;
@@ -44,7 +44,7 @@ namespace pax { namespace cmd_args {
 	/** Override this function for other types than the basic ones.		**/
 	template< typename T >
 	struct Convert {
-		template< String Str >
+		template< traits::string Str >
 		static auto convert( const Str & str_ ) {
 			T		result;
 			std::istringstream( str_ ) >> result;
@@ -52,7 +52,7 @@ namespace pax { namespace cmd_args {
 		}
 	};
 	
-	template< String Str >
+	template< traits::string Str >
 	struct Convert< Str > {
 		static constexpr auto convert( Str && str_ )		noexcept	{	return std::forward< Str >( str_ );		}
 		static constexpr auto convert( const Str & str_ )	noexcept	{	return str_;							}
@@ -65,7 +65,7 @@ namespace pax { namespace cmd_args {
 		destroy the Parameters, Group, and Param varaiables and only keep Arguments. 
 		You may declare it const, as all public member functions are const. 
 	**/
-	template< Character Char >
+	template< traits::character Char >
 	class Arguments {
 		using String								  = std::basic_string< Char >;
 		using String_view							  = std::basic_string_view< Char >;
@@ -191,7 +191,7 @@ namespace pax { namespace cmd_args {
 
 
 	/// Stream the contents of an Arguments.
-	template< Character Char >
+	template< traits::character Char >
 	auto & operator<<( std::basic_ostream< Char > & out_, const Arguments< Char > & arguments_ ) {
 		arguments_.stream( out_ );
 		return out_;
@@ -201,7 +201,7 @@ namespace pax { namespace cmd_args {
 }	// namespace cmd_args
 
 
-	template< Character Char >
+	template< traits::character Char >
 	auto to_string( const cmd_args::Arguments< Char > & arguments_ ) {
 		std::ostringstream		result;
 		result << arguments_;
@@ -211,7 +211,7 @@ namespace pax { namespace cmd_args {
 
 	template< typename T > struct Serialize;
 
-	template< Character Char >
+	template< traits::character Char >
 	struct Serialize< cmd_args::Arguments< Char > > {
 		using Args	  = cmd_args::Arguments< Char >;
 		using Sview	  = std::basic_string_view< Char >;

@@ -34,11 +34,11 @@ namespace pax {
 		- Table< T > object: 
 			+ Constructed from a span< string_view >. 
 			+ Return cell reference, row reference (std::span), col reference (striding iterator). 
-		– Text_table< Character >:
+		– Text_table< traits::character >:
 			+ Based on Table_reference. 
 			+ Stream contents, also with a predicate( index ). 
 	**/
-	template< Character Ch >
+	template< traits::character Ch >
 	class Text_table {
 		using element_type				  = Ch;
 		using value_type				  = std::remove_cv_t< element_type >;
@@ -178,7 +178,7 @@ namespace pax {
 
 		/// Return a vector with T, formed from the column col_id_.
 		/// - col_id_ must be in the header. 
-		template< typename T, String Str, typename Predicate = const decltype( always_true ) & >
+		template< typename T, traits::string Str, typename Predicate = const decltype( always_true ) & >
 			requires( std::is_invocable_r_v< bool, Predicate, Size > )
 		constexpr std::vector< T > export_values( 
 			const Str					  & col_id_,
@@ -270,7 +270,7 @@ namespace pax {
 	};
 
 
-	template< Character Ch >
+	template< traits::character Ch >
 	Text_table( std::basic_string< Ch > )	-> Text_table< std::remove_cv_t< Ch > >;
 
 }	// namespace pax
