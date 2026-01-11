@@ -40,7 +40,7 @@ namespace pax {
 		concept has_extent
 			 =	0u <= std::tuple_size			< clean_t< T > >::value
 			||	std::is_bounded_array_v			< clean_t< T > >	// T[ N ], T( & )[ N ]
-			||	T::extent != dynamic_extent;	  // std::span< T, N > doesn't have tuple_size...
+			||	T::extent != dynamic_extent;	// std::span< T, N > doesn't have tuple_size...
 
 		/// Does an instance have only a dynamic size?
 		template< typename T >
@@ -67,7 +67,7 @@ namespace pax {
 			template< size_contiguous T >		  requires( !has_declared_element_type< T > && !array_like< T > )
 			struct Element_type< T >			: std::conditional< 
 				std::is_same_v< typename T::iterator, typename T::const_iterator >,
-				const typename T::value_type,	// std::string_view needs it...
+				const typename T::value_type,	// std::string_view needs this...
 				typename T::value_type
 			> {};
 		}
@@ -81,18 +81,18 @@ namespace pax {
 		using value_type_t 						= clean_t< element_type_t< T > >;
 
 		namespace detail {
-			template< typename T >				struct extent;
+			template< typename T >				  struct extent;
 		
-			template< traits::has_dynamic_size T >
-			struct extent< T > : size_constant< dynamic_extent > {};
+			template< has_dynamic_size T >
+			struct extent< T >					: size_constant< dynamic_extent > {};
 		
-			template< traits::has_extent T >	requires( requires{ T::extent; } )
+			template< has_extent T >			requires( requires{ T::extent; } )
 			struct extent< T > 					: size_constant< T::extent > {};
 
-			template< traits::has_extent T >	requires( std::is_bounded_array_v< clean_t< T > > )
+			template< has_extent T >			requires( std::is_bounded_array_v< clean_t< T > > )
 			struct extent< T > 					: std::extent< clean_t< T > > {};
 
-			template< traits::has_extent T >	requires( std::tuple_size< clean_t< T > >::value >= 0 )
+			template< has_extent T >			requires( std::tuple_size< clean_t< T > >::value >= 0 )
 			struct extent< T > 					: std::tuple_size< clean_t< T > > {};
 		}
 
@@ -128,6 +128,12 @@ namespace pax {
 	}	// namespace traits
 
 	constexpr std::size_t dynamic_extent = traits::dynamic_extent;
+
+	template< traits::contiguous Str >
+	constexpr std::size_t shave_zero_suffix( const Str & str_, const std::size_t sz_ )	{
+		return sz_ - ( traits::character_array< Str > && sz_ && !str_[ sz_ - 1 ] );
+	}
+
 }		// namespace pax
 
 namespace std {

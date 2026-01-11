@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../concepts.hpp"	// pax::traits::character, pax::traits::string, pax::traits::contiguous
+#include "../concepts.hpp"	// shave_zero_suffix, pax::traits::character, pax::traits::string, etc.
 #include <algorithm>		// std::min, std::equal, std::lexicographical_compare_three_way
 #include <cassert>			// assert
 
@@ -26,6 +26,7 @@
 
 
 namespace pax {
+	using std::data, std::size, std::begin, std::end;
 
 	/// Tag for use when doing stuff with newlines. 
 	struct Newline{};
@@ -39,10 +40,7 @@ namespace pax {
 
 	/// Returns sp_.data() != nullptr. 
 	template< traits::contiguous V >
-	[[nodiscard]] constexpr bool valid( const V & v_ ) 		noexcept	{
-		using std::data;
-		return valid( data( v_ ) );
-	}
+	[[nodiscard]] constexpr bool valid( const V & v_ ) 		noexcept	{	return valid( data( v_ ) );	}
 
 
 	/// Return true iff both data() and size() are equal between the two std::spans.
@@ -51,7 +49,6 @@ namespace pax {
 		const V0						  & v0_, 
 		const V1						  & v1_ 
 	) noexcept {
-		using std::data, std::size;
 		return ( data( v0_ ) == data( v1_ ) ) && ( size( v0_ ) == size( v1_ ) );
 	}
 
@@ -62,7 +59,6 @@ namespace pax {
 		const V0						  & v0_, 
 		const V1						  & v1_ 
 	) noexcept {
-		using std::data, std::size;
 		return	( ( data( v0_ ) > data( v1_ ) )	? ( data( v1_ ) + size( v1_ ) > data( v0_ ) ) 
 												: ( data( v0_ ) + size( v0_ ) > data( v1_ ) )	)
 			&&	size( v0_ ) && size( v1_ );		// An empty view cannot overlap.
@@ -72,7 +68,6 @@ namespace pax {
 	/// UB, if v_ has a dynamic size that is zero.
 	template< traits::contiguous V >
 	[[nodiscard]] constexpr auto & front( V && v_ ) noexcept {
-		using std::data, std::size;
 		static_assert( traits::extent_v< V > != 0, "front( v_ ) requires size( v_ ) > 0" );
 		if constexpr ( traits::extent_v< V > == dynamic_extent )
 			assert( size( v_ ) && "front( v_ ) requires size( v_ ) > 0" );
@@ -101,20 +96,9 @@ namespace pax {
 
 		template< traits::contiguous V0, traits::contiguous V1 >
 		constexpr void assert_equal_extent( [[maybe_unused]] const V0 & v0_, [[maybe_unused]] const V1 & v1_ )	noexcept {
-			using std::size;
 			assert( size( v0_ ) == size( v1_ ) && "v0_ and v1_ must have same size." );
 		}
 	}	// namespace detail
-
-
-
-	/// Discount possible trailing '\0'.
-	template< traits::string Str >
-	[[nodiscard]] constexpr std::size_t chars_size( const Str & str_ ) noexcept {
-		using std::size;
-		const std::size_t	sz = size( str_ );
-		return sz - ( traits::array_like< Str > && bool( sz ) && !str_[ sz - 1 ] );
-	}
 
 
 
@@ -124,7 +108,7 @@ namespace pax {
 		const Str						  & str_, 
 		const traits::value_type_t< Str >	ch_ 
 	) noexcept {
-		return chars_size( str_ ) && ( str_[ 0 ] == ch_ );
+		return shave_zero_suffix( str_, size( str_ ) ) && ( str_[ 0 ] == ch_ );
 	}
 
 	/// Returns the size of `v_` if the beginning of `view_` is lexicographical equal to `v_` and 0 otherwise.
@@ -133,11 +117,10 @@ namespace pax {
 		const V0						  & v0_, 
 		V1								 && v1_
 	) noexcept {
-		using std::begin;
 		const auto		b0  = begin( v0_ );
-		const auto		sz0 = chars_size( v0_ );
+		const auto		sz0 = shave_zero_suffix( v0_, size( v0_ ) );
 		const auto		b1  = begin( v1_ );
-		const auto		sz1 = chars_size( v1_ );
+		const auto		sz1 = shave_zero_suffix( v1_, size( v1_ ) );
 		return ( sz1 > sz0 ) ? 0u : std::equal( b1, b1 + sz1, b0 ) ? sz1 : 0u;
 	}
 
@@ -145,11 +128,11 @@ namespace pax {
 	/// Returns 1, if the end of `view_` is `t_` and 0 otherwise.
 	template< traits::string V >
 	[[nodiscard]] constexpr bool ends_with(  
-		const V							  & v_, 
+		const V							  & str_, 
 		const traits::value_type_t< V >		t_ 
 	) noexcept {
-		const auto		sz = chars_size( v_ );
-		return sz && ( v_[ sz - 1 ] == t_ );
+		const auto	sz = shave_zero_suffix( str_, size( str_ ) );
+		return sz && ( str_[ sz - 1 ] == t_ );
 	}
 
 	/// Returns the size of `v_`, if the end of `view_` is lexicographical equal to `v_` and 0 otherwise.
@@ -158,11 +141,10 @@ namespace pax {
 		const V0						  & v0_, 
 		V1								 && v1_
 	) noexcept {
-		using std::begin;
 		const auto		b0  = begin( v0_ );
-		const auto		sz0 = chars_size( v0_ );
+		const auto		sz0 = shave_zero_suffix( v0_, size( v0_ ) );
 		const auto		b1  = begin( v1_ );
-		const auto		sz1 = chars_size( v1_ );
+		const auto		sz1 = shave_zero_suffix( v1_, size( v1_ ) );
 		return ( sz1 > sz0 ) ? 0u : std::equal( b1, b1 + sz1, b0 + ( sz0 - sz1 ) ) ? sz1 : 0u;
 	}
 
@@ -176,12 +158,10 @@ namespace pax {
 		const V0						  & v0_, 
 		const V1						  & v1_
 	) noexcept {
-		using std::begin;
 		const auto		b0  = begin( v0_ );
-		const auto		sz0 = chars_size( v0_ );
 		const auto		b1  = begin( v1_ );
-		const auto		sz1 = chars_size( v1_ );
-		return std::search( b0, b0 + sz0, b1, b1 + sz1 ) - b0;
+		return std::search( b0, b0 + shave_zero_suffix( v0_, size( v0_ ) ), 
+							b1, b1 + shave_zero_suffix( v1_, size( v1_ ) ) ) - b0;
 	}
 
 	/// Returns the offset to the first occurence of t_ in v_.
@@ -191,10 +171,8 @@ namespace pax {
 		const V							  & v_, 
 		const traits::value_type_t< V >	  & t_ 
 	) noexcept {
-		using std::begin;
 		const auto		b  = begin( v_ );
-		const auto		sz = chars_size( v_ );
-		return std::find( b, b + sz, t_ ) - b;
+		return std::find( b, b + shave_zero_suffix( v_, size( v_ ) ), t_ ) - b;
 	}
 
 	/// Returns the offset to v for the first true occurence of pred_( v ) in v_.
@@ -205,10 +183,8 @@ namespace pax {
 		const V							  & v_, 
 		Pred							 && pred_ 
 	) noexcept {
-		using std::begin;
 		const auto		b  = begin( v_ );
-		const auto		sz = chars_size( v_ );
-		return std::find_if( b, b + sz, pred_ ) - b;
+		return std::find_if( b, b + shave_zero_suffix( v_, size( v_ ) ), pred_ ) - b;
 	}
 
 	/// Returns the offset to the first occurence of either `'\n'` or `'\r'` in `view_`.
@@ -218,8 +194,7 @@ namespace pax {
 		const V							  & v_, 
 		Newline	
 	) noexcept {
-		return find( v_, []( const unsigned c )	noexcept 
-			{
+		return find( v_, []( const unsigned c )	noexcept {
 				// The first part of the test is redundant, but is thought to quicken up the test in most cases.
 				return ( c <= 0x0d ) && ( ( c == 0x0a ) || ( c == 0x0d ) );
 			}
@@ -232,7 +207,7 @@ namespace pax {
 		const V							  & v_, 
 		X								 && x_ 
 	) noexcept {
-		return find( v_, x_ ) < chars_size( v_ );
+		return find( v_, x_ ) < shave_zero_suffix( v_, size( v_ ) );
 	}
 
 	/// Returns the offset to the last occurence of t_ in v_.
@@ -242,12 +217,8 @@ namespace pax {
 		const V							  & v_, 
 		const traits::value_type_t< V >	  & t_ 
 	) noexcept {
-		using std::size, std::begin, std::end;
-		auto		b = std::reverse_iterator( end  ( v_ ) );
-		const auto	e = std::reverse_iterator( begin( v_ ) );
-		if constexpr( traits::character_array< V > ) 
-			b += ( b != e ) && !*b;
-
+		const auto	b = std::reverse_iterator( end  ( v_ ) );
+		const auto	e = b + shave_zero_suffix( v_, size( v_ ) );
 		const auto res = std::find( b, e, t_ );
 		return ( res == e ) ? size( v_ ) : e - res - 1;
 	}
@@ -260,12 +231,8 @@ namespace pax {
 		const V							  & v_, 
 		Pred							 && pred_ 
 	) noexcept {
-		using std::size, std::begin, std::end;
-		auto		b = std::reverse_iterator( end  ( v_ ) );
-		const auto	e = std::reverse_iterator( begin( v_ ) );
-		if constexpr( traits::character_array< V > ) 
-			b += ( b != e ) && !*b;
-
+		const auto	b = std::reverse_iterator( end  ( v_ ) );
+		const auto	e = b + shave_zero_suffix( v_, size( v_ ) );
 		const auto res = std::find_if( b, e, pred_ );
 		return ( res == e ) ? size( v_ ) : e - res - 1;
 	}
@@ -278,17 +245,10 @@ namespace pax {
 		const V0						  & v0_, 
 		V1								 && v1_
 	) noexcept {
-		using std::begin, std::end;
 		const auto		b0 = begin( v0_ );
-		auto			e0 = end  ( v0_ );
 		const auto		b1 = begin( v1_ );
-		auto			e1 = end  ( v1_ );
-		if constexpr( traits::character_array< V0 > ) 
-			e0 -= ( b0 != e0 ) && !*( e0 - 1 );		// To remove possible trailing '\0'.
-		if constexpr( traits::character_array< V1 > ) 
-			e1 -= ( b1 != e1 ) && !*( e1 - 1 );		// To remove possible trailing '\0'.
-
-		return std::equal( b0, e0, b1, e1 );
+		return std::equal( b0, b0 + shave_zero_suffix( v0_, size( v0_ ) ), 
+						   b1, b1 + shave_zero_suffix( v1_, size( v1_ ) ) );
 	}
 
 
@@ -298,13 +258,8 @@ namespace pax {
 	/// - https://en.cppreference.com/w/cpp/algorithm/sort
 	template< traits::contiguous V >
 	constexpr void sort( V & v_ ) {
-		using std::begin, std::end;
 		const auto		b = begin( v_ );
-		auto			e = end  ( v_ );
-		if constexpr( traits::character_array< V > ) 
-			e -= ( b != e ) && !*( e - 1 );			// To remove possible trailing '\0'.
-
-		std::sort( b, e );
+		std::sort( b, b + shave_zero_suffix( v_, size( v_ ) ) );
 	}
 
 
@@ -318,15 +273,10 @@ namespace pax {
 		const V1	  & v1_,
 		Binary		 && binary_
 	) noexcept {
-		using std::begin, std::size;
 		auto			b0 = begin( v0_ );
-		auto			s0 = size ( v0_ );
+		const auto		s0 = shave_zero_suffix( v0_, size( v0_ ) );
 		auto			b1 = begin( v1_ );
-		auto			s1 = size ( v1_ );
-		if constexpr( traits::character_array< V0 > ) 
-			s0 -= bool( s0 ) && !v0_[ s0 - 1 ];		// To remove possible trailing '\0'.
-		if constexpr( traits::character_array< V1 > ) 
-			s1 -= bool( s1 ) && !v1_[ s1 - 1 ];		// To remove possible trailing '\0'.
+		const auto		s1 = shave_zero_suffix( v1_, size( v1_ ) );
 
 		assert( ( s0 == s1 ) && "The containers must have the same size" );
 		const auto		e0 = b0 + s0;
@@ -345,15 +295,10 @@ namespace pax {
 		const V1	  & v1_,
 		Binary		 && binary_
 	) noexcept {
-		using std::begin, std::size;
 		auto			b0 = begin( v0_ );
-		auto			s0 = size ( v0_ );
+		const auto		s0 = shave_zero_suffix( v0_, size( v0_ ) );
 		auto			b1 = begin( v1_ );
-		auto			s1 = size ( v1_ );
-		if constexpr( traits::character_array< V0 > ) 
-			s0 -= bool( s0 ) && !v0_[ s0 - 1 ];		// To remove possible trailing '\0'.
-		if constexpr( traits::character_array< V1 > ) 
-			s1 -= bool( s1 ) && !v1_[ s1 - 1 ];		// To remove possible trailing '\0'.
+		const auto		s1 = shave_zero_suffix( v1_, size( v1_ ) );
 
 		assert( ( s0 == s1 ) && "The containers must have the same size" );
 		const auto		e0 = b0 + s0;
@@ -369,13 +314,8 @@ namespace pax {
 		const V							  & v_, 
 		Pred							 && p_
 	) {
-		using std::begin, std::end;
 		const auto		b = begin( v_ );
-		auto			e = end  ( v_ );
-		if constexpr( traits::character_array< V > ) 
-			e -= ( b != e ) && !*( e - 1 );			// To remove possible trailing '\0'.
-
-		return std::all_of( b, e, p_ );
+		return std::all_of( b, b + shave_zero_suffix( v_, size( v_ ) ), p_ );
 	}
 
 	/// Checks if binary_( v0_[i], v1_[i] ) is true for all i.
@@ -404,13 +344,8 @@ namespace pax {
 		const V							  & v_, 
 		Pred							 && p_
 	) {
-		using std::begin, std::end;
 		const auto		b = begin( v_ );
-		auto			e = end  ( v_ );
-		if constexpr( traits::character_array< V > ) 
-			e -= ( b != e ) && !*( e - 1 );			// To remove possible trailing '\0'.
-
-		return std::any_of( b, e, p_ );
+		return std::any_of( b, b + shave_zero_suffix( v_, size( v_ ) ), p_ );
 	}
 
 	/// Checks if binary_( v0_[i], v1_[i] ) is true for any i.
@@ -439,13 +374,8 @@ namespace pax {
 		const V							  & v_, 
 		Pred							 && p_
 	) {
-		using std::begin, std::end;
 		const auto		b = begin( v_ );
-		auto			e = end  ( v_ );
-		if constexpr( traits::character_array< V > ) 
-			e -= ( b != e ) && !*( e - 1 );			// To remove possible trailing '\0'.
-
-		return std::none_of( b, e, p_ );
+		return std::none_of( b, b + shave_zero_suffix( v_, size( v_ ) ), p_ );
 	}
 
 	/// Checks if binary_( v0_[i], v1_[i] ) is true for no i.

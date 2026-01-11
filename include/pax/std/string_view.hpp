@@ -39,6 +39,8 @@ namespace std {
 
 
 namespace pax {
+	using std::data, std::size, std::begin, std::end;
+
 
 	/// Name some of the control characters.
 	enum Ascii : unsigned {
@@ -142,7 +144,6 @@ namespace pax {
 
 	template< traits::string S >
 	constexpr auto as_ascii( const S & str_ )					noexcept	{
-		using std::size, std::begin, std::end;
 		using 				Ch	  = typename S::value_type;
 		using				Str	  = std::basic_string     < Ch >;
 		using				StrV  = std::basic_string_view< Ch >;
@@ -181,7 +182,6 @@ namespace pax {
 		Newline 
 	) noexcept {
 		if constexpr( traits::extent_v< V > > 1 ) {
-			using std::data, std::size;
 			return	( size( v_ ) > 1 )	? newlines  ( v_[ 0 ], v_[ 1 ] )
 				:	  size( v_ )		? is_newline( v_[ 0 ] )
 				:						  0;
@@ -199,11 +199,7 @@ namespace pax {
 		Newline 
 	) noexcept {
 		if constexpr( traits::extent_v< V > > 1 ) {
-			using std::data, std::size;
-			auto			s = size ( v_ );
-			if constexpr( traits::character_array< V > ) 
-				s -= bool( s ) && !v_[ s - 1 ];		// To remove possible trailing '\0'.
-
+			const auto		s = shave_zero_suffix( v_, size( v_ ) );
 			const auto last = data( v_ ) + s - ( s > 0 );
 			return	( s > 1 )	? newlines  ( *last, *( last - 1 ) )
 				:	bool( s )	? is_newline( v_[ 0 ] )
@@ -220,7 +216,6 @@ namespace pax {
 
 	template< traits::string V >
 	[[nodiscard]] constexpr std::size_t length( V && v_ )		noexcept	{
-		using 				std::size;
 		if constexpr( traits::character_array< V > )	return std::basic_string_view( v_ ).size();
 		else											return size( v_ );
 	}
@@ -230,7 +225,6 @@ namespace pax {
 	/// UB, if v_ has a dynamic size that is zero.
 	template< traits::string V >
 	[[nodiscard]] constexpr auto & back( const V & v_ )			noexcept	{
-		using 				std::data;
 		const auto			sz = length( v_ );
 		assert( sz && "back( strv ) requires size( strv ) > 0" );
 		return *( data( v_ ) + sz - 1 );
@@ -244,7 +238,6 @@ namespace pax {
 		V				 && v_, 
 		const std::size_t 	i_ = 1 
 	) noexcept {
-		using				std::data;
 		const auto			sz = length( v_ );
 		return std::basic_string_view( data( v_ ), std::min( i_, sz ) );
 	}
@@ -256,8 +249,6 @@ namespace pax {
 		V				 && v_, 
 		const std::size_t 	i_ = 1 
 	) noexcept {
-		using std::data;
-		using				std::data;
 		const auto			sz = length( v_ );
 		return ( i_ < sz )	? std::basic_string_view( data( v_ ) + sz - i_, i_ )
 							: std::basic_string_view( v_ );
@@ -270,7 +261,6 @@ namespace pax {
 		V				 && v_, 
 		const std::size_t 	i_ = 1 
 	) noexcept {
-		using std::data;
 		const auto			sz = length( v_ );
 		return ( i_ < sz )	? std::basic_string_view( data( v_ ) + i_, sz - i_ )
 							: std::basic_string_view( data( v_ ) + sz, 0 );
@@ -283,7 +273,6 @@ namespace pax {
 		V				 && v_, 
 		const std::size_t 	i_ = 1 
 	) noexcept {
-		using std::data;
 		const auto			sz = length( v_ );
 		return std::basic_string_view( data( v_ ), ( i_ < sz ) ? sz - i_ : 0u );
 	}
@@ -297,7 +286,6 @@ namespace pax {
 		const std::ptrdiff_t 	offset_, 
 		const std::size_t 		size_ 
 	) noexcept {
-		using 					std::data, std::size;
 		const auto				sz = size( v_ );
 		const std::size_t 		offset	=	( offset_ >= 0 )					? std::min( std::size_t( offset_ ), sz ) 
 										:	( std::size_t( -offset_ ) < sz )	? sz - std::size_t( -offset_ )
@@ -350,11 +338,8 @@ namespace pax {
 		const V		  & v_, 
 		Pred		 && p_ 
 	) noexcept {
-		using std::begin, std::end;
 		auto			itr = begin( v_ );
-		auto			e   = end  ( v_ );
-		if constexpr( traits::character_array< V > ) 
-			e -= ( itr != e ) && !*( e - 1 );			// To remove possible trailing '\0'.
+		auto			e   = itr + shave_zero_suffix( v_, size( v_ ) );
 
 		while( ( itr != e ) && p_( *itr ) )				++itr;
 		return std::basic_string_view{ itr, e };
@@ -388,11 +373,8 @@ namespace pax {
 		const V		  & v_, 
 		Pred		 && p_ 
 	) noexcept {
-		using std::begin, std::end;
-		auto			itr = end  ( v_ );
 		const auto		b   = begin( v_ );
-		if constexpr( traits::character_array< V > ) 
-			itr -= ( itr != b ) && !*( itr - 1 );		// To remove possible trailing '\0'.
+		auto			itr = b + shave_zero_suffix( v_, size( v_ ) );
 
 		while( ( --itr != b ) && p_( *itr ) );
 		return std::basic_string_view{ b, itr + 1 };
@@ -462,11 +444,7 @@ namespace pax {
 		const V							  & v_, 
 		By								 && by_
 	) noexcept {
-		using std::size;
-		auto				s = size( by_ );
-		if constexpr( traits::character_array< V > ) 
-			s -= bool( s ) && !by_[ s - 1 ];		// To remove possible trailing '\0'.
-
+		const auto		s = shave_zero_suffix( by_, size( by_ ) );
 		return split_at( v_, find( v_, by_ ), s );
 	}
 
@@ -551,11 +529,8 @@ namespace pax {
 	/// - https://en.wikipedia.org/wiki/Luhn_algorithm
 	template< traits::string V >
 	[[nodiscard]] constexpr std::size_t luhn_sum( const V & v_ ) noexcept {
-		using std::begin, std::end;
 		auto				b = begin( v_ );
-		auto				e = end  ( v_ );
-		if constexpr( traits::character_array< V > ) 
-			e -= ( b != e ) && !*( e - 1 );			// To remove possible trailing '\0'.
+		const auto			e = b + shave_zero_suffix( v_, size( v_ ) );
 
 		static constexpr char	twice[] = { 0, 2, 4, 6, 8, 1, 3, 5, 7, 9 };
 		std::size_t				sum{};

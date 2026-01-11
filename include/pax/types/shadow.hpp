@@ -8,10 +8,14 @@
 
 // To Do:
 // – Add statically sized variants of first, not_first, etc.
+// – Precalculate N, to adapt it to char arrays with null suffix.
 
 
 namespace pax {
 
+	template< traits::contiguous Str, std::size_t N = traits::extent_v< Str > >
+	constexpr std::size_t shaved_extent	  = N - ( traits::character_array< Str > && N );
+	
 	/// Implements the core for span-like utilities. Static or dynamic size.
 	/// Is a minimal std::ranges::contiguous_range.
 	template< typename T, std::size_t N = dynamic_extent >
@@ -21,13 +25,14 @@ namespace pax {
 		using pointer					  = element_type *;
 		
 		// Some types of strings may have a '\0' at the end that we want to ignore...
-		static constexpr std::size_t 		extent = 
-			N - ( traits::character< value_type > && N && std::is_const_v< element_type > ); 
+		static constexpr std::size_t 		extent = N 
+			- ( traits::character< value_type > && std::is_const_v< element_type > && N ); 
 
 	    constexpr range() noexcept {};
 	    constexpr range( pointer src_ )		noexcept : m_source{ src_ } {}
 
 		template< std::ranges::contiguous_range U >
+			// requires( shaved_extent< U > == extent )
 		constexpr range( U & src_ )			noexcept : range{ std::ranges::data( src_ ) } {}
 
 		constexpr pointer data()			const noexcept	{	return m_source;			}
