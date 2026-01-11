@@ -298,9 +298,8 @@ namespace pax {
 		auto			b0 = begin( v0_ );
 		const auto		s0 = shave_zero_suffix( v0_, size( v0_ ) );
 		auto			b1 = begin( v1_ );
-		const auto		s1 = shave_zero_suffix( v1_, size( v1_ ) );
 
-		assert( ( s0 == s1 ) && "The containers must have the same size" );
+		assert( ( s0 == shave_zero_suffix( v1_, size( v1_ ) ) ) && "The containers must have the same size" );
 		const auto		e0 = b0 + s0;
 		while( ( b0 != e0 ) && binary_( *( b0++ ), *( b1++ ) ) );
 		return b0 == e0;

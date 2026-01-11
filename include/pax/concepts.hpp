@@ -92,7 +92,7 @@ namespace pax {
 			template< has_extent T >			requires( std::is_bounded_array_v< clean_t< T > > )
 			struct extent< T > 					: std::extent< clean_t< T > > {};
 
-			template< has_extent T >			requires( std::tuple_size< clean_t< T > >::value >= 0 )
+			template< has_extent T >			requires( !requires{ T::extent; } && std::tuple_size< clean_t< T > >::value >= 0 )
 			struct extent< T > 					: std::tuple_size< clean_t< T > > {};
 		}
 
