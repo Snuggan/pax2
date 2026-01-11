@@ -9,7 +9,6 @@
 
 
 namespace pax {
-
 	namespace traits {
 		template< typename T >		using clean			= std::remove_cvref< T >;
 		template< typename T >		using clean_t 		= clean< T >::type;
@@ -17,79 +16,35 @@ namespace pax {
 
 
 		/// The value that represents a dynamic size, where other values would be the static size.
-		constexpr std::size_t dynamic_extent( -1 );
+		constexpr std::size_t dynamic_extent	= -1;
 
-		/// A concept to match pointer, T[], T( & )[], T[ N ], or T( & )[ N ].
+		/// A concept to match T*, T[], T( & )[], T[ N ], or T( & )[ N ].
 		template< typename T >
-		concept array_like
-			 = std::is_pointer_v				< clean_t< T > > 
-			|| std::rank_v						< clean_t< T > > == 1;
-
-		static_assert(  array_like< int[ 4 ] > );
-		static_assert(  array_like< int( & )[ 4 ] > );
-		static_assert(  array_like< int( & )[] > );
-		static_assert(  array_like< int[] > );
-		static_assert(  array_like< int * > );
+		concept array_like						= std::is_pointer_v< clean_t< T > > || std::rank_v< clean_t< T > > == 1;
 
 		/// Do T store or reference contiguous elements, i.e. std::array, std::string, std::span etc.
 		template< typename T >
-		concept has_contiguous_sizeable
-			 = std::ranges::contiguous_range	< clean_t< T > >
+		concept size_contiguous					= std::ranges::contiguous_range< clean_t< T > >
 			|| std::is_bounded_array_v			< clean_t< T > >;	// int[ N ] and int ( & )[ N ]
-
-		static_assert(  has_contiguous_sizeable< int[ 4 ] > );
-		static_assert(  has_contiguous_sizeable< int( & )[ 4 ] > );
-		static_assert( !has_contiguous_sizeable< int( & )[] > );
-		static_assert( !has_contiguous_sizeable< int[] > );
-		static_assert( !has_contiguous_sizeable< int * > );
 	
-		/// Either has_contiguous_sizeable or pointer..
+		/// Either size_contiguous or pointer..
 		template< typename T >
-		concept has_contiguous
-			 = has_contiguous_sizeable			< T >
-			|| array_like						< T >;
-
-		static_assert(  has_contiguous< int[ 4 ] > );
-		static_assert(  has_contiguous< int( & )[ 4 ] > );
-		static_assert(  has_contiguous< int( & )[] > );
-		static_assert(  has_contiguous< int[] > );
-		static_assert(  has_contiguous< int * > );
+		concept contiguous						= size_contiguous< T > || array_like< T >;
 
 		/// Does an instance have a size?
 		template< typename T >
-		concept has_size
-			 = std::ranges::sized_range			< clean_t< T > >;	// int( & )[]
-
-		static_assert(  has_size< int[ 4 ] > );
-		static_assert(  has_size< int( & )[ 4 ] > );
-		static_assert( !has_size< int( & )[] > );
-		static_assert( !has_size< int[] > );
-		static_assert( !has_size< int * > );
+		concept has_size						= std::ranges::sized_range< clean_t< T > >;
 
 		/// Does the type T have a [static] size?
 		template< typename T >
 		concept has_extent
-			 = ( 0 <= std::tuple_size			< clean_t< T > >::value ) 
-			|| (		std::is_bounded_array_v	< clean_t< T > > 
-					&&	1u == std::rank_v		< clean_t< T > >
-			   )								  // T[ N ], T( & )[ N ]
-			|| ( T::extent != dynamic_extent );	  // std::span< T, N > doesn't have tuple_size...
-
-		static_assert(  has_extent< int[ 4 ] > );
-		static_assert(  has_extent< int( & )[ 4 ] > );
-		static_assert( !has_extent< int( & )[] > );
-		static_assert( !has_extent< int[] > );
-		static_assert( !has_extent< int * > );
+			 =	0u <= std::tuple_size			< clean_t< T > >::value
+			||	std::is_bounded_array_v			< clean_t< T > >	// T[ N ], T( & )[ N ]
+			||	T::extent != dynamic_extent;	  // std::span< T, N > doesn't have tuple_size...
 
 		/// Does an instance have only a dynamic size?
 		template< typename T >
 		concept has_dynamic_size				= has_size< T > && !has_extent< T >;
-
-		static_assert( !has_dynamic_size< int[ 4 ] > );
-		static_assert( !has_dynamic_size< int( & )[ 4 ] > );
-		static_assert( !has_dynamic_size< int( & )[] > );
-		static_assert( !has_dynamic_size< int[] > );
-		static_assert( !has_dynamic_size< int * > );
 
 		/// Does T have an element_type, [probably] in addition to the value_type?
 		template< typename T >
@@ -97,9 +52,7 @@ namespace pax {
 
 		namespace detail {
 			template< typename T >	struct Element_type;
-			template< typename T >	struct Element_type< T & >			:	Element_type< T > {};
-			template< typename T >	struct Element_type< T && >			:	Element_type< T > {};
-			template< typename T >	struct Element_type< const T >		{	using type = const Element_type< T >::type;		};
+			template< typename T >	struct Element_type< const T >		{	using type = const    Element_type< T >::type;	};
 			template< typename T >	struct Element_type< volatile T >	{	using type = volatile Element_type< T >::type;	};
 
 			template< typename T >				  requires( std::is_pointer_v< T > )
@@ -108,11 +61,12 @@ namespace pax {
 			template< typename T >				  requires( std::is_array_v< T > )
 			struct Element_type< T >			: std::remove_all_extents< T > {};
 
-			template< has_contiguous_sizeable T > requires(  has_declared_element_type< T > && !array_like< T > )
+			template< size_contiguous T >		  requires(  has_declared_element_type< T > && !array_like< T > )
 			struct Element_type< T >			{ using type = typename T::element_type; };
 
-			template< has_contiguous_sizeable T > requires( !has_declared_element_type< T > && !array_like< T > )
-			struct Element_type< T >			: std::conditional< std::is_same_v< typename T::iterator, typename T::const_iterator >,
+			template< size_contiguous T >		  requires( !has_declared_element_type< T > && !array_like< T > )
+			struct Element_type< T >			: std::conditional< 
+				std::is_same_v< typename T::iterator, typename T::const_iterator >,
 				const typename T::value_type,	// std::string_view needs it...
 				typename T::value_type
 			> {};
@@ -120,30 +74,26 @@ namespace pax {
 
 		/// Get the value type of T.
 		template< typename T >
-		using element_type_t 					= detail::Element_type< T >::type;
+		using element_type_t 					= detail::Element_type< std::remove_reference_t< T > >::type;
 
 		/// Get the value type of T.
 		template< typename T >
 		using value_type_t 						= clean_t< element_type_t< T > >;
 
 		namespace detail {
-			template< typename T >	struct extent;
-			template< typename T >	struct extent< T & >		: extent< T > {};
-			template< typename T >	struct extent< T && >		: extent< T > {};
-			template< typename T >	struct extent< const T >	: extent< T > {};
-			template< typename T >	struct extent< volatile T >	: extent< T > {};
+			template< typename T >				struct extent;
 		
 			template< traits::has_dynamic_size T >
 			struct extent< T > : size_constant< dynamic_extent > {};
 		
 			template< traits::has_extent T >	requires( requires{ T::extent; } )
-			struct extent< T > : size_constant< T::extent > {};
+			struct extent< T > 					: size_constant< T::extent > {};
 
 			template< traits::has_extent T >	requires( std::is_bounded_array_v< clean_t< T > > )
-			struct extent< T > : std::extent< clean_t< T > > {};
+			struct extent< T > 					: std::extent< clean_t< T > > {};
 
 			template< traits::has_extent T >	requires( std::tuple_size< clean_t< T > >::value >= 0 )
-			struct extent< T > : std::tuple_size< clean_t< T > > {};
+			struct extent< T > 					: std::tuple_size< clean_t< T > > {};
 		}
 
 		/// The "size" of a type. 
@@ -152,10 +102,7 @@ namespace pax {
 			- Other type with no contigous elements do not have a specialization.
 		**/
 		template< typename T >
-		constexpr std::size_t 		extent_v	= detail::extent< T >::value;
-
-		static_assert( extent_v< int[ 4 ] >			== 4u );
-		static_assert( extent_v< int( & )[ 4 ] >	== 4u );
+		constexpr std::size_t 		extent_v	= detail::extent< std::remove_cvref_t< T > >::value;
 
 		namespace detail {
 			template< typename T >	struct is_character					: std::false_type {};
@@ -174,18 +121,16 @@ namespace pax {
 
 		/// A concept to match character arrays.
 		template< typename T >
-		concept character_array					= array_like< T > && character< value_type_t< T > >;
+		concept character_array					= character< value_type_t< T > > && array_like< T >;
 
 		template< typename T >
-		concept string							= has_contiguous< T > && character< value_type_t< T > >;
-	}
+		concept string							= contiguous< T > && character< value_type_t< T > >;
+	}	// namespace traits
 
 	constexpr std::size_t dynamic_extent = traits::dynamic_extent;
-
-}	// namespace pax
+}		// namespace pax
 
 namespace std {
-
 	template< pax::traits::character Ch >
 	[[nodiscard]] constexpr Ch * begin( Ch * const & c_ )		noexcept	{	return c_;							}
 
@@ -209,6 +154,4 @@ namespace std {
 
 	template< pax::traits::character Ch, std::size_t N >		// In char arrays the null character is counted. 
 	[[nodiscard]] constexpr Ch * end( Ch( & c_ )[ N ] )			noexcept	{	return c_ + size( c_ );		}
-
 }	// namespace std
-

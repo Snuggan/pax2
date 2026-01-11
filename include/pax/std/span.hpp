@@ -13,7 +13,7 @@
 
 namespace std {
 	/// Check if all elements of `sp_` are equal to the corresponding elements of `v_`.
-	template< typename T, std::size_t N, pax::traits::has_contiguous V >
+	template< typename T, std::size_t N, pax::traits::contiguous V >
 	[[nodiscard]] constexpr bool operator==(
 		const std::span< T, N >	sp_,
 		V					 && v_
@@ -23,7 +23,7 @@ namespace std {
 	}
 
 	/// Lexicographically compare `sp_` with `v_` using three-way comparison.
-	template< typename T, std::size_t N, pax::traits::has_contiguous V >
+	template< typename T, std::size_t N, pax::traits::contiguous V >
 	[[nodiscard]] constexpr auto operator<=>(
 		const std::span< T, N >	sp_,
 		V					 && v_
@@ -45,10 +45,10 @@ namespace std {
 namespace pax {
 
 	template< typename T >
-	concept Not_character_array = traits::has_contiguous< T > && !traits::character_array< T >;
+	concept Not_character_array = traits::contiguous< T > && !traits::character_array< T >;
 
 	template< typename T >
-	concept Not_string			= traits::has_contiguous< T > && !traits::string< T >;
+	concept Not_string			= traits::contiguous< T > && !traits::string< T >;
 
 
 	/// Returns a std::span.
@@ -100,7 +100,7 @@ namespace pax {
 	}
 
 	/// Returns a dynamically sized std::span.
-	template< traits::has_contiguous V >
+	template< traits::contiguous V >
 	[[nodiscard]] constexpr auto make_dynamic_span( V && v_ ) 						noexcept {
 		return make_dynamic_span( make_span( v_ ) );
 	}
@@ -315,7 +315,7 @@ namespace pax {
 
 	/// Return the beginning of v_ up to but not including the first until_this_.
 	/// - If no until_this_ is found, v_ is returned.
-	template< traits::has_contiguous V, typename U >
+	template< traits::contiguous V, typename U >
 	constexpr auto until(  
 		V					 && v_, 
 		U					 && until_this_ 

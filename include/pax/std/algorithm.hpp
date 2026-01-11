@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../concepts.hpp"	// pax::traits::character, pax::traits::string, pax::traits::has_contiguous
+#include "../concepts.hpp"	// pax::traits::character, pax::traits::string, pax::traits::contiguous
 #include <algorithm>		// std::min, std::equal, std::lexicographical_compare_three_way
 #include <cassert>			// assert
 
@@ -38,7 +38,7 @@ namespace pax {
 	[[nodiscard]] constexpr bool valid( T * ptr_ ) 			noexcept	{	return ptr_ != nullptr;		}
 
 	/// Returns sp_.data() != nullptr. 
-	template< traits::has_contiguous V >
+	template< traits::contiguous V >
 	[[nodiscard]] constexpr bool valid( const V & v_ ) 		noexcept	{
 		using std::data;
 		return valid( data( v_ ) );
@@ -46,7 +46,7 @@ namespace pax {
 
 
 	/// Return true iff both data() and size() are equal between the two std::spans.
-	template< traits::has_contiguous V0, traits::has_contiguous V1 >
+	template< traits::contiguous V0, traits::contiguous V1 >
 	[[nodiscard]] constexpr bool identic(
 		const V0						  & v0_, 
 		const V1						  & v1_ 
@@ -57,7 +57,7 @@ namespace pax {
 
 	/// Return true iff any element in v1_ by address is also an element in v2_.
 	/// Cheap: 1 addition, 2 comparisons, and 2 bolean &&.
-	template< traits::has_contiguous V0, traits::has_contiguous V1 >
+	template< traits::contiguous V0, traits::contiguous V1 >
 	[[nodiscard]] constexpr bool overlap( 
 		const V0						  & v0_, 
 		const V1						  & v1_ 
@@ -70,7 +70,7 @@ namespace pax {
 
 	/// Returns a reference to the first item. 
 	/// UB, if v_ has a dynamic size that is zero.
-	template< traits::has_contiguous V >
+	template< traits::contiguous V >
 	[[nodiscard]] constexpr auto & front( V && v_ ) noexcept {
 		using std::data, std::size;
 		static_assert( traits::extent_v< V > != 0, "front( v_ ) requires size( v_ ) > 0" );
@@ -83,7 +83,7 @@ namespace pax {
 
 	namespace detail {
 		// Return true iff copying to dest_ requires backward copy.
-		template< traits::has_contiguous V, typename Itr >
+		template< traits::contiguous V, typename Itr >
 		[[nodiscard]] constexpr bool requires_backward( 
 			V							 && sp_,
 			Itr 							dst_ 
@@ -93,13 +93,13 @@ namespace pax {
 			return same && ( dst_ >= sp_.begin() ) && ( dst_ < sp_.end() );
 		}
 
-		template< traits::has_contiguous V0, traits::has_contiguous V1 >
+		template< traits::contiguous V0, traits::contiguous V1 >
 			requires( ( traits::extent_v< V0 > != dynamic_extent ) && ( traits::extent_v< V1 > != dynamic_extent ) )
 		constexpr void assert_equal_extent( const V0 &, const V1 & )			noexcept {
 			static_assert( traits::extent_v< V0 > == traits::extent_v< V1 >, "V0 and V1 must have same static size." );
 		}
 
-		template< traits::has_contiguous V0, traits::has_contiguous V1 >
+		template< traits::contiguous V0, traits::contiguous V1 >
 		constexpr void assert_equal_extent( [[maybe_unused]] const V0 & v0_, [[maybe_unused]] const V1 & v1_ )	noexcept {
 			using std::size;
 			assert( size( v0_ ) == size( v1_ ) && "v0_ and v1_ must have same size." );
@@ -108,71 +108,62 @@ namespace pax {
 
 
 
-	/// Returns 1, if the beginning of `view_` is `t_` and 0 otherwise.
-	template< traits::has_contiguous V >
-	[[nodiscard]] constexpr std::size_t starts_with(  
-		const V							  & v_, 
-		const traits::value_type_t< V >		t_ 
-	) noexcept {
+	/// Discount possible trailing '\0'.
+	template< traits::string Str >
+	[[nodiscard]] constexpr std::size_t chars_size( const Str & str_ ) noexcept {
 		using std::size;
-		auto			s = size( v_ );
-		if constexpr( traits::character_array< V > ) 
-			s -= bool( s ) && !v_[ s - 1 ];			// To remove possible trailing '\0'.
+		const std::size_t	sz = size( str_ );
+		return sz - ( traits::array_like< Str > && bool( sz ) && !str_[ sz - 1 ] );
+	}
 
-		return s && ( v_[ 0 ] == t_ );
+
+
+	/// Returns 1, if the beginning of `view_` is `t_` and 0 otherwise.
+	template< traits::string Str >
+	[[nodiscard]] constexpr bool starts_with(  
+		const Str						  & str_, 
+		const traits::value_type_t< Str >	ch_ 
+	) noexcept {
+		return chars_size( str_ ) && ( str_[ 0 ] == ch_ );
 	}
 
 	/// Returns the size of `v_` if the beginning of `view_` is lexicographical equal to `v_` and 0 otherwise.
-	template< traits::has_contiguous V0, traits::has_contiguous V1 >
+	template< traits::string V0, traits::string V1 >
 	[[nodiscard]] constexpr std::size_t starts_with(  
 		const V0						  & v0_, 
 		V1								 && v1_
 	) noexcept {
-		using std::begin, std::size;
-		const auto		b0 = begin( v0_ );
-		auto			s0 = size ( v0_ );
-		const auto		b1 = begin( v1_ );
-		auto			s1 = size ( v1_ );
-		if constexpr( traits::character_array< V0 > ) 
-			s0 -= bool( s0 ) && !v0_[ s0 - 1 ];		// To remove possible trailing '\0'.
-		if constexpr( traits::character_array< V1 > ) 
-			s1 -= bool( s1 ) && !v1_[ s1 - 1 ];		// To remove possible trailing '\0'.
-
-		return ( s1 > s0 ) ? 0u : std::equal( b1, b1 + s1, b0 ) ? s1 : 0u;
+		using std::begin;
+		const auto		b0  = begin( v0_ );
+		const auto		sz0 = chars_size( v0_ );
+		const auto		b1  = begin( v1_ );
+		const auto		sz1 = chars_size( v1_ );
+		return ( sz1 > sz0 ) ? 0u : std::equal( b1, b1 + sz1, b0 ) ? sz1 : 0u;
 	}
 
 
 	/// Returns 1, if the end of `view_` is `t_` and 0 otherwise.
-	template< traits::has_contiguous V >
-	[[nodiscard]] constexpr std::size_t ends_with(  
+	template< traits::string V >
+	[[nodiscard]] constexpr bool ends_with(  
 		const V							  & v_, 
 		const traits::value_type_t< V >		t_ 
 	) noexcept {
-		using std::size;
-		auto			s = size( v_ );
-		if constexpr( traits::character_array< V > ) 
-			s -= bool( s ) && !v_[ s - 1 ];			// To remove possible trailing '\0'.
-
-		return s && ( v_[ s - 1 ] == t_ );
+		const auto		sz = chars_size( v_ );
+		return sz && ( v_[ sz - 1 ] == t_ );
 	}
 
 	/// Returns the size of `v_`, if the end of `view_` is lexicographical equal to `v_` and 0 otherwise.
-	template< traits::has_contiguous V0, traits::has_contiguous V1 >
+	template< traits::string V0, traits::string V1 >
 	[[nodiscard]] constexpr std::size_t ends_with( 
 		const V0						  & v0_, 
 		V1								 && v1_
 	) noexcept {
-		using std::begin, std::size;
-		const auto		b0 = begin( v0_ );
-		auto			s0 = size ( v0_ );
-		const auto		b1 = begin( v1_ );
-		auto			s1 = size ( v1_ );
-		if constexpr( traits::character_array< V0 > ) 
-			s0 -= bool( s0 ) && !v0_[ s0 - 1 ];		// To remove possible trailing '\0'.
-		if constexpr( traits::character_array< V1 > ) 
-			s1 -= bool( s1 ) && !v1_[ s1 - 1 ];		// To remove possible trailing '\0'.
-
-		return ( s1 > s0 ) ? 0u : std::equal( b1, b1 + s1, b0 + ( s0 - s1 ) ) ? s1 : 0u;
+		using std::begin;
+		const auto		b0  = begin( v0_ );
+		const auto		sz0 = chars_size( v0_ );
+		const auto		b1  = begin( v1_ );
+		const auto		sz1 = chars_size( v1_ );
+		return ( sz1 > sz0 ) ? 0u : std::equal( b1, b1 + sz1, b0 + ( sz0 - sz1 ) ) ? sz1 : 0u;
 	}
 
 
@@ -180,55 +171,44 @@ namespace pax {
 
 	/// Returns the offset to the first occurence of sp1_ in sp0_.
 	/// - Returns size( v_ ) if there is no such.
-	template< traits::has_contiguous V0, traits::has_contiguous V1 >
+	template< traits::contiguous V0, traits::contiguous V1 >
 	[[nodiscard]] constexpr std::size_t find(  
 		const V0						  & v0_, 
 		const V1						  & v1_
 	) noexcept {
-		using std::begin, std::end;
-		const auto		b0 = begin( v0_ );
-		auto			e0 = end  ( v0_ );
-		const auto		b1 = begin( v1_ );
-		auto			e1 = end  ( v1_ );
-		if constexpr( traits::character_array< V0 > ) 
-			e0 -= ( b0 != e0 ) && !*( e0 - 1 );		// To remove possible trailing '\0'.
-		if constexpr( traits::character_array< V1 > ) 
-			e1 -= ( b1 != e1 ) && !*( e1 - 1 );		// To remove possible trailing '\0'.
-
-		return std::search( b0, e0, b1, e1 ) - b0;
+		using std::begin;
+		const auto		b0  = begin( v0_ );
+		const auto		sz0 = chars_size( v0_ );
+		const auto		b1  = begin( v1_ );
+		const auto		sz1 = chars_size( v1_ );
+		return std::search( b0, b0 + sz0, b1, b1 + sz1 ) - b0;
 	}
 
 	/// Returns the offset to the first occurence of t_ in v_.
 	/// - Returns v_.size() if there is no such.
-	template< traits::has_contiguous V >
+	template< traits::contiguous V >
 	[[nodiscard]] constexpr std::size_t find(  
 		const V							  & v_, 
 		const traits::value_type_t< V >	  & t_ 
 	) noexcept {
-		using std::begin, std::end;
-		const auto		b = begin( v_ );
-		auto			e = end  ( v_ );
-		if constexpr( traits::character_array< V > ) 
-			e -= ( b != e ) && !*( e - 1 );			// To remove possible trailing '\0'.
-
-		return std::find( b, e, t_ ) - b;
+		using std::begin;
+		const auto		b  = begin( v_ );
+		const auto		sz = chars_size( v_ );
+		return std::find( b, b + sz, t_ ) - b;
 	}
 
 	/// Returns the offset to v for the first true occurence of pred_( v ) in v_.
 	/// - Returns size( v_ ) if there is no such.
-	template< traits::has_contiguous V, typename Pred >
+	template< traits::contiguous V, typename Pred >
 		requires( std::predicate< Pred, traits::value_type_t< V > > )
 	[[nodiscard]] constexpr std::size_t find(  
 		const V							  & v_, 
 		Pred							 && pred_ 
 	) noexcept {
-		using std::begin, std::end;
-		const auto		b = begin( v_ );
-		auto			e = end  ( v_ );
-		if constexpr( traits::character_array< V > ) 
-			e -= ( b != e ) && !*( e - 1 );			// To remove possible trailing '\0'.
-
-		return std::find_if( b, e, pred_ ) - b;
+		using std::begin;
+		const auto		b  = begin( v_ );
+		const auto		sz = chars_size( v_ );
+		return std::find_if( b, b + sz, pred_ ) - b;
 	}
 
 	/// Returns the offset to the first occurence of either `'\n'` or `'\r'` in `view_`.
@@ -247,22 +227,17 @@ namespace pax {
 	}
 
 	/// Returns true iff find( v_, x_ ) < size( v_ ).
-	template< traits::has_contiguous V, typename X >
+	template< traits::contiguous V, typename X >
 	[[nodiscard]] constexpr bool contains(  
 		const V							  & v_, 
 		X								 && x_ 
 	) noexcept {
-		using std::size;
-		auto			s = size( v_ );
-		if constexpr( traits::character_array< V > ) 
-			s -= bool( s ) && !v_[ s - 1 ];			// To remove possible trailing '\0'.
-
-		return find( v_, x_ ) < size( v_ );
+		return find( v_, x_ ) < chars_size( v_ );
 	}
 
 	/// Returns the offset to the last occurence of t_ in v_.
 	/// - Returns size( v_ ) if there is no such.
-	template< traits::has_contiguous V >
+	template< traits::contiguous V >
 	[[nodiscard]] constexpr std::size_t rfind(  
 		const V							  & v_, 
 		const traits::value_type_t< V >	  & t_ 
@@ -279,7 +254,7 @@ namespace pax {
 
 	/// Returns the offset for the last true occurence of pred_( ... ).
 	/// - Returns size( v_ ) if there is no such.
-	template< traits::has_contiguous V, typename Pred >
+	template< traits::contiguous V, typename Pred >
 		requires( std::predicate< Pred, traits::value_type_t< V > > )
 	[[nodiscard]] constexpr std::size_t rfind(  
 		const V							  & v_, 
@@ -298,7 +273,7 @@ namespace pax {
 
 
 	/// Returns true iff v_ and u_ are equal.
-	template< traits::has_contiguous V0, traits::has_contiguous V1 >
+	template< traits::contiguous V0, traits::contiguous V1 >
 	[[nodiscard]] constexpr bool equal(  
 		const V0						  & v0_, 
 		V1								 && v1_
@@ -321,7 +296,7 @@ namespace pax {
 	///	Sorts the elements in v in non-descending order.
 	///	- The order of equal elements is not guaranteed to be preserved.
 	/// - https://en.cppreference.com/w/cpp/algorithm/sort
-	template< traits::has_contiguous V >
+	template< traits::contiguous V >
 	constexpr void sort( V & v_ ) {
 		using std::begin, std::end;
 		const auto		b = begin( v_ );
@@ -336,7 +311,7 @@ namespace pax {
 
 	/// A tool to apply binary_ on all pairs of items from v0_/v1_. 
 	/// v0_ and v1_ must have the same same size.
-	template< traits::has_contiguous V0, traits::has_contiguous V1, typename Binary >
+	template< traits::contiguous V0, traits::contiguous V1, typename Binary >
 		requires std::is_invocable_v< Binary, traits::value_type_t< V0 >, traits::value_type_t< V1 > >
 	constexpr void on_each_pair(
 		const V0	  & v0_,
@@ -363,7 +338,7 @@ namespace pax {
 		- Terminates unless v0_.size() == v1_.size().
 		- This could be used to mutate elements or aggregate/count in different ways.
 	**/
-	template< traits::has_contiguous V0, traits::has_contiguous V1, typename Binary >
+	template< traits::contiguous V0, traits::contiguous V1, typename Binary >
 		requires std::is_invocable_r_v< bool, Binary, traits::value_type_t< V0 >, traits::value_type_t< V1 > >
 	constexpr bool on_each_pair_while(
 		const V0	  & v0_,
@@ -388,7 +363,7 @@ namespace pax {
 
 	///	Checks if unary predicate p returns true for all elements in v.
 	/**	- https://en.cppreference.com/w/cpp/algorithm/all_any_none_of		**/
-	template< traits::has_contiguous V, typename Pred >
+	template< traits::contiguous V, typename Pred >
 		requires std::is_invocable_r_v< bool, Pred, traits::value_type_t< V > >
 	[[nodiscard]] constexpr bool all_of( 
 		const V							  & v_, 
@@ -404,7 +379,7 @@ namespace pax {
 	}
 
 	/// Checks if binary_( v0_[i], v1_[i] ) is true for all i.
-	template< traits::has_contiguous V0, traits::has_contiguous V1, typename Binary >
+	template< traits::contiguous V0, traits::contiguous V1, typename Binary >
 		requires std::is_invocable_r_v< bool, Binary, traits::value_type_t< V0 >, traits::value_type_t< V1 > >
 	[[nodiscard]] constexpr bool all_of(
 		const V0						  & v0_,
@@ -423,7 +398,7 @@ namespace pax {
 
 	///	Checks if unary predicate p returns true for at least one element in v.
 	/**	- https://en.cppreference.com/w/cpp/algorithm/all_any_none_of		**/
-	template< traits::has_contiguous V, typename Pred >
+	template< traits::contiguous V, typename Pred >
 		requires std::is_invocable_r_v< bool, Pred, traits::value_type_t< V > >
 	[[nodiscard]] constexpr bool any_of( 
 		const V							  & v_, 
@@ -439,7 +414,7 @@ namespace pax {
 	}
 
 	/// Checks if binary_( v0_[i], v1_[i] ) is true for any i.
-	template< traits::has_contiguous V0, traits::has_contiguous V1, typename Binary >
+	template< traits::contiguous V0, traits::contiguous V1, typename Binary >
 		requires std::is_invocable_r_v< bool, Binary, traits::value_type_t< V0 >, traits::value_type_t< V1 > >
 	[[nodiscard]] constexpr bool any_of(
 		const V0						  & v0_,
@@ -458,7 +433,7 @@ namespace pax {
 
 	///	Checks if unary predicate p returns true for no elements in v.
 	/**	- https://en.cppreference.com/w/cpp/algorithm/all_any_none_of		**/
-	template< traits::has_contiguous V, typename Pred >
+	template< traits::contiguous V, typename Pred >
 		requires std::is_invocable_r_v< bool, Pred, traits::value_type_t< V > >
 	[[nodiscard]] constexpr bool none_of( 
 		const V							  & v_, 
@@ -474,7 +449,7 @@ namespace pax {
 	}
 
 	/// Checks if binary_( v0_[i], v1_[i] ) is true for no i.
-	template< traits::has_contiguous V0, traits::has_contiguous V1, typename Binary >
+	template< traits::contiguous V0, traits::contiguous V1, typename Binary >
 		requires std::is_invocable_r_v< bool, Binary, traits::value_type_t< V0 >, traits::value_type_t< V1 > >
 	[[nodiscard]] constexpr bool none_of(
   		const V0						  & v0_,

@@ -17,7 +17,7 @@ namespace pax {
 
 	/// What std::span or std::string_view is suitable for a type?
 	/// Candidates are std::span< T >, std::span< T, N >, or std::string_view< T >.
-	template< traits::has_contiguous C, bool Dynamic = false >
+	template< traits::contiguous C, bool Dynamic = false >
 	struct view_type {
 		using type = std::span< traits::element_type_t< C >, Dynamic ? std::dynamic_extent : traits::extent_v< C > >;
 	};
@@ -43,7 +43,7 @@ namespace pax {
 	template< typename T, bool Dynamic >
 	struct view_type< const T, Dynamic > : view_type< T, Dynamic > {};
 
-	template< traits::has_contiguous C, bool Dynamic = false >
+	template< traits::contiguous C, bool Dynamic = false >
 	using view_type_t = typename view_type< C, Dynamic >::type;
 
 
