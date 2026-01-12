@@ -24,7 +24,8 @@ namespace pax {
 
 		/// Do T store or reference contiguous elements, i.e. std::array, std::string, std::span etc.
 		template< typename T >
-		concept size_contiguous					= std::ranges::contiguous_range< clean_t< T > >
+		concept size_contiguous
+			 = std::ranges::contiguous_range	< clean_t< T > >
 			|| std::is_bounded_array_v			< clean_t< T > >;	// int[ N ] and int ( & )[ N ]
 	
 		/// Either size_contiguous or pointer..
@@ -61,7 +62,7 @@ namespace pax {
 			template< typename T >				  requires( std::is_array_v< T > )
 			struct Element_type< T >			: std::remove_all_extents< T > {};
 
-			template< size_contiguous T >		  requires(  has_declared_element_type< T > && !array_like< T > )
+			template< size_contiguous T >		  requires(  has_declared_element_type< T > )
 			struct Element_type< T >			{ using type = typename T::element_type; };
 
 			template< size_contiguous T >		  requires( !has_declared_element_type< T > && !array_like< T > )
@@ -86,13 +87,13 @@ namespace pax {
 			template< has_dynamic_size T >
 			struct extent< T >					: size_constant< dynamic_extent > {};
 		
-			template< has_extent T >			requires( requires{ T::extent; } )
+			template< has_extent T >			  requires( requires{ T::extent; } )
 			struct extent< T > 					: size_constant< T::extent > {};
 
-			template< has_extent T >			requires( std::is_bounded_array_v< clean_t< T > > )
+			template< has_extent T >			  requires( std::is_bounded_array_v< clean_t< T > > )
 			struct extent< T > 					: std::extent< clean_t< T > > {};
 
-			template< has_extent T >			requires( !requires{ T::extent; } && 
+			template< has_extent T >			  requires( !requires{ T::extent; } && 
 												  std::tuple_size< clean_t< T > >::value >= 0 )
 			struct extent< T > 					: std::tuple_size< clean_t< T > > {};
 		}
