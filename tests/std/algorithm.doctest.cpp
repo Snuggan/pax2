@@ -252,7 +252,7 @@ namespace pax {
 			static_assert( !is_value_const < decltype( sp ) > );
 			static_assert( !std::is_const_v< decltype( sp.front() ) > );
 			static_assert(  is_value_const < decltype( make_const_span( sp ) ) > );
-			// static_assert(  std::is_const_v< decltype( make_const_span( sp ).front() ) > );	// error
+			static_assert(  std::is_const_v< decltype( make_const_span( sp ).front() ) > );	// error
 		}
 		{	// make_dynamic_span
 			static_assert( make_dynamic_span( std::string_view{} ).extent	== dynamic_extent );
