@@ -49,6 +49,10 @@ namespace pax {
 		DOCTEST_FAST_CHECK_UNARY( sh_.ends_with( "ext" ) );
 		DOCTEST_FAST_CHECK_UNARY( sh_.contains( 'x' ) );
 		DOCTEST_FAST_CHECK_UNARY( sh_.contains( "xt" ) );
+		
+		if constexpr( Sh::is_static ) {
+			DOCTEST_FAST_CHECK_EQ( get< 2 >( sh_ )	, sh_[ 2 ] );
+		}
 	}
 	
 	template< typename Sh >

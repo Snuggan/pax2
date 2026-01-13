@@ -39,6 +39,9 @@ namespace pax {
 		static constexpr std::size_t size()	noexcept		{	return extent;				}
 		constexpr pointer begin()			const noexcept	{	return data();				}
 		constexpr pointer end()				const noexcept	{	return data() + size();		}
+ 
+		template< std::size_t I >			requires( I < extent )
+		friend element_type & get( const range & r_ )  noexcept	{	return *( r_.data() + I );	}
 
 	private:
 		pointer								m_source{};
@@ -106,6 +109,8 @@ namespace pax {
 		using shadowN					  = base_shadow< range< element_type, N > >;
 		using shadow					  = shadowN< dynamic_extent >;
 		
+		static constexpr size_type			extent{ Core::extent };
+		static constexpr bool				is_static{ extent != dynamic_extent };
 		static constexpr bool				is_string{ traits::character< value_type > };
 
 	    using Core::Core, Core::data, Core::size;
@@ -176,8 +181,7 @@ namespace pax {
  
 		template< typename Out >
 		friend Out & operator<<( Out & out_, const base_shadow & sh_ )							{
-			if constexpr ( is_string )
-				return out_.write( sh_.data(), sh_.size() );
+			if constexpr ( is_string )		return out_.write( sh_.data(), sh_.size() );
 			else {
 				bool comma = false;
 				out_ << '[';
@@ -188,7 +192,7 @@ namespace pax {
 				return out_ << ']';
 			}
 		}
-	};
+ 	};
 	
 	template< typename T, std::size_t N = dynamic_extent >
 	using shadow = base_shadow< range< T, N > >;
@@ -213,13 +217,17 @@ namespace pax {
 		using value_type				  = std::remove_cv_t< element_type >;
 		using pointer					  = element_type *;
 		using traits_type				  = Traits;
+		static constexpr std::size_t 		extent = N;
 
 	    constexpr core_litteral( element_type ( & str_ )[ N ] )	{	std::copy_n( str_, N, value );	}
 
-		constexpr pointer data()			const noexcept	{	return value;				}
-		static constexpr std::size_t size()	noexcept		{	return N - ( N > 0 );		}
-		constexpr pointer begin()			const noexcept	{	return data();				}
-		constexpr pointer end()				const noexcept	{	return data() + size();		}
+		constexpr pointer data()			const noexcept	{	return value;					}
+		static constexpr std::size_t size()	noexcept		{	return N - ( N > 0 );			}
+		constexpr pointer begin()			const noexcept	{	return data();					}
+		constexpr pointer end()				const noexcept	{	return data() + size();			}
+ 
+		template< std::size_t I >			requires( ( I < extent ) && ( extent != dynamic_extent ) )
+		friend element_type & get( const core_litteral & cl_ )  noexcept	{	return *( cl_.data() + I );	}
 		
 		value_type							value[ N ];
 	};
