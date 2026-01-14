@@ -60,7 +60,7 @@ namespace pax {
 	constexpr const auto						abc		= std::span< const char >{ str, 12 };
 	
 	template< typename T >
-	constexpr bool is_value_const = std::is_const_v< std::remove_reference_t< traits::element_type_t< T > > >;
+	concept is_value_const = std::is_const_v< std::remove_reference_t< traits::element_type_t< T > > >;
 	
 	template< typename T >
 	constexpr auto safe_first( T && t_, std::size_t sz_ ) {

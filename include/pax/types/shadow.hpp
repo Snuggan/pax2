@@ -210,6 +210,12 @@ namespace pax {
 	template< std::ranges::contiguous_range Cont >
 	base_shadow( Cont & )				 -> base_shadow< range< traits::element_type_t< Cont >, traits::extent_v< Cont > > >;
 
+	/// Return a shadow instance with const (unmutable) elements. 
+	template< typename ...Args >
+	auto const_shadow( Args && ...args_ ) {
+		using type = decltype( shadow( std::forward< Args >( args_ )... ) );
+		return shadow< const typename type::element_type, type::extent >( std::forward< Args >( args_ )... );
+	}
 
 
 	template< traits::character Char, std::size_t N, typename Traits = std::char_traits< Char > >

@@ -14,6 +14,9 @@
 namespace pax { 
 	
 	template< auto V >	struct litteral_test	{	static constexpr decltype( V ) v = V;	};
+
+	template< typename T >
+	concept is_value_const = std::is_const_v< std::remove_reference_t< traits::element_type_t< T > > >;
 	
 	template< typename Sh >
 	void text_test( const Sh & sh_ ) {
@@ -121,8 +124,21 @@ namespace pax {
 	}
 	DOCTEST_TEST_CASE( "shadow numbers dynamic size" ) {
 		static constexpr std::array			nums0{ 0, 1, 2, 3, 4, 5, 0 };
-		const std::vector< int >			nums{ nums0.begin(), nums0.end() };
+		std::vector< int >					nums{ nums0.begin(), nums0.end() };
+
+		static_assert( !is_value_const < decltype( shadow( nums ) ) > );
+		static_assert( !std::is_const_v< std::remove_reference_t< decltype( shadow( nums ).front() ) > > );
+
 		num_test( shadow( nums ) );
+	}
+	DOCTEST_TEST_CASE( "const_shadow" ) {
+		static constexpr std::array			nums0{ 0, 1, 2, 3, 4, 5, 0 };
+		std::vector< int >					nums{ nums0.begin(), nums0.end() };
+
+		static_assert(  is_value_const < decltype( const_shadow( nums ) ) > );
+		static_assert(  std::is_const_v< std::remove_reference_t< decltype( const_shadow( nums ).front() ) > > );
+
+		num_test( const_shadow( nums ) );
 	}
 	DOCTEST_TEST_CASE( "litteral text" ) {
 		static_assert( litt( "text" ).last( 2 ) == "xt" );
