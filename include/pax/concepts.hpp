@@ -41,7 +41,7 @@ namespace pax {
 		concept has_extent
 			 =	0u <= std::tuple_size			< clean_t< T > >::value
 			||	std::is_bounded_array_v			< clean_t< T > >	// T[ N ], T( & )[ N ]
-			||	T::extent != dynamic_extent;	// std::span< T, N > doesn't have tuple_size...
+			||	std::remove_cvref_t< T >::extent != dynamic_extent;	// std::span< T, N > doesn't have tuple_size...
 
 		/// Does an instance have only a dynamic size?
 		template< typename T >
@@ -128,8 +128,6 @@ namespace pax {
 		template< typename T >
 		concept string							= contiguous< T > && character< value_type_t< T > >;
 	}	// namespace traits
-
-	constexpr std::size_t dynamic_extent = traits::dynamic_extent;
 
 	template< traits::contiguous Str >
 	constexpr std::size_t shave_zero_suffix( const Str & str_, const std::size_t sz_ )	{

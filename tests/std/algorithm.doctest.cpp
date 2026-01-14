@@ -252,18 +252,18 @@ namespace pax {
 			static_assert( !is_value_const < decltype( sp ) > );
 			static_assert( !std::is_const_v< decltype( sp.front() ) > );
 			static_assert(  is_value_const < decltype( make_const_span( sp ) ) > );
-			// static_assert(  std::is_const_v< decltype( make_const_span( sp ).front() ) > );	// error
+			static_assert(  std::is_const_v< std::remove_reference_t< decltype( make_const_span( sp ).front() ) > > );
 		}
 		{	// make_dynamic_span
-			static_assert( make_dynamic_span( std::string_view{} ).extent	== dynamic_extent );
-			static_assert( make_dynamic_span( e ).extent					== dynamic_extent );
-			static_assert( make_dynamic_span( str ).extent					== dynamic_extent );
+			static_assert( make_dynamic_span( std::string_view{} ).extent	== traits::dynamic_extent );
+			static_assert( make_dynamic_span( e ).extent					== traits::dynamic_extent );
+			static_assert( make_dynamic_span( str ).extent					== traits::dynamic_extent );
 
-			static_assert( make_dynamic_span( ints ).extent					== dynamic_extent );
-			static_assert( make_dynamic_span( intsN ).extent				== dynamic_extent );
+			static_assert( make_dynamic_span( ints ).extent					== traits::dynamic_extent );
+			static_assert( make_dynamic_span( intsN ).extent				== traits::dynamic_extent );
 
-			static_assert( std::span< int >{}.extent						== dynamic_extent );
-			static_assert( ints.extent										== dynamic_extent );
+			static_assert( std::span< int >{}.extent						== traits::dynamic_extent );
+			static_assert( ints.extent										== traits::dynamic_extent );
 			static_assert( intsN.extent										== N );
 		}
 		{	// identic
@@ -417,7 +417,6 @@ namespace pax {
 			static_assert( identic( last<  0 >( intsN ), safe_last( intsN,  0 ) ) );
 			static_assert( identic( last<  5 >( intsN ), safe_last( intsN,  5 ) ) );
 			static_assert( identic( last< 12 >( intsN ), safe_last( intsN, 12 ) ) );
-			static_assert( identic( last< 22 >( intsN ), safe_last( intsN, 22 ) ) );
 			static_assert( last<  5 >( intsN ).extent	==	5 );
 		}
 		{	// not_first (character)

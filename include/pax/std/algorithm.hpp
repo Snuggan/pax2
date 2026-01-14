@@ -69,7 +69,7 @@ namespace pax {
 	template< traits::contiguous V >
 	[[nodiscard]] constexpr auto & front( V && v_ ) noexcept {
 		static_assert( traits::extent_v< V > != 0, "front( v_ ) requires size( v_ ) > 0" );
-		if constexpr ( traits::extent_v< V > == dynamic_extent )
+		if constexpr ( traits::extent_v< V > == traits::dynamic_extent )
 			assert( size( v_ ) && "front( v_ ) requires size( v_ ) > 0" );
 		return *data( v_ );
 	}
@@ -89,7 +89,8 @@ namespace pax {
 		}
 
 		template< traits::contiguous V0, traits::contiguous V1 >
-			requires( ( traits::extent_v< V0 > != dynamic_extent ) && ( traits::extent_v< V1 > != dynamic_extent ) )
+			requires( ( traits::extent_v< V0 > != traits::dynamic_extent ) 
+				&&    ( traits::extent_v< V1 > != traits::dynamic_extent ) )
 		constexpr void assert_equal_extent( const V0 &, const V1 & )			noexcept {
 			static_assert( traits::extent_v< V0 > == traits::extent_v< V1 >, "V0 and V1 must have same static size." );
 		}

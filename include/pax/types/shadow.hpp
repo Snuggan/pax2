@@ -12,6 +12,7 @@
 
 
 namespace pax {
+	constexpr std::size_t dynamic_extent = traits::dynamic_extent;	// From concepts.hpp.
 
 	template< traits::contiguous Str, std::size_t N = traits::extent_v< Str > >
 	constexpr std::size_t shaved_extent	  = N - ( traits::character_array< Str > && N );
