@@ -142,6 +142,18 @@ namespace pax {
 		constexpr shadow first( const size_type n_ )					const noexcept
 		{	return { data(), ( size() >= n_ ) ? n_ : size() };									}
  
+		template< std::size_t I >										requires( I != traits::dynamic_extent )
+		[[nodiscard]] constexpr auto first()							const noexcept {
+			assert( I <= size( v_ ) && "first< I >( v_ ) requires I <= size( v_ )." );
+			return shadow< element_type, I >{ data( v_ ) };
+		}
+
+		template< std::size_t I >										requires( I != traits::dynamic_extent )
+		[[nodiscard]] constexpr auto first() 							const noexcept {
+			static constexpr std::size_t	sz  = std::min( I, traits::extent_v< V > );
+			return shadow< element_type, I >( data( v_ ) );
+		}
+
 		constexpr shadow not_first( size_type n_ )						const noexcept			{
 			n_ = ( size() > n_ ) ? n_ : size();
 			return shadow{ data() + n_, size() - n_ };

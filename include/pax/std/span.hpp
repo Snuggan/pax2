@@ -150,16 +150,6 @@ namespace pax {
 		static constexpr std::size_t	sz  = std::min( I, traits::extent_v< V > );
 		return std::span< traits::element_type_t< V >, sz >( data( v_ ), sz );
 	}
-	template< auto I, Not_character_array V >
-		requires( std::is_unsigned_v< decltype( I ) > && ( I != traits::dynamic_extent ) && ( traits::has_extent< V > ) )
-	[[nodiscard]] constexpr auto first( 
-		V					 && v_,
-		Statique< I >	
-	) noexcept {
-		using std::data;
-		static constexpr std::size_t	sz  = std::min( std::size_t( I ), traits::extent_v< V > );
-		return std::span< traits::element_type_t< V >, sz >( data( v_ ), sz );
-	}
 
 
 	/// Returns a dynamically sized span of the last i_ elements of v_.
