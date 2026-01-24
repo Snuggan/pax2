@@ -14,6 +14,9 @@ namespace pax {
 		template< typename T >		using clean_t 		= clean< T >::type;
 		template< std::size_t I >	using size_constant = std::integral_constant< std::size_t, I >;
 
+		/// Returns true iff type T is the same as any of the Other types.
+		template< typename T, typename ...Other >
+		static constexpr bool any_of_v			= ( false || ... || std::is_same_v< T, Other > );
 
 		/// The value that represents a dynamic size, where other values would be the static size.
 		constexpr std::size_t dynamic_extent	= -1;
@@ -41,7 +44,7 @@ namespace pax {
 		concept has_extent
 			 =	0u <= std::tuple_size			< clean_t< T > >::value
 			||	std::is_bounded_array_v			< clean_t< T > >	// T[ N ], T( & )[ N ]
-			||	std::remove_cvref_t< T >::extent != dynamic_extent;	// std::span< T, N > doesn't have tuple_size...
+			||	clean_t< T >::extent != dynamic_extent;				// std::span< T, N > doesn't have tuple_size...
 
 		/// Does an instance have only a dynamic size?
 		template< typename T >
@@ -71,17 +74,7 @@ namespace pax {
 				const typename T::value_type,	// std::string_view needs this...
 				typename T::value_type
 			> {};
-		}
 
-		/// Get the value type of T.
-		template< typename T >
-		using element_type_t 					= detail::Element_type< std::remove_reference_t< T > >::type;
-
-		/// Get the value type of T.
-		template< typename T >
-		using value_type_t 						= clean_t< element_type_t< T > >;
-
-		namespace detail {
 			template< typename T >				  struct extent;
 		
 			template< has_dynamic_size T >
@@ -98,47 +91,53 @@ namespace pax {
 			struct extent< T > 					: std::tuple_size< clean_t< T > > {};
 		}
 
+		/// Get the value type of T.
+		template< typename T >
+		using element_type_t 					= detail::Element_type< std::remove_reference_t< T > >::type;
+
+		/// Get the value type of T.
+		template< typename T >
+		using value_type_t 						= clean_t< element_type_t< T > >;
+
 		/// The "size" of a type. 
 		/**	- dynamic_extent: for dynamically sized containers with contigous elements.
 			- N: for statically sized containers with N contigous elements.
-			- Other type with no contigous elements do not have a specialization.
-		**/
+			- Other type with no contigous elements do not have a specialization.		**/
 		template< typename T >
 		constexpr std::size_t 		extent_v	= detail::extent< std::remove_cvref_t< T > >::value;
 
-		namespace detail {
-			template< typename T >	struct is_character					: std::false_type {};
-			template<>				struct is_character< char >			: std::true_type {};
-			template<>				struct is_character< signed char >	: std::true_type {};
-			template<>				struct is_character< unsigned char >: std::true_type {};
-			template<>				struct is_character< wchar_t >		: std::true_type {};
-			template<>				struct is_character< char8_t >		: std::true_type {};
-			template<>				struct is_character< char16_t >		: std::true_type {};
-			template<>				struct is_character< char32_t >		: std::true_type {};
-		}
-
 		/// Is T a character type. 
 		template< typename T >
-		concept character						= detail::is_character< clean_t< T > >::value;
+		concept character						= any_of_v< clean_t< T >, char, signed char, unsigned char, 
+																		wchar_t, char8_t, char16_t, char32_t >;
 
 		/// A concept to match character arrays.
 		template< typename T >
-		concept character_array					= character< value_type_t< T > > && array_like< T >;
+		concept character_array					= array_like< T > && character< value_type_t< T > >;
 
 		template< typename T >
 		concept string							= contiguous< T > && character< value_type_t< T > >;
 	}	// namespace traits
 
-	template< traits::contiguous Str >
-	constexpr std::size_t shave_zero_suffix( const Str & str_, const std::size_t sz_ )	{
-		return sz_ - ( traits::character_array< Str > && sz_ && !str_[ sz_ - 1 ] );
-	}
+	template< typename T >
+	[[nodiscard]] constexpr bool zero_suffix( const T &, const std::size_t )						{	return false;	}
+
+	template< traits::string Str >				  requires( traits::character_array< Str > )
+	[[nodiscard]] constexpr bool zero_suffix( const Str & str_, const std::size_t sz_ )
+	{	return sz_ && !str_[ sz_ - 1 ];																					}
+
+	template< typename T >
+	[[nodiscard]] constexpr std::size_t shave_zero_suffix( const T &, const std::size_t sz_ )		{	return sz_;		}
+
+	template< traits::string Str >				  requires( traits::character_array< Str > )
+	[[nodiscard]] constexpr std::size_t shave_zero_suffix( const Str & str_, const std::size_t sz_ )
+	{	return sz_ - ( sz_ && !str_[ sz_ - 1 ] );																		}
 
 }		// namespace pax
 
 namespace std {
 	template< pax::traits::character Ch >
-	[[nodiscard]] constexpr Ch * begin( Ch * const & c_ )		noexcept	{	return c_;							}
+	[[nodiscard]] constexpr Ch * begin( Ch * const & c_ )		noexcept	{	return c_;								}
 
 	template< pax::traits::character Ch >
 	[[nodiscard]] constexpr Ch * end( Ch * const & c_ )			noexcept	{
@@ -148,16 +147,15 @@ namespace std {
 	}
 
 	template< pax::traits::character Ch >
-	[[nodiscard]] constexpr Ch * data( Ch * const & c_ )		noexcept	{	return c_;							}
+	[[nodiscard]] constexpr Ch * data( Ch * const & c_ )		noexcept	{	return c_;								}
 
 	template< pax::traits::character Ch >
-	[[nodiscard]] constexpr std::size_t size( Ch * const & c_ )	noexcept	{	return end( c_ ) - c_;				}
+	[[nodiscard]] constexpr std::size_t size( Ch * const & c_ )	noexcept	{	return end( c_ ) - c_;					}
 
 	template< pax::traits::character Ch, std::size_t N >		// In char arrays the null character is counted. 
-	[[nodiscard]] constexpr std::size_t size( Ch( & c_ )[ N ] )	noexcept	{
-		return ( N == 0 ) ? 0u : N - ( c_[ N-1 ] == 0 );
-	}
+	[[nodiscard]] constexpr std::size_t size( Ch( & c_ )[ N ] )	noexcept	{	return pax::shave_zero_suffix( c_, N );	}
 
 	template< pax::traits::character Ch, std::size_t N >		// In char arrays the null character is counted. 
-	[[nodiscard]] constexpr Ch * end( Ch( & c_ )[ N ] )			noexcept	{	return c_ + size( c_ );		}
+	[[nodiscard]] constexpr Ch * end( Ch( & c_ )[ N ] )			noexcept	{	return c_ + size( c_ );					}
+
 }	// namespace std

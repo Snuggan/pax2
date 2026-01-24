@@ -16,6 +16,22 @@
 
 namespace pax::traits {
 
+	DOCTEST_TEST_CASE( "concepts zero_suffix" ) {
+		using std::size;
+		{
+			const char			str[] = "Hej!";
+			DOCTEST_FAST_CHECK_EQ   (  size( str ), 5 );
+			DOCTEST_FAST_CHECK_UNARY(  zero_suffix( str, size( str ) ) );
+		} {
+			const auto			str   = "Hej!";
+			DOCTEST_FAST_CHECK_EQ   (  size( str ), 4 );
+			DOCTEST_FAST_CHECK_UNARY( !zero_suffix( str, size( str ) ) );
+		} {
+			const std::string	str   = "Hej!";
+			DOCTEST_FAST_CHECK_UNARY( !zero_suffix( str, size( str ) ) );
+		}
+	}
+
 	static_assert(  array_like< int[ 4 ] > );
 	static_assert(  array_like< int( & )[ 4 ] > );
 	static_assert(  array_like< int( & )[] > );
@@ -171,6 +187,10 @@ namespace pax::traits {
 		static_assert( !string< std::span< int > > );
 		static_assert( !string< std::span< int, 4 > > );
 		static_assert( !string< std::vector< int > > );
+	}
+	DOCTEST_TEST_CASE( "concepts any_of" ) {
+		static_assert( !any_of_v< int, bool, char, long > );
+		static_assert(  any_of_v< int, bool, char, long, int > );
 	}
 
 }	// namespace pax

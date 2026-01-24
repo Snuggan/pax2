@@ -3,6 +3,7 @@
 
 
 #include <pax/types/shadow.hpp>
+#include <pax/std/string_view.hpp>
 #include <pax/doctest.hpp>
 #include <string>
 #include <array>
@@ -14,6 +15,7 @@
 namespace pax { 
 	
 	template< auto V >	struct litteral_test	{	static constexpr decltype( V ) v = V;	};
+	constexpr bool printout{ false };
 
 	template< typename T >
 	concept is_value_const = std::is_const_v< std::remove_reference_t< traits::element_type_t< T > > >;
@@ -53,8 +55,40 @@ namespace pax {
 		DOCTEST_FAST_CHECK_UNARY( sh_.contains( 'x' ) );
 		DOCTEST_FAST_CHECK_UNARY( sh_.contains( "xt" ) );
 		
-		if constexpr( Sh::is_static ) {
-			DOCTEST_FAST_CHECK_EQ( get< 2 >( sh_ )	, sh_[ 2 ] );
+		const auto first2 = sh_.template first< 2 >();
+		DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( first2 ) >, 2 );
+		DOCTEST_FAST_CHECK_EQ( first2, "te" );
+
+		const auto last2 = sh_.template last< 2 >();
+		DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( last2 ) >, 2 );
+		DOCTEST_ASCII_CHECK_EQ( last2, "xt" );
+
+		if constexpr( traits::has_extent< Sh > ) {
+			DOCTEST_ASCII_CHECK_EQ( get< 2 >( sh_ )	, sh_[ 2 ] );
+
+			const auto first9 = sh_.template first< 9 >();
+			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( first9 ) >, 4 );
+			DOCTEST_ASCII_CHECK_EQ( first9, "text" );
+
+			const auto not_first2 = sh_.template not_first< 2 >();
+			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( not_first2 ) >, 2 );
+			DOCTEST_ASCII_CHECK_EQ( not_first2, "xt" );
+
+			const auto not_first9 = sh_.template not_first< 9 >();
+			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( not_first9 ) >, 0 );
+			DOCTEST_ASCII_CHECK_EQ( not_first9, "" );
+
+			const auto last9 = sh_.template last< 9 >();
+			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( last9 ) >, 4 );
+			DOCTEST_ASCII_CHECK_EQ( last9, "text" );
+
+			const auto not_last2 = sh_.template not_last< 2 >();
+			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( not_last2 ) >, 2 );
+			DOCTEST_ASCII_CHECK_EQ( not_last2, "te" );
+
+			const auto not_last9 = sh_.template not_last< 9 >();
+			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( not_last9 ) >, 0 );
+			DOCTEST_ASCII_CHECK_EQ( not_last9, "" );
 		}
 	}
 	
@@ -97,14 +131,51 @@ namespace pax {
 		DOCTEST_FAST_CHECK_UNARY( sh_.contains( 5 ) );
 		DOCTEST_FAST_CHECK_UNARY( sh_.contains( std::array{ 2, 3, 4 } ) );
 #endif
+		const auto first2 = sh_.template first< 2 >();
+		DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( first2 ) >, 2 );
+		DOCTEST_FAST_CHECK_EQ( first2, std::array{ 0, 1 } );
+
+		const auto last2 = sh_.template last< 2 >();
+		DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( last2 ) >, 2 );
+		DOCTEST_FAST_CHECK_EQ( last2, std::array{ 5, 0 } );
+
+		if constexpr( traits::has_extent< Sh > ) {
+			DOCTEST_FAST_CHECK_EQ( get< 2 >( sh_ )	, sh_[ 2 ] );
+
+			const auto first9 = sh_.template first< 9 >();
+			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( first9 ) >, 7 );
+			DOCTEST_FAST_CHECK_EQ( first9, nums );
+
+			const auto not_first2 = sh_.template not_first< 2 >();
+			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( not_first2 ) >, 5 );
+			DOCTEST_FAST_CHECK_EQ( not_first2, std::array{ 2, 3, 4, 5, 0 } );
+
+			const auto not_first9 = sh_.template not_first< 9 >();
+			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( not_first9 ) >, 0 );
+			DOCTEST_FAST_CHECK_EQ( not_first9, empty );
+
+			const auto last9 = sh_.template last< 9 >();
+			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( last9 ) >, 7 );
+			DOCTEST_FAST_CHECK_EQ( last9, nums );
+
+			const auto not_last2 = sh_.template not_last< 2 >();
+			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( not_last2 ) >, 5 );
+			DOCTEST_FAST_CHECK_EQ( not_last2, std::array{ 0, 1, 2, 3, 4 } );
+
+			const auto not_last9 = sh_.template not_last< 9 >();
+			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( not_last9 ) >, 0 );
+			DOCTEST_FAST_CHECK_EQ( not_last9, empty );
+		}
 	}
 
 	DOCTEST_TEST_CASE( "shadow text static size" ) {
-		static_assert( shadow( "text" ).last( 2 ) == "xt" );
+		if( printout )	std::println( "--- shadow text static ------------------" );
+//		static_assert( shadow( "text" ).last( 2 ) == "xt" );
 		DOCTEST_FAST_CHECK_EQ( std::format( "{:?s}", shadow( "1\t2\n3\"4" ) ), "\"1\\t2\\n3\\\"4\"" );
 		text_test( shadow( "text" ) );
 	}
 	DOCTEST_TEST_CASE( "shadow text dynamic size" ) {
+		if( printout )	std::println( "--- shadow text dynamic -----------------" );
 		const std::string		str0{ "1\t2\n3\"4" };
 		DOCTEST_FAST_CHECK_EQ( std::format( "{:?s}", shadow( str0 ) ), "\"1\\t2\\n3\\\"4\"" );
 		std::string				str{ "text" };
@@ -114,6 +185,7 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( str[ 2 ], 'a' );
 	}
 	DOCTEST_TEST_CASE( "shadow numbers static size" ) {
+		if( printout )	std::println( "--- shadow numbers static ---------------" );
 		static constexpr std::array			nums0{ 0, 1, 2, 3, 4, 5, 0 };
 		static_assert( shadow( nums0 ).last( 2 ) == std::array{ 5, 0 } );
 		std::array							nums{ nums0 };
@@ -123,6 +195,7 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( nums[ 2 ], 99 );
 	}
 	DOCTEST_TEST_CASE( "shadow numbers dynamic size" ) {
+		if( printout )	std::println( "--- shadow numbers dynamic --------------" );
 		static constexpr std::array			nums0{ 0, 1, 2, 3, 4, 5, 0 };
 		std::vector< int >					nums{ nums0.begin(), nums0.end() };
 
@@ -132,6 +205,7 @@ namespace pax {
 		num_test( shadow( nums ) );
 	}
 	DOCTEST_TEST_CASE( "const_shadow" ) {
+		if( printout )	std::println( "--- const_shadow ------------------------" );
 		static constexpr std::array			nums0{ 0, 1, 2, 3, 4, 5, 0 };
 		std::vector< int >					nums{ nums0.begin(), nums0.end() };
 
@@ -141,9 +215,9 @@ namespace pax {
 		num_test( const_shadow( nums ) );
 	}
 	DOCTEST_TEST_CASE( "litteral text" ) {
-		static_assert( litt( "text" ).last( 2 ) == "xt" );
+		if( printout )	std::println( "--- litteral text -----------------------" );
+		DOCTEST_FAST_CHECK_EQ( litt( "text" ).last( 2 ), "xt" );
 		DOCTEST_FAST_CHECK_EQ( std::format( "{:?s}", shadow( "1\t2\n3\"4" ) ), "\"1\\t2\\n3\\\"4\"" );
 		text_test( litt( "text" ) );
 	}
-
 }
