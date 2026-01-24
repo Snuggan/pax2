@@ -20,7 +20,18 @@
 
 namespace pax {
 	constexpr std::size_t dynamic_extent = traits::dynamic_extent;	// From concepts.hpp.
+
+	template< typename T >
+	[[nodiscard]] constexpr auto shave_zero_suffix2( const T & t_ ) {
+		using std::begin, std::size;
+		return begin( t_ ) + size( t_ );
+	}
+
+	template< traits::character Char, std::size_t N >	requires( N > 0 )
+	[[nodiscard]] constexpr Char const * shave_zero_suffix2( Char const ( & str_ )[ N ] )
+	{	return str_ + N - !str_[ N - 1 ];													}
 	
+
 	/// Implements the core for span-like utilities. Static or dynamic size.
 	/// Is a minimal std::ranges::contiguous_range.
 	template< typename T, std::size_t N = dynamic_extent >
@@ -63,8 +74,7 @@ namespace pax {
 	    constexpr range( pointer src_, const std::size_t size_ ) noexcept 
 			:	m_source{ src_ }, m_size{ src_ ? size_ : 0u } {}
 
-	    constexpr range( pointer begin_, pointer end_ ) noexcept 
-			:	range{ begin_, end_ - begin_ } {}
+	    constexpr range( pointer begin_, pointer end_ ) noexcept : range{ begin_, end_ - begin_ } {}
 
 		template< std::ranges::contiguous_range U >
 		constexpr range( U & src_ ) 		noexcept
@@ -136,23 +146,25 @@ namespace pax {
 		{	return data()[ i_ ];																}
 
 		/// Utility function that returns true iff a string and the last character is \0.
-		constexpr bool skip_last()										const noexcept
-		{	return zero_suffix( data(), size() );												}
+		constexpr auto shave_zero_suffix_end()							const noexcept			{
+			if constexpr(  is_static && is_string && extent )			return end() - !back();
+			else 														return end();
+		}
 
 		/// If this is a string and the last character is \0 it is ignored. 
  	    template< typename U >
 	    constexpr bool operator==( const U & u_ )						const noexcept			{
-			using std::begin, std::end, std::data, std::size;
-			return std::equal(	this->begin(), this->end() - skip_last(),
-								begin( u_ ), end( u_ ) - zero_suffix( begin( u_ ), size( u_ ) ) );
+			using std::begin, std::size;
+			return std::equal(	this->begin(), shave_zero_suffix_end(),
+								begin( u_ ),   shave_zero_suffix2( u_ ) );
 		}
 		
 		/// If this is a string and the last character is \0 it is ignored. 
  	    template< typename U >
 	    constexpr auto operator<=>( const U & u_ )						const noexcept			{
-			using std::begin, std::end, std::data, std::size;
-	    	return std::lexicographical_compare_three_way( this->begin(), this->end() - skip_last(),
-								begin( u_ ), end( u_ ) - zero_suffix( begin( u_ ), size( u_ ) ) );
+			using std::begin, std::size;
+	    	return std::lexicographical_compare_three_way( this->begin(), shave_zero_suffix_end(), 
+								begin( u_ ), shave_zero_suffix2( u_ ) );
 	    }
 
 		/// Return a dynamic shadow of the first min(n_, size()) elements. 

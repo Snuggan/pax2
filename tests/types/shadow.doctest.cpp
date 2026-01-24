@@ -14,6 +14,19 @@
 
 namespace pax { 
 	
+	DOCTEST_TEST_CASE( "concepts zero_suffix" ) {
+		using std::data, std::size;
+		{
+			const char			str[] = "Hej!";
+			DOCTEST_FAST_CHECK_EQ( size( str ), 5 );
+			DOCTEST_FAST_CHECK_EQ( shave_zero_suffix2( str ) - str, 4 );
+		} {
+			const auto			str   = "Hej!";
+			DOCTEST_FAST_CHECK_EQ( size( str ), 4 );
+			DOCTEST_FAST_CHECK_EQ( shave_zero_suffix2( str ) - str, 4 );
+		}
+	}
+
 	template< auto V >	struct litteral_test	{	static constexpr decltype( V ) v = V;	};
 	constexpr bool printout{ false };
 
@@ -27,29 +40,29 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ ( std::format( "{}", sh_ ), "['t', 'e', 'x', 't']" );
 		DOCTEST_FAST_CHECK_EQ ( std::format( "{:s}", sh_ ), "text" );
 
-		DOCTEST_FAST_CHECK_EQ( sh_					, "text" );
+		DOCTEST_ASCII_CHECK_EQ( sh_					, "text" );
 		DOCTEST_FAST_CHECK_EQ( sh_.size()			, 4u );
 		DOCTEST_FAST_CHECK_GT( sh_					, "test" );
 		DOCTEST_FAST_CHECK_GE( sh_					, "test" );
-		DOCTEST_FAST_CHECK_EQ( sh_[ 3 ]				, 't' );
-		DOCTEST_FAST_CHECK_EQ( *( sh_.begin() + 1 ) , 'e' );
-		DOCTEST_FAST_CHECK_EQ( *( sh_.end()   - 2 ) , 'x' );
-		DOCTEST_FAST_CHECK_EQ( sh_.front() 			, 't' );
-		DOCTEST_FAST_CHECK_EQ( sh_.back() 			, 't' );
-		DOCTEST_FAST_CHECK_EQ( sh_.first( 2 )		, "te" );
-		DOCTEST_FAST_CHECK_EQ( sh_.first( 9 )		, "text" );
-		DOCTEST_FAST_CHECK_EQ( sh_.not_first( 2 )	, "xt" );
-		DOCTEST_FAST_CHECK_EQ( sh_.not_first( 9 )	, "" );
-		DOCTEST_FAST_CHECK_EQ( sh_.last( 2 )		, "xt" );
-		DOCTEST_FAST_CHECK_EQ( sh_.last( 9 )		, "text" );
-		DOCTEST_FAST_CHECK_EQ( sh_.not_last( 2 )	, "te" );
-		DOCTEST_FAST_CHECK_EQ( sh_.not_last( 9 )	, "" );
-		DOCTEST_FAST_CHECK_EQ( sh_.part(  1, 2 )	, "ex" );
-		DOCTEST_FAST_CHECK_EQ( sh_.part(  9, 2 )	, "" );
-		DOCTEST_FAST_CHECK_EQ( sh_.part(  1, 9 )	, "ext" );
-		DOCTEST_FAST_CHECK_EQ( sh_.part( -3, 2 )	, "ex" );
-		DOCTEST_FAST_CHECK_EQ( sh_.part( -9, 2 )	, "te" );
-		DOCTEST_FAST_CHECK_EQ( sh_.part( -3, 9 )	, "ext" );
+		DOCTEST_ASCII_CHECK_EQ( sh_[ 3 ]			, 't' );
+		DOCTEST_ASCII_CHECK_EQ( *( sh_.begin() + 1 ) , 'e' );
+		DOCTEST_ASCII_CHECK_EQ( *( sh_.end()   - 2 ) , 'x' );
+		DOCTEST_ASCII_CHECK_EQ( sh_.front() 		, 't' );
+		DOCTEST_ASCII_CHECK_EQ( sh_.back() 			, 't' );
+		DOCTEST_ASCII_CHECK_EQ( sh_.first( 2 )		, "te" );
+		DOCTEST_ASCII_CHECK_EQ( sh_.first( 9 )		, "text" );
+		DOCTEST_ASCII_CHECK_EQ( sh_.not_first( 2 )	, "xt" );
+		DOCTEST_ASCII_CHECK_EQ( sh_.not_first( 9 )	, "" );
+		DOCTEST_ASCII_CHECK_EQ( sh_.last( 2 )		, "xt" );
+		DOCTEST_ASCII_CHECK_EQ( sh_.last( 9 )		, "text" );
+		DOCTEST_ASCII_CHECK_EQ( sh_.not_last( 2 )	, "te" );
+		DOCTEST_ASCII_CHECK_EQ( sh_.not_last( 9 )	, "" );
+		DOCTEST_ASCII_CHECK_EQ( sh_.part(  1, 2 )	, "ex" );
+		DOCTEST_ASCII_CHECK_EQ( sh_.part(  9, 2 )	, "" );
+		DOCTEST_ASCII_CHECK_EQ( sh_.part(  1, 9 )	, "ext" );
+		DOCTEST_ASCII_CHECK_EQ( sh_.part( -3, 2 )	, "ex" );
+		DOCTEST_ASCII_CHECK_EQ( sh_.part( -9, 2 )	, "te" );
+		DOCTEST_ASCII_CHECK_EQ( sh_.part( -3, 9 )	, "ext" );
 		DOCTEST_FAST_CHECK_UNARY( sh_.starts_with( "tex" ) );
 		DOCTEST_FAST_CHECK_UNARY( sh_.ends_with( "ext" ) );
 		DOCTEST_FAST_CHECK_UNARY( sh_.contains( 'x' ) );
@@ -58,6 +71,7 @@ namespace pax {
 		const auto first2 = sh_.template first< 2 >();
 		DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( first2 ) >, 2 );
 		DOCTEST_FAST_CHECK_EQ( first2, "te" );
+		DOCTEST_ASCII_CHECK_EQ( first2, "te" );
 
 		const auto last2 = sh_.template last< 2 >();
 		DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( last2 ) >, 2 );
@@ -216,8 +230,8 @@ namespace pax {
 	}
 	DOCTEST_TEST_CASE( "litteral text" ) {
 		if( printout )	std::println( "--- litteral text -----------------------" );
-		DOCTEST_FAST_CHECK_EQ( litt( "text" ).last( 2 ), "xt" );
-		DOCTEST_FAST_CHECK_EQ( std::format( "{:?s}", shadow( "1\t2\n3\"4" ) ), "\"1\\t2\\n3\\\"4\"" );
+		DOCTEST_ASCII_CHECK_EQ( litt( "text" ).last( 2 ), "xt" );
+		DOCTEST_ASCII_CHECK_EQ( std::format( "{:?s}", shadow( "1\t2\n3\"4" ) ), "\"1\\t2\\n3\\\"4\"" );
 		text_test( litt( "text" ) );
 	}
 }
