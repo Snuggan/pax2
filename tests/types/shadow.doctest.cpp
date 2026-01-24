@@ -19,11 +19,11 @@ namespace pax {
 		{
 			const char			str[] = "Hej!";
 			DOCTEST_FAST_CHECK_EQ( size( str ), 5 );
-			DOCTEST_FAST_CHECK_EQ( shave_zero_suffix2( str ) - str, 4 );
+			DOCTEST_FAST_CHECK_EQ( no_nullchar_end( str ) - str, 4 );
 		} {
 			const auto			str   = "Hej!";
 			DOCTEST_FAST_CHECK_EQ( size( str ), 4 );
-			DOCTEST_FAST_CHECK_EQ( shave_zero_suffix2( str ) - str, 4 );
+			DOCTEST_FAST_CHECK_EQ( no_nullchar_end( str ) - str, 4 );
 		}
 	}
 
