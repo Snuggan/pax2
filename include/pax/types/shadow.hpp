@@ -3,18 +3,16 @@
 
 #pragma once
 
-#include <pax/concepts.hpp>		// traits::character
+#include <pax/concepts.hpp>		// traits::character, traits::string, etc.
 #include <algorithm>			// std::ranges::equal, std::lexicographical_compare_three_way, etc.
 #include <assert.h>
 
 // To Do:
-// – Add statically sized variants of first, not_first, etc.
-// – Precalculate N, to adapt it to char arrays with null suffix.
+// – Add statically sized variant of part.
 
 
 /// Shadow: string_view and span in one
 /**	Test the feasability of having one class for all uses of string_view and span, both static as well as dynamic sizesing. And a variant can also be used for text in template parameters. It consists of a common base class for most of the functionality and small classes with specialisations for handling [the references to] data. A main idea is to keep the number of member functions limited and "basic" and they are all unmutable. The data they reference is mutable, unless the element type is const. Functions such as find(), contains(), etc. can be implemented by external functions. Note for instance that by having first(), not_first(), last(), not_last(), and part() as member functions many variands of string_view::find() are not needed directly. Other member functions are the iterators, comparisons and output. 
-
 **/
 
 
@@ -23,13 +21,12 @@ namespace pax {
 
 	template< typename T >
 	[[nodiscard]] constexpr auto no_nullchar_end( const T & t_ ) {
-		using std::begin, std::size;
-		return begin( t_ ) + size( t_ );
+		using std::end;									return end( t_ );
 	}
-
 	template< traits::character Char, std::size_t N >	requires( N > 0 )
-	[[nodiscard]] constexpr Char const * no_nullchar_end( Char const ( & str_ )[ N ] )
-	{	return str_ + N - !str_[ N - 1 ];													}
+	[[nodiscard]] constexpr Char const * no_nullchar_end( Char const ( & str_ )[ N ] )	{
+		return str_ + N - !str_[ N - 1 ];
+	}
 	
 
 	/// Implements the core for span-like utilities. Static or dynamic size.
@@ -41,22 +38,24 @@ namespace pax {
 		using pointer								  = element_type *;
 		
 		// Some types of strings may have a '\0' at the end that we want to ignore...
-		static constexpr std::size_t 					extent = N 
-			- ( traits::character< value_type > && std::is_const_v< element_type > && N ); 
+		static constexpr std::size_t 					extent = N;
 
 	    constexpr range() noexcept {};
 	    constexpr range( pointer src_ )					noexcept : m_source{ src_ } {}
 
+		constexpr range( value_type const ( & str_ )[ N+1 ] ) noexcept requires( traits::character< value_type > ) 
+			:	m_source{ str_ } {	assert( !str_[ N ] && "Removing a non-zero character suffix!" );	}
+
 		template< std::ranges::contiguous_range U >
 		constexpr range( U & src_ )						noexcept : range{ std::ranges::data( src_ ) } {}
 
-		constexpr pointer data()						const noexcept	{	return m_source;			}
-		static constexpr std::size_t size()				noexcept		{	return extent;				}
-		constexpr pointer begin()						const noexcept	{	return data();				}
-		constexpr pointer end()							const noexcept	{	return data() + size();		}
+		constexpr pointer data()						const noexcept	{	return m_source;				}
+		static constexpr std::size_t size()				noexcept		{	return extent;					}
+		constexpr pointer begin()						const noexcept	{	return data();					}
+		constexpr pointer end()							const noexcept	{	return data() + size();			}
  
 		template< std::size_t I >						requires( I < extent )
-		friend element_type & get( const range & r_ )	noexcept	{	return *( r_.data() + I );	}
+		friend element_type & get( const range & r_ )	noexcept		{	return *( r_.data() + I );		}
 
 	private:
 		pointer											m_source{};
@@ -98,8 +97,8 @@ namespace pax {
 	template< typename T, std::size_t N >
 	range( T ( & )[ N ] )		 -> range< T, N >;
 
-	// template< traits::character T, std::size_t N >
-	// range( T const ( & )[ N ] )	 -> range< T const, N-(N>0) >;
+	template< traits::character T, std::size_t N >
+	range( T const ( & )[ N ] )	 -> range< T const, N-(N>0) >;
 
 	template< std::ranges::contiguous_range Cont >
 	range( Cont & )				 -> range< traits::element_type_t< Cont >, traits::extent_v< Cont > >;
@@ -143,24 +142,18 @@ namespace pax {
 	    constexpr		reference back()				const noexcept	{	return operator[]( size()-1 );	}
 	    constexpr		reference operator[]( const size_type i_ ) const noexcept {	return data()[ i_ ];	}
 
-		/// Utility function that returns true iff a string and the last character is \0.
-		constexpr auto shave_zero_suffix_end()			const noexcept	{
-			if constexpr(  is_static && is_string && extent )				return end() - !back();
-			else 															return end();
-		}
-
 		/// If this is a string and the last character is \0 it is ignored. 
  	    template< typename U >
 	    constexpr bool operator==( const U & u_ )		const noexcept	{
 			using std::begin, std::size;
-			return std::equal( this->begin(), shave_zero_suffix_end(), begin( u_ ), no_nullchar_end( u_ ) );
+			return std::equal( this->begin(), this->end(), begin( u_ ), no_nullchar_end( u_ ) );
 		}
 		
 		/// If this is a string and the last character is \0 it is ignored. 
  	    template< typename U >
 	    constexpr auto operator<=>( const U & u_ )		const noexcept	{
 			using std::begin;
-	    	return std::lexicographical_compare_three_way( this->begin(), shave_zero_suffix_end(), 
+	    	return std::lexicographical_compare_three_way( this->begin(), this->end(), 
 														begin( u_ ), no_nullchar_end( u_ ) );
 	    }
 
@@ -180,7 +173,7 @@ namespace pax {
 		template< std::size_t N >		requires(  is_static && ( N != traits::dynamic_extent ) )
 		[[nodiscard]] constexpr auto first() 			const noexcept	{
 			static constexpr std::size_t	sz = ( N < extent ) ? N : extent;
-			return base_shadow< range< element_type, sz + is_string > >( data() );
+			return base_shadow< range< element_type, sz > >( data() );
 		}
 
 		/// Return a dynamic shadow of the last size() - min(n_, size()) elements. 
@@ -213,7 +206,7 @@ namespace pax {
 		[[nodiscard]] constexpr auto last() 			const noexcept	{
 			static constexpr std::size_t	sz = extent;
 			static constexpr std::size_t	offset = ( N < sz ) ? sz - N : 0u;
-			return base_shadow< range< element_type, sz + is_string - offset > >( data() + offset );
+			return base_shadow< range< element_type, sz - offset > >( data() + offset );
 		}
  
 		/// Return a dynamic shadow of the first size() - min(n_, size()) elements. 
@@ -261,7 +254,7 @@ namespace pax {
 		/// Stream all elements to out_.
 		template< typename Out >
 		friend Out & operator<<( Out & out_, const base_shadow & sh_ )	{
-			if constexpr ( is_string )		return out_.write( sh_.data(), sh_.size() );
+			if constexpr( is_string )		return out_.write( sh_.data(), sh_.size() );
 			else {
 				bool comma = false;
 				out_ << '[';
@@ -286,8 +279,8 @@ namespace pax {
 	template< typename T, std::size_t N >
 	base_shadow( T ( & )[ N ] )		 -> base_shadow< range< T, N > >;
 
-	// template< traits::character T, std::size_t N >
-	// base_shadow( T const ( & )[ N ] ) -> base_shadow< range< T const, N-(N>0) > >;
+	template< traits::character T, std::size_t N >
+	base_shadow( T const ( & )[ N ] ) -> base_shadow< range< T const, N-(N>0) > >;
 
 	template< std::ranges::contiguous_range Cont >
 	base_shadow( Cont & )			 -> base_shadow< range< traits::element_type_t< Cont >, traits::extent_v< Cont > > >;
@@ -339,9 +332,9 @@ namespace pax {
 		return { str_ };
 	}
 
-	template< traits::character Char, size_t N >
+	template< traits::character Char, size_t N >	requires( N > 0 )
 	constexpr Tagged< struct general, litteral< Char const, N-(N>0) > > tagged( Char const ( & str_ )[ N ] ) {
-		assert( ( N == 0 ) || !str_[ N-1 ] && "Removing a zero character suffix that isn't zero!." );
+		assert( !str_[ N-1 ] && "Removing a non-zero character suffix!" );
 		return { str_ };
 	}
 
@@ -350,9 +343,9 @@ namespace pax {
 		return { str_ };
 	}
 
-	template< typename Tag, traits::character Char, size_t N >
+	template< typename Tag, traits::character Char, size_t N >	requires( N > 0 )
 	constexpr Tagged< Tag, litteral< Char const, N-(N>0) > > tagged( Char const ( & str_ )[ N ] ) {
-		assert( ( N == 0 ) || !str_[ N-1 ] && "Removing a zero character suffix that isn't zero!." );
+		assert( !str_[ N-1 ] && "Removing a non-zero character suffix!" );
 		return { str_ };
 	}
 	
