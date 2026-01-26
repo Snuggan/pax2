@@ -31,6 +31,14 @@ namespace pax {
 	/// Tag for use when doing stuff with newlines. 
 	struct Newline{};
 
+	template< typename T >
+	[[nodiscard]] constexpr std::size_t shave_zero_suffix( const T &, const std::size_t sz_ )		{	return sz_;		}
+
+	template< traits::string Str >			  requires( traits::character_array< Str > )
+	[[nodiscard]] constexpr std::size_t shave_zero_suffix( const Str & str_, const std::size_t sz_ )
+	{	return sz_ - ( sz_ && !str_[ sz_ - 1 ] );																		}
+
+
 	/// Returns false. 
 	[[nodiscard]] constexpr bool valid( std::nullptr_t ) 	noexcept	{	return false;				}
 

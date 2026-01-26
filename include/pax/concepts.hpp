@@ -118,17 +118,6 @@ namespace pax::traits {
 	concept string							= contiguous< T > && character< value_type_t< T > >;
 }	// namespace pax::traits
 
-namespace pax {
-
-	template< typename T >
-	[[nodiscard]] constexpr std::size_t shave_zero_suffix( const T &, const std::size_t sz_ )		{	return sz_;		}
-
-	template< traits::string Str >			  requires( traits::character_array< Str > )
-	[[nodiscard]] constexpr std::size_t shave_zero_suffix( const Str & str_, const std::size_t sz_ )
-	{	return sz_ - ( sz_ && !str_[ sz_ - 1 ] );																		}
-
-}	// namespace pax
-
 namespace std {
 	template< pax::traits::character Ch >
 	[[nodiscard]] constexpr Ch * begin( Ch * const & c_ )		noexcept	{	return c_;								}
@@ -147,7 +136,7 @@ namespace std {
 	[[nodiscard]] constexpr std::size_t size( Ch * const & c_ )	noexcept	{	return end( c_ ) - c_;					}
 
 	template< pax::traits::character Ch, std::size_t N >		// In char arrays the null character is counted. 
-	[[nodiscard]] constexpr std::size_t size( Ch( & c_ )[ N ] )	noexcept	{	return pax::shave_zero_suffix( c_, N );	}
+	[[nodiscard]] constexpr std::size_t size( Ch( & c_ )[ N ] )	noexcept	{	return N - !c_[ N - 1 ];				}
 
 	template< pax::traits::character Ch, std::size_t N >		// In char arrays the null character is counted. 
 	[[nodiscard]] constexpr Ch * end( Ch( & c_ )[ N ] )			noexcept	{	return c_ + size( c_ );					}

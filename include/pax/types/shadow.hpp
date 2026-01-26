@@ -3,13 +3,9 @@
 
 #pragma once
 
-#include <pax/concepts.hpp>		// traits::character, traits::string, etc.
+#include <pax/concepts.hpp>		// traits:: stuff.
 #include <algorithm>			// std::ranges::equal, std::lexicographical_compare_three_way, etc.
 #include <assert.h>
-
-// To Do:
-// – Add statically sized variant of part.
-
 
 /// Shadow: string_view and span in one
 /**	Test the feasability of having one class for all uses of string_view and span, both static as well as dynamic sizesing. And a variant can also be used for text in template parameters. It consists of a common base class for most of the functionality and small classes with specialisations for handling [the references to] data. A main idea is to keep the number of member functions limited and "basic" and they are all unmutable. The data they reference is mutable, unless the element type is const. Functions such as find(), contains(), etc. can be implemented by external functions. Note for instance that by having first(), not_first(), last(), not_last(), and part() as member functions many variands of string_view::find() are not needed directly. Other member functions are the iterators, comparisons and output. 
@@ -17,12 +13,11 @@
 
 
 namespace pax {
-	constexpr std::size_t dynamic_extent = traits::dynamic_extent;	// From concepts.hpp.
+	constexpr std::size_t dynamic_extent = traits::dynamic_extent;
 
 	template< typename T >
-	[[nodiscard]] constexpr auto no_nullchar_end( const T & t_ ) {
-		using std::end;									return end( t_ );
-	}
+	[[nodiscard]] constexpr auto no_nullchar_end( const T & t_ )	{	using std::end;	return end( t_ );	}
+
 	template< traits::character Char, std::size_t N >	requires( N > 0 )
 	[[nodiscard]] constexpr Char const * no_nullchar_end( Char const ( & str_ )[ N ] )	{
 		return str_ + N - !str_[ N - 1 ];
@@ -36,15 +31,13 @@ namespace pax {
 		using element_type							  = T;
 		using value_type							  = std::remove_cv_t< element_type >;
 		using pointer								  = element_type *;
-		
-		// Some types of strings may have a '\0' at the end that we want to ignore...
 		static constexpr std::size_t 					extent = N;
 
-	    constexpr range() noexcept {};
+	    constexpr range()								noexcept {};
 	    constexpr range( pointer src_ )					noexcept : m_source{ src_ } {}
 
 		constexpr range( value_type const ( & str_ )[ N+1 ] ) noexcept requires( traits::character< value_type > ) 
-			:	m_source{ str_ } {	assert( !str_[ N ] && "Removing a non-zero character suffix!" );	}
+			:	m_source{ str_ }	{	assert( !str_[ N ] && "Removing a non-zero character suffix!" );	}
 
 		template< std::ranges::contiguous_range U >
 		constexpr range( U & src_ )						noexcept : range{ std::ranges::data( src_ ) } {}
@@ -68,7 +61,7 @@ namespace pax {
 		using pointer								  = element_type *;
 		static constexpr std::size_t 					extent = dynamic_extent;
 
-	    constexpr range() noexcept {};
+	    constexpr range()								noexcept {};
 
 	    constexpr range( pointer src_, const std::size_t size_ ) noexcept 
 			:	m_source{ src_ }, m_size{ src_ ? size_ : 0u } {}
@@ -166,7 +159,7 @@ namespace pax {
 		template< std::size_t N >		requires( !is_static && ( N != traits::dynamic_extent ) )
 		[[nodiscard]] constexpr auto first()			const noexcept	{
 			assert( N <= size() && "first< N >() requires N <= size()." );
-			return base_shadow< range< element_type, N + ( is_string && is_static ) > >{ data() };
+			return base_shadow< range< element_type, N > >{ data() };
 		}
 
 		/// Return a static shadow of the first min(N, extent) elements. 
@@ -222,10 +215,20 @@ namespace pax {
 
 		/// Return a dynamic shadow of the n_ elements starting with offs_, but restricted to the bounds of this.
 		/// A negative offs_ is counted from the back. 
-		constexpr shadow part( difference_type offs_, const size_type n_ ) const noexcept	{
+		constexpr shadow part( difference_type offs_, const size_type n_ )	const noexcept	{
 			offs_ =	( offs_ >= 0 )					  ? std::min( size_type(  offs_ ), size() ) 
 				  :	( size_type( -offs_ ) < size() )  ? size()  - size_type( -offs_ ) : 0u;
 			return { data() + offs_, ( size() >= offs_ + n_ ) ? n_ : size() - offs_ };
+		}
+
+		/// Return a static shadow of the N elements starting with offs_, but restricted to the bounds of this.
+		/// A negative offs_ is counted from the back. Ub, if N > size().
+		template< std::size_t N >		requires( N != traits::dynamic_extent )
+		[[nodiscard]] constexpr auto part( difference_type offs_ )			const noexcept	{
+			offs_ =	( offs_ >= 0 )					  ? std::min( size_type(  offs_ ), size() ) 
+				  :	( size_type( -offs_ ) < size() )  ? size()  - size_type( -offs_ ) : 0u;
+			assert( N <= size() && "part< N >() requires offs_ + N <= size()." );
+			return base_shadow< range< element_type, N > >{ data() + offs_ };
 		}
 
 		/// Return true if u_ equals the first elements of this.

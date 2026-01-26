@@ -67,42 +67,52 @@ namespace pax {
 		DOCTEST_FAST_CHECK_UNARY( sh_.ends_with( "ext" ) );
 		DOCTEST_FAST_CHECK_UNARY( sh_.contains( 'x' ) );
 		DOCTEST_FAST_CHECK_UNARY( sh_.contains( "xt" ) );
-		
-		const auto first2 = sh_.template first< 2 >();
-		DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( first2 ) >, 2 );
-		DOCTEST_FAST_CHECK_EQ( first2, "te" );
-		DOCTEST_ASCII_CHECK_EQ( first2, "te" );
-
-		const auto last2 = sh_.template last< 2 >();
-		DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( last2 ) >, 2 );
-		DOCTEST_ASCII_CHECK_EQ( last2, "xt" );
+		{
+			const auto res = sh_.template first< 2 >();
+			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 2 );
+			DOCTEST_FAST_CHECK_EQ( res, "te" );
+			DOCTEST_ASCII_CHECK_EQ( res, "te" );
+		} {
+			const auto res = sh_.template last< 2 >();
+			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 2 );
+			DOCTEST_ASCII_CHECK_EQ( res, "xt" );
+		} {
+			const auto res = sh_.template part< 2 >( 1 );
+			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 2 );
+			DOCTEST_ASCII_CHECK_EQ( res, "ex" );
+		} {
+			const auto res = sh_.template part< 2 >( -3 );
+			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 2 );
+			DOCTEST_ASCII_CHECK_EQ( res, "ex" );
+		}
 
 		if constexpr( traits::has_extent< Sh > ) {
 			DOCTEST_ASCII_CHECK_EQ( get< 2 >( sh_ )	, sh_[ 2 ] );
-
-			const auto first9 = sh_.template first< 9 >();
-			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( first9 ) >, 4 );
-			DOCTEST_ASCII_CHECK_EQ( first9, "text" );
-
-			const auto not_first2 = sh_.template not_first< 2 >();
-			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( not_first2 ) >, 2 );
-			DOCTEST_ASCII_CHECK_EQ( not_first2, "xt" );
-
-			const auto not_first9 = sh_.template not_first< 9 >();
-			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( not_first9 ) >, 0 );
-			DOCTEST_ASCII_CHECK_EQ( not_first9, "" );
-
-			const auto last9 = sh_.template last< 9 >();
-			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( last9 ) >, 4 );
-			DOCTEST_ASCII_CHECK_EQ( last9, "text" );
-
-			const auto not_last2 = sh_.template not_last< 2 >();
-			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( not_last2 ) >, 2 );
-			DOCTEST_ASCII_CHECK_EQ( not_last2, "te" );
-
-			const auto not_last9 = sh_.template not_last< 9 >();
-			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( not_last9 ) >, 0 );
-			DOCTEST_ASCII_CHECK_EQ( not_last9, "" );
+			{
+				const auto res = sh_.template first< 9 >();
+				DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 4 );
+				DOCTEST_ASCII_CHECK_EQ( res, "text" );
+			} {
+				const auto res = sh_.template not_first< 2 >();
+				DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 2 );
+				DOCTEST_ASCII_CHECK_EQ( res, "xt" );
+			} {
+				const auto res = sh_.template not_first< 9 >();
+				DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 0 );
+				DOCTEST_ASCII_CHECK_EQ( res, "" );
+			} {
+				const auto res = sh_.template last< 9 >();
+				DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 4 );
+				DOCTEST_ASCII_CHECK_EQ( res, "text" );
+			} {
+				const auto res = sh_.template not_last< 2 >();
+				DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 2 );
+				DOCTEST_ASCII_CHECK_EQ( res, "te" );
+			} {
+				const auto res = sh_.template not_last< 9 >();
+				DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 0 );
+				DOCTEST_ASCII_CHECK_EQ( res, "" );
+			}
 		}
 	}
 	
@@ -145,40 +155,50 @@ namespace pax {
 		DOCTEST_FAST_CHECK_UNARY( sh_.contains( 5 ) );
 		DOCTEST_FAST_CHECK_UNARY( sh_.contains( std::array{ 2, 3, 4 } ) );
 #endif
-		const auto first2 = sh_.template first< 2 >();
-		DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( first2 ) >, 2 );
-		DOCTEST_FAST_CHECK_EQ( first2, std::array{ 0, 1 } );
-
-		const auto last2 = sh_.template last< 2 >();
-		DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( last2 ) >, 2 );
-		DOCTEST_FAST_CHECK_EQ( last2, std::array{ 5, 0 } );
-
+		{
+			const auto res = sh_.template first< 2 >();
+			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 2 );
+			DOCTEST_FAST_CHECK_EQ( res, std::array{ 0, 1 } );
+		} {
+			const auto res = sh_.template last< 2 >();
+			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 2 );
+			DOCTEST_FAST_CHECK_EQ( res, std::array{ 5, 0 } );
+		} {
+			const auto res = sh_.template part< 2 >( 1 );
+			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 2 );
+			DOCTEST_FAST_CHECK_EQ( res, std::array{ 1, 2 } );
+		} {
+			const auto res = sh_.template part< 2 >( -6 );
+			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 2 );
+			DOCTEST_FAST_CHECK_EQ( res, std::array{ 1, 2 } );
+		}
 		if constexpr( traits::has_extent< Sh > ) {
 			DOCTEST_FAST_CHECK_EQ( get< 2 >( sh_ )	, sh_[ 2 ] );
-
-			const auto first9 = sh_.template first< 9 >();
-			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( first9 ) >, 7 );
-			DOCTEST_FAST_CHECK_EQ( first9, nums );
-
-			const auto not_first2 = sh_.template not_first< 2 >();
-			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( not_first2 ) >, 5 );
-			DOCTEST_FAST_CHECK_EQ( not_first2, std::array{ 2, 3, 4, 5, 0 } );
-
-			const auto not_first9 = sh_.template not_first< 9 >();
-			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( not_first9 ) >, 0 );
-			DOCTEST_FAST_CHECK_EQ( not_first9, empty );
-
-			const auto last9 = sh_.template last< 9 >();
-			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( last9 ) >, 7 );
-			DOCTEST_FAST_CHECK_EQ( last9, nums );
-
-			const auto not_last2 = sh_.template not_last< 2 >();
-			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( not_last2 ) >, 5 );
-			DOCTEST_FAST_CHECK_EQ( not_last2, std::array{ 0, 1, 2, 3, 4 } );
-
-			const auto not_last9 = sh_.template not_last< 9 >();
-			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( not_last9 ) >, 0 );
-			DOCTEST_FAST_CHECK_EQ( not_last9, empty );
+			{
+				const auto res = sh_.template first< 9 >();
+				DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 7 );
+				DOCTEST_FAST_CHECK_EQ( res, nums );
+			} {
+				const auto res = sh_.template not_first< 2 >();
+				DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 5 );
+				DOCTEST_FAST_CHECK_EQ( res, std::array{ 2, 3, 4, 5, 0 } );
+			} {
+				const auto res = sh_.template not_first< 9 >();
+				DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 0 );
+				DOCTEST_FAST_CHECK_EQ( res, empty );
+			} {
+				const auto res = sh_.template last< 9 >();
+				DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 7 );
+				DOCTEST_FAST_CHECK_EQ( res, nums );
+			} {
+				const auto res = sh_.template not_last< 2 >();
+				DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 5 );
+				DOCTEST_FAST_CHECK_EQ( res, std::array{ 0, 1, 2, 3, 4 } );
+			} {
+				const auto res = sh_.template not_last< 9 >();
+				DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 0 );
+				DOCTEST_FAST_CHECK_EQ( res, empty );
+			}
 		}
 	}
 
