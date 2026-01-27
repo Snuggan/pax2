@@ -33,8 +33,8 @@ namespace pax {
 		using pointer								  = element_type *;
 		static constexpr std::size_t 					extent = N;
 
-	    constexpr range()								noexcept {};
-	    constexpr range( pointer src_ )					noexcept : m_source{ src_ } {}
+		constexpr range()								noexcept {};
+		constexpr range( pointer src_ )					noexcept : m_source{ src_ } {}
 
 		constexpr range( value_type const ( & str_ )[ N+1 ] ) noexcept requires( traits::character< value_type > ) 
 			:	m_source{ str_ }	{	assert( !str_[ N ] && "Removing a non-zero character suffix!" );	}
@@ -42,13 +42,13 @@ namespace pax {
 		template< std::ranges::contiguous_range U >
 		constexpr range( U & src_ )						noexcept : range{ std::ranges::data( src_ ) } {}
 
-		constexpr pointer data()						const noexcept	{	return m_source;				}
-		static constexpr std::size_t size()				noexcept		{	return extent;					}
-		constexpr pointer begin()						const noexcept	{	return data();					}
-		constexpr pointer end()							const noexcept	{	return data() + size();			}
+		[[nodiscard]] constexpr pointer data()			const noexcept	{	return m_source;				}
+		[[nodiscard]] static constexpr std::size_t size()	  noexcept	{	return extent;					}
+		[[nodiscard]] constexpr pointer begin()			const noexcept	{	return data();					}
+		[[nodiscard]] constexpr pointer end()			const noexcept	{	return data() + size();			}
  
 		template< std::size_t I >						requires( I < extent )
-		friend element_type & get( const range & r_ )	noexcept		{	return *( r_.data() + I );		}
+		[[nodiscard]] friend element_type & get( const range & r_ )	noexcept {	return *( r_.data() + I );	}
 
 	private:
 		pointer											m_source{};
@@ -61,20 +61,20 @@ namespace pax {
 		using pointer								  = element_type *;
 		static constexpr std::size_t 					extent = dynamic_extent;
 
-	    constexpr range()								noexcept {};
+		constexpr range()								noexcept {};
 
-	    constexpr range( pointer src_, const std::size_t size_ ) noexcept 
+		constexpr range( pointer src_, const std::size_t size_ ) noexcept 
 			:	m_source{ src_ }, m_size{ src_ ? size_ : 0u } {}
 
-	    constexpr range( pointer begin_, pointer end_ )	noexcept : range{ begin_, end_ - begin_ } {}
+		constexpr range( pointer begin_, pointer end_ )	noexcept : range{ begin_, end_ - begin_ } {}
 
 		template< std::ranges::contiguous_range U >
 		constexpr range( U & src_ ) noexcept : range{ std::ranges::data( src_ ), std::ranges::size( src_ ) } {}
 
-		constexpr pointer data()						const noexcept	{	return m_source;				}
-		constexpr std::size_t size()					const noexcept	{	return m_size;					}
-		constexpr pointer begin()						const noexcept	{	return data();					}
-		constexpr pointer end()							const noexcept	{	return data() + size();			}
+		[[nodiscard]] constexpr pointer data()			const noexcept	{	return m_source;				}
+		[[nodiscard]] constexpr std::size_t size()		const noexcept	{	return m_size;					}
+		[[nodiscard]] constexpr pointer begin()			const noexcept	{	return data();					}
+		[[nodiscard]] constexpr pointer end()			const noexcept	{	return data() + size();			}
 
 	private:
 		pointer											m_source{};
@@ -121,104 +121,102 @@ namespace pax {
 		static constexpr bool							is_static{ extent != dynamic_extent };
 		static constexpr bool							is_string{ traits::character< value_type > };
 
-	    using Core::Core, Core::data, Core::size;
+		using Core::Core, Core::data, Core::size;
 
-		constexpr bool empty()							const noexcept	{	return size() == 0;				}
-		constexpr explicit operator bool()				const noexcept	{	return empty();					}
+		[[nodiscard]] constexpr bool empty()			const noexcept	{	return size() == 0;				}
+		[[nodiscard]] constexpr explicit operator bool()const noexcept	{	return empty();					}
 
 		/// Element access, possibly mutable if the element type is not const.
-	    constexpr		iterator  begin()				const noexcept	{	return data();					}
-	    constexpr		iterator  end()					const noexcept	{	return begin() + size();		}
-	    constexpr const_iterator  cbegin()				const noexcept	{	return data();					}
-	    constexpr const_iterator  cend()				const noexcept	{	return begin() + size();		}
-	    constexpr		reference front()				const noexcept	{	return *data();					}
-	    constexpr		reference back()				const noexcept	{	return operator[]( size()-1 );	}
-	    constexpr		reference operator[]( const size_type i_ ) const noexcept {	return data()[ i_ ];	}
+		[[nodiscard]] constexpr iterator begin()		const noexcept	{	return data();					}
+		[[nodiscard]] constexpr iterator end()			const noexcept	{	return begin() + size();		}
+		[[nodiscard]] constexpr const_iterator cbegin()	const noexcept	{	return data();					}
+		[[nodiscard]] constexpr const_iterator cend()	const noexcept	{	return begin() + size();		}
+		[[nodiscard]] constexpr reference front()		const noexcept	{	return *data();					}
+		[[nodiscard]] constexpr reference back()		const noexcept	{	return operator[]( size()-1 );	}
+		[[nodiscard]] constexpr reference operator[]( const size_type i_ ) const noexcept { return data()[ i_ ]; }
 
 		/// If this is a string and the last character is \0 it is ignored. 
- 	    template< typename U >
-	    constexpr bool operator==( const U & u_ )		const noexcept	{
+ 		template< typename U >
+		[[nodiscard]] constexpr bool operator==( const U & u_ )				const noexcept	{
 			using std::begin, std::size;
 			return std::equal( this->begin(), this->end(), begin( u_ ), no_nullchar_end( u_ ) );
 		}
 		
 		/// If this is a string and the last character is \0 it is ignored. 
- 	    template< typename U >
-	    constexpr auto operator<=>( const U & u_ )		const noexcept	{
+ 		template< typename U >
+		[[nodiscard]] constexpr auto operator<=>( const U & u_ )			const noexcept	{
 			using std::begin;
-	    	return std::lexicographical_compare_three_way( this->begin(), this->end(), 
+			return std::lexicographical_compare_three_way( this->begin(), this->end(), 
 														begin( u_ ), no_nullchar_end( u_ ) );
-	    }
+		}
 
 		/// Return a dynamic shadow of the first min(n_, size()) elements. 
-		constexpr shadow first( const size_type n_ )	const noexcept	{
-			return { data(), ( size() >= n_ ) ? n_ : size() };
+		[[nodiscard]] constexpr auto first( const size_type n_ )			const noexcept	{
+			return shadow{ data(), ( size() >= n_ ) ? n_ : size() };
 		}
  
 		/// Return a static shadow of the first N elements. Ub, if N > size().
 		template< std::size_t N >		requires( !is_static && ( N != traits::dynamic_extent ) )
-		[[nodiscard]] constexpr auto first()			const noexcept	{
+		[[nodiscard]] constexpr auto first()								const noexcept	{
 			assert( N <= size() && "first< N >() requires N <= size()." );
-			return base_shadow< range< element_type, N > >{ data() };
+			return shadowN< N >{ data() };
 		}
 
 		/// Return a static shadow of the first min(N, extent) elements. 
 		template< std::size_t N >		requires(  is_static && ( N != traits::dynamic_extent ) )
-		[[nodiscard]] constexpr auto first() 			const noexcept	{
-			static constexpr std::size_t	sz = ( N < extent ) ? N : extent;
-			return base_shadow< range< element_type, sz > >( data() );
+		[[nodiscard]] constexpr auto first() 								const noexcept	{
+			return shadowN< ( N < extent ) ? N : extent >( data() );
 		}
 
 		/// Return a dynamic shadow of the last size() - min(n_, size()) elements. 
-		constexpr shadow not_first( size_type n_ )		const noexcept	{
+		[[nodiscard]] constexpr auto not_first( size_type n_ )				const noexcept	{
 			n_ = ( size() > n_ ) ? n_ : size();
-			return { data() + n_, size() - n_ };
+			return shadow{ data() + n_, size() - n_ };
 		}
 
 		/// Return a static shadow of the last size() - min(N, extent) elements. 
 		template< std::size_t N >		requires(  is_static )
-		[[nodiscard]] constexpr auto not_first() 		const noexcept	{
+		[[nodiscard]] constexpr auto not_first() 							const noexcept	{
 			return last< extent - ( ( N < extent ) ? N : extent ) >();
 		}
 
 		/// Return a dynamic shadow of the last min(n_, size()) elements. 
-		constexpr shadow last( size_type n_ )			const noexcept	{
+		[[nodiscard]] constexpr auto last( size_type n_ )					const noexcept	{
 			n_ = ( size() > n_ ) ? n_ : size();
-			return { data() + size() - n_, n_ };
+			return shadow{ data() + size() - n_, n_ };
 		}
  
 		/// Return a static shadow of the last N elements. Ub, if N > size().
 		template< std::size_t N >		requires( !is_static && ( N != traits::dynamic_extent ) )
-		[[nodiscard]] constexpr auto last()				const noexcept	{
+		[[nodiscard]] constexpr auto last()									const noexcept	{
 			assert( N <= size() && "last< N >() requires N <= size()." );
-			return base_shadow< range< element_type, N > >( data() + size() - N );
+			return shadowN< N >( data() + size() - N );
 		}
 
 		/// Return a static shadow of the first min(N, extent) elements. 
 		template< std::size_t N >		requires(  is_static && ( N != traits::dynamic_extent ) )
-		[[nodiscard]] constexpr auto last() 			const noexcept	{
-			static constexpr std::size_t	sz = extent;
-			static constexpr std::size_t	offset = ( N < sz ) ? sz - N : 0u;
-			return base_shadow< range< element_type, sz - offset > >( data() + offset );
+		[[nodiscard]] constexpr auto last() 								const noexcept	{
+			static constexpr std::size_t	offset = ( N < extent ) ? extent - N : 0u;
+			return shadowN< extent - offset >( data() + offset );
 		}
  
 		/// Return a dynamic shadow of the first size() - min(n_, size()) elements. 
-		constexpr shadow not_last( const size_type n_ )	const noexcept	{
-			return { data(), ( size() > n_ ) ? size() - n_ : 0u };
+		[[nodiscard]] constexpr auto not_last( const size_type n_ )			const noexcept	{
+			return shadow{ data(), ( size() > n_ ) ? size() - n_ : 0u };
 		}
 
 		/// Return a static shadow of the first size() - min(N, extent) elements. 
 		template< std::size_t N >		requires( traits::has_extent< base_shadow > )
-		[[nodiscard]] constexpr auto not_last() 		const noexcept 	{
+		[[nodiscard]] constexpr auto not_last() 							const noexcept 	{
 			return first< ( extent > N ) ? extent - N : 0 >();
 		}
 
 		/// Return a dynamic shadow of the n_ elements starting with offs_, but restricted to the bounds of this.
 		/// A negative offs_ is counted from the back. 
-		constexpr shadow part( difference_type offs_, const size_type n_ )	const noexcept	{
+		[[nodiscard]] constexpr auto part( difference_type offs_, const size_type n_ )	const noexcept	{
 			offs_ =	( offs_ >= 0 )					  ? std::min( size_type(  offs_ ), size() ) 
 				  :	( size_type( -offs_ ) < size() )  ? size()  - size_type( -offs_ ) : 0u;
-			return { data() + offs_, ( size() >= offs_ + n_ ) ? n_ : size() - offs_ };
+			return shadow{ data() + offs_, ( size() >= offs_ + n_ ) ? n_ : size() - offs_ };
 		}
 
 		/// Return a static shadow of the N elements starting with offs_, but restricted to the bounds of this.
@@ -228,29 +226,29 @@ namespace pax {
 			offs_ =	( offs_ >= 0 )					  ? std::min( size_type(  offs_ ), size() ) 
 				  :	( size_type( -offs_ ) < size() )  ? size()  - size_type( -offs_ ) : 0u;
 			assert( N <= size() && "part< N >() requires offs_ + N <= size()." );
-			return base_shadow< range< element_type, N > >{ data() + offs_ };
+			return shadowN< N >{ data() + offs_ };
 		}
 
 		/// Return true if u_ equals the first elements of this.
- 	    template< typename U >
-	    constexpr bool starts_with( const U & u_ )		const noexcept	{
+ 		template< typename U >
+		[[nodiscard]] constexpr bool starts_with( const U & u_ )			const noexcept	{
 			const range		vw( u_ );
 			return first( vw.size() ) == vw;
 		}
 
 		/// Return true if u_ equals the last elements of this.
- 	    template< typename U >
-	    constexpr bool ends_with( const U & u_ )		const noexcept	{
+ 		template< typename U >
+		[[nodiscard]] constexpr bool ends_with( const U & u_ )				const noexcept	{
 			const range		vw( u_ );
 			return last( vw.size() ) == vw;
 		}
  
-	    constexpr bool contains( const value_type t_ )	const noexcept	{
+		[[nodiscard]] constexpr bool contains( const value_type t_ )		const noexcept	{
 			return std::ranges::contains( begin(), end(), t_ );
 		}
 
- 	    template< typename U >
-	    constexpr bool contains( const U & u_ )			const noexcept	{
+ 		template< typename U >
+		[[nodiscard]] constexpr bool contains( const U & u_ )				const noexcept	{
 			return std::ranges::contains_subrange( *this, range{ u_ } );
 		}
  
@@ -290,7 +288,7 @@ namespace pax {
 
 	/// Return a shadow instance with const (unmutable) elements. 
 	template< typename ...Args >
-	auto const_shadow( Args && ...args_ ) {
+	[[nodiscard]] auto const_shadow( Args && ...args_ ) {
 		using type = decltype( shadow( std::forward< Args >( args_ )... ) );
 		return shadow< const typename type::element_type, type::extent >( std::forward< Args >( args_ )... );
 	}
@@ -304,16 +302,16 @@ namespace pax {
 		using traits_type							  = Traits;
 		static constexpr std::size_t			 		extent = N;
 
-	    constexpr core_litteral( value_type       ( & str_ )[  N  ] )	{	std::copy_n( str_, N, value );	}
-	    constexpr core_litteral( value_type const ( & str_ )[ N+1 ] )	{	std::copy_n( str_, N, value );	}
+		constexpr core_litteral( value_type       ( & str_ )[  N  ] )	{	std::copy_n( str_, N, value );	}
+		constexpr core_litteral( value_type const ( & str_ )[ N+1 ] )	{	std::copy_n( str_, N, value );	}
 
-		constexpr pointer data()						const noexcept	{	return value;					}
-		static constexpr std::size_t size()				noexcept		{	return N;						}
-		constexpr pointer begin()						const noexcept	{	return data();					}
-		constexpr pointer end()							const noexcept	{	return data() + size();			}
+		[[nodiscard]] constexpr pointer data()			const noexcept	{	return value;					}
+		[[nodiscard]] static constexpr std::size_t size()	  noexcept	{	return N;						}
+		[[nodiscard]] constexpr pointer begin()			const noexcept	{	return data();					}
+		[[nodiscard]] constexpr pointer end()			const noexcept	{	return data() + size();			}
  
 		template< std::size_t I >			requires( ( I < extent ) && ( extent != dynamic_extent ) )
-		friend element_type & get( const core_litteral & cl_ ) noexcept	{	return *( cl_.data() + I );		}
+		[[nodiscard]] friend element_type & get( const core_litteral & cl_ ) noexcept { return *( cl_.data() + I );	}
 		
 		value_type							value[ N ];
 	};
@@ -322,32 +320,32 @@ namespace pax {
 	using litteral = base_shadow< core_litteral< Char, N, Traits > >;
 
 	template< traits::character Char, std::size_t N, typename Traits = std::char_traits< Char > >
-	constexpr litteral< Char, N, Traits > litt( Char ( & src_ )[ N ] )	{	return { src_ };				}
+	[[nodiscard]] constexpr litteral< Char, N, Traits > litt( Char ( & src_ )[ N ] )				   { return { src_ }; }
 
 	template< traits::character Char, std::size_t N, typename Traits = std::char_traits< const Char > >
-	constexpr litteral< Char const, N-(N>0), Traits > litt( Char const ( & src_ )[ N ] ) {	return { src_ };	}
+	[[nodiscard]] constexpr litteral< Char const, N-(N>0), Traits > litt( Char const ( & src_ )[ N ] ) { return { src_ }; }
 
 
 	template< typename Tag, typename T >	struct Tagged;
 
 	template< traits::character Char, size_t N >
-	constexpr Tagged< struct general, litteral< Char, N > > tagged( Char ( & str_ )[ N ] )	{
+	[[nodiscard]] constexpr Tagged< struct general, litteral< Char, N > > tagged( Char ( & str_ )[ N ] )	{
 		return { str_ };
 	}
 
 	template< traits::character Char, size_t N >	requires( N > 0 )
-	constexpr Tagged< struct general, litteral< Char const, N-(N>0) > > tagged( Char const ( & str_ )[ N ] ) {
+	[[nodiscard]] constexpr Tagged< struct general, litteral< Char const, N-(N>0) > > tagged( Char const ( & str_ )[ N ] ) {
 		assert( !str_[ N-1 ] && "Removing a non-zero character suffix!" );
 		return { str_ };
 	}
 
 	template< typename Tag, traits::character Char, size_t N >
-	constexpr Tagged< Tag, litteral< Char, N > > tagged( Char ( & str_ )[ N ] )	{
+	[[nodiscard]] constexpr Tagged< Tag, litteral< Char, N > > tagged( Char ( & str_ )[ N ] ) {
 		return { str_ };
 	}
 
 	template< typename Tag, traits::character Char, size_t N >	requires( N > 0 )
-	constexpr Tagged< Tag, litteral< Char const, N-(N>0) > > tagged( Char const ( & str_ )[ N ] ) {
+	[[nodiscard]] constexpr Tagged< Tag, litteral< Char const, N-(N>0) > > tagged( Char const ( & str_ )[ N ] ) {
 		assert( !str_[ N-1 ] && "Removing a non-zero character suffix!" );
 		return { str_ };
 	}
