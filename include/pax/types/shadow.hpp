@@ -36,8 +36,6 @@ namespace pax {
 		constexpr range()								noexcept = default;
 		constexpr range( const range & )				noexcept = default;
 		constexpr range & operator=( const range & )	noexcept = default;
-		constexpr range( range && )						noexcept = delete;
-		constexpr range & operator=( range && )			noexcept = delete;
 		constexpr range( pointer src_ )					noexcept : m_source{ src_ } {}
 
 		constexpr range( value_type const ( & str_ )[ N+1 ] ) noexcept requires( traits::character< value_type > ) 
@@ -68,8 +66,6 @@ namespace pax {
 		constexpr range()								noexcept = default;
 		constexpr range( const range & )				noexcept = default;
 		constexpr range & operator=( const range & )	noexcept = default;
-		constexpr range( range && )						noexcept = delete;
-		constexpr range & operator=( range && )			noexcept = delete;
 		constexpr range( pointer src_, std::size_t sz )	noexcept : m_source{ src_ }, m_size{ src_ ? sz : 0u } {}
 		constexpr range( pointer begin_, pointer end_ )	noexcept : range{ begin_, end_ - begin_ } {}
 
@@ -223,33 +219,33 @@ namespace pax {
 			return shadowN< N >{ data() + offs_ };
 		}
 
-		/// Return true if u_ equals the first elements of this.
+		/// Return true iff u_ equals the first elements of this.
  		template< typename U >
 		[[nodiscard]] constexpr bool starts_with( const U & u_ )			const noexcept	{
 			const range		vw( u_ );
 			return first( vw.size() ) == vw;
 		}
 
-		/// Return true if u_ equals the last elements of this.
+		/// Return true iff u_ equals the last elements of this.
  		template< typename U >
 		[[nodiscard]] constexpr bool ends_with( const U & u_ )				const noexcept	{
 			const range		vw( u_ );
 			return last( vw.size() ) == vw;
 		}
  
-		[[nodiscard]] constexpr bool contains( const value_type t_ )		const noexcept	{
-			return std::ranges::contains( begin(), end(), t_ );
+		/// Return a shadow of where t_ is -- or a zereo-sized shadow located at end().
+		[[nodiscard]] constexpr shadow find( const value_type t_ )			const noexcept	{
+			const auto result = std::find( begin(), end(), t_ );
+			return { result, result != end() };
 		}
 
+		/// Return a shadow of where u_ is -- or a zereo-sized shadow located at end().
  		template< typename U >
-		[[nodiscard]] constexpr bool contains( const U & u_ )				const noexcept	{
-			return std::ranges::contains_subrange( *this, range{ u_ } );
+		[[nodiscard]] constexpr shadow find( const U & u_ )					const noexcept	{
+			const range		vw( u_ );
+			const auto result = std::search( begin(), end(), vw.begin(), vw.end() );
+			return { result, ( result == end() ) ? 0u : vw.size() };
 		}
- 
-		[[nodiscard]] constexpr std::size_t find( const value_type t_ )		const noexcept;
-
- 		template< typename U >
-		[[nodiscard]] constexpr shadow find( const U & u_ )					const noexcept;
  
 		/// Stream all elements to out_.
 		template< typename Out >

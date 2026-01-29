@@ -64,8 +64,14 @@ namespace pax {
 		DOCTEST_ASCII_CHECK_EQ( sh_.part( -3, 9 )	, "ext" );
 		DOCTEST_FAST_CHECK_UNARY( sh_.starts_with( "tex" ) );
 		DOCTEST_FAST_CHECK_UNARY( sh_.ends_with( "ext" ) );
-		DOCTEST_FAST_CHECK_UNARY( sh_.contains( 'x' ) );
-		DOCTEST_FAST_CHECK_UNARY( sh_.contains( "xt" ) );
+		DOCTEST_FAST_CHECK_EQ( sh_.find( 'x'  ).begin() - sh_.begin(), 2 );
+		DOCTEST_FAST_CHECK_EQ( sh_.find( '8'  ).begin() - sh_.begin(), 4 );
+		DOCTEST_FAST_CHECK_EQ( sh_.find( "ex" ).begin() - sh_.begin(), 1 );
+		DOCTEST_FAST_CHECK_EQ( sh_.find( "ax" ).begin() - sh_.begin(), 4 );
+		DOCTEST_FAST_CHECK_EQ( sh_.find( 'x'  ).size(), 1 );
+		DOCTEST_FAST_CHECK_EQ( sh_.find( '8'  ).size(), 0 );
+		DOCTEST_FAST_CHECK_EQ( sh_.find( "ex" ).size(), 2 );
+		DOCTEST_FAST_CHECK_EQ( sh_.find( "ax" ).size(), 0 );
 		{
 			const auto res = sh_.template first< 2 >();
 			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 2 );
@@ -150,10 +156,14 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( sh_.part( -3, 9 )	, std::array{ 4, 5, 0 } );
 		DOCTEST_FAST_CHECK_UNARY( sh_.starts_with( std::array{ 0, 1, 2 } ) );
 		DOCTEST_FAST_CHECK_UNARY( sh_.ends_with( std::array{ 4, 5, 0 } ) );
-#if defined( __clang__ )	// Not constexpr in gcc:
-		DOCTEST_FAST_CHECK_UNARY( sh_.contains( 5 ) );
-		DOCTEST_FAST_CHECK_UNARY( sh_.contains( std::array{ 2, 3, 4 } ) );
-#endif
+		DOCTEST_FAST_CHECK_EQ( sh_.find( 3  ).begin() - sh_.begin(), 3 );
+		DOCTEST_FAST_CHECK_EQ( sh_.find( 9  ).begin() - sh_.begin(), sh_.size() );
+		DOCTEST_FAST_CHECK_EQ( sh_.find( sh_.part( 2, 3 ) ).begin() - sh_.begin(), 2 );
+		DOCTEST_FAST_CHECK_EQ( sh_.find( std::array{ 1, 3, 4 } ).begin() - sh_.begin(), sh_.size() );
+		DOCTEST_FAST_CHECK_EQ( sh_.find( 3  ).size(), 1 );
+		DOCTEST_FAST_CHECK_EQ( sh_.find( 9  ).size(), 0 );
+		DOCTEST_FAST_CHECK_EQ( sh_.find( sh_.part( 2, 3 ) ).size(), 3 );
+		DOCTEST_FAST_CHECK_EQ( sh_.find( std::array{ 1, 3, 4 } ).size(), 0 );
 		{
 			const auto res = sh_.template first< 2 >();
 			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 2 );
