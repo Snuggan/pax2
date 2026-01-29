@@ -28,7 +28,6 @@ namespace pax {
 	}
 
 	template< auto V >	struct litteral_test	{	static constexpr decltype( V ) v = V;	};
-	constexpr bool printout{ false };
 
 	template< typename T >
 	concept is_value_const = std::is_const_v< std::remove_reference_t< traits::element_type_t< T > > >;
@@ -203,13 +202,11 @@ namespace pax {
 	}
 
 	DOCTEST_TEST_CASE( "shadow text static size" ) {
-		if( printout )	std::println( "--- shadow text static ------------------" );
 //		static_assert( shadow( "text" ).last( 2 ) == "xt" );
 		DOCTEST_FAST_CHECK_EQ( std::format( "{:?s}", shadow( "1\t2\n3\"4" ) ), "\"1\\t2\\n3\\\"4\"" );
 		text_test( shadow( "text" ) );
 	}
 	DOCTEST_TEST_CASE( "shadow text dynamic size" ) {
-		if( printout )	std::println( "--- shadow text dynamic -----------------" );
 		const std::string		str0{ "1\t2\n3\"4" };
 		DOCTEST_FAST_CHECK_EQ( std::format( "{:?s}", shadow( str0 ) ), "\"1\\t2\\n3\\\"4\"" );
 		std::string				str{ "text" };
@@ -219,7 +216,6 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( str[ 2 ], 'a' );
 	}
 	DOCTEST_TEST_CASE( "shadow numbers static size" ) {
-		if( printout )	std::println( "--- shadow numbers static ---------------" );
 		static constexpr std::array			nums0{ 0, 1, 2, 3, 4, 5, 0 };
 		static_assert( shadow( nums0 ).last( 2 ) == std::array{ 5, 0 } );
 		std::array							nums{ nums0 };
@@ -229,7 +225,6 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( nums[ 2 ], 99 );
 	}
 	DOCTEST_TEST_CASE( "shadow numbers dynamic size" ) {
-		if( printout )	std::println( "--- shadow numbers dynamic --------------" );
 		static constexpr std::array			nums0{ 0, 1, 2, 3, 4, 5, 0 };
 		std::vector< int >					nums{ nums0.begin(), nums0.end() };
 
@@ -239,7 +234,6 @@ namespace pax {
 		num_test( shadow( nums ) );
 	}
 	DOCTEST_TEST_CASE( "const_shadow" ) {
-		if( printout )	std::println( "--- const_shadow ------------------------" );
 		static constexpr std::array			nums0{ 0, 1, 2, 3, 4, 5, 0 };
 		std::vector< int >					nums{ nums0.begin(), nums0.end() };
 
@@ -249,7 +243,6 @@ namespace pax {
 		num_test( const_shadow( nums ) );
 	}
 	DOCTEST_TEST_CASE( "litteral text" ) {
-		if( printout )	std::println( "--- litteral text -----------------------" );
 		DOCTEST_ASCII_CHECK_EQ( litt( "text" ).last( 2 ), "xt" );
 		DOCTEST_ASCII_CHECK_EQ( std::format( "{:?s}", shadow( "1\t2\n3\"4" ) ), "\"1\\t2\\n3\\\"4\"" );
 		text_test( litt( "text" ) );

@@ -33,7 +33,11 @@ namespace pax {
 		using pointer								  = element_type *;
 		static constexpr std::size_t 					extent = N;
 
-		constexpr range()								noexcept {};
+		constexpr range()								noexcept = default;
+		constexpr range( const range & )				noexcept = default;
+		constexpr range & operator=( const range & )	noexcept = default;
+		constexpr range( range && )						noexcept = delete;
+		constexpr range & operator=( range && )			noexcept = delete;
 		constexpr range( pointer src_ )					noexcept : m_source{ src_ } {}
 
 		constexpr range( value_type const ( & str_ )[ N+1 ] ) noexcept requires( traits::character< value_type > ) 
@@ -61,11 +65,12 @@ namespace pax {
 		using pointer								  = element_type *;
 		static constexpr std::size_t 					extent = dynamic_extent;
 
-		constexpr range()								noexcept {};
-
-		constexpr range( pointer src_, const std::size_t size_ ) noexcept 
-			:	m_source{ src_ }, m_size{ src_ ? size_ : 0u } {}
-
+		constexpr range()								noexcept = default;
+		constexpr range( const range & )				noexcept = default;
+		constexpr range & operator=( const range & )	noexcept = default;
+		constexpr range( range && )						noexcept = delete;
+		constexpr range & operator=( range && )			noexcept = delete;
+		constexpr range( pointer src_, std::size_t sz )	noexcept : m_source{ src_ }, m_size{ src_ ? sz : 0u } {}
 		constexpr range( pointer begin_, pointer end_ )	noexcept : range{ begin_, end_ - begin_ } {}
 
 		template< std::ranges::contiguous_range U >
@@ -139,15 +144,15 @@ namespace pax {
  		template< typename U >
 		[[nodiscard]] constexpr bool operator==( const U & u_ )				const noexcept	{
 			using std::begin, std::size;
-			return std::equal( this->begin(), this->end(), begin( u_ ), no_nullchar_end( u_ ) );
+			return std::equal(	this->begin(), this->end(), begin( u_ ), no_nullchar_end( u_ ) );
 		}
 		
 		/// If this is a string and the last character is \0 it is ignored. 
  		template< typename U >
 		[[nodiscard]] constexpr auto operator<=>( const U & u_ )			const noexcept	{
 			using std::begin;
-			return std::lexicographical_compare_three_way( this->begin(), this->end(), 
-														begin( u_ ), no_nullchar_end( u_ ) );
+			return std::lexicographical_compare_three_way( 
+								this->begin(), this->end(), begin( u_ ), no_nullchar_end( u_ ) );
 		}
 
 		/// Return a dynamic shadow of the first min(n_, size()) elements. 
@@ -155,16 +160,11 @@ namespace pax {
 			return shadow{ data(), ( size() >= n_ ) ? n_ : size() };
 		}
  
-		/// Return a static shadow of the first N elements. Ub, if N > size().
-		template< std::size_t N >		requires( !is_static && ( N != traits::dynamic_extent ) )
-		[[nodiscard]] constexpr auto first()								const noexcept	{
-			assert( N <= size() && "first< N >() requires N <= size()." );
-			return shadowN< N >{ data() };
-		}
-
 		/// Return a static shadow of the first min(N, extent) elements. 
-		template< std::size_t N >		requires(  is_static && ( N != traits::dynamic_extent ) )
+		/// Ub, if N > size() and this is dynamically sized. 
+		template< std::size_t N >		requires( N != traits::dynamic_extent )
 		[[nodiscard]] constexpr auto first() 								const noexcept	{
+			if constexpr( !is_static )	assert( N <= size() && "first< N >() requires N <= size()." );
 			return shadowN< ( N < extent ) ? N : extent >( data() );
 		}
 
@@ -175,7 +175,7 @@ namespace pax {
 		}
 
 		/// Return a static shadow of the last size() - min(N, extent) elements. 
-		template< std::size_t N >		requires(  is_static )
+		template< std::size_t N >		requires( is_static )
 		[[nodiscard]] constexpr auto not_first() 							const noexcept	{
 			return last< extent - ( ( N < extent ) ? N : extent ) >();
 		}
@@ -186,18 +186,12 @@ namespace pax {
 			return shadow{ data() + size() - n_, n_ };
 		}
  
-		/// Return a static shadow of the last N elements. Ub, if N > size().
-		template< std::size_t N >		requires( !is_static && ( N != traits::dynamic_extent ) )
-		[[nodiscard]] constexpr auto last()									const noexcept	{
-			assert( N <= size() && "last< N >() requires N <= size()." );
-			return shadowN< N >( data() + size() - N );
-		}
-
 		/// Return a static shadow of the first min(N, extent) elements. 
-		template< std::size_t N >		requires(  is_static && ( N != traits::dynamic_extent ) )
+		/// Ub, if N > size() and this is dynamically sized. 
+		template< std::size_t N >		requires( N != traits::dynamic_extent )
 		[[nodiscard]] constexpr auto last() 								const noexcept	{
-			static constexpr std::size_t	offset = ( N < extent ) ? extent - N : 0u;
-			return shadowN< extent - offset >( data() + offset );
+			if constexpr( !is_static )	assert( N <= size() && "last< N >() requires N <= size()." );
+			return shadowN< ( N < extent ) ? N : extent >( data() + ( ( N < size() ) ? size() - N : 0u ) );
 		}
  
 		/// Return a dynamic shadow of the first size() - min(n_, size()) elements. 
@@ -225,7 +219,7 @@ namespace pax {
 		[[nodiscard]] constexpr auto part( difference_type offs_ )			const noexcept	{
 			offs_ =	( offs_ >= 0 )					  ? std::min( size_type(  offs_ ), size() ) 
 				  :	( size_type( -offs_ ) < size() )  ? size()  - size_type( -offs_ ) : 0u;
-			assert( N <= size() && "part< N >() requires offs_ + N <= size()." );
+			assert( offs_ + N <= size() && "part< N >() requires offs_ + N <= size()." );
 			return shadowN< N >{ data() + offs_ };
 		}
 
@@ -252,6 +246,11 @@ namespace pax {
 			return std::ranges::contains_subrange( *this, range{ u_ } );
 		}
  
+		[[nodiscard]] constexpr std::size_t find( const value_type t_ )		const noexcept;
+
+ 		template< typename U >
+		[[nodiscard]] constexpr shadow find( const U & u_ )					const noexcept;
+ 
 		/// Stream all elements to out_.
 		template< typename Out >
 		friend Out & operator<<( Out & out_, const base_shadow & sh_ )	{
@@ -267,7 +266,7 @@ namespace pax {
 			}
 		}
  	};
-	
+
 	template< typename T, std::size_t N = dynamic_extent >
 	using shadow = base_shadow< range< T, N > >;
 
