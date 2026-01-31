@@ -38,11 +38,13 @@ namespace pax {
 		constexpr range & operator=( const range & )	noexcept = default;
 		constexpr range( pointer src_ )					noexcept : m_source{ src_ } {}
 
-		constexpr range( value_type const ( & str_ )[ N+1 ] ) noexcept requires( traits::character< value_type > ) 
+		template< typename U >
+		constexpr range( const U ( & str_ )[ N+1 ] )	noexcept // Somewhat constructed due to disambiguation: 
+			requires( std::is_same_v< U, value_type > && traits::character< value_type > ) 
 			:	m_source{ str_ }	{	assert( !str_[ N ] && "Removing a non-zero character suffix!" );	}
 
 		template< std::ranges::contiguous_range U >
-		constexpr range( U & src_ )						noexcept : range{ std::ranges::data( src_ ) } {}
+		constexpr range( U & src_ )						noexcept : m_source{ std::ranges::data( src_ ) } {}
 
 		[[nodiscard]] constexpr pointer data()			const noexcept	{	return m_source;				}
 		[[nodiscard]] static constexpr std::size_t size()	  noexcept	{	return extent;					}
