@@ -257,7 +257,7 @@ namespace pax {
 			return { { begin(), mid_ }, { begin() + mid_, end() } };
 		}
 
-		/// Return a shadow of where u_ is -- or a zereo-sized shadow located at end().
+		/// Split this in to: before and after sh_, but all clamped to [begin(), end()]. 
 		template< size_type I >
 		[[nodiscard]] constexpr pair split( const shadowN< I > sh_ )		const noexcept	{
 			return { { begin(), std::clamp( sh_.begin(), begin(), end() ) },
