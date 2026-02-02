@@ -69,7 +69,7 @@ namespace pax {
 		constexpr range( const range & )				noexcept = default;
 		constexpr range & operator=( const range & )	noexcept = default;
 		constexpr range( pointer src_, std::size_t sz )	noexcept : m_source{ src_ }, m_size{ src_ ? sz : 0u } {}
-		constexpr range( pointer begin_, pointer end_ )	noexcept : range{ begin_, end_ - begin_ } {}
+		constexpr range( pointer begin_, pointer end_ )	noexcept : range{ begin_, std::size_t( end_ - begin_ ) } {}
 
 		template< std::ranges::contiguous_range U >
 		constexpr range( U & src_ ) noexcept : range{ std::ranges::data( src_ ), std::ranges::size( src_ ) } {}
@@ -119,6 +119,8 @@ namespace pax {
 		template< size_type N >
 		using shadowN								  = base_shadow< range< element_type, N > >;
 		using shadow								  = shadowN< dynamic_extent >;
+		
+		struct pair 													{	shadow first{}, second{};		};
 		
 		static constexpr size_type						extent{ Core::extent };
 		static constexpr bool							is_static{ extent != dynamic_extent };
@@ -247,6 +249,19 @@ namespace pax {
 			const range		vw( u_ );
 			const auto result = std::search( begin(), end(), vw.begin(), vw.end() );
 			return { result, ( result == end() ) ? 0u : vw.size() };
+		}
+ 
+		/// Split this in two at offset t_ (first.end() == second.begin() and first.size() == t_).
+		[[nodiscard]] constexpr pair split( size_type mid_ )				const noexcept	{
+			mid_	  = std::min( mid_, size() );
+			return { { begin(), mid_ }, { begin() + mid_, end() } };
+		}
+
+		/// Return a shadow of where u_ is -- or a zereo-sized shadow located at end().
+		template< size_type I >
+		[[nodiscard]] constexpr pair split( const shadowN< I > sh_ )		const noexcept	{
+			return { { begin(), std::clamp( sh_.begin(), begin(), end() ) },
+							  { std::clamp( sh_.end(),   begin(), end() ), end() } };
 		}
  
 		/// Stream all elements to out_.

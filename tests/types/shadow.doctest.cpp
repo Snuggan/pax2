@@ -89,6 +89,70 @@ namespace pax {
 			const auto res = sh_.template part< 2 >( -3 );
 			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 2 );
 			DOCTEST_ASCII_CHECK_EQ( res, "ex" );
+		} {
+			{
+				const auto res = sh_.split( 0 );
+				DOCTEST_FAST_CHECK_EQ( res.first.begin(),  sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.first.end(),    sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.second.begin(), sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.second.end(),   sh_.end() );				
+			} {
+				const auto res = sh_.split( 3 );
+				DOCTEST_FAST_CHECK_EQ( res.first.begin(),  sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.first.end(),    sh_.begin() + 3 );
+				DOCTEST_FAST_CHECK_EQ( res.second.begin(), sh_.begin() + 3 );
+				DOCTEST_FAST_CHECK_EQ( res.second.end(),   sh_.end() );				
+			} {
+				const auto res = sh_.split( sh_.size() + 3 );
+				DOCTEST_FAST_CHECK_EQ( res.first.begin(),  sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.first.end(),    sh_.end() );
+				DOCTEST_FAST_CHECK_EQ( res.second.begin(), sh_.end() );
+				DOCTEST_FAST_CHECK_EQ( res.second.end(),   sh_.end() );				
+			}
+		} {
+			{
+				const shadow	gap{ sh_.begin() - 3u, sh_.begin() - 1u };
+				const auto		res{ sh_.split( gap ) };
+				DOCTEST_FAST_CHECK_EQ( res.first.begin(),  sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.first.end(),    sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.second.begin(), sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.second.end(),   sh_.end() );				
+			} {
+				const shadow	gap{ sh_.begin() - 3u, sh_.end() + 2u };
+				const auto		res{ sh_.split( gap ) };
+				DOCTEST_FAST_CHECK_EQ( res.first.begin(),  sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.first.end(),    sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.second.begin(), sh_.end() );
+				DOCTEST_FAST_CHECK_EQ( res.second.end(),   sh_.end() );				
+			} {
+				const shadow	gap{ sh_.begin() - 3u, sh_.begin() + 2u };
+				const auto		res{ sh_.split( gap ) };
+				DOCTEST_FAST_CHECK_EQ( res.first.begin(),  sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.first.end(),    sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.second.begin(), sh_.begin() + 2u );
+				DOCTEST_FAST_CHECK_EQ( res.second.end(),   sh_.end() );				
+			} {
+				const shadow	gap{ sh_.begin() + 1u, sh_.begin() + 3u };
+				const auto		res{ sh_.split( gap ) };
+				DOCTEST_FAST_CHECK_EQ( res.first.begin(),  sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.first.end(),    sh_.begin() + 1u );
+				DOCTEST_FAST_CHECK_EQ( res.second.begin(), sh_.begin() + 3u );
+				DOCTEST_FAST_CHECK_EQ( res.second.end(),   sh_.end() );				
+			} {
+				const shadow	gap{ sh_.begin() + 1u, sh_.end() + 3u };
+				const auto		res{ sh_.split( gap ) };
+				DOCTEST_FAST_CHECK_EQ( res.first.begin(),  sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.first.end(),    sh_.begin() + 1u );
+				DOCTEST_FAST_CHECK_EQ( res.second.begin(), sh_.end() );
+				DOCTEST_FAST_CHECK_EQ( res.second.end(),   sh_.end() );				
+			} {
+				const shadow	gap{ sh_.end() + 1u, sh_.end() + 3u };
+				const auto		res{ sh_.split( gap ) };
+				DOCTEST_FAST_CHECK_EQ( res.first.begin(),  sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.first.end(),    sh_.end() );
+				DOCTEST_FAST_CHECK_EQ( res.second.begin(), sh_.end() );
+				DOCTEST_FAST_CHECK_EQ( res.second.end(),   sh_.end() );				
+			}
 		}
 
 		if constexpr( traits::has_extent< Sh > ) {
@@ -180,6 +244,70 @@ namespace pax {
 			const auto res = sh_.template part< 2 >( -6 );
 			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 2 );
 			DOCTEST_FAST_CHECK_EQ( res, std::array{ 1, 2 } );
+		} {
+			{
+				const auto res = sh_.split( 0 );
+				DOCTEST_FAST_CHECK_EQ( res.first.begin(),  sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.first.end(),    sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.second.begin(), sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.second.end(),   sh_.end() );				
+			} {
+				const auto res = sh_.split( 3 );
+				DOCTEST_FAST_CHECK_EQ( res.first.begin(),  sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.first.end(),    sh_.begin() + 3 );
+				DOCTEST_FAST_CHECK_EQ( res.second.begin(), sh_.begin() + 3 );
+				DOCTEST_FAST_CHECK_EQ( res.second.end(),   sh_.end() );				
+			} {
+				const auto res = sh_.split( sh_.size() + 3 );
+				DOCTEST_FAST_CHECK_EQ( res.first.begin(),  sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.first.end(),    sh_.end() );
+				DOCTEST_FAST_CHECK_EQ( res.second.begin(), sh_.end() );
+				DOCTEST_FAST_CHECK_EQ( res.second.end(),   sh_.end() );				
+			}
+		} {
+			{
+				const shadow	gap{ sh_.begin() - 3u, sh_.begin() - 1u };
+				const auto		res{ sh_.split( gap ) };
+				DOCTEST_FAST_CHECK_EQ( res.first.begin(),  sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.first.end(),    sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.second.begin(), sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.second.end(),   sh_.end() );				
+			} {
+				const shadow	gap{ sh_.begin() - 3u, sh_.end() + 2u };
+				const auto		res{ sh_.split( gap ) };
+				DOCTEST_FAST_CHECK_EQ( res.first.begin(),  sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.first.end(),    sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.second.begin(), sh_.end() );
+				DOCTEST_FAST_CHECK_EQ( res.second.end(),   sh_.end() );				
+			} {
+				const shadow	gap{ sh_.begin() - 3u, sh_.begin() + 2u };
+				const auto		res{ sh_.split( gap ) };
+				DOCTEST_FAST_CHECK_EQ( res.first.begin(),  sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.first.end(),    sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.second.begin(), sh_.begin() + 2u );
+				DOCTEST_FAST_CHECK_EQ( res.second.end(),   sh_.end() );				
+			} {
+				const shadow	gap{ sh_.begin() + 1u, sh_.begin() + 3u };
+				const auto		res{ sh_.split( gap ) };
+				DOCTEST_FAST_CHECK_EQ( res.first.begin(),  sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.first.end(),    sh_.begin() + 1u );
+				DOCTEST_FAST_CHECK_EQ( res.second.begin(), sh_.begin() + 3u );
+				DOCTEST_FAST_CHECK_EQ( res.second.end(),   sh_.end() );				
+			} {
+				const shadow	gap{ sh_.begin() + 1u, sh_.end() + 3u };
+				const auto		res{ sh_.split( gap ) };
+				DOCTEST_FAST_CHECK_EQ( res.first.begin(),  sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.first.end(),    sh_.begin() + 1u );
+				DOCTEST_FAST_CHECK_EQ( res.second.begin(), sh_.end() );
+				DOCTEST_FAST_CHECK_EQ( res.second.end(),   sh_.end() );				
+			} {
+				const shadow	gap{ sh_.end() + 1u, sh_.end() + 3u };
+				const auto		res{ sh_.split( gap ) };
+				DOCTEST_FAST_CHECK_EQ( res.first.begin(),  sh_.begin() );
+				DOCTEST_FAST_CHECK_EQ( res.first.end(),    sh_.end() );
+				DOCTEST_FAST_CHECK_EQ( res.second.begin(), sh_.end() );
+				DOCTEST_FAST_CHECK_EQ( res.second.end(),   sh_.end() );				
+			}
 		}
 		if constexpr( traits::has_extent< Sh > ) {
 			DOCTEST_FAST_CHECK_EQ( get< 2 >( sh_ )	, sh_[ 2 ] );
