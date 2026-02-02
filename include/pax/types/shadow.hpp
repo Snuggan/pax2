@@ -55,7 +55,7 @@ namespace pax {
 		[[nodiscard]] friend element_type & get( const range & r_ )	noexcept {	return *( r_.data() + I );	}
 
 	private:
-		pointer											m_source{};
+		pointer											m_source{ nullptr };
 	};
 
 	template< typename T >
@@ -80,7 +80,7 @@ namespace pax {
 		[[nodiscard]] constexpr pointer end()			const noexcept	{	return data() + size();			}
 
 	private:
-		pointer											m_source{};
+		pointer											m_source{ nullptr };
 		std::size_t										m_size{};
 	};
 
@@ -128,6 +128,7 @@ namespace pax {
 
 		using Core::Core, Core::data, Core::size;
 
+		[[nodiscard]] constexpr bool valid()			const noexcept	{	return data() != nullptr;		}
 		[[nodiscard]] constexpr bool empty()			const noexcept	{	return size() == 0;				}
 		[[nodiscard]] constexpr explicit operator bool()const noexcept	{	return empty();					}
 
@@ -257,11 +258,11 @@ namespace pax {
 			return { { begin(), mid_ }, { begin() + mid_, end() } };
 		}
 
-		/// Split this in to: before and after sh_, but all clamped to [begin(), end()]. 
+		/// Split this in two: before and after gap_, but everything clamped to [begin(), end()]. 
 		template< size_type I >
-		[[nodiscard]] constexpr pair split( const shadowN< I > sh_ )		const noexcept	{
-			return { { begin(), std::clamp( sh_.begin(), begin(), end() ) },
-							  { std::clamp( sh_.end(),   begin(), end() ), end() } };
+		[[nodiscard]] constexpr pair split( const shadowN< I > gap_ )		const noexcept	{
+			return { { begin(), std::clamp( gap_.begin(), begin(), end() ) },
+							  { std::clamp( gap_.end(),   begin(), end() ), end() } };
 		}
  
 		/// Stream all elements to out_.
