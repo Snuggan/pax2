@@ -119,8 +119,7 @@ namespace pax {
 		template< size_type N >
 		using shadowN								  = base_shadow< range< element_type, N > >;
 		using shadow								  = shadowN< dynamic_extent >;
-		
-		struct pair 													{	shadow first{}, second{};		};
+		using pair									  = std::pair< shadow, shadow >;
 		
 		static constexpr size_type						extent{ Core::extent };
 		static constexpr bool							is_static{ extent != dynamic_extent };
@@ -251,6 +250,23 @@ namespace pax {
 			const auto result = std::search( begin(), end(), vw.begin(), vw.end() );
 			return { result, ( result == end() ) ? 0u : vw.size() };
 		}
+
+		/// Find any of "\n", "\r", "\n\r", or "\r\n" and return a shadow reference to it.
+		/// If none is found, { end(), 0u } is returned. 
+		constexpr shadow find_line()										const noexcept 
+												requires( traits::character< value_type > )	{
+			enum	class what {	other, nl, cr	};
+			what	previous{ what::other };
+			for( pointer itr = begin(); itr != end(); ++itr ) {
+				switch( previous ) {
+					case what::other: 	previous  = ( *itr == '\n' ) ? what::nl : 
+													( *itr == '\r' ) ? what::cr : what::other;		break;
+					case what::nl: 		return { itr-1, 1u + ( *itr == '\r' ) };
+					case what::cr: 		return { itr-1, 1u + ( *itr == '\n' ) };
+				}
+			}
+			return { end(), end() };
+		};
  
 		/// Split this in two at offset t_ (first.end() == second.begin() and first.size() == t_).
 		[[nodiscard]] constexpr pair split( size_type mid_ )				const noexcept	{

@@ -340,9 +340,30 @@ namespace pax {
 	}
 
 	DOCTEST_TEST_CASE( "shadow text static size" ) {
-//		static_assert( shadow( "text" ).last( 2 ) == "xt" );
+		static_assert( shadow( "text" ).last( 2 ) == "xt" );
 		DOCTEST_FAST_CHECK_EQ( std::format( "{:?s}", shadow( "1\t2\n3\"4" ) ), "\"1\\t2\\n3\\\"4\"" );
 		text_test( shadow( "text" ) );
+		{
+			const auto sh	  = shadow( "first\nsecond\rthird\n\rfourth\r\nfifth\n\nsixth" );
+			auto res		  = sh.split( sh.find_line() );
+			DOCTEST_FAST_CHECK_EQ( res.first, "first" );
+			res				  = res.second.split( res.second.find_line() );
+			DOCTEST_FAST_CHECK_EQ( res.first, "second" );
+			res				  = res.second.split( res.second.find_line() );
+			DOCTEST_ASCII_CHECK_EQ( res.first, "third" );
+			res				  = res.second.split( res.second.find_line() );
+			DOCTEST_FAST_CHECK_EQ( res.first, "fourth" );
+			res				  = res.second.split( res.second.find_line() );
+			DOCTEST_FAST_CHECK_EQ( res.first, "fifth" );
+			res				  = res.second.split( res.second.find_line() );
+			DOCTEST_FAST_CHECK_EQ( res.first, "" );
+			res				  = res.second.split( res.second.find_line() );
+			DOCTEST_FAST_CHECK_EQ( res.first, "sixth" );
+			DOCTEST_FAST_CHECK_UNARY( res.second.empty() );
+			res				  = res.second.split( res.second.find_line() );
+			DOCTEST_FAST_CHECK_UNARY( res.first.empty() );
+			DOCTEST_FAST_CHECK_UNARY( res.second.empty() );
+		}
 	}
 	DOCTEST_TEST_CASE( "shadow text dynamic size" ) {
 		const std::string		str0{ "1\t2\n3\"4" };
