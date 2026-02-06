@@ -251,19 +251,15 @@ namespace pax {
 			return { result, ( result == end() ) ? 0u : vw.size() };
 		}
 
-		/// Find any of "\n", "\r", "\n\r", or "\r\n" and return a shadow reference to it.
-		/// If none is found, { end(), 0u } is returned. 
-		constexpr shadow find_line()										const noexcept 
-												requires( traits::character< value_type > )	{
-			enum	class what {	other, nl, cr	};
-			what	previous{ what::other };
-			for( pointer itr = begin(); itr != end(); ++itr ) {
-				switch( previous ) {
-					case what::other: 	previous  = ( *itr == '\n' ) ? what::nl : 
-													( *itr == '\r' ) ? what::cr : what::other;		break;
-					case what::nl: 		return { itr-1, 1u + ( *itr == '\r' ) };
-					case what::cr: 		return { itr-1, 1u + ( *itr == '\n' ) };
-				}
+		/// Find any of "\n\r", "\n", "\r\n", or "\r" and return a shadow reference to it.
+		/// If none is found, { end(), 0u } is returned, so if result.empty() none was found. 
+		[[nodiscard]] constexpr shadow find_linebreak()						const noexcept 
+																	requires( is_string )	{
+			value_type		previous{};
+			for( pointer itr = begin(); itr != end(); ++itr ) switch( previous ) {
+				case '\n': 	return { itr-1, 1u + ( *itr == '\r' ) };
+				case '\r': 	return { itr-1, 1u + ( *itr == '\n' ) };
+				default: 	previous  = *itr;				break;
 			}
 			return { end(), end() };
 		};

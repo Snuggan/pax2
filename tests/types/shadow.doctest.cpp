@@ -345,22 +345,22 @@ namespace pax {
 		text_test( shadow( "text" ) );
 		{
 			const auto sh	  = shadow( "first\nsecond\rthird\n\rfourth\r\nfifth\n\nsixth" );
-			auto res		  = sh.split( sh.find_line() );
+			auto res		  = sh.split( sh.find_linebreak() );
 			DOCTEST_FAST_CHECK_EQ( res.first, "first" );
-			res				  = res.second.split( res.second.find_line() );
+			res				  = res.second.split( res.second.find_linebreak() );
 			DOCTEST_FAST_CHECK_EQ( res.first, "second" );
-			res				  = res.second.split( res.second.find_line() );
+			res				  = res.second.split( res.second.find_linebreak() );
 			DOCTEST_ASCII_CHECK_EQ( res.first, "third" );
-			res				  = res.second.split( res.second.find_line() );
+			res				  = res.second.split( res.second.find_linebreak() );
 			DOCTEST_FAST_CHECK_EQ( res.first, "fourth" );
-			res				  = res.second.split( res.second.find_line() );
+			res				  = res.second.split( res.second.find_linebreak() );
 			DOCTEST_FAST_CHECK_EQ( res.first, "fifth" );
-			res				  = res.second.split( res.second.find_line() );
+			res				  = res.second.split( res.second.find_linebreak() );
 			DOCTEST_FAST_CHECK_EQ( res.first, "" );
-			res				  = res.second.split( res.second.find_line() );
+			res				  = res.second.split( res.second.find_linebreak() );
 			DOCTEST_FAST_CHECK_EQ( res.first, "sixth" );
 			DOCTEST_FAST_CHECK_UNARY( res.second.empty() );
-			res				  = res.second.split( res.second.find_line() );
+			res				  = res.second.split( res.second.find_linebreak() );
 			DOCTEST_FAST_CHECK_UNARY( res.first.empty() );
 			DOCTEST_FAST_CHECK_UNARY( res.second.empty() );
 		}
