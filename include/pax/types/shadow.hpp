@@ -208,8 +208,8 @@ namespace pax {
 		/// Return a dynamic shadow of the n_ elements starting with offs_, but restricted to the bounds of this.
 		/// A negative offs_ is counted from the back. 
 		[[nodiscard]] constexpr auto part( difference_type offs_, const size_type n_ )	const noexcept	{
-			offs_ =	( offs_ >= 0 )					  ? std::min( size_type(  offs_ ), size() ) 
-				  :	( size_type( -offs_ ) < size() )  ? size()  - size_type( -offs_ ) : 0u;
+			offs_ =	( offs_ >= 0 )	?		   std::min( size_type(  offs_ ), size() ) 
+									: size() - std::min( size_type( -offs_ ), size() );
 			return shadow{ data() + offs_, std::min( size() - offs_, n_ ) };
 		}
 
@@ -217,8 +217,8 @@ namespace pax {
 		/// A negative offs_ is counted from the back. Ub, if N > size().
 		template< std::size_t N >		requires( N != traits::dynamic_extent )
 		[[nodiscard]] constexpr auto part( difference_type offs_ )			const noexcept	{
-			offs_ =	( offs_ >= 0 )					  ? std::min( size_type(  offs_ ), size() ) 
-				  :	( size_type( -offs_ ) < size() )  ? size()  - size_type( -offs_ ) : 0u;
+			offs_ =	( offs_ >= 0 )	?		   std::min( size_type(  offs_ ), size() ) 
+									: size() - std::min( size_type( -offs_ ), size() );
 			assert( offs_ + N <= size() && "part< N >() requires offs_ + N <= size()." );
 			return shadowN< N >{ data() + offs_ };
 		}
