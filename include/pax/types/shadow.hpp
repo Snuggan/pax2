@@ -143,7 +143,7 @@ namespace pax {
 		/// If this is a string and the last character is \0 it is ignored. 
  		template< typename U >
 		[[nodiscard]] constexpr bool operator==( const U & u_ )				const noexcept	{
-			using std::begin, std::size;
+			using std::begin;
 			return std::equal(	this->begin(), this->end(), begin( u_ ), no_nullchar_end( u_ ) );
 		}
 		
