@@ -282,11 +282,11 @@ namespace pax {
 		friend Out & operator<<( Out & out_, const base_shadow & sh_ )	{
 			if constexpr( is_string )		return out_.write( sh_.data(), sh_.size() );
 			else {
-				bool comma = false;
+				auto comma = "";
 				out_ << '[';
 				for( const auto & item : sh_ ) {
-					out_ << ( comma ? ", " : "" ) << item;
-					comma = true;
+					out_ << comma << item;
+					comma = ", ";
 				}
 				return out_ << ']';
 			}
