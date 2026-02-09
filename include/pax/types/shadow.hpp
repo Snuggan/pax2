@@ -157,7 +157,7 @@ namespace pax {
 
 		/// Return a dynamic shadow of the first min(n_, size()) elements. 
 		[[nodiscard]] constexpr auto first( const size_type n_ )			const noexcept	{
-			return shadow{ data(), ( size() >= n_ ) ? n_ : size() };
+			return shadow{ data(), std::min( n_, size() ) };
 		}
  
 		/// Return a static shadow of the first min(N, extent) elements. 
@@ -165,24 +165,24 @@ namespace pax {
 		template< std::size_t N >		requires( N != traits::dynamic_extent )
 		[[nodiscard]] constexpr auto first() 								const noexcept	{
 			if constexpr( !is_static )	assert( N <= size() && "first< N >() requires N <= size()." );
-			return shadowN< ( N < extent ) ? N : extent >( data() );
+			return shadowN< std::min( N, extent ) >( data() );
 		}
 
 		/// Return a dynamic shadow of the last size() - min(n_, size()) elements. 
 		[[nodiscard]] constexpr auto not_first( size_type n_ )				const noexcept	{
-			n_ = ( size() > n_ ) ? n_ : size();
+			n_ = std::min( n_, size() );
 			return shadow{ data() + n_, size() - n_ };
 		}
 
 		/// Return a static shadow of the last size() - min(N, extent) elements. 
 		template< std::size_t N >		requires( is_static )
 		[[nodiscard]] constexpr auto not_first() 							const noexcept	{
-			return last< extent - ( ( N < extent ) ? N : extent ) >();
+			return last< extent - std::min( N, extent ) >();
 		}
 
 		/// Return a dynamic shadow of the last min(n_, size()) elements. 
 		[[nodiscard]] constexpr auto last( size_type n_ )					const noexcept	{
-			n_ = ( size() > n_ ) ? n_ : size();
+			n_ = std::min( n_, size() );
 			return shadow{ data() + size() - n_, n_ };
 		}
  
@@ -191,18 +191,18 @@ namespace pax {
 		template< std::size_t N >		requires( N != traits::dynamic_extent )
 		[[nodiscard]] constexpr auto last() 								const noexcept	{
 			if constexpr( !is_static )	assert( N <= size() && "last< N >() requires N <= size()." );
-			return shadowN< ( N < extent ) ? N : extent >( data() + ( ( N < size() ) ? size() - N : 0u ) );
+			return shadowN< std::min( N, extent ) >{ data() + size() - std::min( N, size() ) };
 		}
  
 		/// Return a dynamic shadow of the first size() - min(n_, size()) elements. 
 		[[nodiscard]] constexpr auto not_last( const size_type n_ )			const noexcept	{
-			return shadow{ data(), ( size() > n_ ) ? size() - n_ : 0u };
+			return shadow{ data(), size() - std::min( n_, size() ) };
 		}
 
 		/// Return a static shadow of the first size() - min(N, extent) elements. 
 		template< std::size_t N >		requires( traits::has_extent< base_shadow > )
 		[[nodiscard]] constexpr auto not_last() 							const noexcept 	{
-			return first< ( extent > N ) ? extent - N : 0 >();
+			return first< extent - std::min( N, size() ) >();
 		}
 
 		/// Return a dynamic shadow of the n_ elements starting with offs_, but restricted to the bounds of this.
@@ -210,7 +210,7 @@ namespace pax {
 		[[nodiscard]] constexpr auto part( difference_type offs_, const size_type n_ )	const noexcept	{
 			offs_ =	( offs_ >= 0 )					  ? std::min( size_type(  offs_ ), size() ) 
 				  :	( size_type( -offs_ ) < size() )  ? size()  - size_type( -offs_ ) : 0u;
-			return shadow{ data() + offs_, ( size() >= offs_ + n_ ) ? n_ : size() - offs_ };
+			return shadow{ data() + offs_, std::min( size() - offs_, n_ ) };
 		}
 
 		/// Return a static shadow of the N elements starting with offs_, but restricted to the bounds of this.
