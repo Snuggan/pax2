@@ -5,6 +5,7 @@
 
 #include <pax/concepts.hpp>		// traits:: stuff.
 #include <algorithm>			// std::ranges::equal, std::lexicographical_compare_three_way, etc.
+#include <iterator>				// std::reverse_iterator.
 #include <assert.h>
 
 /// Shadow: string_view and span in one
@@ -113,6 +114,8 @@ namespace pax {
 		using reference								  = element_type &;
 		using iterator								  = pointer;
 		using const_iterator						  = element_type const *;
+		using reverse_iterator						  = std::reverse_iterator< iterator >;
+		using const_reverse_iterator				  = std::reverse_iterator< const_iterator >;
 		using size_type								  = std::size_t;
 		using difference_type						  = std::ptrdiff_t;
 
@@ -132,10 +135,16 @@ namespace pax {
 		[[nodiscard]] constexpr explicit operator bool()const noexcept	{	return empty();					}
 
 		/// Element access, possibly mutable if the element type is not const.
+		template< typename Ptr >
+		[[nodiscard]] constexpr auto revit( Ptr p_ )	const noexcept	{	return std::reverse_iterator( p_ );	}
 		[[nodiscard]] constexpr iterator begin()		const noexcept	{	return data();					}
 		[[nodiscard]] constexpr iterator end()			const noexcept	{	return begin() + size();		}
-		[[nodiscard]] constexpr const_iterator cbegin()	const noexcept	{	return data();					}
-		[[nodiscard]] constexpr const_iterator cend()	const noexcept	{	return begin() + size();		}
+		[[nodiscard]] constexpr const_iterator cbegin()	const noexcept	{	return begin();					}
+		[[nodiscard]] constexpr const_iterator cend()	const noexcept	{	return end();					}
+		[[nodiscard]] constexpr auto rbegin()			const noexcept	{	return revit( end() );			}
+		[[nodiscard]] constexpr auto rend()				const noexcept	{	return revit( begin() );		}
+		[[nodiscard]] constexpr auto crbegin()			const noexcept	{	return revit( cend() );			}
+		[[nodiscard]] constexpr auto crend()			const noexcept	{	return revit( cbegin() );		}
 		[[nodiscard]] constexpr reference front()		const noexcept	{	return *data();					}
 		[[nodiscard]] constexpr reference back()		const noexcept	{	return operator[]( size()-1 );	}
 		[[nodiscard]] constexpr reference operator[]( const size_type i_ ) const noexcept { return data()[ i_ ]; }

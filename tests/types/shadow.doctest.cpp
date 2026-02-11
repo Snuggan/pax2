@@ -46,6 +46,12 @@ namespace pax {
 		DOCTEST_ASCII_CHECK_EQ( sh_[ 3 ]			, 't' );
 		DOCTEST_ASCII_CHECK_EQ( *( sh_.begin() + 1 ) , 'e' );
 		DOCTEST_ASCII_CHECK_EQ( *( sh_.end()   - 2 ) , 'x' );
+		DOCTEST_ASCII_CHECK_EQ( *( sh_.cbegin() + 1 ) , 'e' );
+		DOCTEST_ASCII_CHECK_EQ( *( sh_.cend()   - 2 ) , 'x' );
+		DOCTEST_ASCII_CHECK_EQ( *( sh_.rbegin() + 1 ) , 'x' );
+		DOCTEST_ASCII_CHECK_EQ( *( sh_.rend()   - 2 ) , 'e' );
+		DOCTEST_ASCII_CHECK_EQ( *( sh_.crbegin() + 1 ) , 'x' );
+		DOCTEST_ASCII_CHECK_EQ( *( sh_.crend()   - 2 ) , 'e' );
 		DOCTEST_ASCII_CHECK_EQ( sh_.front() 		, 't' );
 		DOCTEST_ASCII_CHECK_EQ( sh_.back() 			, 't' );
 		DOCTEST_ASCII_CHECK_EQ( sh_.first( 2 )		, "te" );
@@ -202,6 +208,12 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( sh_[ 3 ]				, 3 );
 		DOCTEST_FAST_CHECK_EQ( *( sh_.begin() + 1 ) , 1 );
 		DOCTEST_FAST_CHECK_EQ( *( sh_.end()   - 2 ) , 5 );
+		DOCTEST_FAST_CHECK_EQ( *( sh_.cbegin() + 1 ) , 1 );
+		DOCTEST_FAST_CHECK_EQ( *( sh_.cend()   - 2 ) , 5 );
+		DOCTEST_FAST_CHECK_EQ( *( sh_.rbegin() + 1 ) , 5 );
+		DOCTEST_FAST_CHECK_EQ( *( sh_.rend()   - 2 ) , 1 );
+		DOCTEST_FAST_CHECK_EQ( *( sh_.crbegin() + 1 ) , 5 );
+		DOCTEST_FAST_CHECK_EQ( *( sh_.crend()   - 2 ) , 1 );
 		DOCTEST_FAST_CHECK_EQ( sh_.front() 			, 0 );
 		DOCTEST_FAST_CHECK_EQ( sh_.back() 			, 0 );
 		DOCTEST_FAST_CHECK_EQ( sh_.first( 2 )		, std::array{ 0, 1 } );
