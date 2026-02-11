@@ -130,23 +130,23 @@ namespace pax {
 
 		using Core::Core, Core::data, Core::size;
 
-		[[nodiscard]] constexpr bool valid()			const noexcept	{	return data() != nullptr;		}
-		[[nodiscard]] constexpr bool empty()			const noexcept	{	return size() == 0;				}
-		[[nodiscard]] constexpr explicit operator bool()const noexcept	{	return empty();					}
+		[[nodiscard]] constexpr bool valid()			const noexcept	{	return data() != nullptr;			}
+		[[nodiscard]] constexpr bool empty()			const noexcept	{	return size() == 0;					}
+		[[nodiscard]] constexpr explicit operator bool()const noexcept	{	return empty();						}
 
 		/// Element access, possibly mutable if the element type is not const.
 		template< typename Ptr >
 		[[nodiscard]] constexpr auto revit( Ptr p_ )	const noexcept	{	return std::reverse_iterator( p_ );	}
-		[[nodiscard]] constexpr iterator begin()		const noexcept	{	return data();					}
-		[[nodiscard]] constexpr iterator end()			const noexcept	{	return begin() + size();		}
-		[[nodiscard]] constexpr const_iterator cbegin()	const noexcept	{	return begin();					}
-		[[nodiscard]] constexpr const_iterator cend()	const noexcept	{	return end();					}
-		[[nodiscard]] constexpr auto rbegin()			const noexcept	{	return revit( end() );			}
-		[[nodiscard]] constexpr auto rend()				const noexcept	{	return revit( begin() );		}
-		[[nodiscard]] constexpr auto crbegin()			const noexcept	{	return revit( cend() );			}
-		[[nodiscard]] constexpr auto crend()			const noexcept	{	return revit( cbegin() );		}
-		[[nodiscard]] constexpr reference front()		const noexcept	{	return *data();					}
-		[[nodiscard]] constexpr reference back()		const noexcept	{	return operator[]( size()-1 );	}
+		[[nodiscard]] constexpr iterator begin()		const noexcept	{	return data();						}
+		[[nodiscard]] constexpr iterator end()			const noexcept	{	return begin() + size();			}
+		[[nodiscard]] constexpr const_iterator cbegin()	const noexcept	{	return begin();						}
+		[[nodiscard]] constexpr const_iterator cend()	const noexcept	{	return end();						}
+		[[nodiscard]] constexpr auto rbegin()			const noexcept	{	return revit( end() );				}
+		[[nodiscard]] constexpr auto rend()				const noexcept	{	return revit( begin() );			}
+		[[nodiscard]] constexpr auto crbegin()			const noexcept	{	return revit( cend() );				}
+		[[nodiscard]] constexpr auto crend()			const noexcept	{	return revit( cbegin() );			}
+		[[nodiscard]] constexpr reference front()		const noexcept	{	return *data();						}
+		[[nodiscard]] constexpr reference back()		const noexcept	{	return operator[]( size()-1 );		}
 		[[nodiscard]] constexpr reference operator[]( const size_type i_ ) const noexcept { return data()[ i_ ]; }
 
 		/// If this is a string and the last character is \0 it is ignored. 
@@ -336,13 +336,13 @@ namespace pax {
 		using traits_type							  = Traits;
 		static constexpr std::size_t			 		extent = N;
 
-		constexpr core_litteral( value_type       ( & str_ )[  N  ] )	{	std::copy_n( str_, N, value );	}
-		constexpr core_litteral( value_type const ( & str_ )[ N+1 ] )	{	std::copy_n( str_, N, value );	}
+		constexpr core_litteral( value_type       ( & str_ )[  N  ] )	{	std::copy_n( str_, N, value );		}
+		constexpr core_litteral( value_type const ( & str_ )[ N+1 ] )	{	std::copy_n( str_, N, value );		}
 
-		[[nodiscard]] constexpr pointer data()			const noexcept	{	return value;					}
-		[[nodiscard]] static constexpr std::size_t size()	  noexcept	{	return N;						}
-		[[nodiscard]] constexpr pointer begin()			const noexcept	{	return data();					}
-		[[nodiscard]] constexpr pointer end()			const noexcept	{	return data() + size();			}
+		[[nodiscard]] constexpr pointer data()			const noexcept	{	return value;						}
+		[[nodiscard]] static constexpr std::size_t size()	  noexcept	{	return N;							}
+		[[nodiscard]] constexpr pointer begin()			const noexcept	{	return data();						}
+		[[nodiscard]] constexpr pointer end()			const noexcept	{	return data() + size();				}
  
 		template< std::size_t I >			requires( ( I < extent ) && ( extent != dynamic_extent ) )
 		[[nodiscard]] friend element_type & get( const core_litteral & cl_ ) noexcept { return *( cl_.data() + I );	}
@@ -363,7 +363,7 @@ namespace pax {
 	template< typename Tag, typename T >	struct Tagged;
 
 	template< traits::character Char, size_t N >
-	[[nodiscard]] constexpr Tagged< struct general, litteral< Char, N > > tagged( Char ( & str_ )[ N ] )	{
+	[[nodiscard]] constexpr Tagged< struct general, litteral< Char, N > > tagged( Char ( & str_ )[ N ] )		{
 		return { str_ };
 	}
 
