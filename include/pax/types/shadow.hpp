@@ -109,7 +109,7 @@ namespace pax {
 	template< typename Core >
 	struct base_shadow : public Core {
 		using element_type							  = typename Core::element_type;
-		using value_type							  = typename Core::value_type;
+		using value_type							  = std::remove_cv_t< element_type >;
 		using pointer								  = element_type *;
 		using reference								  = element_type &;
 		using iterator								  = pointer;
@@ -130,9 +130,9 @@ namespace pax {
 
 		using Core::Core, Core::data, Core::size;
 
-		[[nodiscard]] constexpr bool valid()			const noexcept	{	return data() != nullptr;			}
-		[[nodiscard]] constexpr bool empty()			const noexcept	{	return size() == 0;					}
-		[[nodiscard]] constexpr explicit operator bool()const noexcept	{	return empty();						}
+		[[nodiscard]] constexpr bool valid()			const noexcept	{	return  data() != nullptr;			}
+		[[nodiscard]] constexpr bool empty()			const noexcept	{	return !size();						}
+		[[nodiscard]] constexpr explicit operator bool()const noexcept	{	return  size();						}
 
 		/// Element access, possibly mutable if the element type is not const.
 		template< typename Ptr >
@@ -141,9 +141,9 @@ namespace pax {
 		[[nodiscard]] constexpr iterator end()			const noexcept	{	return begin() + size();			}
 		[[nodiscard]] constexpr const_iterator cbegin()	const noexcept	{	return begin();						}
 		[[nodiscard]] constexpr const_iterator cend()	const noexcept	{	return end();						}
-		[[nodiscard]] constexpr auto rbegin()			const noexcept	{	return revit( end() );				}
-		[[nodiscard]] constexpr auto rend()				const noexcept	{	return revit( begin() );			}
-		[[nodiscard]] constexpr auto crbegin()			const noexcept	{	return revit( cend() );				}
+		[[nodiscard]] constexpr auto rbegin()			const noexcept	{	return revit( end()    );			}
+		[[nodiscard]] constexpr auto rend()				const noexcept	{	return revit( begin()  );			}
+		[[nodiscard]] constexpr auto crbegin()			const noexcept	{	return revit( cend()   );			}
 		[[nodiscard]] constexpr auto crend()			const noexcept	{	return revit( cbegin() );			}
 		[[nodiscard]] constexpr reference front()		const noexcept	{	return *data();						}
 		[[nodiscard]] constexpr reference back()		const noexcept	{	return operator[]( size()-1 );		}

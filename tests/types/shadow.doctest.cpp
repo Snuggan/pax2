@@ -375,6 +375,8 @@ namespace pax {
 			res				  = res.second.split( res.second.find_linebreak() );
 			DOCTEST_FAST_CHECK_UNARY( res.first.empty() );
 			DOCTEST_FAST_CHECK_UNARY( res.second.empty() );
+			DOCTEST_FAST_CHECK_UNARY( !res.first );
+			DOCTEST_FAST_CHECK_UNARY( !res.second );
 		}
 	}
 	DOCTEST_TEST_CASE( "shadow text dynamic size" ) {
