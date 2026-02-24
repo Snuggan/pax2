@@ -304,11 +304,8 @@ namespace pax {
 		/// What is the largest value?
 		constexpr value_type max()						const noexcept	{	return m_values[ 1 ];					}
 		
-		template< std::size_t I >
-		constexpr friend T get( const Minmax & mm_ )	noexcept		{
-			static_assert( I < 2 );
-			return mm_.m_values[ I ];
-		}
+		template< std::size_t I >						requires( I < 2 )
+		constexpr friend T get( const Minmax & mm_ )	noexcept		{	return mm_.m_values[ I ];				}
 	};
 
 

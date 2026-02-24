@@ -26,15 +26,15 @@ namespace pax::traits {
 	static_assert( !array_like< std::span< int, 4 > > );
 	static_assert( !array_like< std::span< int > > );
 
-	static_assert(  size_contiguous< int[ 4 ] > );
-	static_assert(  size_contiguous< int( & )[ 4 ] > );
-	static_assert( !size_contiguous< int( & )[] > );
-	static_assert( !size_contiguous< int[] > );
-	static_assert( !size_contiguous< int * > );
-	static_assert(  size_contiguous< std::array< int, 4 > > );
-	static_assert(  size_contiguous< std::vector< int > > );
-	static_assert(  size_contiguous< std::span< int, 4 > > );
-	static_assert(  size_contiguous< std::span< int > > );
+	static_assert(  sized_contiguous< int[ 4 ] > );
+	static_assert(  sized_contiguous< int( & )[ 4 ] > );
+	static_assert( !sized_contiguous< int( & )[] > );
+	static_assert( !sized_contiguous< int[] > );
+	static_assert( !sized_contiguous< int * > );
+	static_assert(  sized_contiguous< std::array< int, 4 > > );
+	static_assert(  sized_contiguous< std::vector< int > > );
+	static_assert(  sized_contiguous< std::span< int, 4 > > );
+	static_assert(  sized_contiguous< std::span< int > > );
 
 	static_assert(  traits::contiguous< int[ 4 ] > );
 	static_assert(  traits::contiguous< int( & )[ 4 ] > );
@@ -149,11 +149,11 @@ namespace pax::traits {
 		static_assert(  string< T > );
 	}
 
-	DOCTEST_TEST_CASE( "concepts size_contiguous" ) {
-		static_assert( !size_contiguous< std::tuple< int, int > > );
-		static_assert( !size_contiguous< std::pair< int, int > > );
-		static_assert( !size_contiguous< std::list< int > > );
-		static_assert( !size_contiguous< std::map< int, int > > );
+	DOCTEST_TEST_CASE( "concepts sized_contiguous" ) {
+		static_assert( !sized_contiguous< std::tuple< int, int > > );
+		static_assert( !sized_contiguous< std::pair< int, int > > );
+		static_assert( !sized_contiguous< std::list< int > > );
+		static_assert( !sized_contiguous< std::map< int, int > > );
 	}
 	DOCTEST_TEST_CASE( "concepts traits::character or not traits::string" ) {
 		static_assert(  character< char > );

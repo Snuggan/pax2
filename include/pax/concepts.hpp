@@ -26,13 +26,13 @@ namespace pax::traits {
 
 	/// Do T store or reference contiguous elements, i.e. std::array, std::string, std::span etc.
 	template< typename T >
-	concept size_contiguous
+	concept sized_contiguous
 		 = std::ranges::contiguous_range	< clean_t< T > >
 		|| std::is_bounded_array_v			< clean_t< T > >;	// int[ N ] and int ( & )[ N ]
 
-	/// Either size_contiguous or pointer..
+	/// Either sized_contiguous or pointer..
 	template< typename T >
-	concept contiguous						= size_contiguous< T > || array_like< T >;
+	concept contiguous						= sized_contiguous< T > || array_like< T >;
 
 	/// Does an instance have a size?
 	template< typename T >
@@ -64,13 +64,13 @@ namespace pax::traits {
 		template< typename T >				  requires( std::is_array_v< T > )
 		struct Element_type< T >			: std::remove_all_extents< T > {};
 
-		template< size_contiguous T >		  requires(  has_declared_element_type< T > )
+		template< sized_contiguous T >		  requires(  has_declared_element_type< T > )
 		struct Element_type< T >			{ using type = typename T::element_type; };
 
-		template< size_contiguous T >		  requires( !has_declared_element_type< T > && !array_like< T > )
+		template< sized_contiguous T >		  requires( !has_declared_element_type< T > && !array_like< T > )
 		struct Element_type< T >			: std::conditional< 
 			std::is_same_v< typename T::iterator, typename T::const_iterator >,
-			const typename T::value_type,	// std::string_view needs this...
+			const typename T::value_type,	// std::string_view needs this...4
 			typename T::value_type
 		> {};
 

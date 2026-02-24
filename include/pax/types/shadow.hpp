@@ -150,14 +150,14 @@ namespace pax {
 		[[nodiscard]] constexpr reference operator[]( const size_type i_ ) const noexcept { return data()[ i_ ]; }
 
 		/// If this is a string and the last character is \0 it is ignored. 
- 		template< typename U >
+ 		template< std::ranges::contiguous_range U >
 		[[nodiscard]] constexpr bool operator==( const U & u_ )				const noexcept	{
 			using std::begin;
 			return std::equal(	this->begin(), this->end(), begin( u_ ), no_nullchar_end( u_ ) );
 		}
 		
 		/// If this is a string and the last character is \0 it is ignored. 
- 		template< typename U >
+ 		template< std::ranges::contiguous_range U >
 		[[nodiscard]] constexpr auto operator<=>( const U & u_ )			const noexcept	{
 			using std::begin;
 			return std::lexicographical_compare_three_way( 
@@ -233,14 +233,14 @@ namespace pax {
 		}
 
 		/// Return true iff u_ equals the first elements of this.
- 		template< typename U >
+ 		template< std::ranges::contiguous_range U >
 		[[nodiscard]] constexpr bool starts_with( const U & u_ )			const noexcept	{
 			const range		vw( u_ );
 			return first( vw.size() ) == vw;
 		}
 
 		/// Return true iff u_ equals the last elements of this.
- 		template< typename U >
+ 		template< std::ranges::contiguous_range U >
 		[[nodiscard]] constexpr bool ends_with( const U & u_ )				const noexcept	{
 			const range		vw( u_ );
 			return last( vw.size() ) == vw;
@@ -253,7 +253,7 @@ namespace pax {
 		}
 
 		/// Return a shadow of where u_ is -- or a zereo-sized shadow located at end().
- 		template< typename U >
+ 		template< std::ranges::contiguous_range U >
 		[[nodiscard]] constexpr shadow find( const U & u_ )					const noexcept	{
 			const range		vw( u_ );
 			const auto result = std::search( begin(), end(), vw.begin(), vw.end() );
