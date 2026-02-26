@@ -58,6 +58,7 @@ list( APPEND PAX_SANITIZE
 if( ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang" )	
 	add_definitions( -D__IS_CLANG__=1 )
 	list( APPEND PAX_FLAGS
+		-Wno-c2y-extensions				# doctest: error: '__COUNTER__' is a C2y extension [-Werror,-Wc2y-extensions]
 		-Wstring-conversion				# Warns when a string literal is implicitly converted into a bool. 
 	)
 	list( REMOVE_ITEM PAX_SANITIZE
