@@ -11,7 +11,7 @@ namespace pax {
 <html lang=\se\>
 <head>
 <title>{}</title>
-<meta http-equiv=Content-Type content=\text/html; charset=utf-8\>
+<meta http-equiv=Content-Type content=\text/html; charset=utf-8>
 <style>
 	body {{
 		margin: 0;
