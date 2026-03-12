@@ -7,13 +7,11 @@
 #include "bbox.hpp"
 #include <pax/reporting/error_message.hpp>
 #include <pax/math/adjust.hpp>		// align_le, align_ge
-
 #include <pdal/Filter.hpp>			// PointViewPtr, PointId
 
 
 namespace pax {
-	
-	
+
 	/// Manage a two-dimensional bounding box + resolution. 
 	struct Bbox_indexer {
 		using coord_type		  = double;
@@ -50,100 +48,59 @@ namespace pax {
 		constexpr coord_type maxy()			const noexcept	{	return m_maxy;								}
 		Box2 bbox()							const noexcept	{	return { minx(), maxx(), miny(), maxy() };	}
 
-
 		/// The affine transformation of the Bbox_indexer, defined as in gdal.
 		constexpr auto affine_vector()		const noexcept	{
-			return std::array< coord_type, 6 >{
-	    		minx(),		resolution(),	 0.0,
-				maxy(),		0.0,			-resolution()
+			return std::array{
+	    		minx(),		resolution(),	 coord_type{},
+				maxy(),		coord_type{},	-resolution()
 			};
 		}
 
-
 		/// Does the point belong to the bbox?
 		bool contains( const coord_type x_, const coord_type y_ ) const noexcept {
-			return ( minx() <= x_ ) && ( x_ <= maxx() )
-				&& ( miny() <= y_ ) && ( y_ <= maxy() );
+			return x_in_range( x_ ) && y_in_range( y_ );
 		}
-
 
 		index_type col( const coord_type x_ ) const {
-			const index_type c( std::floor( ( x_ - minx() )/resolution() ) );
-
-			if( c >= cols() ) {	// Assumes that index_type( -1 ) is positive, that index_type is unsigned.
-				// Are we right on the bbox limit? If so, adjust minimally.
-				const auto nudge{ 0.125*resolution() };
-				if     ( inclusive( minx(), x_, minx() + nudge ) )	return col( x_ + nudge );
-				else if( inclusive( maxx() - nudge, x_, maxx() ) )	return col( x_ - nudge );
-				else {
-					// No, we are well outside, so the given bbox was plain wrong.
-					throw	error_message( 
-						( x_ <= minx() ) ?	std20::format( "x < min_x: {} < {} (diff {})", x_, minx(), minx()-x_ ) : 
-						( x_ >= maxx() ) ?	std20::format( "x > max_x: {} > {} (diff {})", x_, maxx(), x_-maxx() ) : 
-											std20::format( "Calculated col >= cols: {} >= {}", c, cols() ) 
-					);
-				}
-			}
-			return c;
+			if( x_in_range( x_ ) )		return min( ( x_ - minx() )/resolution(), cols() - 1 );
+			throw error_message( std20::format( "Column: x-coord {} is outside range [{}, {}[", x_, minx(), maxx() ) );
 		}
-
 
 		index_type row( const coord_type y_ ) const {
 			// When dealing with rasters, origo is at the upper left corner.
 			// So y is the other way compared to mathematics (direction is "down" and not "up"). 
-			const index_type r( std::floor( ( maxy() - y_ )/resolution() ) );
-
-			if( r >= rows() ) {	// Assumes that index_type( -1 ) is positive, that index_type is unsigned.
-				// Are we right on the bbox limit? If so, adjust minimally.
-				const auto nudge{ 0.125*resolution() };
-				if     ( inclusive( miny(), y_, miny() + nudge ) )	return row( y_ + nudge );
-				else if( inclusive( maxy() - nudge, y_, maxy() ) )	return row( y_ - nudge );
-				else {
-					// No, we are well outside, so the given bbox was plain wrong.
-					throw	error_message( 
-						( y_ <= miny() ) ?	std20::format( "y < min_y: {} < {} (diff {})", y_, miny(), miny()-y_ ) : 
-						( y_ >= maxy() ) ?	std20::format( "y > max_y: {} > {} (diff {})", y_, maxy(), y_-maxy() ) : 
-											std20::format( "Calculated row >= rows: {} >= {}", r, rows() )
-					);
-				}
-			}
-			return r;
+			if( y_in_range( y_ ) )		return min( ( maxy() - y_ )/resolution(), rows() - 1 );
+			throw error_message( std20::format( "Row: y-coord {} is outside range ]{}, {}]", y_, miny(), maxy() ) );
 		}
-
 
 		/// Given this point, what index does its coordinates produce? (row first index)
 		/** Works for minx() <= x_ <= maxx() and  miny() <= y_ <= maxy(). 
 			If either coordinate is outside the bounding box, an exception is thrown. 		**/
-		index_type index( const coord_type x_, const coord_type y_ )	const	{
-			return cols()*row( y_ ) + col( x_ );	// row first indexing. 
+		index_type index( const coord_type x_, const coord_type y_ ) const	{
+			return cols()*row( y_ ) + col( x_ );	// For proper exception message.
 		}
-
 
 		friend std::string to_string( const Bbox_indexer & bb_ ) {
 			return std20::format( "{}E[{}, {}], N[{}, {}], res {}{}",	
 				'{', bb_.minx(), bb_.maxx(), bb_.miny(), bb_.maxy(), bb_.resolution(), '}' );
 		}
 
-
 		template< typename CharT, typename Traits >
 		friend std::basic_ostream< CharT, Traits > & operator<<(
 			std::basic_ostream< CharT, Traits >	  & out_,
 			const Bbox_indexer					  & bb_
-		) {
-			return	out_ << to_string( bb_ );
-		}
+		) {	return	out_ << to_string( bb_ );					}
 	
 	private:
 		coord_type		m_minx, m_maxx, m_miny, m_maxy, m_resolution;
 		index_type	 	m_rows, m_cols;
 		
-		static constexpr index_type minimum_1( const index_type i_ ) noexcept {
-			return ( i_ > 1u ) ? i_ : 1u;
-		}
-		
-		template< typename U >
-		static constexpr bool inclusive( const U min_, const U u_, const U max_ ) noexcept {
-			return ( min_ <= u_ ) && ( u_ <= max_ );
+		static constexpr index_type minimum_1( const index_type i_ )	noexcept	{	return ( i_ > 1u ) ? i_ : 1u;		}
+		constexpr bool x_in_range( const coord_type x_ ) const noexcept	{	return ( minx() <= x_ ) && ( x_ <  maxx() );	}
+		constexpr bool y_in_range( const coord_type y_ ) const noexcept	{	return ( miny() <  y_ ) && ( y_ <= maxy() );	}
+
+		static constexpr index_type min( const index_type a_, const index_type b_ ) noexcept {
+			return ( a_ < b_ ) ? a_ : b_;
 		}
 	};
 
@@ -158,7 +115,6 @@ namespace pax {
 		/** Throws if view_ is [almost] empty.		**/
 		PointView_indexer( const pdal::PointViewPtr view_, const coord_type alignment_ ) 
 			: Bbox_indexer{ get_aligned_indexer( view_, alignment_ ) } {}
-
 
 		/// Given this point, what index does its coordinates produce?
 		index_type index( const pdal::PointViewPtr view_, const pdal::PointId idx_ ) const {

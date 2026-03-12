@@ -45,9 +45,9 @@ namespace pax {
 	template< typename T >
 	constexpr T nudge_up( const T v_ ) noexcept {
 		using std::nextafter;
-		constexpr auto limit{ std::numeric_limits< T >::max() };
-		if constexpr( std::is_integral_v< T > )		return ( v_ < limit ) ? v_+1					: limit;
-		else										return ( v_ < limit ) ? nextafter( v_, limit )	: limit;
+		constexpr auto highest{ std::numeric_limits< T >::max() };
+		if constexpr( std::is_integral_v< T > )		return ( v_ < highest ) ? v_+1						: highest;
+		else										return ( v_ < highest ) ? nextafter( v_, highest )	: highest;
 	}
 
 
@@ -56,9 +56,9 @@ namespace pax {
 	template< typename T >
 	constexpr T nudge_down( const T v_ ) noexcept {
 		using std::nextafter;
-		constexpr auto limit{ std::numeric_limits< T >::lowest() };
-		if constexpr( std::is_integral_v< T > )		return ( v_ > limit ) ? v_-1					: limit;
-		else										return ( v_ > limit ) ? nextafter( v_, limit )	: limit;
+		constexpr auto lowest{ std::numeric_limits< T >::lowest() };
+		if constexpr( std::is_integral_v< T > )		return ( v_ > lowest ) ? v_-1						: lowest;
+		else										return ( v_ > lowest ) ? nextafter( v_, lowest )	: lowest;
 	}
 
 }	// namespace pax
