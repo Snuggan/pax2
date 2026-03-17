@@ -4,5 +4,6 @@ cmake 														\
 	-DCMAKE_BUILD_TYPE=Debug								\
 	-DCMAKE_INSTALL_RPATH_USE_LINK_PATH="ON"				\
 	-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST	\
+	-DCMAKE_EXPORT_COMPILE_COMMANDS=1						\
 	-G Ninja												\
 	../..

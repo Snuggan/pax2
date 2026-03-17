@@ -1,4 +1,4 @@
-//	Copyright (c) 2014-2025, Peder Axensten, all rights reserved.
+//	Copyright (c) 2014-2026, Peder Axensten, all rights reserved.
 //	Contact: peder ( at ) axensten.se
 
 #pragma once
@@ -9,7 +9,13 @@
 #include <assert.h>
 
 /// Shadow: string_view and span in one
-/**	Test the feasability of having one class for all uses of string_view and span, both static as well as dynamic sizesing. And a variant can also be used for text in template parameters. It consists of a common base class for most of the functionality and small classes with specialisations for handling [the references to] data. A main idea is to keep the number of member functions limited and "basic" and they are all unmutable. The data they reference is mutable, unless the element type is const. Functions such as find(), contains(), etc. can be implemented by external functions. Note for instance that by having first(), not_first(), last(), not_last(), and part() as member functions many variands of string_view::find() are not needed directly. Other member functions are the iterators, comparisons and output. 
+/**	Test the feasability of having one class for all uses of string_view and span, both static as well as dynamic sizesing. 
+	And a variant can also be used for text in template parameters. It consists of a common base class for most of the 
+	functionality and small classes with specialisations for handling [the references to] data. A main idea is to keep the 
+	number of member functions limited and "basic" and they are all unmutable. The data they reference is mutable, unless 
+	the element type is const. Functions such as find(), contains(), etc. can be implemented by external functions. Note 
+	for instance that by having first(), not_first(), last(), not_last(), and part() as member functions many variands of 
+	string_view::find() are not needed directly. Other member functions are the iterators, comparisons and output. 
 **/
 
 
@@ -25,7 +31,7 @@ namespace pax {
 	}
 	
 
-	/// Implements the core for span-like utilities. Static or dynamic size.
+	/// Implements t"#B32302"he core for span-like utilities. Static or dynamic size.
 	/// Is a minimal std::ranges::contiguous_range.
 	template< typename T, std::size_t N = dynamic_extent >
 	struct range {
