@@ -30,8 +30,8 @@ namespace pax {
 		static_assert( Stat< 2 >   < Stat< 3 > );
 		static_assert( Stat< 2.5 > + Stat< 4 > == 6.5 );
 
-		DOCTEST_FAST_CHECK_EQ( "Hej", Stat< litt( "Hej" ) > );
-		DOCTEST_FAST_CHECK_EQ( "Hej", Stat< litt( "Hej" ), struct litt > );
+		DOCTEST_FAST_CHECK_EQ( "Hej", Stat< litt( "Hej" ) >() );
+		DOCTEST_FAST_CHECK_EQ( "Hej", Stat< litt( "Hej" ), struct litt >() );
 	
 		DOCTEST_FAST_CHECK_EQ( test( Stat< 1 >			),	1 );	// Not an unsigned value.
 		DOCTEST_FAST_CHECK_EQ( test( Statique2< 1u >{}	),	3 );	// Not the general tag.
@@ -49,10 +49,13 @@ namespace pax {
 		// static_assert( Tagged< struct general >( true ) );
 		static_assert( tagged( true ) );
 		static_assert( tagged( 42ul ) == tagged( 42u ) );
-		static_assert( tagged< struct specific >( 42ul ) == tagged( 42u ) );
+		static_assert( 42ul == tagged( 42u )() );
 
-		DOCTEST_FAST_CHECK_EQ( "Hej", tagged( "Hej" ) );
-		DOCTEST_FAST_CHECK_EQ( "Hej", tagged< struct hej >( "Hej" ) );
+		DOCTEST_FAST_CHECK_EQ( tagged( 5.0 ), tagged( 5 ) );
+		DOCTEST_FAST_CHECK_EQ( tagged< struct hej >( 5.0 ), tagged< struct hej >( 5 ) );
+
+		DOCTEST_FAST_CHECK_LT( tagged( 4.0 ), tagged( 5 ) );
+		DOCTEST_FAST_CHECK_LT( tagged< struct hej >( 4.0 ), tagged< struct hej >( 5 ) );
 
 		DOCTEST_FAST_CHECK_EQ( test( tagged< struct general  >( false ) ),	1 );
 		DOCTEST_FAST_CHECK_EQ( test( tagged< struct specific >( false ) ),	3 );

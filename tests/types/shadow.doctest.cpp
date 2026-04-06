@@ -5,11 +5,13 @@
 #include <pax/types/shadow.hpp>
 #include <pax/std/string_view.hpp>
 #include <pax/doctest.hpp>
+
 #include <string>
 #include <array>
 #include <vector>
 #include <span>
 #include <print>
+#include <sstream>
 
 
 namespace pax { 
@@ -38,6 +40,12 @@ namespace pax {
 
 		DOCTEST_FAST_CHECK_EQ ( std::format( "{}", sh_ ), "['t', 'e', 'x', 't']" );
 		DOCTEST_FAST_CHECK_EQ ( std::format( "{:s}", sh_ ), "text" );
+		
+		{
+			std::stringstream		s;
+			s << sh_.first( 0 ) << "--" << sh_;
+			DOCTEST_FAST_CHECK_EQ( s.str()			, "--text" );
+		}
 
 		DOCTEST_ASCII_CHECK_EQ( sh_					, "text" );
 		DOCTEST_FAST_CHECK_EQ( sh_.size()			, 4u );
@@ -201,6 +209,12 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ ( std::format( "{}", sh_ ), "[0, 1, 2, 3, 4, 5, 0]" );
 		DOCTEST_FAST_CHECK_EQ ( std::format( "{::4}", sh_ ), "[   0,    1,    2,    3,    4,    5,    0]" );
 
+		{
+			std::stringstream		s;
+			s << sh_.first( 0 ) << sh_;
+			DOCTEST_FAST_CHECK_EQ( s.str()			, "[][0, 1, 2, 3, 4, 5, 0]" );
+		}
+
 		DOCTEST_FAST_CHECK_EQ( sh_					, nums );
 		DOCTEST_FAST_CHECK_EQ( sh_.size()			, 7u );
 		DOCTEST_FAST_CHECK_GT( sh_					, std::array{ 0, 1, 2, 3, 3, 5, 0 } );
@@ -240,6 +254,10 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( sh_.find( 9  ).size(), 0 );
 		DOCTEST_FAST_CHECK_EQ( sh_.find( sh_.part( 2, 3 ) ).size(), 3 );
 		DOCTEST_FAST_CHECK_EQ( sh_.find( std::array{ 1, 3, 4 } ).size(), 0 );
+		DOCTEST_FAST_CHECK_EQ( sh_.find( []( int v_ ) { return ( v_ > 1 ) && ( v_ < 5 ); } ),	std::array{ 2, 3, 4 } );
+		DOCTEST_FAST_CHECK_EQ( sh_.find( []( int v_ ) { return ( v_ > 2 ) || ( v_ == 0 ); } ),	sh_.first( 1 ) );
+		DOCTEST_FAST_CHECK_EQ( sh_.find( []( int v_ ) { return ( v_ >= 0 ); } ),				sh_ );
+		DOCTEST_FAST_CHECK_EQ( sh_.find( []( int v_ ) { return ( v_ <  0 ); } ).size(),			0 );
 		{
 			const auto res = sh_.template first< 2 >();
 			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 2 );
@@ -415,6 +433,7 @@ namespace pax {
 
 		num_test( const_shadow( nums ) );
 	}
+
 	DOCTEST_TEST_CASE( "litteral text" ) {
 		DOCTEST_ASCII_CHECK_EQ( litt( "text" ).last( 2 ), "xt" );
 		DOCTEST_ASCII_CHECK_EQ( std::format( "{:?s}", shadow( "1\t2\n3\"4" ) ), "\"1\\t2\\n3\\\"4\"" );

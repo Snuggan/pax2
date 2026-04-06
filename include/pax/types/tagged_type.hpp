@@ -8,58 +8,83 @@
 
 namespace pax {
 
-	/// Define a specific type of a value that is known at compile time.
-	/// Tag is to be used if you want the value type to be unique. Use Statique, otherwise.
+	/// A specific type to use as the base for compile time constants.
+	/// Ignore Tag unless you want the value type to be unique. 
 	template< auto N, typename Tag = struct general >
 	struct Statique {
-		using tag_type							  = Tag;
-		using value_type						  = decltype( N );
-		using type								  = Statique;
-		static constexpr value_type					value{ N };
-		constexpr operator value_type()				const noexcept	{	return value;		}
-		static constexpr value_type operator()()	noexcept		{	return value;		}
-	    constexpr bool operator==( const value_type & v_ )	const	{   return value == v_;	}
+		using type									  = Statique;
+		using tag_type								  = Tag;
+		using value_type							  = decltype( N );
+		static constexpr value_type						value{ N };
+
+		// This function is conciously not explicit, as that would only be in the way. 
+		constexpr operator value_type()					const noexcept	{	return value;			}
+
+		static constexpr value_type operator()()		noexcept		{	return value;			}
+
+		template< typename U >
+	    constexpr bool operator== ( const U & v_ )		const noexcept	{   return value ==  v_;	}
+
+		template< typename U >
+	    constexpr auto operator<=>( const U & v_ )		const noexcept	{   return value <=> v_;	}
 
 		template< typename Out >
-		friend std::ostream & operator<<( Out & out_, const Statique & stat_ ) 
-		{	return out_ << stat_.value;				}
+		friend std::ostream & operator<<( Out & out_, const Statique & stat_ ) {
+			return out_ << stat_.value;
+		}
 	};
 
-	/// Define the value [of Statique] that is usable at compile time.
+	/// Create compile time constants.
+	/// Ignore Tag unless you want the value type to be unique. 
 	template< auto N, typename Tag = struct general >
 	constexpr Statique< N, Tag >	Stat{};
 
-	static_assert(     5 == Stat< 5 > );
+	static_assert( Stat< 5 > == Stat< 5.0 > );
+	static_assert(       5   == Stat< 5.0 > );
+	static_assert(       5   <  Stat< 5.1 > );
 
 
 
 	/// Hold values in a type-specific way.
 	template< typename Tag, typename T >
 	struct Tagged {
-		using tag_type							  = Tag;
-		constexpr Tagged( const T v_ )				noexcept		:	value{ v_ } {}
-		using value_type						  = T;
-		using type								  = Tagged;
-		value_type									value;
-		constexpr operator value_type()				const noexcept	{	return value;		}
-		constexpr value_type operator()()			const noexcept	{	return value;		}
-	    constexpr bool operator==( const value_type & v_ )	const	{   return value == v_;	}
-		
-		template< typename T2, typename Tag2 >
-	    constexpr bool operator==( const Tagged< T2, Tag2 > & v_ )	const
-		{   return value == v_.value;				}
+		using type									  = Tagged;
+		using tag_type								  = Tag;
+		using value_type							  = T;
+		value_type										value;
+
+		constexpr Tagged()								noexcept = delete;
+		constexpr Tagged( const Tagged & )				noexcept = default;
+		constexpr Tagged & operator=( const Tagged & )	noexcept = default;
+		constexpr Tagged( const T v_ )					noexcept		:	value{ v_ } {}
+		explicit constexpr operator value_type()		const noexcept	{	return value;	}
+		constexpr value_type operator()()				const noexcept	{	return value;	}
+
+		template< typename U >
+	    constexpr bool operator== ( const Tagged< Tag, U > & v_ ) const noexcept {
+			return value ==  v_.value;
+		}
+
+		template< typename U >
+	    constexpr auto operator<=>( const Tagged< Tag, U > & v_ ) const noexcept {
+			return value <=> v_.value;
+		}
+
+		template< typename Out >
+		friend std::ostream & operator<<( Out & out_, const Tagged & v_ ) {
+			return out_ << v_.value;
+		}
 	};
 
 	template< typename T >
-	constexpr Tagged< struct general, T > tagged( const T & t_ )
-	{	return { t_ };								}
+	constexpr Tagged< struct general, T > tagged( const T & t_ )		{	return { t_ };	}
 
 	template< typename Tag, typename T >
-	constexpr Tagged< Tag, T > tagged( const T & t_ )
-	{	return { t_ };								}
+	constexpr Tagged< Tag, T > tagged( const T & t_ )					{	return { t_ };	}
 
-	static_assert(     5 == tagged( 5 ) );
-	
+	static_assert( tagged( 5 ) == tagged( 5.0 ) );
+	static_assert( tagged( 5 ) <  tagged( 5.1 ) );
+
 }	// namespace pax
 
 namespace std20 {
