@@ -14,7 +14,7 @@
 	functionality and small classes with specialisations for handling [the references to] data. A main idea is to keep the
 	number of member functions limited and "basic" and they are all unmutable. The data they reference is mutable, unless
 	the element type is const. Functions such as find(), contains(), etc. can be implemented by external functions. Note
-	for instance that by having first(), not_first(), last(), not_last(), and part() as member functions many variands of
+	for instance that by having first(), not_first(), last(), not_last(), and mid() as member functions many variands of
 	string_view::find() are not needed directly. Other member functions are the iterators, comparisons and output.
 **/
 
@@ -222,7 +222,7 @@ namespace pax {
 
 		/// Return a dynamic shadow of the n_ elements starting with offs_, but restricted to the bounds of this.
 		/// A negative offs_ is counted from the back.
-		[[nodiscard]] constexpr auto part( difference_type offs_, const size_type n_ )	const noexcept	{
+		[[nodiscard]] constexpr auto mid( difference_type offs_, const size_type n_ )	const noexcept	{
 			offs_ =	( offs_ >= 0 )	?		   std::min( size_type(  offs_ ), size() )
 									: size() - std::min( size_type( -offs_ ), size() );
 			return shadow{ data() + offs_, std::min( size() - offs_, n_ ) };
@@ -231,10 +231,10 @@ namespace pax {
 		/// Return a static shadow of the N elements starting with offs_, but restricted to the bounds of this.
 		/// A negative offs_ is counted from the back. Ub, if N > size().
 		template< std::size_t N >		requires( N != traits::dynamic_extent )
-		[[nodiscard]] constexpr auto part( difference_type offs_ )			const noexcept	{
+		[[nodiscard]] constexpr auto mid( difference_type offs_ )			const noexcept	{
 			offs_ =	( offs_ >= 0 )	?		   std::min( size_type(  offs_ ), size() )
 									: size() - std::min( size_type( -offs_ ), size() );
-			assert( offs_ + N <= size() && "part< N >() requires offs_ + N <= size()." );
+			assert( offs_ + N <= size() && "mid< N >() requires offs_ + N <= size()." );
 			return shadowN< N >{ data() + offs_ };
 		}
 

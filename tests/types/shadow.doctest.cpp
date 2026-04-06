@@ -70,12 +70,12 @@ namespace pax {
 		DOCTEST_ASCII_CHECK_EQ( sh_.last( 9 )		, "text" );
 		DOCTEST_ASCII_CHECK_EQ( sh_.not_last( 2 )	, "te" );
 		DOCTEST_ASCII_CHECK_EQ( sh_.not_last( 9 )	, "" );
-		DOCTEST_ASCII_CHECK_EQ( sh_.part(  1, 2 )	, "ex" );
-		DOCTEST_ASCII_CHECK_EQ( sh_.part(  9, 2 )	, "" );
-		DOCTEST_ASCII_CHECK_EQ( sh_.part(  1, 9 )	, "ext" );
-		DOCTEST_ASCII_CHECK_EQ( sh_.part( -3, 2 )	, "ex" );
-		DOCTEST_ASCII_CHECK_EQ( sh_.part( -9, 2 )	, "te" );
-		DOCTEST_ASCII_CHECK_EQ( sh_.part( -3, 9 )	, "ext" );
+		DOCTEST_ASCII_CHECK_EQ( sh_.mid(  1, 2 )	, "ex" );
+		DOCTEST_ASCII_CHECK_EQ( sh_.mid(  9, 2 )	, "" );
+		DOCTEST_ASCII_CHECK_EQ( sh_.mid(  1, 9 )	, "ext" );
+		DOCTEST_ASCII_CHECK_EQ( sh_.mid( -3, 2 )	, "ex" );
+		DOCTEST_ASCII_CHECK_EQ( sh_.mid( -9, 2 )	, "te" );
+		DOCTEST_ASCII_CHECK_EQ( sh_.mid( -3, 9 )	, "ext" );
 		DOCTEST_FAST_CHECK_UNARY( sh_.starts_with( "tex" ) );
 		DOCTEST_FAST_CHECK_UNARY( sh_.ends_with( "ext" ) );
 		DOCTEST_FAST_CHECK_EQ( sh_.find( 'x'  ).begin() - sh_.begin(), 2 );
@@ -96,11 +96,11 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 2 );
 			DOCTEST_ASCII_CHECK_EQ( res, "xt" );
 		} {
-			const auto res = sh_.template part< 2 >( 1 );
+			const auto res = sh_.template mid< 2 >( 1 );
 			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 2 );
 			DOCTEST_ASCII_CHECK_EQ( res, "ex" );
 		} {
-			const auto res = sh_.template part< 2 >( -3 );
+			const auto res = sh_.template mid< 2 >( -3 );
 			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 2 );
 			DOCTEST_ASCII_CHECK_EQ( res, "ex" );
 		} {
@@ -238,21 +238,21 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( sh_.last( 9 )		, nums );
 		DOCTEST_FAST_CHECK_EQ( sh_.not_last( 2 )	, std::array{ 0, 1, 2, 3, 4 } );
 		DOCTEST_FAST_CHECK_EQ( sh_.not_last( 9 )	, empty );
-		DOCTEST_FAST_CHECK_EQ( sh_.part(  1, 2 )	, std::array{ 1, 2 } );
-		DOCTEST_FAST_CHECK_EQ( sh_.part(  9, 2 )	, empty );
-		DOCTEST_FAST_CHECK_EQ( sh_.part(  1, 9 )	, std::array{ 1, 2, 3, 4, 5, 0 } );
-		DOCTEST_FAST_CHECK_EQ( sh_.part( -3, 2 )	, std::array{ 4, 5 } );
-		DOCTEST_FAST_CHECK_EQ( sh_.part( -9, 2 )	, std::array{ 0, 1 } );
-		DOCTEST_FAST_CHECK_EQ( sh_.part( -3, 9 )	, std::array{ 4, 5, 0 } );
+		DOCTEST_FAST_CHECK_EQ( sh_.mid(  1, 2 )		, std::array{ 1, 2 } );
+		DOCTEST_FAST_CHECK_EQ( sh_.mid(  9, 2 )		, empty );
+		DOCTEST_FAST_CHECK_EQ( sh_.mid(  1, 9 )		, std::array{ 1, 2, 3, 4, 5, 0 } );
+		DOCTEST_FAST_CHECK_EQ( sh_.mid( -3, 2 )		, std::array{ 4, 5 } );
+		DOCTEST_FAST_CHECK_EQ( sh_.mid( -9, 2 )		, std::array{ 0, 1 } );
+		DOCTEST_FAST_CHECK_EQ( sh_.mid( -3, 9 )		, std::array{ 4, 5, 0 } );
 		DOCTEST_FAST_CHECK_UNARY( sh_.starts_with( std::array{ 0, 1, 2 } ) );
 		DOCTEST_FAST_CHECK_UNARY( sh_.ends_with( std::array{ 4, 5, 0 } ) );
 		DOCTEST_FAST_CHECK_EQ( sh_.find( 3  ).begin() - sh_.begin(), 3 );
 		DOCTEST_FAST_CHECK_EQ( sh_.find( 9  ).begin() - sh_.begin(), sh_.size() );
-		DOCTEST_FAST_CHECK_EQ( sh_.find( sh_.part( 2, 3 ) ).begin() - sh_.begin(), 2 );
+		DOCTEST_FAST_CHECK_EQ( sh_.find( sh_.mid( 2, 3 ) ).begin() - sh_.begin(), 2 );
 		DOCTEST_FAST_CHECK_EQ( sh_.find( std::array{ 1, 3, 4 } ).begin() - sh_.begin(), sh_.size() );
 		DOCTEST_FAST_CHECK_EQ( sh_.find( 3  ).size(), 1 );
 		DOCTEST_FAST_CHECK_EQ( sh_.find( 9  ).size(), 0 );
-		DOCTEST_FAST_CHECK_EQ( sh_.find( sh_.part( 2, 3 ) ).size(), 3 );
+		DOCTEST_FAST_CHECK_EQ( sh_.find( sh_.mid( 2, 3 ) ).size(), 3 );
 		DOCTEST_FAST_CHECK_EQ( sh_.find( std::array{ 1, 3, 4 } ).size(), 0 );
 		DOCTEST_FAST_CHECK_EQ( sh_.find( []( int v_ ) { return ( v_ > 1 ) && ( v_ < 5 ); } ),	std::array{ 2, 3, 4 } );
 		DOCTEST_FAST_CHECK_EQ( sh_.find( []( int v_ ) { return ( v_ > 2 ) || ( v_ == 0 ); } ),	sh_.first( 1 ) );
@@ -267,11 +267,11 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 2 );
 			DOCTEST_FAST_CHECK_EQ( res, std::array{ 5, 0 } );
 		} {
-			const auto res = sh_.template part< 2 >( 1 );
+			const auto res = sh_.template mid< 2 >( 1 );
 			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 2 );
 			DOCTEST_FAST_CHECK_EQ( res, std::array{ 1, 2 } );
 		} {
-			const auto res = sh_.template part< 2 >( -6 );
+			const auto res = sh_.template mid< 2 >( -6 );
 			DOCTEST_FAST_CHECK_EQ( traits::extent_v< decltype( res ) >, 2 );
 			DOCTEST_FAST_CHECK_EQ( res, std::array{ 1, 2 } );
 		} {
