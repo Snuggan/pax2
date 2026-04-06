@@ -230,7 +230,7 @@ namespace pax {
 
 		/// Return a static shadow of the N elements starting with offs_, but restricted to the bounds of this.
 		/// A negative offs_ is counted from the back. Ub, if N > size().
-		template< std::size_t N >		requires( N != traits::dynamic_extent )
+		template< std::size_t N >		requires( N != traits::dynamic_extent && N <= extent )
 		[[nodiscard]] constexpr auto mid( difference_type offs_ )			const noexcept	{
 			offs_ =	( offs_ >= 0 )	?		   std::min( size_type(  offs_ ), size() )
 									: size() - std::min( size_type( -offs_ ), size() );
