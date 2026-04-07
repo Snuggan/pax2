@@ -279,10 +279,10 @@ namespace pax {
 		[[nodiscard]] constexpr shadow find_linebreak()						const noexcept
 		requires( is_string ) {
 			value_type		previous{};
-			for( pointer itr = begin(); itr != end(); ++itr ) switch( previous ) {
-				case '\n': 	return { itr-1, 1u + ( *itr == '\r' ) };
-				case '\r': 	return { itr-1, 1u + ( *itr == '\n' ) };
-				default: 	previous = *itr;		break;
+			for( element_type & c : *this ) switch( previous ) {
+				case '\n': 	return { &c - 1, 1u + ( c == '\r' ) };
+				case '\r': 	return { &c - 1, 1u + ( c == '\n' ) };
+				default: 	previous = c;	break;
 			}
 			return { end(), end() };
 		};
