@@ -8,14 +8,11 @@
 #include <iterator>				// std::reverse_iterator.
 #include <assert.h>
 
-/// Shadow: string_view and span in one
-/**	Test the feasability of having one class for all uses of string_view and span, both static as well as dynamic sizesing.
-	And a variant can also be used for text in template parameters. It consists of a common base class for most of the
-	functionality and small classes with specialisations for handling [the references to] data. A main idea is to keep the
-	number of member functions limited and "basic" and they are all unmutable. The data they reference is mutable, unless
-	the element type is const. Functions such as find(), contains(), etc. can be implemented by external functions. Note
-	for instance that by having first(), not_first(), last(), not_last(), and mid() as member functions many variands of
-	string_view::find() are not needed directly. Other member functions are the iterators, comparisons and output.
+/// shadow: string_view and span in one
+/**	A class for all uses of string_view and span with static or dynamic size. It consists of a common base class 
+	for most of the functionality and small classes implementing static or dynamic size -- and a variant usable for 
+	template parameter text. The main idea is to keep member functions basic, unmutable, and with a minimum of ub. 
+	The referenced data is mutable (unless declared const). 
 **/
 
 
@@ -31,8 +28,7 @@ namespace pax {
 	}
 
 
-	/// Implements t"#B32302"he core for span-like utilities. Static or dynamic size.
-	/// Is a minimal std::ranges::contiguous_range.
+	/// The core for span-like utilities of static or dynamic size. A minimal std::ranges::contiguous_range.
 	template< typename T, std::size_t N = dynamic_extent >
 	struct range {
 		using element_type							  = T;
@@ -108,10 +104,9 @@ namespace pax {
 
 
 
-	/// Implements the stuff you want for an interface to contiguous imutable elements.
+	/// Implements most of the functionality of a class referensing contiguous elements.
 	/// The interfaced is similar to that of std::string_view and std::span.
-	/// Core needs to implement data() and size() and define element_type, value_type, size_type,
-	/// and difference_type.
+	/// Core must implement data(), size(), and define element_type and extent (possibly = dynamic_extent).
 	template< typename Core >
 	struct base_shadow : public Core {
 		using element_type							  = typename Core::element_type;
@@ -140,7 +135,7 @@ namespace pax {
 		[[nodiscard]] constexpr bool empty()			const noexcept	{	return !size();						}
 		[[nodiscard]] constexpr explicit operator bool()const noexcept	{	return  size();						}
 
-		/// Element access, possibly mutable if the element type is not const.
+		/// Element access (mutable if element type is not const).
 		template< typename Ptr >
 		[[nodiscard]] constexpr auto revit( Ptr p_ )	const noexcept	{	return std::reverse_iterator( p_ );	}
 		[[nodiscard]] constexpr iterator begin()		const noexcept	{	return data();						}
@@ -155,14 +150,14 @@ namespace pax {
 		[[nodiscard]] constexpr reference back()		const noexcept	{	return operator[]( size()-1 );		}
 		[[nodiscard]] constexpr reference operator[]( const size_type i_ ) const noexcept { return data()[ i_ ]; }
 
-		/// If this is a string and the last character is \0 it is ignored.
+		/// In strings a terminating \0 is ignored.
  		template< std::ranges::contiguous_range U >
 		[[nodiscard]] constexpr bool operator==( const U & u_ )				const noexcept	{
 			using std::begin;
 			return std::equal(	this->begin(), this->end(), begin( u_ ), no_nullchar_end( u_ ) );
 		}
 
-		/// If this is a string and the last character is \0 it is ignored.
+		/// In strings a terminating \0 is ignored.
  		template< std::ranges::contiguous_range U >
 		[[nodiscard]] constexpr auto operator<=>( const U & u_ )			const noexcept	{
 			using std::begin;
@@ -176,7 +171,7 @@ namespace pax {
 		}
 
 		/// Return a static shadow of the first min(N, extent) elements.
-		/// Ub, if N > size() and this is dynamically sized.
+		/// Ub, if N > size() and !is_static.
 		template< std::size_t N >		requires( N != traits::dynamic_extent )
 		[[nodiscard]] constexpr auto first() 								const noexcept	{
 			if constexpr( !is_static )	assert( N <= size() && "first< N >() requires N <= size()." );
@@ -190,6 +185,7 @@ namespace pax {
 		}
 
 		/// Return a static shadow of the last size() - min(N, extent) elements.
+		/// Ub, if N > size() and !is_static.
 		template< std::size_t N >		requires( is_static )
 		[[nodiscard]] constexpr auto not_first() 							const noexcept	{
 			return last< extent - std::min( N, extent ) >();
@@ -202,7 +198,7 @@ namespace pax {
 		}
 
 		/// Return a static shadow of the first min(N, extent) elements.
-		/// Ub, if N > size() and this is dynamically sized.
+		/// Ub, if N > size() and !is_static.
 		template< std::size_t N >		requires( N != traits::dynamic_extent )
 		[[nodiscard]] constexpr auto last() 								const noexcept	{
 			if constexpr( !is_static )	assert( N <= size() && "last< N >() requires N <= size()." );
@@ -215,13 +211,14 @@ namespace pax {
 		}
 
 		/// Return a static shadow of the first size() - min(N, extent) elements.
+		/// Ub, if N > size() and !is_static.
 		template< std::size_t N >		requires( traits::has_extent< base_shadow > )
 		[[nodiscard]] constexpr auto not_last() 							const noexcept 	{
 			return first< extent - std::min( N, size() ) >();
 		}
 
 		/// Return a dynamic shadow of the n_ elements starting with offs_, but restricted to the bounds of this.
-		/// A negative offs_ is counted from the back.
+		/// A negative offs_ is counted from the end.
 		[[nodiscard]] constexpr auto mid( difference_type offs_, const size_type n_ )	const noexcept	{
 			offs_ =	( offs_ >= 0 )	?		   std::min( size_type(  offs_ ), size() )
 									: size() - std::min( size_type( -offs_ ), size() );
@@ -264,8 +261,8 @@ namespace pax {
 			return { result, ( result == end() ) ? 0u : vw.size() };
 		}
 
-		/// Return a shadow of the first contigous values that all Test( value ) true.
-		/// If none is found, { end(), 0u } is returned, so if result.empty() none was found.
+		/// Return a shadow of the first contigous range where all Test( value ) are true.
+		/// If none is found, { end(), 0u } is returned.
 		template< typename Test >	requires std::is_invocable_r_v< bool, Test, value_type >
 		[[nodiscard]] constexpr shadow find( Test && test_ )				const noexcept	{
 			const auto	b = std::ranges::find_if( *this, test_ );
@@ -275,7 +272,7 @@ namespace pax {
 		}
 
 		/// Find any of "\n\r", "\n", "\r\n", or "\r" and return a shadow reference to it.
-		/// If none is found, { end(), 0u } is returned, so if result.empty() none was found.
+		/// If none is found, { end(), 0u } is returned.
 		[[nodiscard]] constexpr shadow find_linebreak()						const noexcept
 		requires( is_string ) {
 			value_type		previous{};
@@ -287,7 +284,7 @@ namespace pax {
 			return { end(), end() };
 		};
 
-		/// Split this in two at offset t_ (first.end() == second.begin() and first.size() == t_).
+		/// Split this in two at offset t_ so that first.end() == second.begin() and first.size() == t_.
 		[[nodiscard]] constexpr pair split( size_type mid_ )				const noexcept	{
 			mid_	  = std::min( mid_, size() );
 			return { { begin(), mid_ }, { begin() + mid_, end() } };
@@ -300,7 +297,7 @@ namespace pax {
 							  { std::clamp( gap_.end(),   begin(), end() ), end() } };
 		}
 
-		/// Stream all elements to out_.
+		/// Stream the elements to out_.
 		template< typename Out >
 		friend Out & operator<<( Out & out_, const base_shadow & sh_ )	{
 			if constexpr( is_string )	out_.write( sh_.data(), sh_.size() );
@@ -340,6 +337,8 @@ namespace pax {
 	}
 
 
+	/// The core for a string_view-like type that can be used as a template argument.
+	/// The alias litteral defines the actual type and the function litt creates it. 
 	template< traits::character Char, std::size_t N, typename Traits = std::char_traits< Char > >
 	struct core_litteral {
 		using element_type							  = Char;
