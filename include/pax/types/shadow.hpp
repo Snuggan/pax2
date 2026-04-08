@@ -131,24 +131,26 @@ namespace pax {
 
 		using Core::Core, Core::data, Core::size;
 
-		[[nodiscard]] constexpr bool valid()			const noexcept	{	return  data() != nullptr;			}
-		[[nodiscard]] constexpr bool empty()			const noexcept	{	return !size();						}
-		[[nodiscard]] constexpr explicit operator bool()const noexcept	{	return  size();						}
+		[[nodiscard]] constexpr bool valid()			const noexcept	{	return  data() != nullptr;				}
+		[[nodiscard]] constexpr bool empty()			const noexcept	{	return !size();							}
+		[[nodiscard]] constexpr explicit operator bool()const noexcept	{	return  size();							}
 
 		/// Element access (mutable if element type is not const).
-		template< typename Ptr >
-		[[nodiscard]] constexpr auto revit( Ptr p_ )	const noexcept	{	return std::reverse_iterator( p_ );	}
-		[[nodiscard]] constexpr iterator begin()		const noexcept	{	return data();						}
-		[[nodiscard]] constexpr iterator end()			const noexcept	{	return begin() + size();			}
-		[[nodiscard]] constexpr const_iterator cbegin()	const noexcept	{	return begin();						}
-		[[nodiscard]] constexpr const_iterator cend()	const noexcept	{	return end();						}
-		[[nodiscard]] constexpr auto rbegin()			const noexcept	{	return revit( end()    );			}
-		[[nodiscard]] constexpr auto rend()				const noexcept	{	return revit( begin()  );			}
-		[[nodiscard]] constexpr auto crbegin()			const noexcept	{	return revit( cend()   );			}
-		[[nodiscard]] constexpr auto crend()			const noexcept	{	return revit( cbegin() );			}
-		[[nodiscard]] constexpr reference front()		const noexcept	{	return *data();						}
-		[[nodiscard]] constexpr reference back()		const noexcept	{	return operator[]( size()-1 );		}
-		[[nodiscard]] constexpr reference operator[]( const size_type i_ ) const noexcept { return data()[ i_ ]; }
+		[[nodiscard]] constexpr iterator begin()		const noexcept	{	return data();							}
+		[[nodiscard]] constexpr iterator end()			const noexcept	{	return begin() + size();				}
+		[[nodiscard]] constexpr const_iterator cbegin()	const noexcept	{	return begin();							}
+		[[nodiscard]] constexpr const_iterator cend()	const noexcept	{	return end();							}
+		[[nodiscard]] constexpr auto rbegin()			const noexcept	{	return std::reverse_iterator( end() );	}
+		[[nodiscard]] constexpr auto rend()				const noexcept	{	return std::reverse_iterator( begin() );}
+		[[nodiscard]] constexpr auto crbegin()			const noexcept	{	return rbegin();						}
+		[[nodiscard]] constexpr auto crend()			const noexcept	{	return rend();							}
+		[[nodiscard]] constexpr reference front()		const noexcept	{	return at( 0u );						}
+		[[nodiscard]] constexpr reference back()		const noexcept	{	return at( size() - 1 );				}
+		[[nodiscard]] constexpr reference operator[]( const size_type i_ ) const noexcept { return data()[ i_ ]; 	}
+		[[nodiscard]] constexpr reference at( const size_type i_ ) const noexcept {
+			assert( i_ < size() && "Index out of range." );
+			return data()[ i_ ];
+		}
 
 		/// In strings a terminating \0 is ignored.
  		template< std::ranges::contiguous_range U >
