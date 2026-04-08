@@ -7,6 +7,7 @@
 #include <algorithm>			// std::ranges::equal, std::lexicographical_compare_three_way, etc.
 #include <iterator>				// std::reverse_iterator.
 #include <assert.h>
+#include <stdexcept>			// std::out_of_range.
 
 /// shadow: string_view and span in one
 ///	A class for all uses of string_view and span with static or dynamic size. It consists of a common base class 
@@ -18,7 +19,7 @@ namespace pax {
 	constexpr std::size_t dynamic_extent = traits::dynamic_extent;
 
 	template< typename T >
-	[[nodiscard]] constexpr auto no_nullchar_end( const T & t_ )	{	using std::end;	return end( t_ );	}
+	[[nodiscard]] constexpr auto no_nullchar_end( const T & t_ )		{	using std::end;	return end( t_ );		}
 
 	template< traits::character Char, std::size_t N >	requires( N > 0 )
 	[[nodiscard]] constexpr Char const * no_nullchar_end( Char const ( & str_ )[ N ] )	{
@@ -42,18 +43,18 @@ namespace pax {
 		template< typename U >
 		constexpr range( const U ( & str_ )[ N+1 ] )	noexcept // Somewhat constructed due to disambiguation:
 			requires( std::is_same_v< U, value_type > && traits::character< value_type > )
-			:	m_source{ str_ }	{	assert( !str_[ N ] && "Removing a non-zero character suffix!" );	}
+			:	m_source{ str_ }	{	assert( !str_[ N ] && "Removing a non-zero character suffix!" );			}
 
 		template< std::ranges::contiguous_range U >
 		constexpr range( U & src_ )						noexcept : m_source{ std::ranges::data( src_ ) } {}
 
-		[[nodiscard]] constexpr pointer data()			const noexcept	{	return m_source;				}
-		[[nodiscard]] static constexpr std::size_t size()	  noexcept	{	return extent;					}
-		[[nodiscard]] constexpr pointer begin()			const noexcept	{	return data();					}
-		[[nodiscard]] constexpr pointer end()			const noexcept	{	return data() + size();			}
+		[[nodiscard]] constexpr pointer data()			const noexcept	{	return m_source;						}
+		[[nodiscard]] static constexpr std::size_t size()	  noexcept	{	return extent;							}
+		[[nodiscard]] constexpr pointer begin()			const noexcept	{	return data();							}
+		[[nodiscard]] constexpr pointer end()			const noexcept	{	return data() + size();					}
 
 		template< std::size_t I >						requires( I < extent )
-		[[nodiscard]] friend element_type & get( const range & r_ )	noexcept {	return *( r_.data() + I );	}
+		[[nodiscard]] friend element_type & get( const range & r_ )	noexcept {	return *( r_.data() + I );			}
 
 	private:
 		pointer											m_source{ nullptr };
@@ -75,10 +76,10 @@ namespace pax {
 		template< std::ranges::contiguous_range U >
 		constexpr range( U & src_ ) noexcept : range{ std::ranges::data( src_ ), std::ranges::size( src_ ) } {}
 
-		[[nodiscard]] constexpr pointer data()			const noexcept	{	return m_source;				}
-		[[nodiscard]] constexpr std::size_t size()		const noexcept	{	return m_size;					}
-		[[nodiscard]] constexpr pointer begin()			const noexcept	{	return data();					}
-		[[nodiscard]] constexpr pointer end()			const noexcept	{	return data() + size();			}
+		[[nodiscard]] constexpr pointer data()			const noexcept	{	return m_source;						}
+		[[nodiscard]] constexpr std::size_t size()		const noexcept	{	return m_size;							}
+		[[nodiscard]] constexpr pointer begin()			const noexcept	{	return data();							}
+		[[nodiscard]] constexpr pointer end()			const noexcept	{	return data() + size();					}
 
 	private:
 		pointer											m_source{ nullptr };
@@ -133,7 +134,7 @@ namespace pax {
 		[[nodiscard]] constexpr bool empty()			const noexcept	{	return !size();							}
 		[[nodiscard]] constexpr explicit operator bool()const noexcept	{	return  size();							}
 
-		/// Element access (mutable if element type is not const).
+		/// Iterators.
 		[[nodiscard]] constexpr iterator begin()		const noexcept	{	return data();							}
 		[[nodiscard]] constexpr iterator end()			const noexcept	{	return begin() + size();				}
 		[[nodiscard]] constexpr const_iterator cbegin()	const noexcept	{	return begin();							}
@@ -142,11 +143,22 @@ namespace pax {
 		[[nodiscard]] constexpr auto rend()				const noexcept	{	return std::reverse_iterator( begin() );}
 		[[nodiscard]] constexpr auto crbegin()			const noexcept	{	return rbegin();						}
 		[[nodiscard]] constexpr auto crend()			const noexcept	{	return rend();							}
-		[[nodiscard]] constexpr reference front()		const noexcept	{	return at( 0u );						}
-		[[nodiscard]] constexpr reference back()		const noexcept	{	return at( size() - 1 );				}
-		[[nodiscard]] constexpr reference operator[]( const size_type i_ ) const noexcept { return data()[ i_ ]; 	}
-		[[nodiscard]] constexpr reference at( const size_type i_ ) const noexcept {
+
+		/// Return a reference to the first element. Does operator[]( 0u ).
+		[[nodiscard]] constexpr reference front()		const noexcept	{	return operator[]( 0u );				}
+
+		/// Return a reference to the last element. Does operator[]( size() - 1 ).
+		[[nodiscard]] constexpr reference back()		const noexcept	{	return operator[]( size() - 1 );		}
+
+		/// Return the i_:th element. Does assert( i_ < size() ).
+		[[nodiscard]] constexpr reference operator[]( const size_type i_ ) const noexcept {
 			assert( i_ < size() && "Index out of range." );
+			return data()[ i_ ];
+		}
+
+		/// Return the i_:th element. Throws a std::out_of_range if i_ >= size().
+		[[nodiscard]] constexpr reference at( const size_type i_ ) const {
+			if( i_ >= size() )		throw std::out_of_range( "Index out of range." );
 			return data()[ i_ ];
 		}
 
@@ -347,13 +359,13 @@ namespace pax {
 		using traits_type							  = Traits;
 		static constexpr std::size_t			 		extent = N;
 
-		constexpr core_litteral( value_type       ( & str_ )[  N  ] )	{	std::copy_n( str_, N, value );		}
-		constexpr core_litteral( value_type const ( & str_ )[ N+1 ] )	{	std::copy_n( str_, N, value );		}
+		constexpr core_litteral( value_type       ( & str_ )[  N  ] )	{	std::copy_n( str_, N, value );			}
+		constexpr core_litteral( value_type const ( & str_ )[ N+1 ] )	{	std::copy_n( str_, N, value );			}
 
-		[[nodiscard]] constexpr pointer data()			const noexcept	{	return value;						}
-		[[nodiscard]] static constexpr std::size_t size()	  noexcept	{	return N;							}
-		[[nodiscard]] constexpr pointer begin()			const noexcept	{	return data();						}
-		[[nodiscard]] constexpr pointer end()			const noexcept	{	return data() + size();				}
+		[[nodiscard]] constexpr pointer data()			const noexcept	{	return value;							}
+		[[nodiscard]] static constexpr std::size_t size()	  noexcept	{	return N;								}
+		[[nodiscard]] constexpr pointer begin()			const noexcept	{	return data();							}
+		[[nodiscard]] constexpr pointer end()			const noexcept	{	return data() + size();					}
 
 		template< std::size_t I >			requires( ( I < extent ) && ( extent != dynamic_extent ) )
 		[[nodiscard]] friend element_type & get( const core_litteral & cl_ ) noexcept { return *( cl_.data() + I );	}
@@ -374,7 +386,7 @@ namespace pax {
 	template< typename Tag, typename T >	struct Tagged;
 
 	template< traits::character Char, size_t N >
-	[[nodiscard]] constexpr Tagged< struct general, litteral< Char, N > > tagged( Char ( & str_ )[ N ] )		{
+	[[nodiscard]] constexpr Tagged< struct general, litteral< Char, N > > tagged( Char ( & str_ )[ N ] )			{
 		return { str_ };
 	}
 
