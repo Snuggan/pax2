@@ -9,12 +9,10 @@
 #include <assert.h>
 
 /// shadow: string_view and span in one
-/**	A class for all uses of string_view and span with static or dynamic size. It consists of a common base class 
-	for most of the functionality and small classes implementing static or dynamic size -- and a variant usable for 
-	template parameter text. The main idea is to keep member functions basic, unmutable, and with a minimum of ub. 
-	The referenced data is mutable (unless declared const). 
-**/
-
+///	A class for all uses of string_view and span with static or dynamic size. It consists of a common base class 
+///	for most of the functionality and small classes implementing static or dynamic size -- and a variant usable for 
+///	template parameter text. The main idea is to keep member functions basic, unmutable, and with a minimum of ub. 
+///	The referenced data is mutable (unless declared const). 
 
 namespace pax {
 	constexpr std::size_t dynamic_extent = traits::dynamic_extent;
@@ -105,7 +103,7 @@ namespace pax {
 
 
 	/// Implements most of the functionality of a class referensing contiguous elements.
-	/// The interfaced is similar to that of std::string_view and std::span.
+	/// The interface is similar to that of std::string_view and std::span.
 	/// Core must implement data(), size(), and define element_type and extent (possibly = dynamic_extent).
 	template< typename Core >
 	struct base_shadow : public Core {
@@ -173,7 +171,7 @@ namespace pax {
 		}
 
 		/// Return a static shadow of the first min(N, extent) elements.
-		/// Ub, if N > size() and !is_static.
+		/// Does assert( N <= size() && !is_static ).
 		template< std::size_t N >		requires( N != traits::dynamic_extent )
 		[[nodiscard]] constexpr auto first() 								const noexcept	{
 			if constexpr( !is_static )	assert( N <= size() && "first< N >() requires N <= size()." );
@@ -187,7 +185,7 @@ namespace pax {
 		}
 
 		/// Return a static shadow of the last size() - min(N, extent) elements.
-		/// Ub, if N > size() and !is_static.
+		/// Does assert( N <= size() && !is_static ).
 		template< std::size_t N >		requires( is_static )
 		[[nodiscard]] constexpr auto not_first() 							const noexcept	{
 			return last< extent - std::min( N, extent ) >();
@@ -200,7 +198,7 @@ namespace pax {
 		}
 
 		/// Return a static shadow of the first min(N, extent) elements.
-		/// Ub, if N > size() and !is_static.
+		/// Does assert( N <= size() && !is_static ).
 		template< std::size_t N >		requires( N != traits::dynamic_extent )
 		[[nodiscard]] constexpr auto last() 								const noexcept	{
 			if constexpr( !is_static )	assert( N <= size() && "last< N >() requires N <= size()." );
@@ -213,7 +211,7 @@ namespace pax {
 		}
 
 		/// Return a static shadow of the first size() - min(N, extent) elements.
-		/// Ub, if N > size() and !is_static.
+		/// Does assert( N <= size() && !is_static ).
 		template< std::size_t N >		requires( traits::has_extent< base_shadow > )
 		[[nodiscard]] constexpr auto not_last() 							const noexcept 	{
 			return first< extent - std::min( N, size() ) >();
@@ -228,7 +226,7 @@ namespace pax {
 		}
 
 		/// Return a static shadow of the N elements starting with offs_, but restricted to the bounds of this.
-		/// A negative offs_ is counted from the back. Ub, unless offs_ + N <= size().
+		/// A negative offs_ is counted from the back. Does assert( offs_ + N <= size() ).
 		template< std::size_t N >		requires( N != traits::dynamic_extent && N <= extent )
 		[[nodiscard]] constexpr auto mid( difference_type offs_ )			const noexcept	{
 			offs_ =	( offs_ >= 0 )	?		   std::min( size_type(  offs_ ), size() )
