@@ -166,7 +166,7 @@ namespace pax {
  		template< std::ranges::contiguous_range U >
 		[[nodiscard]] constexpr bool operator==( const U & u_ )				const noexcept	{
 			using std::begin;
-			return std::equal(	this->begin(), this->end(), begin( u_ ), no_nullchar_end( u_ ) );
+			return std::equal(	this->begin(), end(), begin( u_ ), no_nullchar_end( u_ ) );
 		}
 
 		/// In strings a terminating \0 is ignored.
@@ -174,7 +174,7 @@ namespace pax {
 		[[nodiscard]] constexpr auto operator<=>( const U & u_ )			const noexcept	{
 			using std::begin;
 			return std::lexicographical_compare_three_way(
-								this->begin(), this->end(), begin( u_ ), no_nullchar_end( u_ ) );
+								this->begin(), end(), begin( u_ ), no_nullchar_end( u_ ) );
 		}
 
 		/// Return a dynamic shadow of the first min(n_, size()) elements.
@@ -298,7 +298,7 @@ namespace pax {
 
 		/// Split this in two at offset t_ so that first.end() == second.begin() and first.size() == t_.
 		[[nodiscard]] constexpr pair split( size_type mid_ )				const noexcept	{
-			mid_	  = std::min( mid_, size() );
+			mid_		  = std::min( mid_, size() );
 			return { { begin(), mid_ }, { begin() + mid_, end() } };
 		}
 
