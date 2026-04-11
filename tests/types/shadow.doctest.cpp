@@ -369,11 +369,19 @@ namespace pax {
 		}
 	}
 
-	DOCTEST_TEST_CASE( "shadow text static size" ) {
+	DOCTEST_TEST_CASE( "shadow text split find_linebreak" ) {
 		static_assert( shadow( "text" ).last( 2 ) == "xt" );
 		DOCTEST_FAST_CHECK_EQ( std::format( "{:?s}", shadow( "1\t2\n3\"4" ) ), "\"1\\t2\\n3\\\"4\"" );
 		text_test( shadow( "text" ) );
 		{
+			const auto sh	  = shadow( "aaa\r" );
+			auto res		  = sh.find_linebreak();			
+			DOCTEST_ASCII_CHECK_EQ( res, "\r" );
+		} {
+			const auto sh	  = shadow( "aaa\n" );
+			auto res		  = sh.find_linebreak();			
+			DOCTEST_ASCII_CHECK_EQ( res, "\n" );
+		} {
 			const auto sh	  = shadow( "first\nsecond\rthird\n\rfourth\r\nfifth\n\nsixth" );
 			auto res		  = sh.split( sh.find_linebreak() );
 			DOCTEST_FAST_CHECK_EQ( res.first, "first" );

@@ -130,8 +130,13 @@ namespace pax {
 
 		using Core::Core, Core::data, Core::size;
 
+		/// True iff the pointer is not the null pointer. 
 		[[nodiscard]] constexpr bool valid()			const noexcept	{	return  data() != nullptr;				}
+
+		/// True iff the size is zero. 
 		[[nodiscard]] constexpr bool empty()			const noexcept	{	return !size();							}
+
+		/// True iff the size is not zero. 
 		[[nodiscard]] constexpr explicit operator bool()const noexcept	{	return  size();							}
 
 		/// Iterators.
@@ -139,6 +144,8 @@ namespace pax {
 		[[nodiscard]] constexpr iterator end()			const noexcept	{	return begin() + size();				}
 		[[nodiscard]] constexpr const_iterator cbegin()	const noexcept	{	return begin();							}
 		[[nodiscard]] constexpr const_iterator cend()	const noexcept	{	return end();							}
+
+		/// Reverse iterators.
 		[[nodiscard]] constexpr auto rbegin()			const noexcept	{	return std::reverse_iterator( end() );	}
 		[[nodiscard]] constexpr auto rend()				const noexcept	{	return std::reverse_iterator( begin() );}
 		[[nodiscard]] constexpr auto crbegin()			const noexcept	{	return rbegin();						}
@@ -285,15 +292,18 @@ namespace pax {
 
 		/// Find any of "\n\r", "\n", "\r\n", or "\r" and return a shadow reference to it.
 		/// If none is found, { end(), 0u } is returned.
-		[[nodiscard]] constexpr shadow find_linebreak()						const noexcept
-		requires( is_string ) {
-			value_type		previous{};
+		[[nodiscard]] constexpr shadow find_linebreak()	const noexcept requires( is_string ) {
+			value_type		previous{ ' ' };
 			for( element_type & c : *this ) switch( previous ) {
 				case '\n': 	return { &c - 1, 1u + ( c == '\r' ) };
 				case '\r': 	return { &c - 1, 1u + ( c == '\n' ) };
-				default: 	previous = c;	break;
+				default: 	previous = c;
 			}
-			return { end(), end() };
+			switch( previous ) {
+				case '\n':
+				case '\r': 	return { end() - 1, end() };
+				default: 	return { end(),		end() };
+			}
 		};
 
 		/// Split this in two at offset t_ so that first.end() == second.begin() and first.size() == t_.
