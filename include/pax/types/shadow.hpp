@@ -294,16 +294,12 @@ namespace pax {
 		/// If none is found, { end(), 0u } is returned.
 		[[nodiscard]] constexpr shadow find_linebreak()	const noexcept requires( is_string ) {
 			value_type		previous{ ' ' };
-			for( element_type & c : *this ) switch( previous ) {
-				case '\n': 	return { &c - 1, 1u + ( c == '\r' ) };
-				case '\r': 	return { &c - 1, 1u + ( c == '\n' ) };
-				default: 	previous = c;
+			for( element_type & c : *this )	{
+				[[unlikely]] if( previous == '\n' )	return { &c - 1, 1u + ( c == '\r' ) };
+				[[unlikely]] if( previous == '\r' )	return { &c - 1, 1u + ( c == '\n' ) };
+				previous = c;
 			}
-			switch( previous ) {
-				case '\n':
-				case '\r': 	return { end() - 1, end() };
-				default: 	return { end(),		end() };
-			}
+			return { end() - ( ( previous == '\n' ) || ( previous == '\r' ) ), end() };
 		};
 
 		/// Split this in two at offset t_ so that first.end() == second.begin() and first.size() == t_.
