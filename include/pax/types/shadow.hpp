@@ -35,18 +35,19 @@ namespace pax {
 		using pointer								  = element_type *;
 		static constexpr std::size_t 					extent = N;
 
-		constexpr range()								noexcept = default;
-		constexpr range( const range & )				noexcept = default;
+		[[nodiscard]] constexpr range()					noexcept = default;
+		[[nodiscard]] constexpr range( const range & )	noexcept = default;
 		constexpr range & operator=( const range & )	noexcept = default;
-		constexpr range( pointer src_ )					noexcept : m_source{ src_ } {}
+		[[nodiscard]] constexpr range( pointer src_ )	noexcept : m_source{ src_ } {}
 
 		template< typename U >
-		constexpr range( const U ( & str_ )[ N+1 ] )	noexcept // Somewhat constructed due to disambiguation:
+		[[nodiscard]] constexpr range( const U ( & str_ )[ N+1 ] )	noexcept 
+			// Somewhat constructed due to disambiguation:
 			requires( std::is_same_v< U, value_type > && traits::character< value_type > )
 			:	m_source{ str_ }	{	assert( !str_[ N ] && "Removing a non-zero character suffix!" );			}
 
 		template< std::ranges::contiguous_range U >
-		constexpr range( U & src_ )						noexcept : m_source{ std::ranges::data( src_ ) } {}
+		[[nodiscard]] constexpr range( U & src_ )		noexcept : m_source{ std::ranges::data( src_ ) } {}
 
 		[[nodiscard]] constexpr pointer data()			const noexcept	{	return m_source;						}
 		[[nodiscard]] static constexpr std::size_t size()	  noexcept	{	return extent;							}
@@ -67,14 +68,16 @@ namespace pax {
 		using pointer								  = element_type *;
 		static constexpr std::size_t 					extent = dynamic_extent;
 
-		constexpr range()								noexcept = default;
-		constexpr range( const range & )				noexcept = default;
+		[[nodiscard]] constexpr range()					noexcept = default;
+		[[nodiscard]] constexpr range( const range & )	noexcept = default;
 		constexpr range & operator=( const range & )	noexcept = default;
-		constexpr range( pointer src_, std::size_t sz )	noexcept : m_source{ src_ }, m_size{ src_ ? sz : 0u } {}
-		constexpr range( pointer begin_, pointer end_ )	noexcept : range{ begin_, std::size_t( end_ - begin_ ) } {}
+		[[nodiscard]] constexpr range( pointer src_, std::size_t sz ) noexcept 
+			: m_source{ src_ }, m_size{ src_ ? sz : 0u } {}
+		[[nodiscard]] constexpr range( pointer begin_, pointer end_ ) noexcept 
+			: range{ begin_, std::size_t( end_ - begin_ ) } {}
 
 		template< std::ranges::contiguous_range U >
-		constexpr range( U & src_ ) noexcept : range{ std::ranges::data( src_ ), std::ranges::size( src_ ) } {}
+		[[nodiscard]] constexpr range( U & src_ ) noexcept : range{ std::ranges::data( src_ ), std::ranges::size( src_ ) } {}
 
 		[[nodiscard]] constexpr pointer data()			const noexcept	{	return m_source;						}
 		[[nodiscard]] constexpr std::size_t size()		const noexcept	{	return m_size;							}
@@ -365,8 +368,8 @@ namespace pax {
 		using traits_type							  = Traits;
 		static constexpr std::size_t			 		extent = N;
 
-		constexpr core_litteral( value_type       ( & str_ )[  N  ] )	{	std::copy_n( str_, N, value );			}
-		constexpr core_litteral( value_type const ( & str_ )[ N+1 ] )	{	std::copy_n( str_, N, value );			}
+		[[nodiscard]] constexpr core_litteral( value_type       ( & str_ )[  N  ] )	{ std::copy_n( str_, N, value ); }
+		[[nodiscard]] constexpr core_litteral( value_type const ( & str_ )[ N+1 ] )	{ std::copy_n( str_, N, value ); }
 
 		[[nodiscard]] constexpr pointer data()			const noexcept	{	return value;							}
 		[[nodiscard]] static constexpr std::size_t size()	  noexcept	{	return N;								}
