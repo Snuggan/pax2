@@ -1,6 +1,11 @@
 \documentclass[english,a4paper,minion,nofigsidecaption]{article}
 \usepackage{pax3,pax3extra}			% Comment this line if you are not Peder!  :-)
 
+
+\newcommand{\github}{\url{https://github.com/Snuggan/pax2}}
+\newcommand{\dockerhub}{\url{https://hub.docker.com/r/axensten/slu}}
+
+
 \providecommand{\nolb}[1]{\mbox{#1}}
 \providecommand{\ie}{\textit{i.e.}}
 \providecommand{\abbr}[1]{\texorpdfstring{\textsc{\MakeLowercase{#1}}}{#1}}
@@ -62,36 +67,36 @@
 
 \section{Introduction}
 
-The Remote Sensing section of the Department of Forest Resources at the Swedish Agricultural University (\textsc{slu}) has developed a framework and tools to estimate forest variables wall-to-wall for Sweden\footnote{where-to-find}. The data are from the {\als} produced by the Swedish Land Survey and field data from the Swedish National Field Inventory, produced by \textsc{slu}. The framework handles all parts of the process ensuring that all files that need to be processed are processed (in parallel) through all parts of the process. The process has the following principal parts:
+The Remote Sensing section of the Department of Forest Resources at the Swedish Agricultural University (\textsc{slu}) has developed a framework and tools to estimate forest variables wall-to-wall for Sweden\footnote{\github}. The data are from the {\als} produced by the Swedish Land Survey and field data are from the Swedish National Field Inventory, produced at \textsc{slu}. The framework handles all parts of the process ensuring that all files that need to be processed are processed (in parallel) through all parts of the process. The process has the following principal parts:
 \begin{enumerate}
-	\item Filtering and normalising raw point cloud data.
-	\item Calculating metrics for the area covered and for the individual field plots.
-	\item Modelling and prediction.
-	\item Post-processing: mosaics and evaluation.
+	\item filtering and normalising raw point cloud data,
+	\item calculating metrics for the area covered and for the individual field plots,
+	\item modelling and prediction, and
+	\item post-processing: mosaics and evaluation.
 \end{enumerate}
 
-\vspace{0.5em }{\noindent}The process unit (\pu) is the area covered by an individual point data file. These files (and their offsprings) may be processed in parallel, as there are no algorithmic dependencies between them. 
+\vspace{0.5em }{\noindent}The processing unit (\pu) is the area covered by an individual point data file. These files (and their offsprings) may be processed in parallel, as there are no algorithmic dependencies between them. 
 
 \section{Implementation}
 
 \subsection{Framework}
 
-To coordinate the processing of all files and processing steps, a {\make} script is used, it is a tool to handle file dependency chains in complex processing. If a file is added or changed upstream the dependency chain, {\make} ensures that all dependent files downstream are created or updated. This greatly simplifies updating the data set by only processing affected files. A {\make} script defines these dependencies and the tools (with arguments) to execute to produce or update the downstream files. It programmatically describes the complete process. 
+To coordinate the processing of all files through the processing steps a {\make} script is used. If a file is added or changed upstream the dependency chain, {\make} ensures that all dependent files downstream are created or updated. This greatly simplifies updating the data set by only processing affected files. A {\make} script defines these dependencies and what tools to execute to produce or update the downstream files. It programmatically describes the complete process. 
 
-Once everything is set up properly, all you need to do to process all files (often in the hundreds of thousands of them) through all parts of the process is to execute one command in the command prompt:
+Once everything is set up properly, all you need to do to process all files (often in the hundreds of thousands) through all parts of the process is to execute one command in the command prompt:
 \\[0.25em]\mbox{}\hspace{5em}{\texttt{make -j12 -k}}
-\\[0.25em]The argument \texttt{-j12} tells {\make} to use up to 12 threads – use as many as your machine can muster. On big machines with many available threads, a very large number of threads may saturate the file storage bus. Parameter \texttt{-k} tells {\make} not to stop if it encounters an error, so if you have a corrupt file {\make} will continue processing files that are independent of it. If you run the command when all is already up-to-date, nothing will be done. 
+\\[0.25em]The argument \texttt{-j12} tells {\make} to use up to 12 threads – use as many as your machine can muster, although a very large number of threads may saturate the file storage bus. Parameter \texttt{-k} tells {\make} not to stop if it encounters an error, so if you have a corrupt file {\make} will continue processing files that are independent of it. 
 
 \subsection{Tools}
 
-The two {\als} data processing tools used in the first parts of the process are based on {\pdal}, a general tool for point cloud processing. It uses modules for the actual processing. These may be combined into one command, so that the point cloud file is read once and run through the modules as specified before the resulting file is saved. The modules are used sequentially in the {\pdal}-based tools. Some of the modules used are included with {\pdal}, but other had to be developed. 
+The two point data processing tools used in the first parts of the process are based on {\pdal}, a general tool for point cloud processing. Its modules may be combined and executed sequentially in one command, so that the point cloud file is read once, run through the modules as specified, and finally the resulting file is saved. Some of the modules used are included with {\pdal}, but other had to be developed. 
 
 \subsubsection{Normalising and filtering}
 \paxbox{“raw” point data file + \abbr{DEM} $\rightarrow$ filtered point data file.} 
 A {\pdal} tool with the following modules that are executed sequentially:
 \begin{enumerate}
 	\item \textbf{Normalization} ({\pdal} module \texttt{filters.hag\_dem}). Using a \abbr{DEM}, height above ground is calculated.
-	\item \textbf{Altitude and point class filtering} (proprietary module \texttt{filters.slu\_lm}). All points with $z$-values below {\zmin} and above {\zmax} are removed. For the remaining points, all $z$-values below zero are set to zero. Only points with any of the these classes are retained:%
+	\item \textbf{Altitude and point class filtering} (proprietary module \texttt{filters.slu\_lm}). All points with $z$-values below {\zmin} or above {\zmax} are removed. For the remaining points, all $z$-values below zero are set to zero. Only points with any of the these classes are retained:%
 		\footnote{\raggedright Swedish Land Survey point classes: \url{https://www.lantmateriet.se/globalassets/kartor-och-geografisk-information/hojddata/pb_laserdata_nedladdning_skog.pdf}.}
 		\\\begin{tabular}{cl}
 			0:	& created, but never classified, 							\\
@@ -102,7 +107,7 @@ A {\pdal} tool with the following modules that are executed sequentially:
 \end{enumerate}
 
 \subsubsection{Calculating metrics}
-\paxbox{Filtered point data file + plot data file $\rightarrow$ metric raster files and plot file.}
+\paxbox{Filtered point data file + plot data file $\rightarrow$ metric raster files + metrics plot file.}
 A {\pdal} tool with the following modules that are executed sequentially:
 \begin{enumerate}
 	\item \textbf{Raster metrics} (proprietary module \texttt{filters.raster\_metrics}). Creates one raster file for each metric specified.
@@ -118,7 +123,7 @@ To model and estimate an {\R}-based tool is used. A number of plots are chosen f
 {\gdal} is used to produce the final wall-to-wall mosaics and accompanied pyramid files. 
 
 \subsection{{\docker}}
-All processing tools, the framework, and the processing environment are included in an Ubuntu-based {\docker} image available at \url{https://hub.docker.com/repository/docker/axensten/slu}. So if your system has {\docker}, you can install the image and run the tools individually or using the framework {\make} script. Some of the proprietary {\pdal} modules might be of use individually. Execute \verb|pdal --options filters.<name>| to get detailed information on their use. 
+All processing tools, the framework, and the processing environment are included in an available Ubuntu-based {\docker} image\footnote{\dockerhub}. So if your system has {\docker}, you can install the image and run the tools individually or use the framework {\make} script. Some of the proprietary {\pdal} modules might be of use individually. Execute \verb|pdal --options filters.<name>| to get detailed information on their use. 
 \begin{itemize}
 	\item \texttt{filters.slu\_lm}, 
 	\item \texttt{filters.remove\_overlap}, 
@@ -249,7 +254,7 @@ The tools used are all from the \href{https://gdal.org}{\texttt{gdal} library}: 
 \newpage
 \section{Evaluation}
 
-Jörgen and/or Mats?
+[Authored by Jörgen and/or Mats?]
 
 
 
