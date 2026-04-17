@@ -54,9 +54,6 @@ namespace pax {
 		[[nodiscard]] constexpr pointer begin()			const noexcept	{	return data();							}
 		[[nodiscard]] constexpr pointer end()			const noexcept	{	return data() + size();					}
 
-		template< std::size_t I >						requires( I < extent )
-		[[nodiscard]] friend element_type & get( const range & r_ )	noexcept {	return *( r_.data() + I );			}
-
 	private:
 		pointer											m_source{ nullptr };
 	};
@@ -317,6 +314,9 @@ namespace pax {
 			return { { begin(), std::clamp( gap_.begin(), begin(), end() ) },
 							  { std::clamp( gap_.end(),   begin(), end() ), end() } };
 		}
+
+		template< std::size_t I >						requires( is_static && ( I < extent ) )
+		[[nodiscard]] friend element_type & get( const base_shadow & sh_ )	noexcept {	return *( sh_.data() + I );	}
 
 		/// Stream the elements to out_.
 		template< typename Out >
