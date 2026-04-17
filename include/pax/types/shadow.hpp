@@ -37,18 +37,18 @@ namespace pax {
 
 		[[nodiscard]] constexpr range()					noexcept = default;
 		[[nodiscard]] constexpr range( const range & )	noexcept = default;
-		constexpr range & operator=( const range & )	noexcept = default;
 		[[nodiscard]] constexpr range( pointer src_ )	noexcept : m_source{ src_ } {}
 
 		template< typename U >
 		[[nodiscard]] constexpr range( const U ( & str_ )[ N+1 ] )	noexcept 
 			// Somewhat constructed due to disambiguation:
 			requires( std::is_same_v< U, value_type > && traits::character< value_type > )
-			:	m_source{ str_ }	{	assert( !str_[ N ] && "Removing a non-zero character suffix!" );			}
+			: m_source{ str_ }		{	assert( !str_[ N ] && "Removing a non-zero character suffix!" );			}
 
 		template< std::ranges::contiguous_range U >
 		[[nodiscard]] constexpr range( U & src_ )		noexcept : m_source{ std::ranges::data( src_ ) } {}
 
+		constexpr range & operator=( const range & )	noexcept = default;
 		[[nodiscard]] constexpr pointer data()			const noexcept	{	return m_source;						}
 		[[nodiscard]] static constexpr std::size_t size()	  noexcept	{	return extent;							}
 		[[nodiscard]] constexpr pointer begin()			const noexcept	{	return data();							}
@@ -70,7 +70,6 @@ namespace pax {
 
 		[[nodiscard]] constexpr range()					noexcept = default;
 		[[nodiscard]] constexpr range( const range & )	noexcept = default;
-		constexpr range & operator=( const range & )	noexcept = default;
 		[[nodiscard]] constexpr range( pointer src_, std::size_t sz ) noexcept 
 			: m_source{ src_ }, m_size{ src_ ? sz : 0u } {}
 		[[nodiscard]] constexpr range( pointer begin_, pointer end_ ) noexcept 
@@ -79,6 +78,7 @@ namespace pax {
 		template< std::ranges::contiguous_range U >
 		[[nodiscard]] constexpr range( U & src_ ) noexcept : range{ std::ranges::data( src_ ), std::ranges::size( src_ ) } {}
 
+		constexpr range & operator=( const range & )	noexcept = default;
 		[[nodiscard]] constexpr pointer data()			const noexcept	{	return m_source;						}
 		[[nodiscard]] constexpr std::size_t size()		const noexcept	{	return m_size;							}
 		[[nodiscard]] constexpr pointer begin()			const noexcept	{	return data();							}
@@ -151,8 +151,8 @@ namespace pax {
 		/// Reverse iterators.
 		[[nodiscard]] constexpr auto rbegin()			const noexcept	{	return std::reverse_iterator( end() );	}
 		[[nodiscard]] constexpr auto rend()				const noexcept	{	return std::reverse_iterator( begin() );}
-		[[nodiscard]] constexpr auto crbegin()			const noexcept	{	return rbegin();						}
-		[[nodiscard]] constexpr auto crend()			const noexcept	{	return rend();							}
+		[[nodiscard]] constexpr auto crbegin()			const noexcept	{	return std::reverse_iterator( cend() );	}
+		[[nodiscard]] constexpr auto crend()			const noexcept	{	return std::reverse_iterator( cbegin() );}
 
 		/// Return a reference to the first element. Does operator[]( 0u ).
 		[[nodiscard]] constexpr reference front()		const noexcept	{	return operator[]( 0u );				}
