@@ -441,7 +441,14 @@ namespace pax {
 
 		num_test( const_shadow( nums ) );
 	}
-
+	DOCTEST_TEST_CASE( "litteral vector" ) {
+		{
+			constexpr auto		test = litt< int, 1, 3, 2 >();
+			static_assert( test.is_static );
+			static_assert( test.size() == 3 );
+			static_assert( test[ 1 ]   == 3 );
+		}
+	}
 	DOCTEST_TEST_CASE( "litteral text" ) {
 		DOCTEST_ASCII_CHECK_EQ( litt( "text" ).last( 2 ), "xt" );
 		DOCTEST_ASCII_CHECK_EQ( std::format( "{:?s}", shadow( "1\t2\n3\"4" ) ), "\"1\\t2\\n3\\\"4\"" );

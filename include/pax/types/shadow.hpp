@@ -191,7 +191,7 @@ namespace pax {
 
 		/// Return a static shadow of the first min(N, extent) elements.
 		/// Does assert( N <= size() && !is_static ).
-		template< std::size_t N >		requires( N != traits::dynamic_extent )
+		template< std::size_t N >		requires( N != dynamic_extent )
 		[[nodiscard]] constexpr auto first() 								const noexcept	{
 			if constexpr( !is_static )	assert( N <= size() && "first< N >() requires N <= size()." );
 			return shadowN< std::min( N, extent ) >( data() );
@@ -218,7 +218,7 @@ namespace pax {
 
 		/// Return a static shadow of the first min(N, extent) elements.
 		/// Does assert( N <= size() && !is_static ).
-		template< std::size_t N >		requires( N != traits::dynamic_extent )
+		template< std::size_t N >		requires( N != dynamic_extent )
 		[[nodiscard]] constexpr auto last() 								const noexcept	{
 			if constexpr( !is_static )	assert( N <= size() && "last< N >() requires N <= size()." );
 			return shadowN< std::min( N, extent ) >{ data() + size() - std::min( N, size() ) };
@@ -246,7 +246,7 @@ namespace pax {
 
 		/// Return a static shadow of the N elements starting with offs_, but restricted to the bounds of this.
 		/// A negative offs_ is counted from the back. Does assert( offs_ + N <= size() ).
-		template< std::size_t N >		requires( N != traits::dynamic_extent && N <= extent )
+		template< std::size_t N >		requires( N != dynamic_extent && N <= extent )
 		[[nodiscard]] constexpr auto mid( difference_type offs_ )			const noexcept	{
 			offs_ =	( offs_ >= 0 )	?		   std::min( size_type(  offs_ ), size() )
 									: size() - std::min( size_type( -offs_ ), size() );
@@ -360,16 +360,19 @@ namespace pax {
 
 	/// The core for a string_view-like type that can be used as a template argument.
 	/// The alias litteral defines the actual type and the function litt creates it. 
-	template< traits::character Char, std::size_t N, typename Traits = std::char_traits< Char > >
+	template< typename T, std::size_t N >
 	struct core_litteral {
-		using element_type							  = Char;
+		using element_type							  = T;
 		using value_type							  = std::remove_cv_t< element_type >;
 		using pointer								  = element_type *;
-		using traits_type							  = Traits;
 		static constexpr std::size_t			 		extent = N;
 
-		[[nodiscard]] constexpr core_litteral( value_type       ( & str_ )[  N  ] )	{ std::copy_n( str_, N, value ); }
-		[[nodiscard]] constexpr core_litteral( value_type const ( & str_ )[ N+1 ] )	{ std::copy_n( str_, N, value ); }
+		[[nodiscard]] constexpr core_litteral( element_type     ( & ptr_ )[  N  ] )
+			{	std::copy_n( ptr_, N, value );	}
+		[[nodiscard]] constexpr core_litteral( element_type       * ptr_ )			requires( !traits::character< T > ) 
+			{	std::copy_n( ptr_, N, value );	}
+		[[nodiscard]] constexpr core_litteral( value_type const ( & str_ )[ N+1 ] )	requires(  traits::character< T > ) 
+			{	std::copy_n( str_, N, value );	}
 
 		[[nodiscard]] constexpr pointer data()			const noexcept	{	return value;							}
 		[[nodiscard]] static constexpr std::size_t size()	  noexcept	{	return N;								}
@@ -382,14 +385,19 @@ namespace pax {
 		value_type							value[ N ];
 	};
 
-	template< traits::character Char, std::size_t N, typename Traits = std::char_traits< Char > >
-	using litteral = base_shadow< core_litteral< Char, N, Traits > >;
+	template< typename T, std::size_t N >
+	using litteral = base_shadow< core_litteral< T, N > >;
 
-	template< traits::character Char, std::size_t N, typename Traits = std::char_traits< Char > >
-	[[nodiscard]] constexpr litteral< Char, N, Traits > litt( Char ( & src_ )[ N ] )				   { return { src_ }; }
+	template< typename T, std::size_t N >
+	[[nodiscard]] constexpr litteral< T, N > litt( T ( & src_ )[ N ] )					{ return { src_ }; }
 
-	template< traits::character Char, std::size_t N, typename Traits = std::char_traits< const Char > >
-	[[nodiscard]] constexpr litteral< Char const, N-(N>0), Traits > litt( Char const ( & src_ )[ N ] ) { return { src_ }; }
+	template< typename T, T ...Elements >
+	[[nodiscard]] constexpr auto litt() {
+		return litteral< const T, sizeof ...( Elements ) >( std::array{ Elements... }.data() );
+	}
+
+	template< traits::character Char, std::size_t N >
+	[[nodiscard]] constexpr litteral< Char const, N-(N>0) > litt( Char const ( & src_ )[ N ] ) { return { src_ }; }
 
 
 	template< typename Tag, typename T >	struct Tagged;
