@@ -19,7 +19,7 @@ namespace pax {
 	constexpr std::size_t dynamic_extent = traits::dynamic_extent;
 
 	template< typename T >
-	[[nodiscard]] constexpr auto no_nullchar_end( const T & t_ )		{	using std::end;	return end( t_ );		}
+	[[nodiscard]] constexpr auto no_nullchar_end( T && t_ )				{	using std::end; return end( t_ );		}
 
 	template< traits::character Char, std::size_t N >	requires( N > 0 )
 	[[nodiscard]] constexpr Char const * no_nullchar_end( Char const ( & str_ )[ N ] )	{
@@ -172,16 +172,14 @@ namespace pax {
 		/// In strings a terminating \0 is ignored.
  		template< std::ranges::contiguous_range U >
 		[[nodiscard]] constexpr bool operator==( const U & u_ )				const noexcept	{
-			using std::begin;
-			return std::equal(	this->begin(), end(), begin( u_ ), no_nullchar_end( u_ ) );
+			return std::equal(	begin(), end(), std::ranges::begin( u_ ), no_nullchar_end( u_ ) );
 		}
 
 		/// In strings a terminating \0 is ignored.
  		template< std::ranges::contiguous_range U >
 		[[nodiscard]] constexpr auto operator<=>( const U & u_ )			const noexcept	{
-			using std::begin;
 			return std::lexicographical_compare_three_way(
-								this->begin(), end(), begin( u_ ), no_nullchar_end( u_ ) );
+								begin(), end(), std::ranges::begin( u_ ), no_nullchar_end( u_ ) );
 		}
 
 		/// Return a dynamic shadow of the first min(n_, size()) elements.
@@ -367,20 +365,19 @@ namespace pax {
 		using pointer								  = element_type *;
 		static constexpr std::size_t			 		extent = N;
 
-		[[nodiscard]] constexpr core_litteral( element_type     ( & ptr_ )[  N  ] )
-			{	std::copy_n( ptr_, N, value );	}
-		[[nodiscard]] constexpr core_litteral( element_type       * ptr_ )			requires( !traits::character< T > ) 
-			{	std::copy_n( ptr_, N, value );	}
-		[[nodiscard]] constexpr core_litteral( value_type const ( & str_ )[ N+1 ] )	requires(  traits::character< T > ) 
-			{	std::copy_n( str_, N, value );	}
+		[[nodiscard]] consteval core_litteral( element_type ( & ptr_ )[  N  ] )	{	std::copy_n( ptr_, N, value );	}
+		[[nodiscard]] consteval core_litteral( value_type const ( & str_ )[ N+1 ] )	
+			requires(  traits::character< T > ) 								{	std::copy_n( str_, N, value );	}
+		[[nodiscard]] consteval core_litteral( element_type * ptr_ )
+			requires( !traits::character< T > ) 								{	std::copy_n( ptr_, N, value );	}
 
 		[[nodiscard]] constexpr pointer data()			const noexcept	{	return value;							}
-		[[nodiscard]] static constexpr std::size_t size()	  noexcept	{	return N;								}
-		[[nodiscard]] constexpr pointer begin()			const noexcept	{	return data();							}
-		[[nodiscard]] constexpr pointer end()			const noexcept	{	return data() + size();					}
+		[[nodiscard]] static consteval std::size_t size()	  noexcept	{	return N;								}
+		[[nodiscard]] consteval pointer begin()			const noexcept	{	return data();							}
+		[[nodiscard]] consteval pointer end()			const noexcept	{	return data() + size();					}
 
 		template< std::size_t I >			requires( ( I < extent ) && ( extent != dynamic_extent ) )
-		[[nodiscard]] friend element_type & get( const core_litteral & cl_ ) noexcept { return *( cl_.data() + I );	}
+		[[nodiscard]] friend consteval element_type & get( const core_litteral & cl_ ) noexcept { return *( cl_.data() + I );	}
 
 		value_type							value[ N ];
 	};
@@ -389,15 +386,15 @@ namespace pax {
 	using litteral = base_shadow< core_litteral< T, N > >;
 
 	template< typename T, std::size_t N >
-	[[nodiscard]] constexpr litteral< T, N > litt( T ( & src_ )[ N ] )					{ return { src_ }; }
+	[[nodiscard]] consteval litteral< T, N > litt( T ( & src_ )[ N ] )					{ return { src_ }; }
 
 	template< typename T, T ...Elements >
-	[[nodiscard]] constexpr auto litt() {
+	[[nodiscard]] consteval auto litt() {
 		return litteral< const T, sizeof ...( Elements ) >( std::array{ Elements... }.data() );
 	}
 
 	template< traits::character Char, std::size_t N >
-	[[nodiscard]] constexpr litteral< Char const, N-(N>0) > litt( Char const ( & src_ )[ N ] ) { return { src_ }; }
+	[[nodiscard]] consteval litteral< Char const, N-(N>0) > litt( Char const ( & src_ )[ N ] ) { return { src_ }; }
 
 
 	template< typename Tag, typename T >	struct Tagged;
