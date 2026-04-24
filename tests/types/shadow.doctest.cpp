@@ -443,7 +443,17 @@ namespace pax {
 	}
 	DOCTEST_TEST_CASE( "litteral vector" ) {
 		{
-			constexpr auto		test = litt< int, 1, 3, 2 >();
+			constexpr auto		test = litt( "abc" );
+			static_assert( test.is_static );
+			static_assert( test.size() == 3 );
+			static_assert( test[ 1 ]   == 'b' );
+		} {
+			constexpr auto		test = litt( 1, 3, 2 );
+			static_assert( test.is_static );
+			static_assert( test.size() == 3 );
+			static_assert( test[ 1 ]   == 3 );
+		} {
+			constexpr auto		test = litteral< int, 3 >( 1, 3, 2 );
 			static_assert( test.is_static );
 			static_assert( test.size() == 3 );
 			static_assert( test[ 1 ]   == 3 );

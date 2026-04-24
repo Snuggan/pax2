@@ -360,7 +360,7 @@ namespace pax {
 	/// The alias litteral defines the actual type and the function litt creates it. 
 	template< typename T, std::size_t N >
 	struct core_litteral {
-		using element_type							  = T;
+		using element_type							  = const T;
 		using value_type							  = std::remove_cv_t< element_type >;
 		using pointer								  = element_type *;
 		static constexpr std::size_t		extent	  = N;
@@ -370,6 +370,10 @@ namespace pax {
 			requires(  traits::character< T > ) 								{	std::copy_n( str_, N, value );	}
 		[[nodiscard]] consteval core_litteral( element_type * ptr_ )
 			requires( !traits::character< T > ) 								{	std::copy_n( ptr_, N, value );	}
+
+		template< typename... Args >		requires( ( true && ... && std::is_nothrow_convertible_v< Args, T > ) )
+		[[nodiscard]] consteval core_litteral( Args && ...args_ ) 
+			: core_litteral( std::array< T, N >{ T( std::forward< Args >( args_ ) )... }.data() ) {}
 
 		[[nodiscard]] constexpr pointer data()			const noexcept			{	return value;					}
 		[[nodiscard]] static consteval std::size_t size()	  noexcept			{	return N;						}
@@ -389,9 +393,10 @@ namespace pax {
 	template< typename T, std::size_t N >
 	[[nodiscard]] consteval litteral< T, N > litt( T ( & src_ )[ N ] )			{	return { src_ };				}
 
-	template< typename T, T ...Elements >
-	[[nodiscard]] consteval auto litt() {
-		return litteral< const T, sizeof ...( Elements ) >( std::array{ Elements... }.data() );
+	template< typename... Args >			requires( ( ... && !std::is_pointer_v< Args > ) )
+	[[nodiscard]] consteval auto litt( Args && ...args_ ) {
+		using T = std::common_type_t< Args... >;
+		return litteral< const T, sizeof ...( Args ) >( std::array{ T( std::forward< Args >( args_ ) )... }.data() );
 	}
 
 	template< traits::character Char, std::size_t N >
