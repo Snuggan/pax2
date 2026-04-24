@@ -363,7 +363,7 @@ namespace pax {
 		using element_type							  = T;
 		using value_type							  = std::remove_cv_t< element_type >;
 		using pointer								  = element_type *;
-		static constexpr std::size_t			 		extent = N;
+		static constexpr std::size_t		extent	  = N;
 
 		[[nodiscard]] consteval core_litteral( element_type ( & ptr_ )[  N  ] )	{	std::copy_n( ptr_, N, value );	}
 		[[nodiscard]] consteval core_litteral( value_type const ( & str_ )[ N+1 ] )	
@@ -371,13 +371,14 @@ namespace pax {
 		[[nodiscard]] consteval core_litteral( element_type * ptr_ )
 			requires( !traits::character< T > ) 								{	std::copy_n( ptr_, N, value );	}
 
-		[[nodiscard]] constexpr pointer data()			const noexcept	{	return value;							}
-		[[nodiscard]] static consteval std::size_t size()	  noexcept	{	return N;								}
-		[[nodiscard]] consteval pointer begin()			const noexcept	{	return data();							}
-		[[nodiscard]] consteval pointer end()			const noexcept	{	return data() + size();					}
+		[[nodiscard]] constexpr pointer data()			const noexcept			{	return value;					}
+		[[nodiscard]] static consteval std::size_t size()	  noexcept			{	return N;						}
+		[[nodiscard]] consteval pointer begin()			const noexcept			{	return data();					}
+		[[nodiscard]] consteval pointer end()			const noexcept			{	return data() + size();			}
 
-		template< std::size_t I >			requires( ( I < extent ) && ( extent != dynamic_extent ) )
-		[[nodiscard]] friend consteval element_type & get( const core_litteral & cl_ ) noexcept { return *( cl_.data() + I );	}
+		template< std::size_t I >						requires( ( I < extent ) && ( extent != dynamic_extent ) )
+		[[nodiscard]] friend consteval element_type & get( const core_litteral & cl_ ) 
+															  noexcept			{	return *( cl_.data() + I );		}
 
 		value_type							value[ N ];
 	};
@@ -386,7 +387,7 @@ namespace pax {
 	using litteral = base_shadow< core_litteral< T, N > >;
 
 	template< typename T, std::size_t N >
-	[[nodiscard]] consteval litteral< T, N > litt( T ( & src_ )[ N ] )					{ return { src_ }; }
+	[[nodiscard]] consteval litteral< T, N > litt( T ( & src_ )[ N ] )			{	return { src_ };				}
 
 	template< typename T, T ...Elements >
 	[[nodiscard]] consteval auto litt() {
@@ -394,7 +395,7 @@ namespace pax {
 	}
 
 	template< traits::character Char, std::size_t N >
-	[[nodiscard]] consteval litteral< Char const, N-(N>0) > litt( Char const ( & src_ )[ N ] ) { return { src_ }; }
+	[[nodiscard]] consteval litteral< Char const, N-(N>0) > litt( Char const ( & src_ )[ N ] ) { return { src_ };	}
 
 
 	template< typename Tag, typename T >	struct Tagged;
@@ -416,7 +417,7 @@ namespace pax {
 	}
 
 	template< typename Tag, traits::character Char, size_t N >	requires( N > 0 )
-	[[nodiscard]] constexpr Tagged< Tag, litteral< Char const, N-(N>0) > > tagged( Char const ( & str_ )[ N ] ) {
+	[[nodiscard]] constexpr Tagged< Tag, litteral< Char const, N-(N>0) > > tagged( Char const ( & str_ )[ N ] )		{
 		assert( !str_[ N-1 ] && "Removing a non-zero character suffix!" );
 		return { str_ };
 	}
