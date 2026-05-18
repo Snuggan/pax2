@@ -6,14 +6,24 @@
 #include <pax/concepts.hpp>		// traits:: stuff.
 #include <algorithm>			// std::ranges::equal, std::lexicographical_compare_three_way, etc.
 #include <iterator>				// std::reverse_iterator.
-#include <assert.h>
+#include <assert.h>				// The classic assert macro.
 #include <stdexcept>			// std::out_of_range.
 
-/// shadow: string_view and span in one
-///	A class for all uses of string_view and span with static or dynamic size. It consists of a common base class 
-///	for most of the functionality and small classes implementing static or dynamic size -- and a variant usable for 
-///	template parameter text. The main idea is to keep member functions basic, unmutable, and with a minimum of ub. 
-///	The referenced data is mutable (unless declared const). 
+/// shadow: a string_view- and span-like class.
+/// Similar to span, but...
+/// 1. It removes a number of ub or exceptions by defining logical non-ub return values, i.e. see first.
+/// 2. It accepts also char-types, thus mimicking string_view.
+/// 3. Modular design where base_shadow can be used with different base classes. 
+/// 
+/// Comment on 1.: By *always* returning clearly defined values from first, last, not_first, not_last, mid, find,
+/// split etc., it is cleaner to identify and handle also out of bound values retrurned.
+/// For example, `auto sh2 = sh.not_first( sh.size() + 5 )`will return a `sh2 == shadow( sh.end(), 0u )`. 
+/// And `sh2.find( "abs" )` will return a copy of `sh2`, as the string `abc` was not found in [the empty] `sh2`.
+/// 
+///	The `shadow` consists of a common base class for most of the functionality and small classes implementing 
+/// either static or dynamic size -- and also a variant usable for template parameter arrays. The main idea is 
+/// to keep member functions basic, unmutable, and with a minimum of ub. The referenced values are mutable unless 
+/// specifically declared const. 
 
 namespace pax {
 	constexpr std::size_t dynamic_extent = traits::dynamic_extent;
@@ -290,7 +300,7 @@ namespace pax {
 
 		/// Find any of "\n\r", "\n", "\r\n", or "\r" and return a shadow reference to it.
 		/// If none is found, { end(), 0u } is returned.
-		[[nodiscard]] constexpr shadow find_linebreak()	const noexcept requires( is_string ) {
+		[[nodiscard]] constexpr shadow find_linebreak()						const noexcept requires( is_string ) {
 			value_type		previous{ ' ' };
 			for( element_type & c : *this )	{
 				[[unlikely]] if( previous == '\n' )	return { &c - 1, 1u + ( c == '\r' ) };
