@@ -62,6 +62,9 @@ namespace pax {
 		}
 
 		index_type col( const coord_type x_ ) const {
+			// In the tradition of C and C++, an interval contains its lower boundary, but not its upper. 
+			// If you have a bounding box where your highest x-value is *on* the upper body, this exception will be 
+			// triggered. Set the upper bbox boundaries to slightly higher values and you will be fine.
 			if( x_in_range( x_ ) )		return min( ( x_ - minx() )/resolution(), cols() - 1 );
 			throw error_message( std20::format( "Column: x-coord {} is outside range [{}, {}[", x_, minx(), maxx() ) );
 		}
@@ -69,13 +72,14 @@ namespace pax {
 		index_type row( const coord_type y_ ) const {
 			// When dealing with rasters, origo is at the upper left corner.
 			// So y is the other way compared to mathematics (direction is "down" and not "up"). 
+			// See the comment for col(x_), above, for reasons an exception might be triggered. 
 			if( y_in_range( y_ ) )		return min( ( maxy() - y_ )/resolution(), rows() - 1 );
 			throw error_message( std20::format( "Row: y-coord {} is outside range ]{}, {}]", y_, miny(), maxy() ) );
 		}
 
 		/// Given this point, what index does its coordinates produce? (row first index)
-		/** Works for minx() <= x_ <= maxx() and  miny() <= y_ <= maxy(). 
-			If either coordinate is outside the bounding box, an exception is thrown. 		**/
+		/// Works for minx() <= x_ <= maxx() and  miny() <= y_ <= maxy(). 
+		///	If either coordinate is outside the bounding box, an exception is thrown.
 		index_type index( const coord_type x_, const coord_type y_ ) const	{
 			return cols()*row( y_ ) + col( x_ );	// For proper exception message.
 		}
