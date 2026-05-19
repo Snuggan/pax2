@@ -220,6 +220,9 @@ namespace pax {
 		DOCTEST_FAST_CHECK_GT( sh_					, std::array{ 0, 1, 2, 3, 3, 5, 0 } );
 		DOCTEST_FAST_CHECK_GE( sh_					, std::array{ 0, 1, 2, 3, 3, 5, 0 } );
 		DOCTEST_FAST_CHECK_EQ( sh_[ 3 ]				, 3 );
+		DOCTEST_FAST_CHECK_EQ( sh_.inside( sh_.begin() ), true );
+		DOCTEST_FAST_CHECK_EQ( sh_.inside( &sh_[ 2 ] ), true );
+		DOCTEST_FAST_CHECK_EQ( sh_.inside( sh_.end() ), false );
 		DOCTEST_FAST_CHECK_EQ( *( sh_.begin() + 1 ) , 1 );
 		DOCTEST_FAST_CHECK_EQ( *( sh_.end()   - 2 ) , 5 );
 		DOCTEST_FAST_CHECK_EQ( *( sh_.cbegin() + 1 ) , 1 );

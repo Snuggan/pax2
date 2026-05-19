@@ -120,9 +120,10 @@ namespace pax {
 		using element_type							  = typename Core::element_type;
 		using value_type							  = std::remove_cv_t< element_type >;
 		using pointer								  = element_type *;
+		using const_pointer							  = element_type const *;
 		using reference								  = element_type &;
 		using iterator								  = pointer;
-		using const_iterator						  = element_type const *;
+		using const_iterator						  = const_pointer;
 		using reverse_iterator						  = std::reverse_iterator< iterator >;
 		using const_reverse_iterator				  = std::reverse_iterator< const_iterator >;
 		using size_type								  = std::size_t;
@@ -189,6 +190,11 @@ namespace pax {
 		[[nodiscard]] constexpr auto operator<=>( const U & u_ )			const noexcept	{
 			return std::lexicographical_compare_three_way(
 								begin(), end(), std::ranges::begin( u_ ), no_nullchar_end( u_ ) );
+		}
+
+		/// Return `true`, iff `ptr_` references an element in this..
+		[[nodiscard]] constexpr bool inside( const const_pointer ptr_ )		const noexcept	{
+			return ( cbegin() <= ptr_ ) && ( ptr_ < cend() );
 		}
 
 		/// Return a dynamic shadow of the first min(n_, size()) elements.
