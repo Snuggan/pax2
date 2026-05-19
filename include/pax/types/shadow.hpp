@@ -1,14 +1,6 @@
 //	Copyright (c) 2014-2026, Peder Axensten, all rights reserved.
 //	Contact: peder ( at ) axensten.se
 
-#pragma once
-
-#include <pax/concepts.hpp>		// traits:: stuff.
-#include <algorithm>			// std::ranges::equal, std::lexicographical_compare_three_way, etc.
-#include <iterator>				// std::reverse_iterator.
-#include <assert.h>				// The classic assert macro.
-#include <stdexcept>			// std::out_of_range.
-
 /// shadow: a string_view- and span-like class.
 /// Similar to span, but...
 /// 1. It removes a number of ub or exceptions by defining logical non-ub return values, i.e. see first.
@@ -24,6 +16,13 @@
 /// either static or dynamic size -- and also a variant usable for template parameter arrays. The main idea is 
 /// to keep member functions basic, unmutable, and with a minimum of ub. The referenced values are mutable unless 
 /// specifically declared const. 
+
+#pragma once
+#include <pax/concepts.hpp>		// traits:: stuff.
+#include <algorithm>			// std::ranges::equal, std::lexicographical_compare_three_way, etc.
+#include <iterator>				// std::reverse_iterator.
+#include <assert.h>				// The classic assert macro.
+#include <stdexcept>			// std::out_of_range.
 
 namespace pax {
 	constexpr std::size_t dynamic_extent = traits::dynamic_extent;
