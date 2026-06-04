@@ -193,7 +193,7 @@ namespace pax {
 		}
 
 		/// Return `true`, iff `ptr_` references an element in this..
-		[[nodiscard]] constexpr bool inside( const const_pointer ptr_ )		const noexcept	{
+		[[nodiscard]] constexpr bool within( const const_pointer ptr_ )		const noexcept	{
 			return ( cbegin() <= ptr_ ) && ( ptr_ < cend() );
 		}
 
