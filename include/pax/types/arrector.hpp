@@ -45,10 +45,10 @@ namespace pax {
 			std::ranges::copy_n( str_, N, m_source );
 		}
 
-		[[nodiscard]] constexpr pointer data()			const noexcept	{	return pointer( m_source );				}
-		[[nodiscard]] static constexpr std::size_t size()	  noexcept	{	return extent;							}
-		[[nodiscard]] constexpr pointer begin()			const noexcept	{	return data();							}
-		[[nodiscard]] constexpr pointer end()			const noexcept	{	return data() + size();					}
+		[[nodiscard]] constexpr pointer data()			const noexcept	{	return pointer( m_source );		}
+		[[nodiscard]] static constexpr std::size_t size()	  noexcept	{	return extent;					}
+		[[nodiscard]] constexpr pointer begin()			const noexcept	{	return data();					}
+		[[nodiscard]] constexpr pointer end()			const noexcept	{	return data() + size();			}
 
 	private:
 		value_type										m_source[ N ];
@@ -77,10 +77,10 @@ namespace pax {
 		[[nodiscard]] constexpr base_arrector( U & src_ ) noexcept 
 			: base_arrector( std::ranges::data( src_ ), std::ranges::size( src_ ) ) {}
 
-		[[nodiscard]] constexpr pointer data()			const noexcept	{	return m_source.data();					}
-		[[nodiscard]] constexpr std::size_t size()		const noexcept	{	return m_source.size();					}
-		[[nodiscard]] constexpr pointer begin()			const noexcept	{	return data();							}
-		[[nodiscard]] constexpr pointer end()			const noexcept	{	return data() + size();					}
+		[[nodiscard]] constexpr pointer data()			const noexcept	{	return m_source.data();			}
+		[[nodiscard]] constexpr std::size_t size()		const noexcept	{	return m_source.size();			}
+		[[nodiscard]] constexpr pointer begin()			const noexcept	{	return data();					}
+		[[nodiscard]] constexpr pointer end()			const noexcept	{	return data() + size();			}
 
 	private:
 		std::vector< value_type >						m_source;
@@ -89,7 +89,8 @@ namespace pax {
 
 
 	template< typename T, std::size_t N = dynamic_extent >
-	struct arrector : public base_shadow< base_arrector< T, N > > {
+	struct arrector : public contiguous_shell< base_arrector, T, N > {
+		using contiguous_shell< base_arrector, T, N >::contiguous_shell;
 	};
 
 	template< typename T >

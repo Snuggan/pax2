@@ -125,7 +125,7 @@ namespace pax {
 			}
 		} {
 			{
-				const shadow	gap{ sh_.begin() - 3u, sh_.begin() - 1u };
+				const shadow	gap( sh_.begin() - 3u, sh_.begin() - 1u );
 				const auto		res{ sh_.split( gap ) };
 				DOCTEST_FAST_CHECK_EQ( res.first.begin(),  sh_.begin() );
 				DOCTEST_FAST_CHECK_EQ( res.first.end(),    sh_.begin() );
@@ -221,7 +221,7 @@ namespace pax {
 		DOCTEST_FAST_CHECK_GE( sh_					, std::array{ 0, 1, 2, 3, 3, 5, 0 } );
 		DOCTEST_FAST_CHECK_EQ( sh_[ 3 ]				, 3 );
 		DOCTEST_FAST_CHECK_EQ( sh_.within( sh_.begin() ), true );
-		DOCTEST_FAST_CHECK_EQ( sh_.within( &sh_[ 2 ] ), true );
+		DOCTEST_FAST_CHECK_EQ( sh_.within( sh_.begin() + 2 ), true );
 		DOCTEST_FAST_CHECK_EQ( sh_.within( sh_.end() ), false );
 		DOCTEST_FAST_CHECK_EQ( *( sh_.begin() + 1 ) , 1 );
 		DOCTEST_FAST_CHECK_EQ( *( sh_.end()   - 2 ) , 5 );
@@ -413,7 +413,7 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( std::format( "{:?s}", shadow( str0 ) ), "\"1\\t2\\n3\\\"4\"" );
 		std::string				str{ "text" };
 		text_test( shadow( str ) );
-		const auto sh = shadow( str );
+		auto sh = shadow( str );
 		sh[ 2 ]	= 'a';
 		DOCTEST_FAST_CHECK_EQ( str[ 2 ], 'a' );
 	}
@@ -422,7 +422,7 @@ namespace pax {
 		static_assert( shadow( nums0 ).last( 2 ) == std::array{ 5, 0 } );
 		std::array							nums{ nums0 };
 		num_test( shadow( nums ) );
-		const auto sh = shadow( nums );
+		auto sh = shadow( nums );
 		sh[ 2 ]	= 99;
 		DOCTEST_FAST_CHECK_EQ( nums[ 2 ], 99 );
 	}

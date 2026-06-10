@@ -5,7 +5,7 @@
 /// Similar to span, but...
 /// 1. It removes a number of ub or exceptions by defining logical non-ub return values, i.e. see first.
 /// 2. It accepts also char-types, thus mimicking string_view.
-/// 3. Modular design where base_shadow can be used with different base classes. 
+/// 3. Modular design where contiguous_shell can be used with different base classes. 
 /// 
 /// Comment on 1.: By *always* returning clearly defined values from first, last, not_first, not_last, mid, find,
 /// split etc., it is cleaner to identify and handle also out of bound values retrurned.
@@ -115,13 +115,16 @@ namespace pax {
 	/// Implements most of the functionality of a class referensing contiguous elements.
 	/// The interface is similar to that of std::string_view and std::span.
 	/// Core must implement data(), size(), and define element_type and extent (possibly = dynamic_extent).
-	template< typename Core >
-	struct base_shadow : public Core {
-		using element_type							  = typename Core::element_type;
+	// template< typename Core >
+	template< template< typename, std::size_t > typename Core, typename X, std::size_t N >
+	struct contiguous_shell : public Core< X, N > {
+		using Base									  = Core< X, N >;
+		using element_type							  = X;
 		using value_type							  = std::remove_cv_t< element_type >;
 		using pointer								  = element_type *;
 		using const_pointer							  = element_type const *;
 		using reference								  = element_type &;
+		using const_reference						  = const element_type &;
 		using iterator								  = pointer;
 		using const_iterator						  = const_pointer;
 		using reverse_iterator						  = std::reverse_iterator< iterator >;
@@ -129,16 +132,16 @@ namespace pax {
 		using size_type								  = std::size_t;
 		using difference_type						  = std::ptrdiff_t;
 
-		template< size_type N >
-		using shadowN								  = base_shadow< range< element_type, N > >;
+		template< size_type N0 >
+		using shadowN								  = pax::contiguous_shell< range, element_type, N0 >;
 		using shadow								  = shadowN< dynamic_extent >;
 		using pair									  = std::pair< shadow, shadow >;
 
-		static constexpr size_type						extent{ Core::extent };
+		static constexpr size_type						extent{ N };
 		static constexpr bool							is_static{ extent != dynamic_extent };
 		static constexpr bool							is_string{ traits::character< value_type > };
 
-		using Core::Core, Core::data, Core::size;
+		using Base::Base, Base::data, Base::size;
 
 		/// True iff the pointer is not the null pointer. 
 		[[nodiscard]] constexpr bool valid()			const noexcept	{	return  data() != nullptr;				}
@@ -162,13 +165,19 @@ namespace pax {
 		[[nodiscard]] constexpr auto crend()			const noexcept	{	return std::reverse_iterator( cbegin() );}
 
 		/// Return a reference to the first element. Does operator[]( 0u ).
-		[[nodiscard]] constexpr reference front()		const noexcept	{	return operator[]( 0u );				}
+		[[nodiscard]] constexpr value_type front()		const noexcept	{	return operator[]( 0u );				}
+		[[nodiscard]] constexpr reference front()			  noexcept	{	return operator[]( 0u );				}
 
 		/// Return a reference to the last element. Does operator[]( size() - 1 ).
-		[[nodiscard]] constexpr reference back()		const noexcept	{	return operator[]( size() - 1 );		}
+		[[nodiscard]] constexpr value_type back()		const noexcept	{	return operator[]( size() - 1 );		}
+		[[nodiscard]] constexpr reference back()			  noexcept	{	return operator[]( size() - 1 );		}
 
 		/// Return the i_:th element. Does assert( i_ < size() ).
-		[[nodiscard]] constexpr reference operator[]( const size_type i_ ) const noexcept {
+		[[nodiscard]] constexpr value_type operator[]( const size_type i_ ) const noexcept {
+			assert( i_ < size() && "Index out of range." );
+			return data()[ i_ ];
+		}
+		[[nodiscard]] constexpr reference operator[]( const size_type i_ ) noexcept {
 			assert( i_ < size() && "Index out of range." );
 			return data()[ i_ ];
 		}
@@ -204,10 +213,10 @@ namespace pax {
 
 		/// Return a static shadow of the first min(N, extent) elements.
 		/// Does assert( N <= size() && !is_static ).
-		template< std::size_t N >		requires( N != dynamic_extent )
+		template< std::size_t N0 >		requires( N0 != dynamic_extent )
 		[[nodiscard]] constexpr auto first() 								const noexcept	{
-			if constexpr( !is_static )	assert( N <= size() && "first< N >() requires N <= size()." );
-			return shadowN< std::min( N, extent ) >( data() );
+			if constexpr( !is_static )	assert( N0 <= size() && "first< N >() requires N <= size()." );
+			return shadowN< std::min( N0, extent ) >( data() );
 		}
 
 		/// Return a dynamic shadow of the last size() - min(n_, size()) elements.
@@ -218,9 +227,9 @@ namespace pax {
 
 		/// Return a static shadow of the last size() - min(N, extent) elements.
 		/// Does assert( N <= size() && !is_static ).
-		template< std::size_t N >		requires( is_static )
+		template< std::size_t N0 >		requires( is_static )
 		[[nodiscard]] constexpr auto not_first() 							const noexcept	{
-			return last< extent - std::min( N, extent ) >();
+			return last< extent - std::min( N0, extent ) >();
 		}
 
 		/// Return a dynamic shadow of the last min(n_, size()) elements.
@@ -231,10 +240,10 @@ namespace pax {
 
 		/// Return a static shadow of the first min(N, extent) elements.
 		/// Does assert( N <= size() && !is_static ).
-		template< std::size_t N >		requires( N != dynamic_extent )
+		template< std::size_t N0 >		requires( N0 != dynamic_extent )
 		[[nodiscard]] constexpr auto last() 								const noexcept	{
-			if constexpr( !is_static )	assert( N <= size() && "last< N >() requires N <= size()." );
-			return shadowN< std::min( N, extent ) >{ data() + size() - std::min( N, size() ) };
+			if constexpr( !is_static )	assert( N0 <= size() && "last< N0 >() requires N0 <= size()." );
+			return shadowN< std::min( N0, extent ) >{ data() + size() - std::min( N0, size() ) };
 		}
 
 		/// Return a dynamic shadow of the first size() - min(n_, size()) elements.
@@ -244,9 +253,9 @@ namespace pax {
 
 		/// Return a static shadow of the first size() - min(N, extent) elements.
 		/// Does assert( N <= size() && !is_static ).
-		template< std::size_t N >		requires( traits::has_extent< base_shadow > )
+		template< std::size_t N0 >		requires( traits::has_extent< contiguous_shell > )
 		[[nodiscard]] constexpr auto not_last() 							const noexcept 	{
-			return first< extent - std::min( N, size() ) >();
+			return first< extent - std::min( N0, size() ) >();
 		}
 
 		/// Return a dynamic shadow of the n_ elements starting with offs_, but restricted to the bounds of this.
@@ -259,12 +268,12 @@ namespace pax {
 
 		/// Return a static shadow of the N elements starting with offs_, but restricted to the bounds of this.
 		/// A negative offs_ is counted from the back. Does assert( offs_ + N <= size() ).
-		template< std::size_t N >		requires( N != dynamic_extent && N <= extent )
+		template< std::size_t N0 >		requires( N0 != dynamic_extent && N0 <= extent )
 		[[nodiscard]] constexpr auto mid( difference_type offs_ )			const noexcept	{
 			offs_ =	( offs_ >= 0 )	?		   std::min( size_type(  offs_ ), size() )
 									: size() - std::min( size_type( -offs_ ), size() );
-			assert( offs_ + N <= size() && "mid< N >() requires offs_ + N <= size()." );
-			return shadowN< N >{ data() + offs_ };
+			assert( offs_ + N0 <= size() && "mid< N0 >() requires offs_ + N0 <= size()." );
+			return shadowN< N0 >{ data() + offs_ };
 		}
 
 		/// Return true iff u_ equals the first elements of this.
@@ -329,11 +338,11 @@ namespace pax {
 		}
 
 		template< std::size_t I >						requires( is_static && ( I < extent ) )
-		[[nodiscard]] friend element_type & get( const base_shadow & sh_ )	noexcept {	return *( sh_.data() + I );	}
+		[[nodiscard]] friend element_type & get( const contiguous_shell & sh_ )	noexcept {	return *( sh_.data() + I );	}
 
 		/// Stream the elements to out_.
 		template< typename Out >
-		friend Out & operator<<( Out & out_, const base_shadow & sh_ )	{
+		friend Out & operator<<( Out & out_, const contiguous_shell & sh_ )	{
 			if constexpr( is_string )	out_.write( sh_.data(), sh_.size() );
 			else if( sh_.empty() )		out_ << "[]";
 			else {
@@ -345,23 +354,29 @@ namespace pax {
 		}
  	};
 
+	// template< typename T, std::size_t N = dynamic_extent >
+	// using shadow = contiguous_shell< range< T, N > >;
+
 	template< typename T, std::size_t N = dynamic_extent >
-	using shadow = base_shadow< range< T, N > >;
+	struct shadow : public contiguous_shell< range, T, N > {
+		using contiguous_shell< range, T, N >::contiguous_shell;
+	};
 
 	template< typename T >
-	base_shadow( T *, std::size_t )	 -> base_shadow< range< T, dynamic_extent > >;
+	shadow( T *, std::size_t )	 -> shadow< T, dynamic_extent >;
 
 	template< typename T >
-	base_shadow( T *, T * )			 -> base_shadow< range< T, dynamic_extent > >;
+	shadow( T *, T * )			 -> shadow< T, dynamic_extent >;
 
 	template< typename T, std::size_t N >
-	base_shadow( T( & )[ N ] )		 -> base_shadow< range< T, N > >;
+	shadow( T( & )[ N ] )		 -> shadow< T, N >;
 
 	template< traits::character T, std::size_t N >
-	base_shadow( T const( & )[ N ] ) -> base_shadow< range< T const, N-(N>0) > >;
+	shadow( T const( & )[ N ] )  -> shadow< T const, N-(N>0) >;
 
 	template< std::ranges::contiguous_range Cont >
-	base_shadow( Cont & )			 -> base_shadow< range< traits::element_type_t< Cont >, traits::extent_v< Cont > > >;
+	shadow( Cont & )
+		-> shadow< traits::element_type_t< Cont >, traits::extent_v< Cont > >;
 
 	/// Return a shadow instance with const (unmutable) elements.
 	template< typename ...Args >
@@ -403,7 +418,7 @@ namespace pax {
 	};
 
 	template< typename T, std::size_t N >
-	using litteral = base_shadow< core_litteral< T, N > >;
+	using litteral = contiguous_shell< core_litteral, T, N >;
 
 	template< typename T, std::size_t N >
 	[[nodiscard]] consteval litteral< T, N > litt( T ( & src_ )[ N ] )			{	return { src_ };				}
