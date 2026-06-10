@@ -116,7 +116,11 @@ namespace pax {
 	/// The interface is similar to that of std::string_view and std::span.
 	/// Core must implement data(), size(), and define element_type and extent (possibly = dynamic_extent).
 	// template< typename Core >
-	template< template< typename, std::size_t > typename Core, typename X, std::size_t N >
+	template< 
+		template< typename, std::size_t > typename Core, 
+		typename X, 
+		std::size_t N = dynamic_extent 
+	>
 	struct contiguous_shell : public Core< X, N > {
 		using Base									  = Core< X, N >;
 		using element_type							  = X;
