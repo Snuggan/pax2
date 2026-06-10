@@ -86,4 +86,25 @@ namespace pax {
 		std::vector< value_type >						m_source;
 	};
 
+
+
+	template< typename T, std::size_t N = dynamic_extent >
+	struct arrector : public base_shadow< base_arrector< T, N > > {
+	};
+
+	template< typename T >
+	arrector( T *, std::size_t )	 -> arrector< T, dynamic_extent >;
+
+	template< typename T >
+	arrector( T *, T * )			 -> arrector< T, dynamic_extent >;
+
+	template< typename T, std::size_t N >
+	arrector( T( & )[ N ] )			 -> arrector< T, N >;
+
+	template< traits::character T, std::size_t N >
+	arrector( T const( & )[ N ] )	 -> arrector< T const, N-(N>0) >;
+
+	template< std::ranges::contiguous_range Cont >
+	arrector( Cont & )				 -> arrector< traits::element_type_t< Cont >, traits::extent_v< Cont > >;
+
 }	// namespace pax
