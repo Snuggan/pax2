@@ -59,10 +59,11 @@ namespace pax {
 		[[nodiscard]] constexpr shadow_core( U & src_ ) noexcept : m_source{ std::ranges::data( src_ ) } {}
 
 		constexpr shadow_core & operator=( const shadow_core & ) noexcept = default;
-		[[nodiscard]] constexpr pointer data()			const noexcept	{	return m_source;						}
+		[[nodiscard]] constexpr const_pointer data()	const noexcept	{	return m_source;						}
+		[[nodiscard]] constexpr pointer data()				  noexcept	{	return m_source;						}
 		[[nodiscard]] static constexpr std::size_t size()	  noexcept	{	return extent;							}
-		[[nodiscard]] constexpr pointer begin()			const noexcept	{	return data();							}
-		[[nodiscard]] constexpr pointer end()			const noexcept	{	return data() + size();					}
+		[[nodiscard]] constexpr const_pointer begin()	const noexcept	{	return data();							}
+		[[nodiscard]] constexpr const_pointer end()		const noexcept	{	return data() + size();					}
 
 	private:
 		pointer											m_source{ nullptr };
@@ -88,10 +89,11 @@ namespace pax {
 			: m_source( std::ranges::data( src_ ) ), m_size{ std::ranges::size( src_ ) } {}
 
 		constexpr shadow_core & operator=( const shadow_core & ) noexcept = default;
-		[[nodiscard]] constexpr pointer data()			const noexcept	{	return m_source;						}
+		[[nodiscard]] constexpr const_pointer data()	const noexcept	{	return m_source;						}
+		[[nodiscard]] constexpr pointer data()				  noexcept	{	return m_source;						}
 		[[nodiscard]] constexpr std::size_t size()		const noexcept	{	return m_size;							}
-		[[nodiscard]] constexpr pointer begin()			const noexcept	{	return data();							}
-		[[nodiscard]] constexpr pointer end()			const noexcept	{	return data() + size();					}
+		[[nodiscard]] constexpr const_pointer begin()	const noexcept	{	return data();							}
+		[[nodiscard]] constexpr const_pointer end()		const noexcept	{	return data() + size();					}
 
 	private:
 		pointer											m_source{ nullptr };
@@ -173,7 +175,7 @@ namespace pax {
 		[[nodiscard]] constexpr reference back()			  noexcept	{	return operator[]( size() - 1 );		}
 
 		/// Return the i_:th element. Does assert( i_ < size() ).
-		[[nodiscard]] constexpr value_type operator[]( const size_type i_ ) const noexcept {
+		[[nodiscard]] constexpr const_reference operator[]( const size_type i_ ) const noexcept {
 			assert( i_ < size() && "Index out of range." );
 			return data()[ i_ ];
 		}
