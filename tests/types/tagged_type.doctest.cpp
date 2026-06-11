@@ -30,8 +30,8 @@ namespace pax {
 		static_assert( Stat< 2 >   < Stat< 3 > );
 		static_assert( Stat< 2.5 > + Stat< 4 > == 6.5 );
 
-		DOCTEST_FAST_CHECK_EQ( "Hej", Stat< litt( "Hej" ) >() );
-		DOCTEST_FAST_CHECK_EQ( "Hej", Stat< litt( "Hej" ), struct litt >() );
+		DOCTEST_FAST_CHECK_EQ( "Hej", Stat< litteral( "Hej" ) >() );
+		DOCTEST_FAST_CHECK_EQ( "Hej", Stat< litteral( "Hej" ), struct litt >() );
 	
 		DOCTEST_FAST_CHECK_EQ( test( Stat< 1 >			),	1 );	// Not an unsigned value.
 		DOCTEST_FAST_CHECK_EQ( test( Statique2< 1u >{}	),	3 );	// Not the general tag.

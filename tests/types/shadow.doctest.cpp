@@ -3,6 +3,7 @@
 
 
 #include <pax/types/shadow.hpp>
+#include <pax/types/arrector.hpp>
 #include <pax/std/string_view.hpp>
 #include <pax/doctest.hpp>
 
@@ -435,36 +436,86 @@ namespace pax {
 
 		num_test( shadow( nums ) );
 	}
-	DOCTEST_TEST_CASE( "const_shadow" ) {
+	DOCTEST_TEST_CASE( "arrector text split find_linebreak" ) {
+		static_assert( arrector( "text" ).last( 2 ) == "xt" );
+		DOCTEST_FAST_CHECK_EQ( std::format( "{:?s}", arrector( "1\t2\n3\"4" ) ), "\"1\\t2\\n3\\\"4\"" );
+		text_test( arrector( "text" ) );
+		{
+			const auto sh	  = arrector( "aaa\r" );
+			auto res		  = sh.find_linebreak();			
+			DOCTEST_ASCII_CHECK_EQ( res, "\r" );
+		} {
+			const auto sh	  = arrector( "aaa\n" );
+			auto res		  = sh.find_linebreak();			
+			DOCTEST_ASCII_CHECK_EQ( res, "\n" );
+		} {
+			const auto sh	  = arrector( "first\nsecond\rthird\n\rfourth\r\nfifth\n\nsixth" );
+			auto res		  = sh.split( sh.find_linebreak() );
+			DOCTEST_FAST_CHECK_EQ( res.first, "first" );
+			res				  = res.second.split( res.second.find_linebreak() );
+			DOCTEST_FAST_CHECK_EQ( res.first, "second" );
+			res				  = res.second.split( res.second.find_linebreak() );
+			DOCTEST_ASCII_CHECK_EQ( res.first, "third" );
+			res				  = res.second.split( res.second.find_linebreak() );
+			DOCTEST_FAST_CHECK_EQ( res.first, "fourth" );
+			res				  = res.second.split( res.second.find_linebreak() );
+			DOCTEST_FAST_CHECK_EQ( res.first, "fifth" );
+			res				  = res.second.split( res.second.find_linebreak() );
+			DOCTEST_FAST_CHECK_EQ( res.first, "" );
+			res				  = res.second.split( res.second.find_linebreak() );
+			DOCTEST_FAST_CHECK_EQ( res.first, "sixth" );
+			DOCTEST_FAST_CHECK_UNARY( res.second.empty() );
+			res				  = res.second.split( res.second.find_linebreak() );
+			DOCTEST_FAST_CHECK_UNARY( res.first.empty() );
+			DOCTEST_FAST_CHECK_UNARY( res.second.empty() );
+			DOCTEST_FAST_CHECK_UNARY( !res.first );
+			DOCTEST_FAST_CHECK_UNARY( !res.second );
+		}
+	}
+	DOCTEST_TEST_CASE( "arrector text dynamic size" ) {
+		const std::string		str0{ "1\t2\n3\"4" };
+		DOCTEST_FAST_CHECK_EQ( std::format( "{:?s}", arrector( str0 ) ), "\"1\\t2\\n3\\\"4\"" );
+		std::string				str{ "text" };
+		text_test( arrector( str ) );
+	}
+	DOCTEST_TEST_CASE( "arrector numbers static size" ) {
+		static constexpr std::array			nums0{ 0, 1, 2, 3, 4, 5, 0 };
+		static_assert( arrector( nums0 ).last( 2 ) == std::array{ 5, 0 } );
+		std::array							nums{ nums0 };
+		num_test( arrector( nums ) );
+	}
+	DOCTEST_TEST_CASE( "arrector numbers dynamic size" ) {
 		static constexpr std::array			nums0{ 0, 1, 2, 3, 4, 5, 0 };
 		std::vector< int >					nums{ nums0.begin(), nums0.end() };
 
-		static_assert(  is_value_const < decltype( const_shadow( nums ) ) > );
-		static_assert(  std::is_const_v< std::remove_reference_t< decltype( const_shadow( nums ).front() ) > > );
+		static_assert( !is_value_const < decltype( arrector( nums ) ) > );
+		static_assert( !std::is_const_v< std::remove_reference_t< decltype( arrector( nums ).front() ) > > );
 
-		num_test( const_shadow( nums ) );
+		num_test( arrector( nums ) );
+	}
+	DOCTEST_TEST_CASE( "const_shadow" ) {
+		static constexpr std::array			nums0{ 0, 1, 2, 3, 4, 5, 0 };
+		std::vector< int >					nums{ nums0.begin(), nums0.end() };
+		const shadow						consttest( nums );
+
+		num_test( consttest );
 	}
 	DOCTEST_TEST_CASE( "litteral vector" ) {
 		{
-			constexpr auto		test = litt( "abc" );
+			constexpr auto		test = litteral( "abc" );
 			static_assert( test.is_static );
 			static_assert( test.size() == 3 );
 			static_assert( test[ 1 ]   == 'b' );
 		} {
-			constexpr auto		test = litt( 1, 3, 2 );
-			static_assert( test.is_static );
-			static_assert( test.size() == 3 );
-			static_assert( test[ 1 ]   == 3 );
-		} {
-			constexpr auto		test = litteral< int, 3 >( 1, 3, 2 );
+			constexpr auto		test = litteral( 1, 3, 2 );
 			static_assert( test.is_static );
 			static_assert( test.size() == 3 );
 			static_assert( test[ 1 ]   == 3 );
 		}
 	}
 	DOCTEST_TEST_CASE( "litteral text" ) {
-		DOCTEST_ASCII_CHECK_EQ( litt( "text" ).last( 2 ), "xt" );
+		DOCTEST_ASCII_CHECK_EQ( litteral( "text" ).last( 2 ), "xt" );
 		DOCTEST_ASCII_CHECK_EQ( std::format( "{:?s}", shadow( "1\t2\n3\"4" ) ), "\"1\\t2\\n3\\\"4\"" );
-		text_test( litt( "text" ) );
+		text_test( litteral( "text" ) );
 	}
 }
