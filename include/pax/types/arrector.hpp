@@ -24,12 +24,12 @@ namespace pax {
 
 		[[nodiscard]] constexpr arrector_core( T( & ptr_ )[ N ] ) noexcept {	copy( ptr_ );		}
 
-		[[nodiscard]] constexpr arrector_core( const pointer ptr_, const std::size_t sz_ ) noexcept {
+		[[nodiscard]] constexpr arrector_core( const const_pointer ptr_, const std::size_t sz_ ) noexcept {
 			assert( sz_ == N );
-			copy( ptr_ );
+			if( ptr_ )		copy( ptr_ );
 		}
 
-		[[nodiscard]] constexpr arrector_core( const pointer begin_, const pointer end_ ) noexcept 
+		[[nodiscard]] constexpr arrector_core( const const_pointer begin_, const const_pointer end_ ) noexcept 
 			: arrector_core( begin_, std::size_t( end_ - begin_ ) ) {}
 
 		template< std::ranges::contiguous_range U >		requires( N == traits::extent_v< U > )
@@ -42,7 +42,8 @@ namespace pax {
 			copy( str_ );
 		}
 
-		template< typename... Args >					requires( N == sizeof...( Args ) ) 
+		template< typename... Args >
+		requires( N == sizeof...( Args ) && std::is_nothrow_convertible_v< std::common_type_t< Args... >, T > ) 
 		[[nodiscard]] constexpr arrector_core( Args && ...args_ ) noexcept
 			: m_source{ value_type( std::forward< Args >( args_ ) )... } {}
 
@@ -72,10 +73,12 @@ namespace pax {
 		constexpr arrector_core & operator=( const arrector_core & ) noexcept = default;
 		constexpr arrector_core & operator=( arrector_core && ) noexcept = default;
 
-		[[nodiscard]] constexpr arrector_core( const pointer src_, const std::size_t sz ) noexcept 
-			: m_source( src_, src_ + ( src_ ? sz : 0u ) ) {}
+		[[nodiscard]] constexpr arrector_core( const const_pointer src_, const std::size_t sz_ ) noexcept {
+			m_source.resize( sz_ );
+			if( src_ )		m_source.assign( src_, src_ + sz_ );
+		}
 
-		[[nodiscard]] constexpr arrector_core( const pointer begin_, const pointer end_ ) noexcept 
+		[[nodiscard]] constexpr arrector_core( const const_pointer begin_, const const_pointer end_ ) noexcept 
 			: m_source( begin_, end_ ) {}
 
 		template< std::ranges::contiguous_range U >
@@ -112,5 +115,8 @@ namespace pax {
 
 	template< std::ranges::contiguous_range Cont >
 	arrector( Cont & )				 -> arrector< traits::element_type_t< Cont >, traits::extent_v< Cont > >;
+
+	template< typename... Args >		requires( ( ... && !std::is_pointer_v< Args > ) )
+	arrector( Args && ...args_ )	 -> arrector< std::remove_cv_t< std::common_type_t< Args... > >, sizeof ...( Args ) >;
 
 }	// namespace pax

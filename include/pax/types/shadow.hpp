@@ -384,6 +384,9 @@ namespace pax {
 	template< std::ranges::contiguous_range Cont >
 	shadow( Cont & )				 -> shadow< traits::element_type_t< Cont >, traits::extent_v< Cont > >;
 
+	template< typename... Args >		requires( ( ... && !std::is_pointer_v< Args > ) )
+	shadow( Args && ...args_ )	 	 -> shadow< std::remove_cv_t< std::common_type_t< Args... > >, sizeof ...( Args ) >;
+
 
 
 	/// The core for a string_view-like type that can be used as a template argument.
