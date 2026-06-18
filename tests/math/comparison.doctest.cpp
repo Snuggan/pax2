@@ -56,7 +56,6 @@ namespace pax::doctester {
 			static_assert( !any( 0u, 0>3, false, '\0' ) );
 		}
 	}
-
 	DOCTEST_TEST_CASE( "comparison is_" ) {
 		{ // is_finite
 			static_assert(  is_finite( -1u  ) );
@@ -180,7 +179,6 @@ namespace pax::doctester {
 			static_assert( !is_non_positive(  NaN ) );
 		}
 	}
-
 	DOCTEST_TEST_CASE( "binary comparison" ) {
 		{	// eq
 			static_assert(  eq(  0,    0   ) );
@@ -395,7 +393,6 @@ namespace pax::doctester {
 			static_assert( !gt( -4.0, 0,  4u  ) );
 		}
 	}
-
 	DOCTEST_TEST_CASE( "comparison abs" ) {
 		{	// abs
 			static_assert( abs( -Inf ) ==  Inf 	);
@@ -431,7 +428,6 @@ namespace pax::doctester {
 			DOCTEST_FAST_CHECK_UNARY( is_nan( abs_diff( 1.0f,  NaN ) ) );
 		}
 	}
-
 	DOCTEST_TEST_CASE( "comparison in_range" ) {
 		static_assert( !in_range( 0, 0 ) );
 		static_assert(  in_range( 0, 1 ) );
@@ -455,7 +451,6 @@ namespace pax::doctester {
 		static_assert( !in_range< signed short,   unsigned  long >() );
 		static_assert(  in_range< unsigned short,   signed  long >() );
 	}
-
 	DOCTEST_TEST_CASE( "comparison min, max, mid" ) {
 		{	// min
 			static_assert( min( 7.5,       1, 2, 5 ) ==  1 );
@@ -546,7 +541,6 @@ namespace pax::doctester {
 			static_assert( is_nan( Minmax< double >( NaN, 0.5, 4,   2, 1   ).max() ) );
 		}
 	}
-
 	DOCTEST_TEST_CASE( "comparison about_zero" ) {
 		{	// about_zero
 			static_assert(  about_zero( 0 ) );
@@ -562,6 +556,13 @@ namespace pax::doctester {
 			static_assert(  about_zero< 2 >( 1e-3 ) );
 			static_assert( !about_zero< 2 >( 1e-2 ) );
 			static_assert( !about_zero< 2 >( NaN  ) );
+		}
+		{	// about_zero array
+			constexpr double	arr0[ 3 ] = { 0.0, 0.0, 1e-14 };
+			constexpr double	arr1[ 3 ] = { 0.0, 0.0, 1e-13 };
+
+			static_assert(  about_zero( arr0 ) );
+			static_assert( !about_zero( arr1 ) );
 		}
 		{	// similar integers
 			static_assert(  similar< 2 >(  32u,  32  ) );
@@ -665,6 +666,14 @@ namespace pax::doctester {
 			static_assert           ( !similar< 2 >(  NaN,  0.0 ) );
 			static_assert           ( !similar< 2 >(  0.0,  NaN ) );
 			DOCTEST_FAST_CHECK_UNARY( !similar< 2 >(  NaN,  NaN ) );
+		}
+		{	// similar array
+			enum{ pass = 5, nopass };
+			constexpr double	arr0[ 3 ] = { 0.0, 1.0, 123456.0 };
+			constexpr double	arr1[ 3 ] = { 0.0, 1.0, 123457.0 };
+
+			static_assert(  similar<   pass >(  arr0, arr1 ) );
+			static_assert( !similar< nopass >(  arr0, arr1 ) );
 		}
 	}
 	

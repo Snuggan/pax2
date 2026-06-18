@@ -4,9 +4,10 @@
 
 #pragma once
 
+#include <pax/concepts.hpp>		// traits:: stuff.
 #include <cmath>
-#include <utility>		// std::forward
-#include <type_traits>	// std::is_invocable_r_v
+#include <utility>				// std::forward
+#include <type_traits>			// std::is_invocable_r_v, std::is_arithmetic_v
 
 
 // For unit tests
@@ -380,13 +381,27 @@ namespace pax {
 		@{
 	**/
 	template< unsigned Digits, typename T >
+	requires( std::is_arithmetic_v< T > )
 	constexpr bool about_zero( const T v ) 				noexcept	{
 		return Similar< Digits >::comp( v );
 	}
 
 	template< typename T >
+	requires( std::is_arithmetic_v< T > )
 	constexpr bool about_zero( const T v ) 				noexcept	{
 		return about_zero< default_digits< T > >( v );
+	}
+
+ 	template< unsigned Digits, std::ranges::contiguous_range U >
+	constexpr bool about_zero( const U & u_ ) 			noexcept	{
+		for( const auto x_ : u_ ) 
+			if( !about_zero< Digits >( x_ ) )			return false;
+		return true;
+	}
+
+ 	template< std::ranges::contiguous_range U >
+	constexpr bool about_zero( const U & u_ ) noexcept	{
+		return about_zero< default_digits< traits::value_type_t< U > > >( u_ );
 	}
 	// @}
 
@@ -403,13 +418,30 @@ namespace pax {
 		@{
 	**/
 	template< unsigned Digits, typename T0, typename T1 >
-	constexpr bool similar( const T0 t0_, const T1 t1_ ) noexcept	{
+	requires( std::is_arithmetic_v< T0 > && std::is_arithmetic_v< T1 > )
+	constexpr bool similar( const T0 t0_, const T1 t1_ ) noexcept {
 		return Similar< Digits >::comp( t0_, t1_ );
 	}
 
 	template< typename T0, typename T1 >
-	constexpr bool similar( const T0 t0_, const T1 t1_ ) noexcept	{
+	requires( std::is_arithmetic_v< T0 > && std::is_arithmetic_v< T1 > )
+	constexpr bool similar( const T0 t0_, const T1 t1_ ) noexcept {
 		return similar< default_digits< T0, T1 > >( t0_, t1_ );
+	}
+
+ 	template< unsigned Digits, std::ranges::contiguous_range U0, std::ranges::contiguous_range U1 >
+	constexpr bool similar( const U0 & u0_, const U1 & u1_ ) noexcept {
+		using std::begin, std::end;
+		if( end( u0_ ) - begin( u0_ ) != end( u1_ ) - begin( u1_ ) )	return false;
+		auto itr1 = begin( u1_ );
+		for( auto itr0 = begin( u0_ ); itr0 < end( u0_ ); ++itr0, ++itr1 ) 
+			if( !similar< Digits >( *itr0, *itr1 ) )					return false;
+		return true;
+	}
+
+ 	template< std::ranges::contiguous_range U0, std::ranges::contiguous_range U1 >
+	constexpr bool similar( const U0 & u0_, const U1 & u1_ ) noexcept	{
+		return similar< default_digits< traits::value_type_t< U0 >, traits::value_type_t< U1 > > >( u0_, u1_ );
 	}
 	// @}
 
