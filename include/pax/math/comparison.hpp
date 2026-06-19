@@ -444,26 +444,4 @@ namespace pax {
 		return similar< default_digits< traits::value_type_t< U0 >, traits::value_type_t< U1 > > >( u0_, u1_ );
 	}
 	// @}
-
-
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////////
-	// For unit tests:
-	// The stuff below, PAX_FAST_CHECK_ABOUT_ZERO, and PAX_FAST_CHECK_SIMILAR.
-	///////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	template< unsigned Digits, typename Out, typename T0 > 
-	constexpr bool about_zero_test( Out & out_, const T0 & t0_ ) {
-		const bool result = about_zero< Digits >( t0_ );
-		if( !result ) out_ << "FAILED: similar< " << Digits << " >( " << t0_ << " )\n";
-		return result;
-	}
-
-	template< unsigned Digits, typename Out, typename T0, typename T1 > 
-	constexpr bool similar_test( Out & out_, const T0 & t0_, const T1 & t1_ ) {
-		const bool result = similar< Digits >( t0_, t1_ );
-		if( !result ) out_ << "FAILED: similar< " << Digits << " >( " << t0_ << ", " << t1_ << " )\n";
-		return result;
-	}
-
-}		// namespace pax
+}	// namespace pax

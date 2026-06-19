@@ -9,6 +9,21 @@
 namespace pax::doctester { 
 	constexpr const float		Inf		= std::numeric_limits< float  >::infinity();
 	constexpr const double		NaN		= std::numeric_limits< double >::quiet_NaN();
+
+	template< unsigned Digits, typename Out, typename T0 > 
+	constexpr bool about_zero_test( Out & out_, const T0 & t0_ ) {
+		const bool result = about_zero< Digits >( t0_ );
+		if( !result ) out_ << "FAILED: similar< " << Digits << " >( " << t0_ << " )\n";
+		return result;
+	}
+
+	template< unsigned Digits, typename Out, typename T0, typename T1 > 
+	constexpr bool similar_test( Out & out_, const T0 & t0_, const T1 & t1_ ) {
+		const bool result = similar< Digits >( t0_, t1_ );
+		if( !result ) out_ << "FAILED: similar< " << Digits << " >( " << t0_ << ", " << t1_ << " )\n";
+		return result;
+	}
+
 	
 	DOCTEST_TEST_CASE( "comparison chained" ) {
 		{	// none
