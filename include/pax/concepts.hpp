@@ -20,6 +20,13 @@ namespace pax::traits {
 	/// The value that represents a dynamic size, where other values would be the static size.
 	constexpr std::size_t dynamic_extent	= -1;
 
+	/// Returns N if no NN is dynamic_extent and returns dynamic_extent otherwise.
+	template< std::size_t N, std::size_t ...NN >
+	constexpr std::size_t newN = ( true && ... && ( NN != dynamic_extent ) ) ? N : dynamic_extent;
+	static_assert( newN< 5 > == 5 );
+	static_assert( newN< 5, 6, 7, 8 > == 5 );
+	static_assert( newN< 5, 6, 7, dynamic_extent > == dynamic_extent );
+
 	/// A concept to match T*, T[], T( & )[], T[ N ], or T( & )[ N ].
 	template< typename T >
 	concept array_like						= std::is_pointer_v< clean_t< T > > || std::rank_v< clean_t< T > > == 1;
