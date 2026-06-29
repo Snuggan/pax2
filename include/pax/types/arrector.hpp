@@ -88,6 +88,7 @@ namespace pax {
 		[[nodiscard]] constexpr const_pointer data()	const noexcept	{	return m_source.data();		}
 		[[nodiscard]] constexpr pointer data()				  noexcept	{	return m_source.data();		}
 		[[nodiscard]] constexpr std::size_t size()		const noexcept	{	return m_source.size();		}
+		[[nodiscard]] constexpr void resize( std::size_t i_ ) noexcept	{	m_source.resize( i_ );		}
 
 	private:
 		std::vector< value_type >						m_source;

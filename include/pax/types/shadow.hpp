@@ -185,7 +185,11 @@ namespace pax {
 		}
 
 		/// Return the i_:th element. Throws a std::out_of_range if i_ >= size().
-		[[nodiscard]] constexpr reference at( const size_type i_ ) const {
+		[[nodiscard]] constexpr const_reference at( const size_type i_ ) const {
+			if( i_ >= size() )		throw std::out_of_range( "Index out of range." );
+			return data()[ i_ ];
+		}
+		[[nodiscard]] constexpr reference at( const size_type i_ ) {
 			if( i_ >= size() )		throw std::out_of_range( "Index out of range." );
 			return data()[ i_ ];
 		}
