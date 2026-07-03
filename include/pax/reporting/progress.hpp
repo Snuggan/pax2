@@ -41,6 +41,10 @@ namespace pax {
 			typename clock::time_point	m_start;
 		};
 
+		template< typename Rep, typename Ratio >
+		static constexpr double seconds_to_double( const std::chrono::duration< Rep, Ratio > duration_ ) noexcept {
+			return std::chrono::duration< double >( duration_ ).count();
+		}
 
 		std::size_t						m_end_count{}, m_now_count{};
 		Timer							m_clock;

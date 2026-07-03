@@ -12,16 +12,6 @@
 
 namespace pax {
 
-	template< typename Rep, typename Ratio >
-	constexpr double seconds_to_double( const std::chrono::duration< Rep, Ratio > duration_ ) noexcept {
-		if constexpr( Ratio::num == 1 ) {
-			if constexpr( Ratio::den == 1 )			return double( duration_.count() );
-			else									return double( duration_.count() )/Ratio::den;
-		} else if constexpr( Ratio::den == 1 )		return double( duration_.count() )*Ratio::num;
-		else										return double( duration_.count() )*Ratio::num/Ratio::den;
-	}
-	
-
 	inline std::string seconds_to_string( const double secs_, int digits_ = 3 ) {
 		std::string					result{ "~zero time" };
 		if( digits_ == 0 )			digits_ =  3;
