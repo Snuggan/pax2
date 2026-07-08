@@ -80,7 +80,7 @@ mv -f pax.regression*.tar.gz ${SLU_DIR}/tmp-post/pax.regression.tar.gz
 
 
 # Build the docker image (add argument "--progress plain" for more info):
-COMMAND="docker build --progress plain -t axensten/slu:${PAX_TAG} -t axensten/slu:latest -t axensten/slu:stable ${SLU_DIR}"
+COMMAND="docker build --platform linux/amd64 --progress plain -t axensten/slu:${PAX_TAG} -t axensten/slu:latest -t axensten/slu:stable ${SLU_DIR}"
 echo ${COMMAND}
 ${COMMAND}
 

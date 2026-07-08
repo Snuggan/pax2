@@ -11,7 +11,7 @@ HERE=$(cd "$(dirname "$0")" && pwd)    # absolutized and normalized path to this
 #  -t, --tty			Allocate a pseudo-TTY
 #      --rm				Automatically remove the container when it exits
 
-CMD="docker run --interactive --tty --rm"
+CMD="docker run --platform linux/amd64 --interactive --tty --rm"
 CMD+=" --mount type=bind,target=/pax,source=${HERE}/.."
 CMD+=" axensten/slu bash"
 
