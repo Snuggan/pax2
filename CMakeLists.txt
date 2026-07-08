@@ -13,6 +13,8 @@ if( ${CMAKE_CXX_COMPILER_ID} MATCHES "GNU" )
 	set( CMAKE_CXX_STANDARD 			26 )
 else()
 	set( CMAKE_CXX_STANDARD 			26 )
+	set(CMAKE_SYSTEM_NAME Linux)
+	set(CMAKE_SYSTEM_PROCESSOR x86_64)
 endif()
 set( CMAKE_CXX_STANDARD_REQUIRED 		ON )
 set( CMAKE_CXX_EXTENSIONS 				OFF )
@@ -21,7 +23,6 @@ set( CMAKE_CXX_EXTENSIONS 				OFF )
 list( APPEND PAX_FLAGS
 #	-v									# Verbose.
 	-O3									# Turn on all sorts of optimizations.
-#	-msse3								# i386 and x86-64 Options: use sse.
 	-Wpedantic -Wall -Wextra -Werror	# Maximum number of checks.
 	-Wno-unused-function				# What is unused in one target might be used in another...
 	-Wuninitialized						# Warns about uninitialized variables.
