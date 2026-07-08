@@ -202,7 +202,7 @@ namespace pax {
 
 		/// In strings a terminating \0 is ignored.
  		template< std::ranges::contiguous_range U >
-		[[nodiscard]] constexpr auto operator<=>( U && u_ )			const noexcept	{
+		[[nodiscard]] constexpr auto operator<=>( U && u_ )					const noexcept	{
 			return std::lexicographical_compare_three_way(
 								begin(), end(), std::ranges::begin( u_ ), no_nullchar_end( u_ ) );
 		}
@@ -285,13 +285,17 @@ namespace pax {
 		/// Return true iff u_ equals the first elements of this.
  		template< std::ranges::contiguous_range U >
 		[[nodiscard]] constexpr bool starts_with( U && u_ )					const noexcept	{
-			return std::ranges::starts_with( *this, shadow_core( u_ ) );
+			const auto sz = no_nullchar_end( u_ ) - std::ranges::begin( u_ );
+			return std::equal( begin(), first( sz ).end(), std::ranges::begin( u_ ), no_nullchar_end( u_ ) );
+			// return std::ranges::starts_with( *this, shadow_core( u_ ) );	// Ubuntu does not...
 		}
 
 		/// Return true iff u_ equals the last elements of this.
  		template< std::ranges::contiguous_range U >
 		[[nodiscard]] constexpr bool ends_with( U && u_ )					const noexcept	{
-			return std::ranges::ends_with( *this, shadow_core( u_ ) );
+			const auto sz = no_nullchar_end( u_ ) - std::ranges::begin( u_ );
+			return std::equal( last( sz ).begin(), end(), std::ranges::begin( u_ ), no_nullchar_end( u_ ) );
+			// return std::ranges::ends_with( *this, shadow_core( u_ ) );	// Ubuntu does not...
 		}
 
 		/// Return a shadow of where t_ is -- or a zereo-sized shadow located at end().
