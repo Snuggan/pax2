@@ -4,6 +4,7 @@
 *.log
 *.py[co]
 *.sw[nop]
+**/compile_commands.json
 *~
 .#*
 [#]*#
