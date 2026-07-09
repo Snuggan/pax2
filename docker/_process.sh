@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-PROCESSING="/Volumes/pax-stordata/lidar/big"
+PROCESSING="/Volumes/ssd-pax-testdata/lidar/small-files/data"
 #PROCESSING=$(cd "$(dirname "$0")" && pwd)    # absolutized and normalized path to this script
 echo "### Working directory: $PROCESSING"
 
