@@ -1,6 +1,8 @@
 
 cmake_minimum_required( VERSION 3.12 )
 
+set( CMAKE_EXPORT_COMPILE_COMMANDS 		ON )
+
 project( "pax2" 
 	VERSION		1.0.0	# Always use 3 numbers -- no fewer, no more!
 	DESCRIPTION	"A personal library of handy things and pdal modules."
@@ -18,7 +20,6 @@ else()
 endif()
 set( CMAKE_CXX_STANDARD_REQUIRED 		ON )
 set( CMAKE_CXX_EXTENSIONS 				OFF )
-set( CMAKE_EXPORT_COMPILE_COMMANDS 		ON )
 
 
 list( APPEND PAX_FLAGS
