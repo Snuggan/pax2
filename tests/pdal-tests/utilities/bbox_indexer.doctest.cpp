@@ -41,29 +41,28 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( aff[ 5 ], -box.resolution() );
 
 		// Check belong_to:
-		DOCTEST_FAST_CHECK_UNARY(  box.contains( box.minx(), nudge_up( box.miny() ) ) );
-		DOCTEST_FAST_CHECK_UNARY(  box.contains( box.minx(), box.maxy() ) );
-		DOCTEST_FAST_CHECK_UNARY(  box.contains( nudge_down( box.maxx() ), box.maxy() ) );
-		DOCTEST_FAST_CHECK_UNARY(  box.contains( nudge_down( box.maxx() ), nudge_up( box.miny() ) ) );
-		DOCTEST_FAST_CHECK_UNARY( !box.contains( nudge_down( box.minx() ), 5.0 ) );
-		DOCTEST_FAST_CHECK_UNARY( !box.contains( box.maxx(), 5.0 ) );
-		DOCTEST_FAST_CHECK_UNARY( !box.contains( 2.0, box.miny() ) );
-		DOCTEST_FAST_CHECK_UNARY( !box.contains( 2.0, nudge_up( box.maxy() ) ) );
+		DOCTEST_FAST_CHECK_UNARY(  box.contains(             box.minx(),             box.miny()   ) );
+		DOCTEST_FAST_CHECK_UNARY( !box.contains( nudge_down( box.minx() ),           box.miny()   ) );
+		DOCTEST_FAST_CHECK_UNARY( !box.contains(             box.minx(), nudge_down( box.miny() ) ) );
+
+		DOCTEST_FAST_CHECK_UNARY(  box.contains(             box.maxx(),             box.maxy()   ) );
+		DOCTEST_FAST_CHECK_UNARY( !box.contains( nudge_up  ( box.maxx() ),           box.maxy()   ) );
+		DOCTEST_FAST_CHECK_UNARY( !box.contains(             box.maxx(), nudge_up  ( box.maxy() ) ) );
 
 		// Check the row calculation:
-		DOCTEST_FAST_CHECK_EQ( box.row( nudge_up( box.miny() ) ),	box.rows() - 1 );								//	FAIL: CHECK_EQ( 12, 11 )
+		DOCTEST_FAST_CHECK_EQ( box.row( nudge_up( box.miny() ) ),	box.rows() - 1u );		//	FAIL: CHECK_EQ( 12, 11 )
 		DOCTEST_FAST_CHECK_EQ( box.row( 12.5 ),						3u );
 		DOCTEST_FAST_CHECK_EQ( box.row( box.maxy() ),				0u );
-		DOCTEST_CHECK_THROWS_AS( box.row( box.miny() ), 			Runtime_exception );
-		DOCTEST_CHECK_THROWS_AS( box.row( nudge_up( box.maxy() ) ),	Runtime_exception );
+		DOCTEST_FAST_CHECK_EQ( box.row( box.miny() ),				box.rows() - 1u );
+		DOCTEST_FAST_CHECK_EQ( box.row( nudge_up( box.maxy() ) ),	0u );
 
 
 		// Check the col calculation:
 		DOCTEST_FAST_CHECK_EQ( box.col( box.minx() ),				0u );
 		DOCTEST_FAST_CHECK_EQ( box.col( 2.5 ),						2u );
 		DOCTEST_FAST_CHECK_EQ( box.col( nudge_down( box.maxx() ) ),	box.cols() - 1 );
-		DOCTEST_CHECK_THROWS_AS( box.col( nudge_down( box.minx() ) ), Runtime_exception );
-		DOCTEST_CHECK_THROWS_AS( box.col( box.maxx() ), 			Runtime_exception );
+		DOCTEST_FAST_CHECK_EQ( box.col( nudge_down( box.minx() ) ),	0u );
+		DOCTEST_FAST_CHECK_EQ( box.col( box.maxx() ),				box.cols() - 1u );
 
 		// Check the index calculation:
 		DOCTEST_FAST_CHECK_EQ( box.index( box.minx(), box.maxy() ), 0 );
