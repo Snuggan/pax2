@@ -8,6 +8,7 @@
 #include <pax/reporting/error_message.hpp>
 #include <pax/math/adjust.hpp>		// align_le, align_ge
 #include <pdal/Filter.hpp>			// PointViewPtr, PointId
+#include <algorithm>				// std::clamp
 
 
 namespace pax {
@@ -43,7 +44,7 @@ namespace pax {
 				<<	error_message( std20::format( "Warning: There were {} x-coords outside [{}, {}].", 
 					xmisses(), minx(), maxx() ) );
 			if( ymisses() )	std::cerr 
-				<<	error_message( std20::format( "Warning: There were {} y-coords outside []{}, {}].", 
+				<<	error_message( std20::format( "Warning: There were {} y-coords outside [{}, {}].", 
 					ymisses(), miny(), maxy() ) );
 		}
 
@@ -73,19 +74,21 @@ namespace pax {
 		}
 
 		index_type col( const coord_type x_ ) const {
-			if( x_in_range( x_ ) )		return min( ( x_ - minx() )/resolution(), cols() - 1u );
+			const int xindex = min( ( x_ - minx() )/resolution(), cols() - 1u );
+			if( x_in_range( x_ ) )		return xindex;
 			// throw error_message( std20::format( "Column: x-coord {} is outside range [{}, {}[", x_, minx(), maxx() ) );
 			m_x_misses++;
-			return ( x_ <= minx() )	? 0u : cols() - 1u;
+			return std::clamp< int >( xindex, 0, cols() - 1 );
 		}
 
 		index_type row( const coord_type y_ ) const {
 			// When dealing with rasters, origo is at the upper left corner.
 			// So y is the other way compared to mathematics (direction is "down" and not "up"). 
-			if( y_in_range( y_ ) )		return min( ( maxy() - y_ )/resolution(), rows() - 1u );
+			const int yindex = min( ( maxy() - y_ )/resolution(), rows() - 1u );
+			if( y_in_range( y_ ) )		return yindex;
 			// throw error_message( std20::format( "Row: y-coord {} is outside range ]{}, {}]", y_, miny(), maxy() ) );
 			m_y_misses++;
-			return ( y_ >= maxy() )	? 0u : rows() - 1u;
+			return std::clamp< int >( yindex, 0, rows() - 1 );
 		}
 
 		/// Given this point, what index does its coordinates produce? (row first index)
