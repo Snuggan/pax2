@@ -13,9 +13,10 @@
 
 #include "../std/format.hpp"
 #include <string_view>
-#include <source_location>
 #include <exception>
 #include <iostream>
+#include <source_location>
+#include <filesystem>
 
 
 namespace pax {
@@ -24,8 +25,10 @@ namespace pax {
 
 	/// Helper: nice std::source_location string.
 	inline std::string to_string( const std::source_location & sl_ ) {
-		const bool ok = sl_.file_name() && *sl_.file_name();
-		return std20::format( "{}:{}", ok ? sl_.file_name() : "<unspecified source location>", sl_.line() );
+		if( !sl_.file_name() || !*sl_.file_name() ) 		return "<unspecified source location>";
+		std::error_code		ec;
+		const auto			p = std::filesystem::canonical( sl_.file_name(), ec );
+		return std20::format( "{}:{}", ec ? sl_.file_name() : p.native(), sl_.line() );
 	}
 
 	/// Helper: nice error report from a std::error_code.

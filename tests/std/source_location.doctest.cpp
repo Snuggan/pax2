@@ -22,7 +22,7 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ ( loc.line(),				18 );
 		DOCTEST_FAST_CHECK_EQ ( sizeof( loc ),			 8 );
 
-		DOCTEST_FAST_CHECK_EQ ( to_string( std::source_location{} ), "<unspecified source location>:0" );
+		DOCTEST_FAST_CHECK_EQ ( to_string( std::source_location{} ), "<unspecified source location>" );
 	}
 	
 }	// namespace pax
