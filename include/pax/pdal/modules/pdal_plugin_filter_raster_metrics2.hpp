@@ -3,6 +3,7 @@
 #pragma once
 
 #include <pax/pdal/metrics-infrastructure/function-filter.hpp>	// Point_aggregator, Function_filter
+#include <pax/pdal/utilities/bbox_indexer.hpp>
 #include <pdal/Filter.hpp>
 #include <pdal/Streamable.hpp>
 #include <string>
@@ -37,12 +38,7 @@ namespace pax {
 			]
 		}
 	**/
-	class PDAL_DLL Raster_metrics2 : 
-#		if PAX_STREAMING
-			public pdal::Streamable,
-#		endif
-		public pdal::Filter
-	{
+	class PDAL_DLL Raster_metrics2 : public pdal::Streamable, public pdal::Filter {
 	public:
 		Raster_metrics2()			  = default;
 		virtual ~Raster_metrics2();
@@ -51,11 +47,10 @@ namespace pax {
 	private:
 		void addArgs( pdal::ProgramArgs & )					override;
 		void addDimensions( pdal::PointLayoutPtr layout_ )	override;
-#		if PAX_STREAMING
-			bool processOne( pdal::PointRef & pt_ )			override;
-#		else
-			bool processOne( pdal::PointRef & pt_ );
-#		endif
+		bool processOne( pdal::PointRef & pt_ )				override;
+	    void prepared( pdal::PointTableRef table_ )			override;
+	    void ready( pdal::PointTableRef table_ )			override;
+	    void filter( pdal::PointView & view_ )				override;
 		pdal::PointViewSet run( pdal::PointViewPtr view_ )	override;
 
 		using coordinate_type		  = double;
@@ -78,6 +73,12 @@ namespace pax {
 		std::vector< metrics::Function_filter >		pr_metrics_set{};
 		pdal::Dimension::Id 			pr_height_dimension{};
 		bool 							pr_has_return_number{};
+		Bbox_indexer					pr_bbox{};
+		
+		struct metadata {
+			std::size_t 	points_processed{};
+		};
+		metadata			m_metadata{};
 
 
 		static std::filesystem::path insert_suffix(
