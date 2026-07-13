@@ -23,8 +23,8 @@ static pdal::PluginInfo const s_info {
 		"https://github.com/Snuggan/pax2/blob/main/documentation/pdal-raster_metrics.md"
 };
 
-CREATE_SHARED_STAGE( pax::Raster_metrics, s_info )
-std::string pax::Raster_metrics::getName()	const	{	return s_info.name;		}
+CREATE_SHARED_STAGE( pax::Raster_metrics2, s_info )
+std::string pax::Raster_metrics2::getName()	const	{	return s_info.name;		}
 
 
 std::string function_filter_help() {
@@ -34,7 +34,7 @@ std::string function_filter_help() {
 }
 
 
-void pax::Raster_metrics::addArgs( pdal::ProgramArgs & args ) {
+void pax::Raster_metrics2::addArgs( pdal::ProgramArgs & args ) {
 	
 	// setPositional() Makes the argument required.
 	args.add( "dest", 
@@ -54,7 +54,7 @@ void pax::Raster_metrics::addArgs( pdal::ProgramArgs & args ) {
 }
 
 
-void pax::Raster_metrics::addDimensions( pdal::PointLayoutPtr layout_ ) {
+void pax::Raster_metrics2::addDimensions( pdal::PointLayoutPtr layout_ ) {
 	layout_->registerDim( pdal::Dimension::Id::X );
 	layout_->registerDim( pdal::Dimension::Id::Y );
 	
@@ -84,7 +84,7 @@ void pax::Raster_metrics::addDimensions( pdal::PointLayoutPtr layout_ ) {
 }
 
 
-pax::Raster_metrics::~Raster_metrics() {
+pax::Raster_metrics2::~Raster_metrics2() {
 	// Save the metrics.
 #	if PAX_STREAMING
 		
@@ -92,7 +92,7 @@ pax::Raster_metrics::~Raster_metrics() {
 }
 
 
-bool pax::Raster_metrics::processOne( pdal::PointRef & /*pt_*/ ) {
+bool pax::Raster_metrics2::processOne( pdal::PointRef & /*pt_*/ ) {
 	// Read one point.
 	// pr_z_accumulators[ bbox.index( pt_ref ) ].push_back(
 	// 	pt_ref.getFieldAs< value_type >( pr_height_dimension ),
@@ -104,7 +104,7 @@ bool pax::Raster_metrics::processOne( pdal::PointRef & /*pt_*/ ) {
 }
 
 
-pdal::PointViewSet pax::Raster_metrics::run( pdal::PointViewPtr view_ ) {
+pdal::PointViewSet pax::Raster_metrics2::run( pdal::PointViewPtr view_ ) {
 	try {
 		const PointView_indexer			bbox{ view_, m_alignment };
 		{	// Process the points (accumulate the z-values of each pixel). This is the heavy lifting part!!!

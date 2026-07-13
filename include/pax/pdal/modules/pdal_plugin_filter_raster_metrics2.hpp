@@ -1,4 +1,4 @@
-// Raster_metrics.hpp
+// Raster_metrics2.hpp
 
 #pragma once
 
@@ -37,15 +37,15 @@ namespace pax {
 			]
 		}
 	**/
-	class PDAL_DLL Raster_metrics : 
+	class PDAL_DLL Raster_metrics2 : 
 #		if PAX_STREAMING
 			public pdal::Streamable,
 #		endif
 		public pdal::Filter
 	{
 	public:
-		Raster_metrics()			  = default;
-		virtual ~Raster_metrics();
+		Raster_metrics2()			  = default;
+		virtual ~Raster_metrics2();
 		std::string getName()								const override;
 
 	private:
@@ -91,15 +91,6 @@ namespace pax {
 				+ dest_.extension().native()
 			};
 		}
-
-		// static_assert( insert_suffix( "/dir/file.tif",	"wow" ).native() == "/dir/file.wow.tif" );
-		// static_assert( insert_suffix(  "dir/file.tif",	"wow" ).native() == "dir/file.wow.tif" );
-		// static_assert( insert_suffix( "/file.tif",		"wow" ).native() == "/file.wow.tif" );
-		// static_assert( insert_suffix(  "file.tif",		"wow" ).native() == "file.wow.tif" );
-		// static_assert( insert_suffix( "/dir/",			"wow" ).native() == "/dir/.wow" );
-		// static_assert( insert_suffix(  "dir/",			"wow" ).native() == "dir/.wow" );
-		// static_assert( insert_suffix( "/",				"wow" ).native() == "/.wow" );
-		// static_assert( insert_suffix(  "",				"wow" ).native() == ".wow" );
 	};
 
 } // namespace pdal

@@ -6,10 +6,10 @@
 
 namespace pax {
 
-	class PDAL_DLL Slu_lm : public pdal::Filter, public pdal::Streamable {
+	class PDAL_DLL Slu_lm2 : public pdal::Filter, public pdal::Streamable {
 	public:
-		Slu_lm()					  = default;
-		virtual ~Slu_lm();
+		Slu_lm2()					  = default;
+		virtual ~Slu_lm2();
 
 		using pdal::Filter::Filter;
 		std::string getName() 									const override;
@@ -34,8 +34,8 @@ namespace pax {
 		mutable metadata	m_metadata{};
 		pdal::Dimension::Id	m_height_id{};
 
-		Slu_lm( const Slu_lm & )							  = delete;
-		Slu_lm & operator=( const Slu_lm & )				  = delete;
+		Slu_lm2( const Slu_lm2 & )							  = delete;
+		Slu_lm2 & operator=( const Slu_lm2 & )				  = delete;
 	};
 
 } // namespace pax

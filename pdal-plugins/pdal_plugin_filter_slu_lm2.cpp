@@ -15,11 +15,11 @@ namespace pax {
 		"https://github.com/Snuggan/pax2/blob/main/documentation/pdal-slu_lm.md"
 	};
 
-	CREATE_SHARED_STAGE( Slu_lm, s_info )
-	std::string Slu_lm::getName()		const	{	return s_info.name;		}
+	CREATE_SHARED_STAGE( Slu_lm2, s_info )
+	std::string Slu_lm2::getName()		const	{	return s_info.name;		}
 
 
-	void Slu_lm::addArgs( pdal::ProgramArgs& args_ ) {
+	void Slu_lm2::addArgs( pdal::ProgramArgs& args_ ) {
 		args_.add(	"min_z",
 					"Minimum z: remove points with a z-value smaller than this value. " 
 					"Also, sets all remaining negative z-values to zero. You probably don't want to do use this option "
@@ -41,7 +41,7 @@ namespace pax {
 	}
 
 
-	void Slu_lm::addDimensions( pdal::PointLayoutPtr layout_ ) {
+	void Slu_lm2::addDimensions( pdal::PointLayoutPtr layout_ ) {
 		layout_->registerDim( pdal::Dimension::Id::Classification );
 		
 		// The pdal hag_dem filter puts normalized points into a specific dimension: HeightAboveGround. 
@@ -60,7 +60,7 @@ namespace pax {
 	}
 
 
-	Slu_lm::~Slu_lm() {
+	Slu_lm2::~Slu_lm2() {
 		// Create metadata.
 		pdal::MetadataNode					meta = getMetadata();
 		
@@ -86,7 +86,7 @@ namespace pax {
 	}
 
 
-	bool Slu_lm::processOne( pdal::PointRef & pt_ ) {
+	bool Slu_lm2::processOne( pdal::PointRef & pt_ ) {
 		++m_metadata.points_in;
 		const auto	z		  = pt_.getFieldAs< coordinate_type >( m_height_id );
 		const auto	classif	  = asprs::Classification( 	// From pax/pdal/utilities/classification.hpp
@@ -113,7 +113,7 @@ namespace pax {
 	}
 
 
-	pdal::PointViewSet Slu_lm::run( pdal::PointViewPtr view_ ) {
+	pdal::PointViewSet Slu_lm2::run( pdal::PointViewPtr view_ ) {
 		// Create a new empty point cloud.
 		pdal::PointViewPtr		points{ view_->makeNew() };
 
