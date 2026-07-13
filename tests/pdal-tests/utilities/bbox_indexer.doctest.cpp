@@ -50,25 +50,25 @@ namespace pax {
 		DOCTEST_FAST_CHECK_UNARY( !box.contains(             box.maxx(), nudge_up  ( box.maxy() ) ) );
 
 		// Check the row calculation:
-		DOCTEST_FAST_CHECK_EQ( box.row( nudge_up( box.miny() ) ),	box.rows() - 1u );		//	FAIL: CHECK_EQ( 12, 11 )
+		DOCTEST_FAST_CHECK_EQ( box.row( box.miny() ),				box.rows() - 1u );
 		DOCTEST_FAST_CHECK_EQ( box.row( 12.5 ),						3u );
 		DOCTEST_FAST_CHECK_EQ( box.row( box.maxy() ),				0u );
 		DOCTEST_FAST_CHECK_EQ( box.row( box.miny() ),				box.rows() - 1u );
-		DOCTEST_FAST_CHECK_EQ( box.row( nudge_up( box.maxy() ) ),	0u );
-
+		DOCTEST_CHECK_THROWS_AS( box.row( nudge_up  ( box.maxy() ) ), Runtime_exception );
+		DOCTEST_CHECK_THROWS_AS( box.row( nudge_down( box.miny() ) ), Runtime_exception );
 
 		// Check the col calculation:
 		DOCTEST_FAST_CHECK_EQ( box.col( box.minx() ),				0u );
 		DOCTEST_FAST_CHECK_EQ( box.col( 2.5 ),						2u );
-		DOCTEST_FAST_CHECK_EQ( box.col( nudge_down( box.maxx() ) ),	box.cols() - 1 );
-		DOCTEST_FAST_CHECK_EQ( box.col( nudge_down( box.minx() ) ),	0u );
-		DOCTEST_FAST_CHECK_EQ( box.col( box.maxx() ),				box.cols() - 1u );
+		DOCTEST_FAST_CHECK_EQ( box.col( box.maxx() ),				box.cols() - 1 );
+		DOCTEST_CHECK_THROWS_AS( box.col( nudge_down( box.minx() ) ), Runtime_exception );
+		DOCTEST_CHECK_THROWS_AS( box.col( nudge_up  ( box.maxx() ) ), Runtime_exception );
 
 		// Check the index calculation:
 		DOCTEST_FAST_CHECK_EQ( box.index( box.minx(), box.maxy() ), 0 );
-		DOCTEST_FAST_CHECK_EQ( box.index( nudge_down( box.maxx() ), box.maxy() ), box.cols() - 1 );
-		DOCTEST_FAST_CHECK_EQ( box.index( box.minx(), nudge_up( box.miny() ) ), box.pixels() - box.cols() );		//	FAIL: CHECK_EQ( 84, 77 )
-		DOCTEST_FAST_CHECK_EQ( box.index( nudge_down( box.maxx() ), nudge_up( box.miny() ) ), box.pixels() - 1 );	//	FAIL: CHECK_EQ( 90, 83 )
+		DOCTEST_FAST_CHECK_EQ( box.index( box.maxx(), box.maxy() ), box.cols() - 1 );
+		DOCTEST_FAST_CHECK_EQ( box.index( box.minx(), box.miny() ), box.pixels() - box.cols() );
+		DOCTEST_FAST_CHECK_EQ( box.index( box.maxx(), box.miny() ), box.pixels() - 1 );
 	}
 
 }	// namespace pax

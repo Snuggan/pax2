@@ -38,15 +38,6 @@ namespace pax {
 			if( miny() > maxy() )	throw error_message( "Bbox_indexer failed: min_y > max_y." );
 			if( resolution() <= 0 )	throw error_message( "Bbox_indexer failed: resolution <= 0." );
 		}
-		
-		~Bbox_indexer() {
-			if( xmisses() )	std::cerr 
-				<<	error_message( std20::format( "Warning: There were {} x-coords outside [{}, {}].", 
-					xmisses(), minx(), maxx() ) );
-			if( ymisses() )	std::cerr 
-				<<	error_message( std20::format( "Warning: There were {} y-coords outside [{}, {}].", 
-					ymisses(), miny(), maxy() ) );
-		}
 
 		constexpr index_type rows()			const noexcept	{	return m_rows;								}
 		constexpr index_type cols()			const noexcept	{	return m_cols;								}
@@ -56,8 +47,6 @@ namespace pax {
 		constexpr coord_type maxx()			const noexcept	{	return m_maxx;								}
 		constexpr coord_type miny()			const noexcept	{	return m_miny;								}
 		constexpr coord_type maxy()			const noexcept	{	return m_maxy;								}
-		constexpr index_type xmisses()		const noexcept	{	return m_x_misses;							}
-		constexpr index_type ymisses()		const noexcept	{	return m_y_misses;							}
 		Box2 bbox()							const noexcept	{	return { minx(), maxx(), miny(), maxy() };	}
 
 		/// The affine transformation of the Bbox_indexer, defined as in gdal.
@@ -74,21 +63,15 @@ namespace pax {
 		}
 
 		index_type col( const coord_type x_ ) const {
-			const int xindex = min( ( x_ - minx() )/resolution(), cols() - 1u );
-			if( x_in_range( x_ ) )		return xindex;
-			// throw error_message( std20::format( "Column: x-coord {} is outside range [{}, {}[", x_, minx(), maxx() ) );
-			m_x_misses++;
-			return std::clamp< int >( xindex, 0, cols() - 1 );
+			if( x_in_range( x_ ) )		return min( ( x_ - minx() )/resolution(), cols() - 1u );
+			throw error_message( std20::format( "Column: x-coord {} is outside range [{}, {}≈", x_, minx(), maxx() ) );
 		}
 
 		index_type row( const coord_type y_ ) const {
 			// When dealing with rasters, origo is at the upper left corner.
 			// So y is the other way compared to mathematics (direction is "down" and not "up"). 
-			const int yindex = min( ( maxy() - y_ )/resolution(), rows() - 1u );
-			if( y_in_range( y_ ) )		return yindex;
-			// throw error_message( std20::format( "Row: y-coord {} is outside range ]{}, {}]", y_, miny(), maxy() ) );
-			m_y_misses++;
-			return std::clamp< int >( yindex, 0, rows() - 1 );
+			if( y_in_range( y_ ) )		return min( ( maxy() - y_ )/resolution(), rows() - 1u );
+			throw error_message( std20::format( "Row: y-coord {} is outside range [{}, {}]", y_, miny(), maxy() ) );
 		}
 
 		/// Given this point, what index does its coordinates produce? (row first index)
@@ -112,7 +95,6 @@ namespace pax {
 	private:
 		coord_type				m_minx, m_maxx, m_miny, m_maxy, m_resolution;
 		index_type	 			m_rows, m_cols;
-		mutable std::size_t 	m_x_misses{}, m_y_misses{};
 		
 		static constexpr index_type minimum_1( const index_type i_ )	noexcept	{	return ( i_ > 1u ) ? i_ : 1u;		}
 		constexpr bool x_in_range( const coord_type x_ ) const noexcept	{	return ( minx() <= x_ ) && ( x_ <= maxx() );	}
