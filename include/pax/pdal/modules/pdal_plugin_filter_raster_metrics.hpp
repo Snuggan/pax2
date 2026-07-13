@@ -36,6 +36,8 @@ namespace pax {
 	class PDAL_DLL Raster_metrics : public pdal::Filter {
 	public:
 		Raster_metrics()              = default;
+		virtual ~Raster_metrics();
+
 		std::string getName()								const override;
 
 	private:

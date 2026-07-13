@@ -64,6 +64,9 @@ void pax::Raster_metrics::addDimensions( pdal::PointLayoutPtr layout_ ) {
 }
 
 
+pax::Raster_metrics::~Raster_metrics() {
+}
+
 
 
 pdal::PointViewSet pax::Raster_metrics::run( pdal::PointViewPtr view_ ) {

@@ -84,11 +84,6 @@ void pax::Raster_metrics::addDimensions( pdal::PointLayoutPtr layout_ ) {
 }
 
 
-pax::Raster_metrics::Raster_metrics() {
-	// Set up the environment necessary for the metrics calculations.
-}
-
-
 pax::Raster_metrics::~Raster_metrics() {
 	// Save the metrics.
 #	if PAX_STREAMING

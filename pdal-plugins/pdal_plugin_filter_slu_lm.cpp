@@ -58,7 +58,9 @@ namespace pax {
 	}
 	
 	
-
+	Slu_lm::~Slu_lm() {}
+	
+	
 	pdal::PointViewSet Slu_lm::run( pdal::PointViewPtr view_ ) {
 		// No z-value filtering?
 		if( m_max_z < m_min_z ) {

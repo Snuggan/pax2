@@ -7,6 +7,9 @@ namespace pax {
 
 	class PDAL_DLL Slu_lm : public pdal::Filter {
 	public:
+		Slu_lm()					  = default;
+		virtual ~Slu_lm();
+
 		using pdal::Filter::Filter;
 		std::string getName() 									const override;
 

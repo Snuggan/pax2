@@ -8,11 +8,11 @@ namespace pax {
 
 	class PDAL_DLL Slu_lm : public pdal::Filter, public pdal::Streamable {
 	public:
+		Slu_lm()					  = default;
+		virtual ~Slu_lm();
+
 		using pdal::Filter::Filter;
 		std::string getName() 									const override;
-
-		Slu_lm();
-		~Slu_lm();
 
 	private:
 		void addArgs( pdal::ProgramArgs & args_ )				override;

@@ -44,7 +44,7 @@ namespace pax {
 		public pdal::Filter
 	{
 	public:
-		Raster_metrics();
+		Raster_metrics()			  = default;
 		virtual ~Raster_metrics();
 		std::string getName()								const override;
 

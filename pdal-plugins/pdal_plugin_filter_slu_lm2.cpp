@@ -60,9 +60,6 @@ namespace pax {
 	}
 
 
-	Slu_lm::Slu_lm() {}
-
-
 	Slu_lm::~Slu_lm() {
 		// Create metadata.
 		pdal::MetadataNode					meta = getMetadata();
