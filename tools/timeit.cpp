@@ -7,8 +7,8 @@
 
 
 int main( const int argc, char * argv[] ) {
-	const auto	wall_start	  = std::chrono::steady_clock::now();
-	int			status		  = 0;
+	const auto	start	  = std::chrono::steady_clock::now();
+	int			status	  = 0;
 
 	if( argc > 1 ) {
 		// Build args for execvp (need char* array)
@@ -42,11 +42,11 @@ int main( const int argc, char * argv[] ) {
 	}
 
 	const auto now		  = std::chrono::system_clock::now();
-	const auto seconds	  = std::chrono::time_point_cast< std::chrono::seconds >( now );
-	const auto wall_end	  = std::chrono::steady_clock::now();
-	const double wall_sec = std::chrono::duration_cast< std::chrono::nanoseconds >( wall_end - wall_start ).count()*1e-9;
-	std::cout	<< pax::seconds_to_string( wall_sec ) 
-				<< std::vformat( " (wall time) at {:%T} utc\n", std20::make_format_args( seconds ) )
+	const auto now_secs	  = std::chrono::time_point_cast< std::chrono::seconds >( now );
+	const auto end		  = std::chrono::steady_clock::now();
+	const double duration = std::chrono::duration_cast< std::chrono::nanoseconds >( end - start ).count()*1e-9;
+	std::cout	<< pax::seconds_to_string( duration ) 
+				<< std::vformat( " (wall time) at {:%T} utc\n", std20::make_format_args( now_secs ) )
 				;
 
 	// Exit with the child's exit code (like time usually doesn’t change success)
