@@ -61,6 +61,7 @@ namespace pax {
 
 
 	bool plot_points::processOne( pdal::PointRef &  ) {
+		++m_metadata.points_processed;
 		return true;
 	}
 
