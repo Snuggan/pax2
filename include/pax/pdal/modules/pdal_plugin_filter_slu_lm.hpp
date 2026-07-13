@@ -7,7 +7,12 @@ namespace pax {
 
 	class PDAL_DLL Slu_lm : public pdal::Filter {
 	public:
-		Slu_lm()					  = default;
+		Slu_lm()											  = default;
+		Slu_lm( const Slu_lm & )							  = delete;
+		Slu_lm( Slu_lm &&)									  = delete;
+		Slu_lm & operator=( const Slu_lm & )				  = delete;
+		Slu_lm & operator=( Slu_lm && )						  = delete;
+
 		virtual ~Slu_lm();
 
 		using pdal::Filter::Filter;
@@ -24,9 +29,6 @@ namespace pax {
         coordinate_type		m_min_z{ -2.0 };
         coordinate_type		m_max_z{ 50.0 };
         bool				m_lm_filter{ false };
-
-		Slu_lm( const Slu_lm & )							  = delete;
-		Slu_lm & operator=( const Slu_lm & )				  = delete;
 	};
 
 } // namespace pax
