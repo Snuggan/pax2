@@ -84,7 +84,7 @@ pdal::PointViewPtr pax::Remove_overlap::overlap_filter( pdal::PointViewPtr view_
 
 	if(	active ) {
 		// Get the bbox, aligned as specified. 
-		const PointView_indexer		bbox{ view_, m_overlap_resolution };
+		const Bbox_indexer			bbox{ *view_, m_overlap_resolution };
 		std::vector< Angle_source >	min_angle{ bbox.pixels(), Angle_source{} };
 		
 		// Create a raster of minimal angle/point-id pairs.

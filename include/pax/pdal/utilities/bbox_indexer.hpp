@@ -4,14 +4,28 @@
 
 #pragma once
 
-#include "bbox.hpp"
 #include <pax/reporting/error_message.hpp>
 #include <pax/math/adjust.hpp>		// align_le, align_ge
 #include <pdal/Filter.hpp>			// PointViewPtr, PointId
 #include <algorithm>				// std::clamp
 
 
+namespace pdal {
+	inline bool empty( const pdal::BOX2D & box_ )	noexcept	{	return box_.empty();	}
+}	// namespace pdal
+
+
 namespace pax {
+	using Box2					  = pdal::BOX2D;	
+
+
+	/// Return a bounding box for the point cloud. 
+	inline Box2 bbox( const pdal::PointView & view_ ) noexcept {
+		pdal::BOX2D					box_;
+		view_.calculateBounds( box_ );
+		return box_;
+	}
+
 
 	/// Manage a two-dimensional bounding box + resolution. 
 	struct Bbox_indexer {
@@ -21,6 +35,12 @@ namespace pax {
 		static_assert( std::is_floating_point_v< coord_type > );
 		static_assert( std::is_unsigned_v< index_type >, 
 			"This class assumes that index_type{ -1 } is positive, that index_type is unsigned." );
+		
+		Bbox_indexer()									  = default;
+		Bbox_indexer( const Bbox_indexer & )			  = default;
+		Bbox_indexer( Bbox_indexer && )					  = default;
+		Bbox_indexer & operator=( const Bbox_indexer & )  = default;
+		Bbox_indexer & operator=( Bbox_indexer && )		  = default;
 
 		/// Bbox_indexer is a bounding box that can calculate column, row, and vector index for a coordinate pair.
 		Bbox_indexer( 
@@ -38,6 +58,11 @@ namespace pax {
 			if( miny() > maxy() )	throw error_message( "Bbox_indexer failed: min_y > max_y." );
 			if( resolution() <= 0 )	throw error_message( "Bbox_indexer failed: resolution <= 0." );
 		}
+
+		/// Create a 2d bounding box that just encloses all points of view while being aligned to alignment_ (usually the resolution).
+		/** Throws if view_ is [almost] empty.		**/
+		Bbox_indexer( const pdal::PointView & view_, const coord_type alignment_ ) 
+			: Bbox_indexer{ get_aligned_indexer( view_, alignment_ ) } {}
 
 		constexpr index_type rows()			const noexcept	{	return m_rows;								}
 		constexpr index_type cols()			const noexcept	{	return m_cols;								}
@@ -64,7 +89,7 @@ namespace pax {
 
 		index_type col( const coord_type x_ ) const {
 			if( x_in_range( x_ ) )		return min( ( x_ - minx() )/resolution(), cols() - 1u );
-			throw error_message( std20::format( "Column: x-coord {} is outside range [{}, {}≈", x_, minx(), maxx() ) );
+			throw error_message( std20::format( "Column: x-coord {} is outside range [{}, {}]", x_, minx(), maxx() ) );
 		}
 
 		index_type row( const coord_type y_ ) const {
@@ -79,6 +104,22 @@ namespace pax {
 		///	If either coordinate is outside the bounding box, an exception is thrown.
 		index_type index( const coord_type x_, const coord_type y_ ) const	{
 			return cols()*row( y_ ) + col( x_ );	// For proper exception message.
+		}
+
+		/// Given this point, what index does its coordinates produce?
+		index_type index( const pdal::PointViewPtr view_, const pdal::PointId idx_ ) const {
+			return index(
+				view_->getFieldAs< coord_type >( pdal::Dimension::Id::X, idx_ ), 	// x-coord
+				view_->getFieldAs< coord_type >( pdal::Dimension::Id::Y, idx_ )		// y-coord
+			);
+		}
+
+		/// Given this point, what index does its coordinates produce?
+		index_type index( const pdal::PointRef & pt_ref_ ) const {
+			return index(
+				pt_ref_.getFieldAs< coord_type >( pdal::Dimension::Id::X ), 		// x-coord
+				pt_ref_.getFieldAs< coord_type >( pdal::Dimension::Id::Y )			// y-coord
+			);
 		}
 
 		friend std::string to_string( const Bbox_indexer & bb_ ) {
@@ -103,40 +144,10 @@ namespace pax {
 		static constexpr index_type min( const index_type a_, const index_type b_ ) noexcept {
 			return ( a_ < b_ ) ? a_ : b_;
 		}
-	};
-
-
-
 	
-	/// A pdal-specific Bbox_indexer. 
-	struct PointView_indexer : Bbox_indexer {
-		using coord_type = Bbox_indexer::coord_type;
-
-		/// Create a 2d bounding box that just encloses all points of view while being aligned to alignment_ (usually the resolution).
-		/** Throws if view_ is [almost] empty.		**/
-		PointView_indexer( const pdal::PointViewPtr view_, const coord_type alignment_ ) 
-			: Bbox_indexer{ get_aligned_indexer( view_, alignment_ ) } {}
-
-		/// Given this point, what index does its coordinates produce?
-		index_type index( const pdal::PointViewPtr view_, const pdal::PointId idx_ ) const {
-			return Bbox_indexer::index(
-				view_->getFieldAs< coord_type >( pdal::Dimension::Id::X, idx_ ), 	// x-coord
-				view_->getFieldAs< coord_type >( pdal::Dimension::Id::Y, idx_ )		// y-coord
-			);
-		}
-
-		/// Given this point, what index does its coordinates produce?
-		index_type index( const pdal::PointRef & pt_ref_ ) const {
-			return Bbox_indexer::index(
-				pt_ref_.getFieldAs< coord_type >( pdal::Dimension::Id::X ), 		// x-coord
-				pt_ref_.getFieldAs< coord_type >( pdal::Dimension::Id::Y )			// y-coord
-			);
-		}
-	
-	private:
-		static Bbox_indexer get_aligned_indexer( const pdal::PointViewPtr view_, const coord_type alignment_ ) {
-			if( view_->size() == 0 )	throw error_message( "Bbox_indexer failed: Can not create a raster for an empty point-cloud." );
-			if( view_->size() == 1 )	throw error_message( "Bbox_indexer failed: Will not create a raster for a one-point point-cloud." );
+		static Bbox_indexer get_aligned_indexer( const pdal::PointView & view_, const coord_type alignment_ ) {
+			if( view_.size() == 0 )	throw error_message( "Bbox_indexer failed: Can not create a raster for an empty point-cloud." );
+			if( view_.size() == 1 )	throw error_message( "Bbox_indexer failed: Will not create a raster for a one-point point-cloud." );
 			return Bbox_indexer{ pax::bbox( view_ ), alignment_ };
 		}
 	};

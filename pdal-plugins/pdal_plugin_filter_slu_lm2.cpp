@@ -41,22 +41,7 @@ namespace pax {
 	}
 
 
-	void Slu_lm2::addDimensions( pdal::PointLayoutPtr layout_ ) {
-		layout_->registerDim( pdal::Dimension::Id::Classification );
-		
-		// The pdal hag_dem filter puts normalized points into a specific dimension: HeightAboveGround. 
-		// We want to overwrite unnormalized z-values with normalized.
-		const bool	has_hag_dim{ layout_->hasDim( pdal::Dimension::Id::HeightAboveGround ) };
-		m_height_id		  = has_hag_dim ? pdal::Dimension::Id::HeightAboveGround : pdal::Dimension::Id::Z;
-		if( has_hag_dim )	layout_->registerDim( pdal::Dimension::Id::HeightAboveGround );
-		else				layout_->registerDim( pdal::Dimension::Id::Z );
-
-		// No z-value filtering?
-		// Do not place in constructor, as the argument values probably are not set then.
-		if( m_max_z < m_min_z ) {
-			m_min_z = std::numeric_limits< decltype( m_min_z ) >::lowest();
-			m_max_z = std::numeric_limits< decltype( m_max_z ) >::max();
-		}
+	void Slu_lm2::addDimensions( pdal::PointLayoutPtr /*layout_*/ ) {
 	}
 
 
@@ -83,6 +68,25 @@ namespace pax {
 		filtering.add( "not-lm",			m_metadata.not_lm );
 		filtering.add( "points-removed",	m_metadata.points_in - m_metadata.points_out );
 		meta.add( filtering );
+	}
+
+
+	/// 
+	void Slu_lm2::prepared( pdal::PointTableRef table_ ) {
+		const pdal::PointLayoutPtr	layout = table_.layout();
+
+		// The pdal hag_dem filter puts normalized points into a specific dimension: HeightAboveGround. 
+		// We want to overwrite unnormalized z-values with normalized.
+		m_height_id	= ( layout->hasDim( pdal::Dimension::Id::HeightAboveGround ) ) 
+			? pdal::Dimension::Id::HeightAboveGround 
+			: pdal::Dimension::Id::Z;
+
+		// No z-value filtering?
+		// Do not place in constructor, as the argument values probably are not set then.
+		if( m_max_z < m_min_z ) {
+			m_min_z = std::numeric_limits< decltype( m_min_z ) >::lowest();
+			m_max_z = std::numeric_limits< decltype( m_max_z ) >::max();
+		}
 	}
 
 
@@ -118,8 +122,9 @@ namespace pax {
 		pdal::PointViewPtr		points{ view_->makeNew() };
 
 		// Filter the points.
+		auto pt = view_->point( 0 );
 		for( pdal::PointId idx = 0; idx < view_->size(); ++idx ) {
-			auto pt = view_->point( idx );
+			pt = view_->point( idx );
 			if( processOne( pt ) ) 
 				points->appendPoint( *view_, idx );
 		}

@@ -10,7 +10,7 @@
 #include <pax/tables/text-table.hpp>
 
 // pdal stuff
-#include "../utilities/bbox.hpp"	// bbox( pdal::PointViewPtr )
+#include "../utilities/bbox_indexer.hpp"	// bbox( pdal::PointViewPtr )
 #include <pdal/PointView.hpp>
 #include <pdal/PointTable.hpp>
 #include <pdal/Dimension.hpp>
@@ -200,7 +200,7 @@ namespace pax {
 			const string_view						output_file_format_	  = ".laz"
 		) {
 			Process_plots_points					plots{ plots_source_, max_disdance_, view_ptr_, id_column_ };
-			plots.process( bbox( view_ptr_ ) );
+			plots.process( bbox( *view_ptr_ ) );
 			return plots.save( dest_plot_points_directory_, output_file_format_ );
 		}
 	};

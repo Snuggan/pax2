@@ -92,7 +92,7 @@ pdal::PointViewSet pax::Raster_metrics::run( pdal::PointViewPtr view_ ) {
 	
 		pdal::MetadataNode					metrics_node( "raster_metrics" );
 
-		const PointView_indexer				bbox{ view_, m_alignment };
+		const Bbox_indexer					bbox{ *view_, m_alignment };
 		{	// Process the points (accumulate the z-values of each pixel). This is the heavy lifting part!!!
 			Z_accumulators					z_accumulators{ bbox.pixels() };
 			if( has_return_number ) {

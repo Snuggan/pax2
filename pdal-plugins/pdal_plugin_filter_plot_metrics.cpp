@@ -1,5 +1,5 @@
 #include <pax/pdal/modules/pdal_plugin_filter_plot_metrics.hpp>
-#include <pax/pdal/utilities/bbox.hpp>
+#include <pax/pdal/utilities/bbox_indexer.hpp>
 #include <pax/pdal/process/plot-metrics.hpp>
 
 #include <pdal/util/FileUtils.hpp>
@@ -57,7 +57,7 @@ namespace pax {
 
 			// Process plots. 
 			Process_plots_metrics			plots{ m_plot_file };
-			plots.process( view_, bbox( view_ ) );
+			plots.process( view_, bbox( *view_ ) );
 			plots.save( m_dest_plots, std::span( metrics_set ) );
 
 
