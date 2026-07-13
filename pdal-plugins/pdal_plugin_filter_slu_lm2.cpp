@@ -41,10 +41,6 @@ namespace pax {
 	}
 
 
-	void Slu_lm2::addDimensions( pdal::PointLayoutPtr /*layout_*/ ) {
-	}
-
-
 	Slu_lm2::~Slu_lm2() {
 		// Create metadata.
 		pdal::MetadataNode					meta = getMetadata();
@@ -71,12 +67,11 @@ namespace pax {
 	}
 
 
-	/// 
+	/// Do pre-flight stuff.
 	void Slu_lm2::prepared( pdal::PointTableRef table_ ) {
-		const pdal::PointLayoutPtr	layout = table_.layout();
-
 		// The pdal hag_dem filter puts normalized points into a specific dimension: HeightAboveGround. 
 		// We want to overwrite unnormalized z-values with normalized.
+		const pdal::PointLayoutPtr	layout = table_.layout();
 		m_height_id	= ( layout->hasDim( pdal::Dimension::Id::HeightAboveGround ) ) 
 			? pdal::Dimension::Id::HeightAboveGround 
 			: pdal::Dimension::Id::Z;
