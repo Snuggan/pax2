@@ -18,11 +18,11 @@
 namespace pax {
 	
 	/// A simple container for the spacial data of a plot.
-	class Plot_metrics : public Plot_base, public metrics::Point_aggregator {
+	class Plot_metrics : public Plot, public metrics::Point_aggregator {
 		using Meta = class_meta< Plot_metrics, coord_type, coord_type, coord_type >;
 		
 	public:
-		using Plot_base::coord_type;
+		using Plot::coord_type;
 		static constexpr Meta				meta{ "east", "north", "radius" };
 
 		template< std::size_t I >
@@ -35,12 +35,12 @@ namespace pax {
 			const coord_type				east_, 
 			const coord_type				north_, 
 			const coord_type				radius_
-		) noexcept : Plot_base{ east_, north_, radius_ } {}
+		) noexcept : Plot{ east_, north_, radius_ } {}
 
 		/// Should the plot recieve points from file_ (with the bbox_)?
 		template< typename BBox >
         [[nodiscard]] constexpr bool in_box( const BBox & bbox_ )	const noexcept	{
-            return Plot_base::in_box( bbox_ );
+            return Plot::in_box( bbox_ );
         }
 
 		/// Was this plot processed during this run?
@@ -50,7 +50,7 @@ namespace pax {
 
 		/// Is pt_ inside the plot?
 		[[nodiscard]] bool contains( const pdal::PointRef pt_ ) 	const noexcept	{
-            return Plot_base::contains( pt_ );
+            return Plot::contains( pt_ );
         }
 	};
 

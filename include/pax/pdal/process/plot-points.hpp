@@ -22,11 +22,13 @@
 namespace pax {
 
 	/// A simple container for the spacial data of a plot.
-	class Plot_points : public Plot_base {
+	/// It has the plot stuff + an id and a vector of pdal points. 
+	class Plot_points : public Plot {
 		static constexpr const char *	las_suffix  = ".las";
 		static constexpr const char *	laz_suffix  = ".laz";
 		static constexpr const char *	file_suffix = laz_suffix;
 		
+		using Meta = class_meta< Plot_points, Plot::coord_type, Plot::coord_type, Plot::coord_type, std::string >;
 		using string_view			  = std::string_view;
 
 		static_assert( sizeof( pdal::PointId ) == 8 );
@@ -35,22 +37,39 @@ namespace pax {
 
 
 	public:
-		using Plot_base::coord_type;
+		using Plot::coord_type;
 
-		Plot_points(
-			const string_view			id_, 
+		constexpr Plot_points()									  = default;
+		constexpr Plot_points( const Plot_points & )			  = default;
+		constexpr Plot_points( Plot_points && )					  = default;
+		constexpr Plot_points & operator=( const Plot_points & )  = default;
+		constexpr Plot_points & operator=( Plot_points && )		  = default;
+
+
+		/// The actual constructor. 
+		constexpr Plot_points(
 			const coord_type			east_, 
 			const coord_type			north_, 
-			const coord_type			radius_
-		) noexcept : Plot_base{ east_, north_, radius_ }, m_id{ id_.data(), id_.size() } {}
+			const coord_type			radius_, 
+			const string_view			id_
+		) noexcept : Plot{ east_, north_, radius_ }, m_id{ id_.data(), id_.size() } {}
+
+
+		/// This is used to read values from a csv file.
+		static constexpr Meta table_meta( const string_view id_column_ )  noexcept	{
+			return Meta{ "east", "north", "radius", id_column_ };
+		}
 
 		/// Was this plot processed during this run?
-		bool empty()											const noexcept	{	return m_points_idx.empty();	}
+		constexpr bool empty()										const noexcept	{
+			return m_points_idx.empty();
+		}
+
 
 		/// Process a point.
-		bool process( pdal::PointRef * pt_ptr_ ) noexcept {
-			const bool					inside = Plot_base::contains( *pt_ptr_ );
-			if( inside )				m_points_idx.push_back( pt_ptr_->pointId() );
+		bool process( const pdal::PointRef & pt_ ) 					noexcept		{
+			const bool					inside = Plot::contains( pt_ );
+			if( inside )				m_points_idx.push_back( pt_.pointId() );
 			return inside;
 		}
 		
@@ -119,9 +138,8 @@ namespace pax {
 			const coord_type						max_disdance_
 		) {
 			try {
-				using Meta = class_meta< Plot_points, std::string, coord_type, coord_type, coord_type >;
 				Text_table< char >					plots_table{ plots_source_ };
-				auto all_plots = plots_table.export_values( Meta{ id_column_, "east", "north", "radius" } );
+				auto all_plots = plots_table.export_values( Plot_points::table_meta( id_column_ ) );
 				if( max_disdance_ > 0 ) {
 					for( auto plot : all_plots )	// Set all radiuses to max_diustance_.
 						plot.set_radius( max_disdance_ );
@@ -158,7 +176,7 @@ namespace pax {
 					for( pdal::PointId idx{}; idx < m_view_ptr->size(); ++idx ) {
 						pt.setPointId( idx );
 						for( auto plot_ptr : active_plots ) 
-							plot_ptr->process( &pt );
+							plot_ptr->process( pt );
 					}
 				} 
 			}
