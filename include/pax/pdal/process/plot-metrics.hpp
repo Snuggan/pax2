@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "plot-base.hpp"
+#include "plot.hpp"
 #include "../metrics-infrastructure/function-filter.hpp"
 
 // Read a csv file
