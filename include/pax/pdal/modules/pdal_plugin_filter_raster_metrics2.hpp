@@ -46,7 +46,6 @@ namespace pax {
 
 	private:
 		void addArgs( pdal::ProgramArgs & )					override;
-		void addDimensions( pdal::PointLayoutPtr layout_ )	override;
 		bool processOne( pdal::PointRef & pt_ )				override;
 	    void prepared( pdal::PointTableRef table_ )			override;
 	    void ready( pdal::PointTableRef table_ )			override;

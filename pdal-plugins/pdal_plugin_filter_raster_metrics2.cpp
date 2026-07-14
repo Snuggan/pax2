@@ -37,7 +37,6 @@ std::string function_filter_help() {
 namespace pax {
 
 	void Raster_metrics2::addArgs( pdal::ProgramArgs & args ) {
-	
 		// setPositional() Makes the argument required.
 		args.add( "dest", 
 			"Destination directory and file name template for the metric raster files. "
@@ -56,11 +55,40 @@ namespace pax {
 	}
 
 
-	void Raster_metrics2::addDimensions( pdal::PointLayoutPtr /*layout_*/ ) {
-	}
-
-
 	Raster_metrics2::~Raster_metrics2() {
+		// Save metrics' rasters.
+	    pdal::gdal::registerDrivers();
+		pdal::gdal::GDALError			err;
+
+		// Save one raster for each function-filter (metric).
+		std::vector< value_type >		pixels;
+		pixels.reserve( pr_z_accumulators.size() );
+
+		for( const auto metric : pr_metrics_set ) {
+			const std::filesystem::path	dest{ insert_suffix( m_dest_rasters, to_string( metric ) ) };
+			try {
+				if( !dest.parent_path().empty() )
+					std::filesystem::create_directories( dest.parent_path() );
+
+				// Get the actual metric value for each pixel. 
+				pixels.clear();
+				for( auto & accumulator : pr_z_accumulators ) {
+					pixels.push_back( metric.calculate( accumulator ) );
+				}
+
+				// save_metric( acc, m_dest_rasters, m_accumulators );
+			    pdal::gdal::Raster	raster( dest, m_drivername, m_srs, pr_bbox.affine_vector() );
+				err				  = raster.open( pr_bbox.cols(), pr_bbox.rows(), 1, m_dataType, m_noData, m_options );
+				if( err == pdal::gdal::GDALError::None )
+					err			  = raster.writeBand( pixels.data(), m_noData, 1, to_string( metric ) );
+
+				// Add metadata of the metrics' destination file. 
+				if( err != pdal::gdal::GDALError::None )	throwError( raster.errorMsg() );
+			} catch( const std::exception & e_ ) {
+				throw error_message( std20::format( "{} (saving metric to raster file {})", e_.what(), dest.native() ) );
+			}
+		}
+	
 		// Export metadata.
 		pdal::MetadataNode				meta = getMetadata();
 		meta.add( "points-in",			m_metadata.points_processed );
@@ -89,15 +117,13 @@ namespace pax {
 	}
 
 
-	/// 
+	/// Do pre-flight stuff.
 	void Raster_metrics2::prepared( pdal::PointTableRef table_ ) {
 		// "Z" is the standard height, could be either height above ground or height above the geoid (sea level).
 		// "HeightAboveGround", if available, is the height abouve ground. It is possible that both heights are available. 
 		const pdal::PointLayoutPtr	layout = table_.layout();
 		pr_height_dimension		  = layout->hasDim( pdal::Dimension::Id::HeightAboveGround )
-			? pdal::Dimension::Id::HeightAboveGround
-			: pdal::Dimension::Id::Z;
-
+								  ? pdal::Dimension::Id::HeightAboveGround : pdal::Dimension::Id::Z;
 		// Check if the file carry first return information. If not available, no points are treated as first returns. 
 		pr_has_return_number	  = layout->hasDim( pdal::Dimension::Id::ReturnNumber );
 
@@ -121,72 +147,30 @@ namespace pax {
 	}
 
 
-	bool Raster_metrics2::processOne( pdal::PointRef & /*pt_*/ ) {
-		// Read one point.
-		// pr_z_accumulators[ bbox.index( pt_ref ) ].push_back(
-		// 	pt_ref.getFieldAs< value_type >( pr_height_dimension ),
-		// 	pr_has_return_number
-		// 		? pt_ref.getFieldAs< std::uint8_t >( pdal::Dimension::Id::ReturnNumber ) == 1
-		// 		: false
-		// );
+	bool Raster_metrics2::processOne( pdal::PointRef & pt_ ) {
+		// Process a point (accumulate the z-values of all pixels). 
+		pr_z_accumulators[ pr_bbox.index( pt_ ) ].push_back( 
+			pt_.getFieldAs< value_type >( pr_height_dimension ), 
+			pr_has_return_number
+				? pt_.getFieldAs< std::uint8_t >( pdal::Dimension::Id::ReturnNumber ) == 1 
+				: false
+		);
+		++m_metadata.points_processed;
 		return true;
 	}
 
 
 	pdal::PointViewSet Raster_metrics2::run( pdal::PointViewPtr view_ ) {
 		// Process the points (accumulate the z-values of each pixel). This is the heavy lifting part!!!
-		for( const auto & pt_ref : *view_ ) {
-			pr_z_accumulators[ pr_bbox.index( pt_ref ) ].push_back( 
-				pt_ref.getFieldAs< value_type >( pr_height_dimension ), 
-				pr_has_return_number
-					? pt_ref.getFieldAs< std::uint8_t >( pdal::Dimension::Id::ReturnNumber ) == 1 
-					: false
-			);
+		auto pt = view_->point( 0 );
+		for( pdal::PointId idx = 0; idx < view_->size(); ++idx ) {
+			pt = view_->point( idx );
+			processOne( pt );
 		}
 
-		try {
-			// Save metrics' rasters.
-		    pdal::gdal::registerDrivers();
-			pdal::gdal::GDALError			err;
-
-			{	// Save one raster for each function-filter (metric).
-				std::vector< value_type >	pixels;
-				pixels.reserve( pr_z_accumulators.size() );
-
-				for( const auto metric : pr_metrics_set ) {
-					const std::filesystem::path		dest{ insert_suffix( m_dest_rasters, to_string( metric ) ) };
-
-					try {
-						if( !dest.parent_path().empty() )
-							std::filesystem::create_directories( dest.parent_path() );
-
-						// Get the actual metric value for each pixel. 
-						pixels.clear();
-						for( auto & accumulator : pr_z_accumulators ) {
-							pixels.push_back( metric.calculate( accumulator ) );
-						}
-
-						// save_metric( acc, m_dest_rasters, m_accumulators );
-					    pdal::gdal::Raster	raster( dest, m_drivername, m_srs, pr_bbox.affine_vector() );
-						err				  = raster.open( pr_bbox.cols(), pr_bbox.rows(), 1, m_dataType, m_noData, m_options );
-						if( err == pdal::gdal::GDALError::None )
-							err			  = raster.writeBand( pixels.data(), m_noData, 1, to_string( metric ) );
-
-						// Add metadata of the metrics' destination file. 
-						if( err != pdal::gdal::GDALError::None )	throwError( raster.errorMsg() );
-					} catch( const std::exception & e_ ) {
-						throw error_message( std20::format( "{} (saving metric to raster file {})", e_.what(), dest.native() ) );
-					}
-				}
-			}
-		} catch( const std::exception & e_ ) {
-			std::cerr << "An exception was thrown: " << e_.what() << '\n';
-			throw;
-		}
-
-		pdal::PointViewSet					result;
+		pdal::PointViewSet				result;
 		result.insert( view_ );
-		return 		    					result;
+		return result;
 	}
 
 }	// namespace pax
