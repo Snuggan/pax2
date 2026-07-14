@@ -41,13 +41,9 @@ int main( const int argc, char * argv[] ) {
 		}
 	}
 
-	const auto now		  = std::chrono::system_clock::now();
-	const auto now_secs	  = std::chrono::time_point_cast< std::chrono::seconds >( now );
 	const auto end		  = std::chrono::steady_clock::now();
 	const double duration = std::chrono::duration_cast< std::chrono::nanoseconds >( end - start ).count()*1e-9;
-	std::cout	<< pax::seconds_to_string( duration ) 
-				<< std::vformat( " (wall time) at {:%T} utc\n", std20::make_format_args( now_secs ) )
-				;
+	std::cout	<< pax::seconds_to_string( duration ) << " (wall) ";
 
 	// Exit with the child's exit code (like time usually doesn’t change success)
 	if( argc < 2 )				return status;
