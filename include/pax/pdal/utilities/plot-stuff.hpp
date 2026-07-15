@@ -5,13 +5,13 @@
 #pragma once
 
 #include "plot.hpp"
-#include "../metrics-infrastructure/function-filter.hpp"
+#include "bbox_indexer.hpp"		// bbox( pdal::PointViewPtr )
+#include <pax/pdal/metrics-infrastructure/function-filter.hpp>
 
 // Read a csv file
 #include <pax/tables/text-table.hpp>
 
 // pdal stuff
-#include "../utilities/bbox_indexer.hpp"	// bbox( pdal::PointViewPtr )
 #include <pdal/PointView.hpp>
 #include <pdal/PointTable.hpp>
 #include <pdal/Dimension.hpp>
@@ -38,6 +38,13 @@ namespace pax {
 		pdal::Dimension::Id				m_height_dimension{ pdal::Dimension::Id::Z };
 		bool							m_do_points{ true }, m_do_metrics{ true }, m_has_return_number{ false };
 
+		void save_metrics( const dir_path & plot_metrics_directory_ ) const;
+
+		void save_points( 
+			const pdal::PointViewPtr  & view_ptr_,
+			const dir_path			  & plot_points_dest_directory_,
+			string_view					plot_points_file_format_
+		) const;
 
 	public:
 		using Plot::coord_type;
@@ -104,151 +111,73 @@ namespace pax {
 		/// Access the points.
 		void save( 
 			const pdal::PointViewPtr  & view_ptr_,
-			const dir_path			  & dest_plot_points_directory_,
-			string_view					file_format_ = laz_suffix
+			const dir_path			  & plot_metrics_directory_,
+			const dir_path			  & plot_points_dest_directory_,
+			string_view					plot_points_file_format_ = laz_suffix
 		) const {
-			const std::filesystem::path	dest   = dest_plot_points_directory_ / ( m_id + file_format_ );
-			try{
-				// Create a new view and add the plot's points to it. 
-				pdal::PointViewPtr		points{ view_ptr_->makeNew() };
-				pdal::PointRef			pt( *view_ptr_, 0 );
-				for( pdal::PointId idx : m_points_idx ) {
-					pt.setPointId( idx );
-					points->appendPoint( *view_ptr_, pt.pointId() );
-				}
-
-				// Save the view to a file.
-				pdal::Options			options;
-				options.add( "filename", dest.native() );
-				if( file_format_ == laz_suffix ) {
-					options.add( "compression",	"laszip" );
-					file_format_	  = las_suffix;
-				}
-
-				pdal::BufferReader		reader;
-				reader.addView( points );
-
-				// StageFactory always "owns" the stages it creates. They'll be destroyed with the factory.
-				pdal::StageFactory		factory;
-				// Next line can not be "writers.laz", but must in that case be "writers.las".
-				pdal::Stage			  * writer = factory.createStage( std::string( "writers" ) + file_format_ );
-				writer->setInput( reader );
-				writer->setOptions( options );
-				writer->prepare( points->table() );
-				writer->execute( points->table() );
-
-			} catch( const std::exception & error_ ) {
-				throw error_message( std20::format( "Plot_stuff: {}. (Saving point cloud of plot '{}' to file '{}'.)",
-					error_.what(), m_id, to_string( dest )
-				) );
+			if( !empty() ) {
+				if( m_do_metrics && !plot_metrics_directory_.empty() )
+					save_metrics( plot_metrics_directory_ );
+				if( m_do_points  && !plot_points_dest_directory_.empty() )
+					save_points( view_ptr_, plot_points_dest_directory_, plot_points_file_format_ );
 			}
 		}
 	};
+	
+	
+	inline void Plot_stuff::save_metrics( const dir_path & plot_metrics_directory_ ) const {
+		const std::filesystem::path	metrics_dest   = plot_metrics_directory_ / ( m_id + ".csv" );
+		try{
+			
 
+		} catch( const std::exception & error_ ) {
+			throw error_message( std20::format( "Plot_stuff: {}. (Saving metrics of plot '{}' to file '{}'.)",
+				error_.what(), m_id, to_string( metrics_dest )
+			) );
+		}
+	}
 
-	// /// Process the plots in a plots text file.
-	// /** 1. Construct (Process_plots_points) the base data from the plots source file (a csv type of file).
-	// 	2. Process directories of point cloud files file or individual point cloud files.
-	// 	3. Save a new csv type of file, same as the original, but with new or updated metrics.
-	// **/
-	// class Process_plots_points {
-	// 	using coord_type						  = Plot_points::coord_type;
-	// 	using string_view						  = std::string_view;
-	//
-	// 	pdal::PointViewPtr							m_view_ptr;
-	// 	std::vector< Plot_points >					m_plots;				// Binary "table" of plots.
-	// 	std::size_t									m_processed_plots{};	// Number of plots processed.
-	//
-	// 	// Read a plot file and return the resulting text table.
-	// 	[[nodiscard]] static std::vector< Plot_points > read_plots(
-	// 		const file_path						  & plots_source_,
-	// 		const string_view						id_column_,
-	// 		const coord_type						max_disdance_
-	// 	) {
-	// 		try {
-	// 			Text_table< char >					plots_table{ plots_source_ };
-	// 			auto all_plots = plots_table.export_values( Plot_points::table_meta( id_column_ ) );
-	// 			if( max_disdance_ > 0 ) {
-	// 				for( auto plot : all_plots )	// Set all radiuses to max_diustance_.
-	// 					plot.set_radius( max_disdance_ );
-	// 			}
-	// 			return all_plots;
-	// 		} catch( const std::exception & error_ ) {
-	// 			throw error_message( std20::format( "Plot_points: {}. (Reading text table '{}'.)",
-	// 				error_.what(), to_string( plots_source_ )
-	// 			) );
-	// 		}
-	// 	}
-	//
-	// 	/// Construct the base data from the plots source file (a csv type of file).
-	// 	Process_plots_points(
-	// 		const file_path						  & plots_source_,
-	// 		const coord_type						max_disdance_,
-	// 		const pdal::PointViewPtr				view_ptr_,
-	// 		const string_view						id_column_
-	// 	) : m_view_ptr{ view_ptr_ }, m_plots{ read_plots( plots_source_, id_column_, max_disdance_ ) } {}
-	//
-	// 	/// Process an individual point cloud file.
-	// 	template< typename BBox >
-	// 	void process( const BBox & bbox_ ) {
-	// 		// Find the plots that are in bbox_.
-	// 		if( !empty( bbox_ ) ) {
-	// 			std::vector< Plot_points * >		active_plots;
-	// 			for( Plot_points & plot : m_plots )
-	// 				if( plot.in_box( bbox_ ) )		active_plots.push_back( &plot );
-	//
-	// 			// Accumulate points at the activated plots (if there are any).
-	// 			if( !active_plots.empty() ) {
-	// 				m_processed_plots			 += active_plots.size();
-	// 				pdal::PointRef					pt( *m_view_ptr, 0 );
-	// 				for( pdal::PointId idx{}; idx < m_view_ptr->size(); ++idx ) {
-	// 					pt.setPointId( idx );
-	// 					for( auto plot_ptr : active_plots )
-	// 						plot_ptr->process( pt );
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	//
-	// 	/// Save the plots' point couds in the specified directory.
-	// 	/** Returns the number of plots processed.		**/
-	// 	std::size_t save(
-	// 		const dir_path		  & dest_plot_points_directory_,
-	// 		const string_view		output_file_format_
-	// 	) const {
-	// 		if( m_processed_plots )
-	// 			for( const Plot_points & plot : m_plots )
-	// 				if( !plot.empty() )				plot.save( m_view_ptr, dest_plot_points_directory_, output_file_format_ );
-	// 		return m_processed_plots;
-	// 	}
-	//
-	// 	/// Return metadata of result.
-	// 	template< typename Json >
-	// 	[[nodiscard]] Json json( const dir_path & dest_plot_points_directory_ ) const {
-	// 		return Json{
-	// 			{	"plots",						{
-	// 				{	"destination",				dest_plot_points_directory_		},
-	// 				{	"total",					m_plots.size()					},
-	// 				{	"saved-plots",				m_processed_plots				},
-	// 				{	"plot-inclusion",			Plot_points::inclusion_id()		}
-	// 			}}
-	// 		};
-	// 	}
-	//
-	//
-	// public:
-	// 	static std::size_t process(
-	// 		const pdal::PointViewPtr				view_ptr_,
-	// 		const file_path						  & plots_source_,
-	// 		const dir_path						  & dest_plot_points_directory_,
-	// 		const coord_type						max_disdance_,
-	// 		const string_view						id_column_			  = "id",
-	// 		const string_view						output_file_format_	  = ".laz"
-	// 	) {
-	// 		Process_plots_points					plots{ plots_source_, max_disdance_, view_ptr_, id_column_ };
-	// 		plots.process( bbox( *view_ptr_ ) );
-	// 		return plots.save( dest_plot_points_directory_, output_file_format_ );
-	// 	}
-	// };
+	
+	inline void Plot_stuff::save_points( 
+		const pdal::PointViewPtr  & view_ptr_,
+		const dir_path			  & plot_points_dest_directory_,
+		string_view					plot_points_file_format_
+	) const {
+		const std::filesystem::path	plot_points_dest   = plot_points_dest_directory_ / ( m_id + plot_points_file_format_ );
+		try{
+			// Create a new view and add the plot's points to it. 
+			pdal::PointViewPtr		points{ view_ptr_->makeNew() };
+			pdal::PointRef			pt( *view_ptr_, 0 );
+			for( pdal::PointId idx : m_points_idx ) {
+				pt.setPointId( idx );
+				points->appendPoint( *view_ptr_, pt.pointId() );
+			}
+
+			// Save the view to a file.
+			pdal::Options			options;
+			options.add( "filename", plot_points_dest.native() );
+			if( plot_points_file_format_ == laz_suffix ) {
+				options.add( "compression",	"laszip" );
+				plot_points_file_format_	  = las_suffix;
+			}
+
+			pdal::BufferReader		reader;
+			reader.addView( points );
+
+			// StageFactory always "owns" the stages it creates. They'll be destroyed with the factory.
+			pdal::StageFactory		factory;
+			// Next line can not be "writers.laz", but must in that case be "writers.las".
+			pdal::Stage			  * writer = factory.createStage( std::string( "writers" ) + plot_points_file_format_ );
+			writer->setInput( reader );
+			writer->setOptions( options );
+			writer->prepare( points->table() );
+			writer->execute( points->table() );
+
+		} catch( const std::exception & error_ ) {
+			throw error_message( std20::format( "Plot_stuff: {}. (Saving point cloud of plot '{}' to file '{}'.)",
+				error_.what(), m_id, to_string( plot_points_dest )
+			) );
+		}
+	}
 
 }	// namespace pax

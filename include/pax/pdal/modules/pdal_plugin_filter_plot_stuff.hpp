@@ -38,18 +38,21 @@ namespace pax {
 		pdal::PointViewSet run( pdal::PointViewPtr view_ )	override;
 
 		std::string					m_plot_file{}, 
-									m_dest_plot_points_directory{}, 
-									m_dest_plot_metrics_directory{}, 
-									m_id_column{ "id" }, 
-									m_dest_format{ ".laz" };
-		double						m_buffer{ 0.0 };
-		pdal::SpatialReference		m_srs;
+									m_metrics_dest_directory{}, 
+									m_points_dest_directory{}, 
+									m_points_id_column{ "id" }, 
+									m_points_format{ ".laz" };
+		double						m_plot_buffer{ 0.0 };
+		pdal::StringList			m_metrics;		// Metric accessor names.
+		double						m_metrics_nilsson{ 0.0 };
 		
 		pdal::PointViewPtr			m_view_ptr{};
 		std::vector< Plot_stuff >	m_plots{};		// Binary "table" of plots.
 		
 		struct metadata {
-			std::size_t 			plots_processed{}, points_processed{}, points_found{};
+			std::size_t 			plots_processed{}, 
+									points_processed{}, 
+									points_in_plots{};
 		};
 		mutable metadata			m_metadata{};
 	};

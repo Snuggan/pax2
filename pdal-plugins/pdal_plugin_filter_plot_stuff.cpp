@@ -24,43 +24,58 @@ namespace pax {
 
 
 	void plot_stuff::addArgs( pdal::ProgramArgs & args ) {
+		std::ostringstream				metrics_help_stream;
+		metrics::Function_filter::help( metrics_help_stream );
+
 		// setPositional() Makes the argument required.
 		args.add( "plot_file", 			"File path to a csv-type file with at least the required columns 'north', 'east', "
 										"'radius' and 'id'. Plots not entirely within the point cloud bounding box are ignored. ",
 											m_plot_file ).setPositional();
-		args.add( "dest_plot_points",	"Destination path (to a directory) for the plot point cloud files. ", 
-											m_dest_plot_points_directory ).setPositional();
-		args.add( "dest_plot_metrics",	"Destination path (to a directory) for the plot metric csv files. ", 
-											m_dest_plot_metrics_directory ).setPositional();
-		args.add( "dest_format",		"File format to use for resulting point clud files (e.g '.laz'). ", 
-											m_dest_format, m_dest_format );
+		args.add( "plot_points_dest",	"Destination path (to a directory) for the plot point cloud files. ", 
+											m_points_dest_directory ).setPositional();
+		args.add( "plot_metrics_dest",	"Destination path (to a directory) for the plot metric csv files. ", 
+											m_metrics_dest_directory ).setPositional();
+		args.add( "metrics", 			metrics_help_stream.str(), m_metrics ).setPositional();
+		args.add( "nilsson_level", 		"For some metrics, ignore z-values below this. ", m_metrics_nilsson, m_metrics_nilsson );
+		args.add( "points_format",		"File format to use for resulting plot point clud files (e.g '.laz'). ", 
+											m_points_format, m_points_format );
 		args.add( "id_column",			"In what column to find the [unique] plot id, to use as destination file name. ", 
-											m_id_column, m_id_column );
-		args.add( "max_distance",		"How much to enlarge the plot diameters. A zero value (the default) will use the plot diameter. ",
-											m_buffer, m_buffer );
+											m_points_id_column, m_points_id_column );
+		args.add( "plot_buffer",		"How much to enlarge the plot diameters. A zero value (the default) will use the plot diameter. ",
+											m_plot_buffer, m_plot_buffer );
 	}
 
 
 	plot_stuff::~plot_stuff() {
-		// Export metadata.
-		pdal::MetadataNode					meta = getMetadata();
-		meta.add( "plots-processed",		m_metadata.plots_processed );
-		meta.add( "points-processed",		m_metadata.points_processed );
-		meta.add( "points-found",			m_metadata.points_found );
-
-		pdal::MetadataNode					arguments( "arguments" );
-		arguments.add( "plot_file",			to_string( m_plot_file ) );
-		arguments.add( "dest_plot_points",	to_string( m_dest_plot_points_directory ) );
-		arguments.add( "max_distance",		m_buffer );
-		meta.add( arguments );
-		
 		try {
 			for( const auto & plot : m_plots )	if( !plot.empty() )				
-				plot.save( m_view_ptr, m_dest_plot_points_directory, m_dest_format );
+				plot.save( 
+					m_view_ptr, 
+					m_metrics_dest_directory, 
+					m_points_dest_directory, 
+					m_points_format 
+				);
 		} catch( const std::exception & error_ ) {
 			std::cerr << error_.what() << '\n';
 			throw;	// Or should we just terminate?
 		}
+
+		// Export metadata.
+		pdal::MetadataNode					meta = getMetadata();
+		meta.add( "plots-processed",		m_metadata.plots_processed );
+		meta.add( "points-processed",		m_metadata.points_processed );
+		meta.add( "points-found",			m_metadata.points_in_plots );
+
+		pdal::MetadataNode					arguments( "arguments" );
+		arguments.add( "plot_file",			to_string( m_plot_file ) );
+		arguments.add( "plot_points_dest",	to_string( m_points_dest_directory ) );
+		arguments.add( "plot_metrics_dest",	to_string( m_metrics_dest_directory ) );
+		for( const auto & metric : m_metrics )	arguments.add( "metrics",	metric );
+		arguments.add( "nilsson_level", 	m_metrics_nilsson );
+		arguments.add( "points_format",		m_points_format );
+		arguments.add( "id_column",			m_points_id_column );
+		arguments.add( "plot_buffer",		m_plot_buffer );
+		meta.add( arguments );
 	}
 
 
@@ -74,7 +89,7 @@ namespace pax {
 		// First, read in all plots from the csv file.
 		if( !empty( bbox ) ) {	
 			Text_table< char >				plots_table{ m_plot_file };
-			plots						  = plots_table.export_values( Plot_stuff::table_meta( m_id_column ) );
+			plots						  = plots_table.export_values( Plot_stuff::table_meta( m_points_id_column ) );
 		}
 		
 		// Then, only keep the plots that overlap the bbox.
@@ -94,12 +109,12 @@ namespace pax {
 		
 		for( Plot_stuff & plot : plots ) {
 			plot.set_complementary_stuff( 
-				!m_dest_plot_metrics_directory.empty(), 
-				!m_dest_plot_points_directory.empty(), 
+				!m_metrics_dest_directory.empty(), 
+				!m_points_dest_directory.empty(), 
 				has_return_number, 
 				height_dim 
 			);
-			if( m_buffer > 0 )				plot.set_radius( m_buffer );
+			if( m_plot_buffer > 0 )			plot.set_radius( m_plot_buffer );
 		}
 
 		return plots;
@@ -114,7 +129,7 @@ namespace pax {
 		
 
 		// Check argumeents.
-		if( m_buffer < 0 )		std::cerr
+		if( m_plot_buffer < 0 )		std::cerr
 			<< error_message( "To export points in plots the radius needs to be non-negative." ).what() 
 			<< '\n';
 	}
@@ -122,7 +137,7 @@ namespace pax {
 
 	bool plot_stuff::processOne( pdal::PointRef & pt_ ) {
 		++m_metadata.points_processed;
-		for( auto & plot : m_plots )		m_metadata.points_found += plot.process( pt_ );
+		for( auto & plot : m_plots )		m_metadata.points_in_plots += plot.process( pt_ );
 		return true;
 	}
 
@@ -135,7 +150,7 @@ namespace pax {
 			processOne( pt );
 		}
 
-		pdal::PointViewSet				result;
+		pdal::PointViewSet					result;
 		result.insert( view_ );
 		return result;
 	}
