@@ -1,4 +1,4 @@
-// plot_points.hpp
+// plot_stuff.hpp
 
 #pragma once
 
@@ -15,15 +15,15 @@ namespace pax {
 	
 
 	/// Process point cloud files into individual plot point cloud files. 
-	class PDAL_DLL plot_points : public pdal::Filter, public pdal::Streamable {
+	class PDAL_DLL plot_stuff : public pdal::Filter, public pdal::Streamable {
 	public:
-		plot_points()									  = default;
-		plot_points( const plot_points & )				  = delete;
-		plot_points( plot_points &&)					  = delete;
-		plot_points & operator=( const plot_points & )	  = delete;
-		plot_points & operator=( plot_points && )		  = delete;
+		plot_stuff()									  = default;
+		plot_stuff( const plot_stuff & )				  = delete;
+		plot_stuff( plot_stuff &&)						  = delete;
+		plot_stuff & operator=( const plot_stuff & )	  = delete;
+		plot_stuff & operator=( plot_stuff && )			  = delete;
 
-		virtual ~plot_points();
+		virtual ~plot_stuff();
 		std::string getName()								const override;
 
 	private:

@@ -1,4 +1,4 @@
-#include <pax/pdal/modules/pdal_plugin_filter_plot_points2.hpp>
+#include <pax/pdal/modules/pdal_plugin_filter_plot_stuff.hpp>
 #include <pax/tables/text-table.hpp>			// Handle a csv file.
 
 #include <pax/pdal/process/plot-points.hpp>
@@ -12,18 +12,18 @@
 namespace pax {
 
 	static pdal::PluginInfo const s_info {
-		"filters.plot_points2",
+		"filters.plot_stuff",
 		"Save all points within plots [plus an optional buffer] to individual files. "
-		"Execute 'pdal --options filters.plot_points' for a list of available parameters. ",
-		"https://github.com/Snuggan/pax2/blob/main/documentation/pdal-plot_points.md"
+		"Execute 'pdal --options filters.plot_stuff' for a list of available parameters. ",
+		"https://github.com/Snuggan/pax2/blob/main/documentation/pdal-plot_stuff.md"
 	};
 
-	CREATE_SHARED_STAGE( plot_points, s_info )
-	std::string plot_points::getName()	const	{	return s_info.name;		}
+	CREATE_SHARED_STAGE( plot_stuff, s_info )
+	std::string plot_stuff::getName()	const	{	return s_info.name;		}
 
 
 
-	void plot_points::addArgs( pdal::ProgramArgs & args ) {
+	void plot_stuff::addArgs( pdal::ProgramArgs & args ) {
 		// setPositional() Makes the argument required.
 		args.add( "plot_file", 			"File path to a csv-type file with at least the required columns 'north', 'east', "
 										"'radius' and 'id'. Plots not entirely within the point cloud bounding box are ignored. ",
@@ -39,7 +39,7 @@ namespace pax {
 	}
 
 
-	plot_points::~plot_points() {
+	plot_stuff::~plot_stuff() {
 		// Export metadata.
 		pdal::MetadataNode					meta = getMetadata();
 		meta.add( "plots-processed",		m_metadata.plots_processed );
@@ -64,7 +64,7 @@ namespace pax {
 
 	// Read a plot file and return a vector of the plots in the bbox.
 	template< typename BBox >
-	std::vector< Plot_points > plot_points::get_plots(
+	std::vector< Plot_points > plot_stuff::get_plots(
 		const std::string_view				plots_table_, 
 		const std::string_view 				id_column_,
 		const coordinate_type				buffer_,
@@ -97,7 +97,7 @@ namespace pax {
 
 
 	/// Do pre-flight stuff.
-	void plot_points::prepared( pdal::PointTableRef pt_table_ ) {
+	void plot_stuff::prepared( pdal::PointTableRef pt_table_ ) {
 		m_plots							  = get_plots( m_plot_file, m_id_column, m_buffer, bbox( pt_table_ ) );
 		m_metadata.plots_processed		  = m_plots.size();
 		m_pt_view_ptr					  = std::make_shared< pdal::PointView >( pt_table_ );
@@ -110,14 +110,14 @@ namespace pax {
 	}
 
 
-	bool plot_points::processOne( pdal::PointRef & pt_ ) {
+	bool plot_stuff::processOne( pdal::PointRef & pt_ ) {
 		++m_metadata.points_processed;
 		for( auto & plot : m_plots )		m_metadata.points_found += plot.process( pt_ );
 		return true;
 	}
 
 
-	pdal::PointViewSet plot_points::run( pdal::PointViewPtr view_ ) {
+	pdal::PointViewSet plot_stuff::run( pdal::PointViewPtr view_ ) {
 		// Process the points.
 		auto pt = view_->point( 0 );
 		for( pdal::PointId idx = 0; idx < view_->size(); ++idx ) {
