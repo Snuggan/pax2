@@ -10,8 +10,7 @@
 
 namespace pax {
 
-	class Plot_points;	// In pax/pdal/process/plot-points.hpp
-	class Plot_points;
+	class Plot_stuff;	// In pax/pdal/utilities/plot-stuff.hpp
 	
 
 	/// Process point cloud files into individual plot point cloud files. 
@@ -31,7 +30,7 @@ namespace pax {
 		using value_type		  = float;
 
 		template< typename BBox >
-		static std::vector< Plot_points > get_plots(
+		static std::vector< Plot_stuff > get_plots(
 			const std::string_view	plots_table_, 
 			const std::string_view 	id_column_,
 			const coordinate_type 	max_disdance_,
@@ -51,7 +50,7 @@ namespace pax {
 		pdal::SpatialReference		m_srs;
 		
 		pdal::PointViewPtr			m_view_ptr;
-		std::vector< Plot_points >	m_plots;		// Binary "table" of plots.
+		std::vector< Plot_stuff >	m_plots;		// Binary "table" of plots.
 		pdal::PointViewPtr			m_pt_view_ptr;
 		
 		struct metadata {

@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "plot.hpp"
+#include "../utilities/plot.hpp"
 
 // Read a csv file
 #include <pax/tables/text-table.hpp>

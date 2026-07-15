@@ -1,7 +1,7 @@
 #include <pax/pdal/modules/pdal_plugin_filter_plot_stuff.hpp>
 #include <pax/tables/text-table.hpp>			// Handle a csv file.
 
-#include <pax/pdal/process/plot-points.hpp>
+#include <pax/pdal/utilities/plot-stuff.hpp>
 
 #include <pdal/util/FileUtils.hpp>
 #include <pdal/util/ProgramArgs.hpp>
@@ -64,24 +64,24 @@ namespace pax {
 
 	// Read a plot file and return a vector of the plots in the bbox.
 	template< typename BBox >
-	std::vector< Plot_points > plot_stuff::get_plots(
+	std::vector< Plot_stuff > plot_stuff::get_plots(
 		const std::string_view				plots_table_, 
 		const std::string_view 				id_column_,
 		const coordinate_type				buffer_,
 		const BBox						  & bbox_
 	) {
-		std::vector< Plot_points >			plots{};
+		std::vector< Plot_stuff >			plots{};
 
 		// First, read in all plots from the csv file.
 		if( !empty( bbox_ ) ) {	
 			Text_table< char >				plots_table{ plots_table_ };
-			plots						  = plots_table.export_values( Plot_points::table_meta( id_column_ ) );
+			plots						  = plots_table.export_values( Plot_stuff::table_meta( id_column_ ) );
 		}
 		
 		// Then, only keep the plots that overlap the bbox_.
 		// Copy the relevant plots to the begining of 'plots' and...
 		auto itr						  = plots.begin();
-		for( Plot_points & plot : plots )
+		for( Plot_stuff & plot : plots )
 			if( plot.in_box( bbox_ ) )	  * ( itr++ ) = plot;
 
 		// ...resize it to contain just those relevant plots.
@@ -89,7 +89,7 @@ namespace pax {
 		plots.shrink_to_fit();
 
 		// If so stated, set the buffer to the plots.
-		if( buffer_ > 0 ) for( Plot_points & plot : plots )
+		if( buffer_ > 0 ) for( Plot_stuff & plot : plots )
 			plot.set_radius( buffer_ );
 
 		return plots;
