@@ -30,6 +30,8 @@ namespace pax {
 											m_plot_file ).setPositional();
 		args.add( "dest_plot_points",	"Destination path (to a directory) for the plot point cloud files. ", 
 											m_dest_plot_points_directory ).setPositional();
+		args.add( "dest_plot_metrics",	"Destination path (to a directory) for the plot metric csv files. ", 
+											m_dest_plot_metrics_directory ).setPositional();
 		args.add( "dest_format",		"File format to use for resulting point clud files (e.g '.laz'). ", 
 											m_dest_format, m_dest_format );
 		args.add( "id_column",			"In what column to find the [unique] plot id, to use as destination file name. ", 
@@ -54,7 +56,7 @@ namespace pax {
 		
 		try {
 			for( const auto & plot : m_plots )	if( !plot.empty() )				
-				plot.save( m_pt_view_ptr, m_dest_plot_points_directory, m_dest_format );
+				plot.save( m_view_ptr, m_dest_plot_points_directory, m_dest_format );
 		} catch( const std::exception & error_ ) {
 			std::cerr << error_.what() << '\n';
 			throw;	// Or should we just terminate?
@@ -63,34 +65,42 @@ namespace pax {
 
 
 	// Read a plot file and return a vector of the plots in the bbox.
-	template< typename BBox >
-	std::vector< Plot_stuff > plot_stuff::get_plots(
-		const std::string_view				plots_table_, 
-		const std::string_view 				id_column_,
-		const coordinate_type				buffer_,
-		const BBox						  & bbox_
-	) {
+	template< typename Point_table >
+	std::vector< Plot_stuff > plot_stuff::get_plots( Point_table & pt_table_ ) {
+		const pdal::PointLayoutPtr 			layout = pt_table_.layout();
+		const auto							bbox = pax::bbox( pt_table_ );
 		std::vector< Plot_stuff >			plots{};
 
 		// First, read in all plots from the csv file.
-		if( !empty( bbox_ ) ) {	
-			Text_table< char >				plots_table{ plots_table_ };
-			plots						  = plots_table.export_values( Plot_stuff::table_meta( id_column_ ) );
+		if( !empty( bbox ) ) {	
+			Text_table< char >				plots_table{ m_plot_file };
+			plots						  = plots_table.export_values( Plot_stuff::table_meta( m_id_column ) );
 		}
 		
-		// Then, only keep the plots that overlap the bbox_.
+		// Then, only keep the plots that overlap the bbox.
 		// Copy the relevant plots to the begining of 'plots' and...
 		auto itr						  = plots.begin();
 		for( Plot_stuff & plot : plots )
-			if( plot.in_box( bbox_ ) )	  * ( itr++ ) = plot;
+			if( plot.in_box( bbox ) )	  * ( itr++ ) = plot;
 
 		// ...resize it to contain just those relevant plots.
 		plots.resize( std::size_t( itr - plots.begin() ) );
 		plots.shrink_to_fit();
 
-		// If so stated, set the buffer to the plots.
-		if( buffer_ > 0 ) for( Plot_stuff & plot : plots )
-			plot.set_radius( buffer_ );
+		// Set the values not in the table.
+		const auto height_dim			  = layout->hasDim( pdal::Dimension::Id::HeightAboveGround )
+									  	  ? pdal::Dimension::Id::HeightAboveGround : pdal::Dimension::Id::Z;
+		const bool has_return_number	  = layout->hasDim( pdal::Dimension::Id::ReturnNumber );
+		
+		for( Plot_stuff & plot : plots ) {
+			plot.set_complementary_stuff( 
+				!m_dest_plot_metrics_directory.empty(), 
+				!m_dest_plot_points_directory.empty(), 
+				has_return_number, 
+				height_dim 
+			);
+			if( m_buffer > 0 )				plot.set_radius( m_buffer );
+		}
 
 		return plots;
 	}
@@ -98,9 +108,9 @@ namespace pax {
 
 	/// Do pre-flight stuff.
 	void plot_stuff::prepared( pdal::PointTableRef pt_table_ ) {
-		m_plots							  = get_plots( m_plot_file, m_id_column, m_buffer, bbox( pt_table_ ) );
+		m_view_ptr						  = std::make_shared< pdal::PointView >( pt_table_ );
+		m_plots							  = get_plots( pt_table_ );
 		m_metadata.plots_processed		  = m_plots.size();
-		m_pt_view_ptr					  = std::make_shared< pdal::PointView >( pt_table_ );
 		
 
 		// Check argumeents.

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "plot.hpp"
+#include "../metrics-infrastructure/function-filter.hpp"
 
 // Read a csv file
 #include <pax/tables/text-table.hpp>
@@ -23,7 +24,7 @@ namespace pax {
 
 	/// A simple container for the spacial data of a plot.
 	/// It has the plot stuff + an id and a vector of pdal points. 
-	class Plot_stuff : public Plot {
+	class Plot_stuff : public Plot, public metrics::Point_aggregator {
 		static constexpr const char *	las_suffix  = ".las";
 		static constexpr const char *	laz_suffix  = ".laz";
 		static constexpr const char *	file_suffix = laz_suffix;
@@ -33,16 +34,18 @@ namespace pax {
 
 		static_assert( sizeof( pdal::PointId ) == 8 );
 		std::vector< pdal::PointId >	m_points_idx{};
-		std::string						m_id;
+		std::string						m_id{};
+		pdal::Dimension::Id				m_height_dimension{ pdal::Dimension::Id::Z };
+		bool							m_do_points{ true }, m_do_metrics{ true }, m_has_return_number{ false };
 
 
 	public:
 		using Plot::coord_type;
 
 		constexpr Plot_stuff()									  = default;
-		constexpr Plot_stuff( const Plot_stuff & )			  = default;
+		constexpr Plot_stuff( const Plot_stuff & )				  = default;
 		constexpr Plot_stuff( Plot_stuff && )					  = default;
-		constexpr Plot_stuff & operator=( const Plot_stuff & )  = default;
+		constexpr Plot_stuff & operator=( const Plot_stuff & )	  = default;
 		constexpr Plot_stuff & operator=( Plot_stuff && )		  = default;
 
 
@@ -51,14 +54,32 @@ namespace pax {
 			const coord_type			east_, 
 			const coord_type			north_, 
 			const coord_type			radius_, 
-			const string_view			id_
-		) noexcept : Plot{ east_, north_, radius_ }, m_id{ id_.data(), id_.size() } {}
+			const string_view			id_ = "id"
+		) noexcept : 
+			Plot{ east_, north_, radius_ }, 
+			m_id{ id_.data(), id_.size() }
+		{}
+
+
+		/// Set the stuff that is not found in the csv table.
+		constexpr void set_complementary_stuff(
+			const bool					do_metrics, 
+			const bool					do_points, 
+			const bool					has_return_number,
+			const pdal::Dimension::Id	height_dimension
+		) {
+			m_do_metrics			  = do_metrics;
+			m_do_points				  = do_points;
+			m_has_return_number		  = has_return_number;
+			m_height_dimension		  = height_dimension;
+		}
 
 
 		/// This is used to read values from a csv file.
 		static constexpr Meta table_meta( const string_view id_column_ )  noexcept	{
 			return Meta{ "east", "north", "radius", id_column_ };
 		}
+
 
 		/// Was this plot processed during this run?
 		constexpr bool empty()										const noexcept	{
@@ -69,10 +90,17 @@ namespace pax {
 		/// Process a point.
 		bool process( const pdal::PointRef & pt_ ) 					noexcept		{
 			const bool					inside = Plot::contains( pt_ );
-			if( inside )				m_points_idx.push_back( pt_.pointId() );
+			if( inside ) {
+				if( m_do_points )		m_points_idx.push_back( pt_.pointId() );
+				if( m_do_metrics )		Point_aggregator::push_back(
+					pt_.getFieldAs< coord_type >( m_height_dimension ),
+					!m_has_return_number || pt_.getFieldAs<std::uint8_t>(pdal::Dimension::Id::ReturnNumber) == 1
+				);
+			}
 			return inside;
 		}
-		
+
+
 		/// Access the points.
 		void save( 
 			const pdal::PointViewPtr  & view_ptr_,

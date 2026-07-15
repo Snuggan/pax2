@@ -29,13 +29,8 @@ namespace pax {
 		using coordinate_type	  = double;
 		using value_type		  = float;
 
-		template< typename BBox >
-		static std::vector< Plot_stuff > get_plots(
-			const std::string_view	plots_table_, 
-			const std::string_view 	id_column_,
-			const coordinate_type 	max_disdance_,
-			const BBox			  & bbox_
-		);
+		template< typename Point_table >
+		std::vector< Plot_stuff > get_plots( Point_table & pt_table_ );
 
 		void addArgs( pdal::ProgramArgs & )					override;
 	    void prepared( pdal::PointTableRef table_ )			override;
@@ -44,19 +39,18 @@ namespace pax {
 
 		std::string					m_plot_file{}, 
 									m_dest_plot_points_directory{}, 
+									m_dest_plot_metrics_directory{}, 
 									m_id_column{ "id" }, 
 									m_dest_format{ ".laz" };
 		double						m_buffer{ 0.0 };
 		pdal::SpatialReference		m_srs;
 		
-		pdal::PointViewPtr			m_view_ptr;
-		std::vector< Plot_stuff >	m_plots;		// Binary "table" of plots.
-		pdal::PointViewPtr			m_pt_view_ptr;
+		pdal::PointViewPtr			m_view_ptr{};
+		std::vector< Plot_stuff >	m_plots{};		// Binary "table" of plots.
 		
 		struct metadata {
 			std::size_t 			plots_processed{}, points_processed{}, points_found{};
 		};
-
 		mutable metadata			m_metadata{};
 	};
 
