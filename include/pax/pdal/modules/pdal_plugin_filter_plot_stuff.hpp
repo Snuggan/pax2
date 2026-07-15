@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <pax/tables/text-table.hpp>	// Handle a csv file.
 #include <pdal/Filter.hpp>
 #include <pdal/Streamable.hpp>
 #include <string>
@@ -42,6 +43,7 @@ namespace pax {
 									m_points_dest_directory{}, 
 									m_points_id_column{ "id" }, 
 									m_points_format{ ".laz" };
+		Text_table< char >			m_all_plots_table{};
 		double						m_plot_buffer{ 0.0 };
 		pdal::StringList			m_metrics;		// Metric accessor names.
 		double						m_metrics_nilsson{ 0.0 };

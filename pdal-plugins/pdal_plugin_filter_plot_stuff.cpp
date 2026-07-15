@@ -1,5 +1,4 @@
 #include <pax/pdal/modules/pdal_plugin_filter_plot_stuff.hpp>
-#include <pax/tables/text-table.hpp>			// Handle a csv file.
 
 #include <pax/pdal/utilities/plot-stuff.hpp>
 
@@ -48,10 +47,11 @@ namespace pax {
 
 	plot_stuff::~plot_stuff() {
 		try {
+			const auto metric_set		  = metrics::metric_set( std::span{ m_metrics }, m_metrics_nilsson );
+			save_metrics( m_all_plots_table, m_plots, m_metrics_dest_directory, metric_set );
 			for( const auto & plot : m_plots )	if( !plot.empty() )				
-				plot.save( 
+				plot.save_plot_points( 
 					m_view_ptr, 
-					m_metrics_dest_directory, 
 					m_points_dest_directory, 
 					m_points_format 
 				);
@@ -92,16 +92,13 @@ namespace pax {
 
 		// First, read in all plots from the csv file.
 		if( !empty( bbox ) ) {	
-			std::vector< Plot_w_id >		basic_plots{};
-			{	// Destruct plots_table as soon as it is not needed.
-				Text_table< char >			plots_table{ m_plot_file };
-				basic_plots				  = plots_table.export_values( Plot_w_id::table_meta( m_points_id_column ) );
-			}
+			m_all_plots_table			  =	Text_table< char >{ m_plot_file };
+			std::vector< Plot_w_id >		basic_plots = m_all_plots_table.export_values( Plot_w_id::table_meta( m_points_id_column ) );
 		
 			// Then, only keep the plots that overlap the bbox.
 			// Copy the relevant plots to the begining of 'plots' and...
-			auto itr					  = plots.begin();
-			for( Plot_stuff & plot : basic_plots )
+			auto itr					  = basic_plots.begin();
+			for( Plot_w_id & plot : basic_plots )
 				if( plot.in_box( bbox ) )  * ( itr++ ) = plot;
 
 			// ...resize it to contain just those relevant plots.
@@ -109,7 +106,8 @@ namespace pax {
 			plots.reserve( basic_plots.size() );
 
 			// Now, create the Plot_stuff vector.
-			for( const Plot_w_id & plot : basic_plots ) {
+			for( Plot_w_id & plot : basic_plots ) {
+				if( m_plot_buffer > 0 )		plot.set_radius( m_plot_buffer );
 				plots.emplace_back(
 					plot, 
 					!m_metrics_dest_directory.empty(), 
@@ -117,7 +115,6 @@ namespace pax {
 					has_return_number, 
 					height_dim 
 				);
-				if( m_plot_buffer > 0 )		plot.set_radius( m_plot_buffer );
 			}
 		}
 
