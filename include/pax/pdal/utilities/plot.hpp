@@ -86,6 +86,13 @@ namespace pax {
 		) noexcept : point_type{ east_, north_ }, m_radius{ radius_ } {}
 
 
+		/// This is used to read values from a csv file.
+		using Meta = class_meta< Plot_stuff, coord_type, coord_type, coord_type >;
+		static constexpr Meta table_meta()  							noexcept	{
+			return { "east", "north", "radius" };
+		}
+
+
 		/// 
 		static constexpr auto inclusion_id() noexcept {
 			return inclusion_id_[ std::size_t( inclusion ) ];
@@ -119,6 +126,38 @@ namespace pax {
 				+	square( get< 1 >( *this ) - pt_.getFieldAs< coord_type >( pdal::Dimension::Id::Y ) ) 
 				<=  square( radius() );
 		}
+	};
+	
+
+
+	/// A simple container for the spacial data of a plot.
+	class Plot_w_id : public Plot {
+		std::string					m_plot_id{};
+
+	public:
+		constexpr Plot_w_id()								  = default;
+		constexpr Plot_w_id( const Plot_w_id & )			  = default;
+		constexpr Plot_w_id( Plot_w_id && )					  = default;
+		constexpr Plot_w_id & operator=( const Plot_w_id & )  = default;
+		constexpr Plot_w_id & operator=( Plot_w_id && )		  = default;
+
+		constexpr Plot_w_id(
+			const coord_type		east_, 
+			const coord_type		north_,
+			const coord_type		radius_,
+			const std::string_view	plot_id_ = std::string_view{}
+		) noexcept : Plot{ east_, north_, radius_ }, m_plot_id{ plot_id_ } {}
+
+
+		/// This is used to read values from a csv file.
+		using Meta = class_meta< Plot_stuff, coord_type, coord_type, coord_type, std::string >;
+		static constexpr Meta table_meta( const std::string_view id_col_ ) const noexcept {
+			return { "east", "north", "radius", id_col_ };
+		}
+		
+		
+		/// Return the radius.
+		constexpr coord_type id() 								const noexcept	{	return m_plot_id;	}
 	};
 
 }	// namespace pax

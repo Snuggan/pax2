@@ -62,7 +62,7 @@ namespace pax {
 
 		// Export metadata.
 		pdal::MetadataNode					meta = getMetadata();
-		meta.add( "plots-processed",		m_metadata.plots_processed );
+		meta.add( "plots-processed",		m_plots.size() );
 		meta.add( "points-processed",		m_metadata.points_processed );
 		meta.add( "points-found",			m_metadata.points_in_plots );
 
@@ -84,37 +84,41 @@ namespace pax {
 	std::vector< Plot_stuff > plot_stuff::get_plots( Point_table & pt_table_ ) {
 		const pdal::PointLayoutPtr 			layout = pt_table_.layout();
 		const auto							bbox = pax::bbox( pt_table_ );
+		const auto height_dim			  = layout->hasDim( pdal::Dimension::Id::HeightAboveGround )
+									  	  ? pdal::Dimension::Id::HeightAboveGround : pdal::Dimension::Id::Z;
+		const bool has_return_number	  = layout->hasDim( pdal::Dimension::Id::ReturnNumber );
+
 		std::vector< Plot_stuff >			plots{};
 
 		// First, read in all plots from the csv file.
 		if( !empty( bbox ) ) {	
-			Text_table< char >				plots_table{ m_plot_file };
-			plots						  = plots_table.export_values( Plot_stuff::table_meta( m_points_id_column ) );
-		}
+			std::vector< Plot_w_id >		basic_plots{};
+			{	// Destruct plots_table as soon as it is not needed.
+				Text_table< char >			plots_table{ m_plot_file };
+				basic_plots				  = plots_table.export_values( Plot_w_id::table_meta( m_points_id_column ) );
+			}
 		
-		// Then, only keep the plots that overlap the bbox.
-		// Copy the relevant plots to the begining of 'plots' and...
-		auto itr						  = plots.begin();
-		for( Plot_stuff & plot : plots )
-			if( plot.in_box( bbox ) )	  * ( itr++ ) = plot;
+			// Then, only keep the plots that overlap the bbox.
+			// Copy the relevant plots to the begining of 'plots' and...
+			auto itr					  = plots.begin();
+			for( Plot_stuff & plot : basic_plots )
+				if( plot.in_box( bbox ) )  * ( itr++ ) = plot;
 
-		// ...resize it to contain just those relevant plots.
-		plots.resize( std::size_t( itr - plots.begin() ) );
-		plots.shrink_to_fit();
+			// ...resize it to contain just those relevant plots.
+			basic_plots.resize( std::size_t( itr - basic_plots.begin() ) );
+			plots.reserve( basic_plots.size() );
 
-		// Set the values not in the table.
-		const auto height_dim			  = layout->hasDim( pdal::Dimension::Id::HeightAboveGround )
-									  	  ? pdal::Dimension::Id::HeightAboveGround : pdal::Dimension::Id::Z;
-		const bool has_return_number	  = layout->hasDim( pdal::Dimension::Id::ReturnNumber );
-		
-		for( Plot_stuff & plot : plots ) {
-			plot.set_complementary_stuff( 
-				!m_metrics_dest_directory.empty(), 
-				!m_points_dest_directory.empty(), 
-				has_return_number, 
-				height_dim 
-			);
-			if( m_plot_buffer > 0 )			plot.set_radius( m_plot_buffer );
+			// Now, create the Plot_stuff vector.
+			for( const Plot_w_id & plot : basic_plots ) {
+				plots.emplace_back(
+					plot, 
+					!m_metrics_dest_directory.empty(), 
+					!m_points_dest_directory.empty(), 
+					has_return_number, 
+					height_dim 
+				);
+				if( m_plot_buffer > 0 )		plot.set_radius( m_plot_buffer );
+			}
 		}
 
 		return plots;
@@ -125,7 +129,6 @@ namespace pax {
 	void plot_stuff::prepared( pdal::PointTableRef pt_table_ ) {
 		m_view_ptr						  = std::make_shared< pdal::PointView >( pt_table_ );
 		m_plots							  = get_plots( pt_table_ );
-		m_metadata.plots_processed		  = m_plots.size();
 		
 
 		// Check argumeents.

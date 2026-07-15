@@ -50,8 +50,7 @@ namespace pax {
 		std::vector< Plot_stuff >	m_plots{};		// Binary "table" of plots.
 		
 		struct metadata {
-			std::size_t 			plots_processed{}, 
-									points_processed{}, 
+			std::size_t 			points_processed{}, 
 									points_in_plots{};
 		};
 		mutable metadata			m_metadata{};
