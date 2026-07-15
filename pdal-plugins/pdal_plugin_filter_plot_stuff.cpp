@@ -1,6 +1,5 @@
-#include <pax/pdal/modules/pdal_plugin_filter_plot_stuff.hpp>
-
 #include <pax/pdal/utilities/plot-stuff.hpp>
+#include <pax/pdal/modules/pdal_plugin_filter_plot_stuff.hpp>
 
 #include <pdal/util/FileUtils.hpp>
 #include <pdal/util/ProgramArgs.hpp>
@@ -12,7 +11,9 @@ namespace pax {
 
 	static pdal::PluginInfo const s_info {
 		"filters.plot_stuff",
-		"Save all points within plots [plus an optional buffer] to individual files. "
+		"For each plot within a point cloud file, save the plot's points to a specified file "
+		"and also a .csv file containing the metrics for the points of respective plot. "
+		"You can specify a buffer so as to also include points near plots. "
 		"Execute 'pdal --options filters.plot_stuff' for a list of available parameters. ",
 		"https://github.com/Snuggan/pax2/blob/main/documentation/pdal-plot_stuff.md"
 	};
@@ -126,7 +127,6 @@ namespace pax {
 	void plot_stuff::prepared( pdal::PointTableRef pt_table_ ) {
 		m_view_ptr						  = std::make_shared< pdal::PointView >( pt_table_ );
 		m_plots							  = get_plots( pt_table_ );
-		
 
 		// Check argumeents.
 		if( m_plot_buffer < 0 )		std::cerr
