@@ -56,9 +56,8 @@ mkdir -p ${SLU_DIR}/usr/local/etc/makefiles
 cp	-fpXv												\
 	${BIN_DIR}/pax-concat-tables						\
 	${BIN_DIR}/pax-metrics								\
+	${BIN_DIR}/timeit									\
 	${SLU_DIR}/usr/local/bin
-#	${BIN_DIR}/pax										\
-#	${BIN_DIR}/pax-time									\
 
 # Copy libpax* and libpdal_* stuff
 echo "aa"
