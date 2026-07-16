@@ -12,7 +12,10 @@
 ################################################
 
 
-pax.dir			<- file.path( "/Users", "pederaxensten", "develop", "pax2" )
+pax.dir			<- file.path( "/Users", "pax", "Documents", "develop", "pax2" )
+if( !dir.exists( pax.dir ) ) {
+	stop( "Update the path 'pax.dir': there is no such directory", pax.dir )
+}
 
 
 require( getopt,   quietly=TRUE )
@@ -45,6 +48,11 @@ if( dir.exists( package.dir ) ) {
 		system( paste( "RCMD check --as-cran", package.dir ) )
 	}
 	install.packages( pkgs=package.dir, dependencies=TRUE, repos=NULL, type="source" )
+	
+	# opy the shell script to run the regression to bin/:
+	file.copy(	file.path( package.dir, "inst", "tools", "pax-regression/" ), 
+				file.path( "/usr", "local", "bin" ) )
+	cat( "Copy", file.path( package.dir, "inst", "tools", "pax-regression/" ), "to", file.path( "/usr", "local", "bin" ), "\n" )
 } else {
-	stop( "There was no such package path:", package.dir )
+	stop( "Update the path 'package.dir': there is no such directory", package.dir )
 }

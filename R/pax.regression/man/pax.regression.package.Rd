@@ -2,6 +2,7 @@
 % Please edit documentation in R/pax-regression-package.r
 \docType{package}
 \name{pax.regression.package}
+\alias{pax.regression-package}
 \alias{pax.regression.package}
 \title{Tools to use for regression in the forestry domain.}
 \description{

@@ -37,19 +37,19 @@ A family of functions that implements simple logging.
 }
 \section{Functions}{
 \itemize{
-\item \code{log_set_sink}: Set (or reset) the logging sink (destination).
+\item \code{log_set_sink()}: Set (or reset) the logging sink (destination).
 
-\item \code{log_item}: Log an item.
+\item \code{log_item()}: Log an item.
 
-\item \code{log_stop}: An error occured, log the error message and stop.
+\item \code{log_stop()}: An error occured, log the error message and stop.
 
-\item \code{log_sink}: Log Returns the logging sink (destination).
+\item \code{log_sink()}: Log Returns the logging sink (destination).
 
-\item \code{log_begin}: Log the entry into a function.
+\item \code{log_begin()}: Log the entry into a function.
 
-\item \code{log_end}: Log the exit from a function.
+\item \code{log_end()}: Log the exit from a function.
+
 }}
-
 \seealso{
 \code{\link{pax.regression.package}}
 }

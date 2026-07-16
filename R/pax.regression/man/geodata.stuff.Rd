@@ -43,18 +43,18 @@ A family of functions that implements simple logging.
 }
 \section{Functions}{
 \itemize{
-\item \code{epsg_string}: Construct a crs string from an epsg number. Returns a WKT2 string of the CRS for recent versions of PROJ, rgdal & co., 
+\item \code{epsg_string()}: Construct a crs string from an epsg number. Returns a WKT2 string of the CRS for recent versions of PROJ, rgdal & co., 
 otherwise a "+init=epsg:x" proj-string (proj-strings are being deprecated in PROJ, replaced by WKT2).
 
-\item \code{read_one_raster}: Read one raster file. Returns a [terra] raster.
+\item \code{read_one_raster()}: Read one raster file. Returns a [terra] raster.
 
-\item \code{read_raster_extent}: Returns the extension (bounding box) of a raster. Object of class SpatExtent.
+\item \code{read_raster_extent()}: Returns the extension (bounding box) of a raster. Object of class SpatExtent.
 
-\item \code{read_rasters}: Read one or more raster files into a list. Returns a list of metric rasters.
+\item \code{read_rasters()}: Read one or more raster files into a list. Returns a list of metric rasters.
 
-\item \code{write_rasters}: Write a list of named rasters.
+\item \code{write_rasters()}: Write a list of named rasters.
+
 }}
-
 \references{
 Kristian Evers and Thomas Knudsen, \emph{Transformation pipelines for PROJ.4,} 
     				\url{https://www.fig.net/resources/proceedings/fig_proceedings/fig2017/papers/iss6b/ISS6B_evers_knudsen_9156.pdf} (2017)

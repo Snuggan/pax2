@@ -12,4 +12,4 @@ Depends: terra,
 Description: A package for use at RS at the SRH department of SLU. If you don't understand the abbreviations, this is not for you. 
 License: GPL-2
 Encoding: UTF-8
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.3

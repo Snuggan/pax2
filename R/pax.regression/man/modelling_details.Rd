@@ -35,18 +35,18 @@ A bunch of functions that implements simple logging.
 }
 \section{Functions}{
 \itemize{
-\item \code{dependent_variables}: Returns a vector of strings, with the names of the dependent variables to calculate.
+\item \code{dependent_variables()}: Returns a vector of strings, with the names of the dependent variables to calculate.
 
-\item \code{dependent_preparation}: Returns the data.frame \code{x}, with whatever additional columns.
+\item \code{dependent_preparation()}: Returns the data.frame \code{x}, with whatever additional columns.
 
-\item \code{independent_variables}: Returns a vector of strings, with the names of the the independent variables.
+\item \code{independent_variables()}: Returns a vector of strings, with the names of the the independent variables.
 
-\item \code{independent_preparation}: Calculate data needed by the modelling AND extra rasters before using the models.
+\item \code{independent_preparation()}: Calculate data needed by the modelling AND extra rasters before using the models.
 Returns the data.frame \code{x}, with whatever additional columns.
 
-\item \code{build_models}: Calculate the models.
-}}
+\item \code{build_models()}: Calculate the models.
 
+}}
 \seealso{
 \code{\link{pax.regression.package}}
 }
