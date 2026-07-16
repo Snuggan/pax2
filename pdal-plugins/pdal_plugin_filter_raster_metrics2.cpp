@@ -2,7 +2,6 @@
 #include <pax/pdal/metrics-infrastructure/function-filter.hpp>
 #include <pax/std/file.hpp>
 
-#include <pax/reporting/debug.hpp>
 
 // pdal
 #include <pdal/util/FileUtils.hpp>
@@ -18,8 +17,9 @@
 #endif
 
 
-#define DEBUG Debug{}
-// #define DEBUG log()->get(pdal::LogLevel::Debug)
+// #include <pax/reporting/debug.hpp>
+// #define DEBUG Debug{}
+#define DEBUG log()->get(pdal::LogLevel::Debug)
 
 
 static pdal::PluginInfo const s_info {
@@ -42,6 +42,8 @@ std::string function_filter_help() {
 
 namespace pax {
 
+	// This is what prevents this filter to be streaming. 
+	// I can not get the metadata/headerinfo of the files to be processed...
 	void Raster_metrics2::setting_needs_PointView( pdal::PointViewPtr view_ptr_ ) {
 		DEBUG << "Raster_metrics2::setting_needs_PointView start";
 

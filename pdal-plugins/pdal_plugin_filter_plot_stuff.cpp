@@ -27,6 +27,9 @@ std::string pax::plot_stuff::getName()	const	{	return s_info.name;		}
 
 namespace pax {
 
+
+	// This is what prevents this filter to be streaming. 
+	// I can not get the metadata/headerinfo of the files to be processed...
 	void plot_stuff::setting_needs_PointView( pdal::PointViewPtr view_ptr_ ) {
 		DEBUG << "plot_stuff::setting_needs_PointView start";
 

@@ -8,8 +8,6 @@
 #include "bbox_indexer.hpp"		// bbox( pdal::PointViewPtr )
 #include <pax/pdal/metrics-infrastructure/function-filter.hpp>
 
-#include <pax/reporting/debug.hpp>
-
 // Read a csv file
 #include <pax/tables/text-table.hpp>
 
