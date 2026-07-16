@@ -23,25 +23,27 @@ namespace pax {
 		plot_stuff & operator=( const plot_stuff & )	  = delete;
 		plot_stuff & operator=( plot_stuff && )			  = delete;
 
-		virtual ~plot_stuff();
+		virtual ~plot_stuff() {};
 		std::string getName()								const override;
 
 	private:
 		using coordinate_type	  = double;
 		using value_type		  = float;
 
-		template< typename Point_table >
-		std::vector< Plot_stuff > get_plots( Point_table & pt_table_ );
-
+		std::vector< Plot_stuff > get_plots( pdal::PointViewPtr );
+		void setting_needs_PointView( pdal::PointViewPtr );
 		void addArgs( pdal::ProgramArgs & )					override;
-	    void prepared( pdal::PointTableRef table_ )			override;
+		void prepared( pdal::PointTableRef table_ )			override;
+	    void ready( pdal::PointTableRef table_ )			override;
 		bool processOne( pdal::PointRef & pt_ )				override;
+	    void filter( pdal::PointView & view_ )				override;
 		pdal::PointViewSet run( pdal::PointViewPtr view_ )	override;
+		void done( pdal::PointTableRef table_ )				override;
 
 		std::string					m_plot_file{}, 
-									m_metrics_dest_directory{}, 
-									m_points_dest_directory{}, 
-									m_points_id_column{ "id" }, 
+									m_metrics_dest{}, 
+									m_points_dest_dir{}, 
+									m_id_column{}, 
 									m_points_format{ ".laz" };
 		Text_table< char >			m_all_plots_table{};
 		double						m_plot_buffer{ 0.0 };

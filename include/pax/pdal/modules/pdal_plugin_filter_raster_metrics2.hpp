@@ -40,24 +40,31 @@ namespace pax {
 	**/
 	class PDAL_DLL Raster_metrics2 : public pdal::Streamable, public pdal::Filter {
 	public:
-		Raster_metrics2()			  = default;
-		virtual ~Raster_metrics2();
-		std::string getName()								const override;
+		Raster_metrics2()										  = default;
+		Raster_metrics2( const Raster_metrics2 & )				  = delete;
+		Raster_metrics2( Raster_metrics2 &&)					  = delete;
+		Raster_metrics2 & operator=( const Raster_metrics2 & )	  = delete;
+		Raster_metrics2 & operator=( Raster_metrics2 && )		  = delete;
+
+		virtual ~Raster_metrics2() {};
+		std::string getName()										const override;
 
 	private:
-		void addArgs( pdal::ProgramArgs & )					override;
-		bool processOne( pdal::PointRef & pt_ )				override;
-	    void prepared( pdal::PointTableRef table_ )			override;
-	    void ready( pdal::PointTableRef table_ )			override;
-	    void filter( pdal::PointView & view_ )				override;
-		pdal::PointViewSet run( pdal::PointViewPtr view_ )	override;
+		void setting_needs_PointView( pdal::PointViewPtr );
+		void addArgs( pdal::ProgramArgs & )							override;
+		bool processOne( pdal::PointRef & )							override;
+	    void prepared( pdal::PointTableRef )						override;
+	    void ready( pdal::PointTableRef )							override;
+	    void filter( pdal::PointView & )							override;
+		pdal::PointViewSet run( pdal::PointViewPtr )				override;
+		void done( pdal::PointTableRef table_ )						override;
 
 		using coordinate_type		  = double;
 		using value_type			  = float;
 
 		// pax member variables:
 		std::string						m_dest_rasters{};
-		pdal::StringList				m_metrics;			// Metric accessor names.
+		pdal::StringList				m_metrics{};		// Metric accessor names.
 		double							m_nilsson{ 0.0 };
 		coordinate_type					m_alignment{ 0.0 };
 		coordinate_type					m_resolution{ 12.5 };
@@ -65,7 +72,7 @@ namespace pax {
 		pdal::StringList				m_options{};
 		pdal::Dimension::Type			m_dataType{ pdal::Dimension::Type::Float };
 		double							m_noData{ std::numeric_limits<double>::quiet_NaN() };
-	    pdal::SpatialReference			m_srs;
+	    pdal::SpatialReference			m_srs{};
 		
 		// For processing:
 		std::vector< metrics::Point_aggregator >	pr_z_accumulators;

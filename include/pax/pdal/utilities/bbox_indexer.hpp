@@ -26,6 +26,12 @@ namespace pax {
 		return box_;
 	}
 
+	/// Return a bounding box for the point cloud. 
+	inline Box2 bbox( pdal::PointTableRef pt_table_ ) noexcept {
+		auto view_ptr			  = std::make_shared< pdal::PointView >( pt_table_ );
+		return bbox( *view_ptr );
+	}
+
 
 	/// Manage a two-dimensional bounding box + resolution. 
 	struct Bbox_indexer {
@@ -146,8 +152,8 @@ namespace pax {
 		}
 	
 		static Bbox_indexer get_aligned_indexer( const pdal::PointView & view_, const coord_type alignment_ ) {
-			if( view_.size() == 0 )	throw error_message( "Bbox_indexer failed: Can not create a raster for an empty point-cloud." );
-			if( view_.size() == 1 )	throw error_message( "Bbox_indexer failed: Will not create a raster for a one-point point-cloud." );
+			if( view_.size() == 0 )	throw error_message( "Bbox_indexer failed: Can not create a bbox for an empty point-cloud." );
+			if( view_.size() == 1 )	throw error_message( "Bbox_indexer failed: Will not create a bbox for a one-point point-cloud." );
 			return Bbox_indexer{ pax::bbox( view_ ), alignment_ };
 		}
 	};

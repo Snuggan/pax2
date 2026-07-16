@@ -197,7 +197,7 @@ namespace pax {
 			requires( std::is_invocable_r_v< bool, Predicate, Size > )
 		constexpr Text_table make_copy( Predicate && predicate_ = always_true ) const {
 			std::stringstream				temp;
-			stream( temp, m_col_mark, predicate_ );
+			stream( temp, predicate_ , m_col_mark);
 			return Text_table( std::move( temp.str() ), m_col_mark );
 		}
 

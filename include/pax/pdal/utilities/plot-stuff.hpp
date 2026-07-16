@@ -8,6 +8,8 @@
 #include "bbox_indexer.hpp"		// bbox( pdal::PointViewPtr )
 #include <pax/pdal/metrics-infrastructure/function-filter.hpp>
 
+#include <pax/reporting/debug.hpp>
+
 // Read a csv file
 #include <pax/tables/text-table.hpp>
 
@@ -128,23 +130,33 @@ namespace pax {
 	inline void save_metrics(
 		const Text_table< char >						  & plots_table_,
 		const std::span< Plot_stuff >						plots_,
-		const dir_path									  & plot_metrics_dir_,
-		const std::span< const metrics::Function_filter >	metrics_
+		const dest_path									  & plot_metrics_dest_,
+		const std::span< const metrics::Function_filter >	metrics_,
+		const std::string_view								id_col_name_ = "id"
 	) {
-		static constexpr const std::string_view	id_col_name_ = "id";
 		static constexpr const std::string_view	merge_items  = ";{}";	// Semicolon separator.
 		std::vector< std::string >				metric_names{};
 		try{
 			metric_names.reserve( metrics_.size() );
 			for( const auto name : metrics_ )	metric_names.push_back( to_string( name ) );
 
-			if( !plots_.empty() && !plot_metrics_dir_.empty() && !metrics_.empty() ) {
+			if( !plots_.empty() && !plot_metrics_dest_.empty() && !metrics_.empty() ) {
 				const std::size_t 				id_col = plots_table_.header().index( id_col_name_ );
+				if( id_col == -1u )
+					throw error_message( std20::format( "In the plots table, there is no column \"{}\".", id_col_name_ ) );
 
 				// Create an unordered map of all id -> index in plots_.
-				std::unordered_map< std::string_view, std::size_t >		plot_id_idx{};
-				for( std::size_t i{}; i<plots_.size(); ++i )
-					plot_id_idx.insert( { plots_[ i ].id(), i } );
+				std::unordered_map< std::string, std::size_t >		plot_id_idx{};
+				for( std::size_t i{}; i<plots_.size(); ++i )		plot_id_idx.insert( { plots_[ i ].id(), i } );
+
+				if( plot_id_idx.size() != plots_.size() ) {
+					std::cerr << std20::format( "plot_id_idx: {}\n", plot_id_idx );
+					throw error_message( std20::format( 
+						"plot_id_idx should have {} elements, but only has {}. "
+						"Are you sure that column \"{}\" has unique values on every row, no value ever repeated?", 
+						plots_.size(), plot_id_idx.size(), id_col_name_
+					) );
+				}
 
 				// Usually very few plots in the plots__table total are processed, 
 				// so we optimize by only working on those rows.
@@ -155,18 +167,26 @@ namespace pax {
 					// and use it as a predicative. 
 					std::unordered_set< std::size_t >	table_row_ok{};
 					for( std::size_t i{}; i<plots_table_.rows(); ++i )
-						if( plot_id_idx.contains( plots_table_[ i, id_col ] ) )
+						if( plot_id_idx.contains( std::string( plots_table_[ i, id_col ] ) ) ) {
 							table_row_ok.insert( i );
+						}
+					if( table_row_ok.size() != plots_.size() )
+						throw error_message( std20::format( "table_row_ok should have {} elements, but has {}.", 
+							plots_.size(), table_row_ok.size() ) );
 
 					const auto predicate = [ &table_row_ok ]( std::size_t i ) { 
 						return table_row_ok.contains( i ); 
 					};
 
-					reduced_table			  = plots_table_.as_str( predicate, ';' );
-					assert( reduced_table.rows() == plots_.size() );
+					reduced_table			  = plots_table_.as_str( predicate );
 				}
 
+				if( reduced_table.rows() != plots_.size() )
+					throw error_message( std20::format( "Reduced table should have {} rows, but has {}.", 
+						plots_.size(), reduced_table.rows() ) );
+
 				{	// Create a Text_table with the metrics and insert it into reduced_table.
+					// The order of items must correspond to the order in reduced_table.
 					std::stringstream			out;
 					
 					// Stream the header.
@@ -180,8 +200,10 @@ namespace pax {
 					// Stream those metric rows that have actual metric values.
 					const auto					begin = metrics_.begin();
 					const auto					end   = metrics_.end();
-					for( std::size_t i{}; i<plots_.size(); ++i ) {
-						const auto				plot_idx = plot_id_idx.at( plots_table_[ i, id_col ] );
+					for( std::size_t i{}; i<reduced_table.rows(); ++i ) {
+						const std::size_t		plot_idx = plot_id_idx.at( std::string( reduced_table[ i, id_col ] ) );
+						assert( plots_[ plot_idx ].id() == std::string( reduced_table[ i, id_col ] ) );
+
 						auto				  & metric_aggrs = plots_[ plot_idx ].metric_aggregator();
 						auto					itr   = begin;
 						out << std20::format( "\n{}", itr->calculate( metric_aggrs ) );
@@ -194,11 +216,11 @@ namespace pax {
 				}
 
 				// Save the result. 
-				reduced_table.save( plot_metrics_dir_ );
+				reduced_table.save( plot_metrics_dest_ );
 			}
 		} catch( const std::exception & error_ ) {
 			throw error_message( std20::format( "{} (Metrics are {}, destination is '{}'.)", 
-				error_.what(), std::span( metric_names ), to_string( plot_metrics_dir_ )
+				error_.what(), std::span( metric_names ), to_string( plot_metrics_dest_ )
 			) );
 		}
 	}

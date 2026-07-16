@@ -2,6 +2,8 @@
 #include <pax/pdal/metrics-infrastructure/function-filter.hpp>
 #include <pax/std/file.hpp>
 
+#include <pax/reporting/debug.hpp>
+
 // pdal
 #include <pdal/util/FileUtils.hpp>
 #include <pdal/util/ProgramArgs.hpp>
@@ -16,11 +18,15 @@
 #endif
 
 
+#define DEBUG Debug{}
+// #define DEBUG log()->get(pdal::LogLevel::Debug)
+
+
 static pdal::PluginInfo const s_info {
-		"filters.raster_metrics2",
-		"Create rasters with specified metrics (statistics). "
-		"Execute 'pdal --options filters.raster_metrics' for a list of available parameters and metrics. ",
-		"https://github.com/Snuggan/pax2/blob/main/documentation/pdal-raster_metrics.md"
+	"filters.raster_metrics2",
+	"Create rasters with specified metrics (statistics). "
+	"Execute 'pdal --options filters.raster_metrics' for a list of available parameters and metrics. ",
+	"https://github.com/Snuggan/pax2/blob/main/documentation/pdal-raster_metrics.md"
 };
 
 CREATE_SHARED_STAGE( pax::Raster_metrics2, s_info )
@@ -36,7 +42,18 @@ std::string function_filter_help() {
 
 namespace pax {
 
+	void Raster_metrics2::setting_needs_PointView( pdal::PointViewPtr view_ptr_ ) {
+		DEBUG << "Raster_metrics2::setting_needs_PointView start";
+
+		pr_bbox	  = Bbox_indexer{ *view_ptr_, m_alignment };
+		pr_z_accumulators.resize( pr_bbox.pixels() );
+
+		DEBUG << "Raster_metrics2::setting_needs_PointView end";		
+	}
+
+
 	void Raster_metrics2::addArgs( pdal::ProgramArgs & args ) {
+		DEBUG << "Raster_metrics2::addArgs start";
 		// setPositional() Makes the argument required.
 		args.add( "dest", 
 			"Destination directory and file name template for the metric raster files. "
@@ -52,10 +69,94 @@ namespace pax {
 		args.add( "gdalopts", 			"GDAL driver options (name=value,name=value...)", m_options );
 		args.add( "data_type", 			"Data type for output raster (\"int8\", \"uint64\", \"float\", etc.)", m_dataType, m_dataType );
 		args.add( "nodata", 			"No data value, a sentinal value to say that no value was set for nodata", m_noData, m_noData );
+		DEBUG << "Raster_metrics2::addArgs end";
 	}
 
 
-	Raster_metrics2::~Raster_metrics2() {
+	/// Do pre-flight stuff.
+	void Raster_metrics2::prepared( pdal::PointTableRef /*table_*/ ) {
+		DEBUG << "Raster_metrics2::prepared start";
+		DEBUG
+			<< "\n\tRaster metrics arguments:" 
+			<< "\n\talignment:         " << m_alignment 
+			<< "\n\tdata_type:         " << interpretationName( m_dataType ) 
+			<< "\n\tdest_raster:       " << m_dest_rasters 
+			<< "\n\tgdaldriver:        " << m_drivername 
+			<< "\n\tnilsson_level:     " << m_nilsson 
+			<< "\n\tnodata:            " << m_noData 
+			<< "\n\tresolution:        " << m_resolution
+			<< "\n\tgdalopts:          " << std::format( "{}", m_options )
+			<< "\n\tmetrics:           " << std::format( "{}", m_metrics )
+			<< "\n";
+		DEBUG << "Raster_metrics2::prepared end";
+	}
+	
+	
+	/// This is called just before the pipeline is executed. 
+	void Raster_metrics2::ready( pdal::PointTableRef table_ ) {
+		DEBUG << "Raster_metrics2::ready start";
+
+		// "Z" is the standard height, could be either height above ground or height above the geoid (sea level).
+		// "HeightAboveGround", if available, is the height abouve ground. It is possible that both heights are available. 
+		const pdal::PointLayoutPtr	layout = table_.layout();
+		pr_height_dimension		  = layout->hasDim( pdal::Dimension::Id::HeightAboveGround )
+								  ? pdal::Dimension::Id::HeightAboveGround : pdal::Dimension::Id::Z;
+		// Check if the file carry first return information. If not available, no points are treated as first returns. 
+		pr_has_return_number	  = layout->hasDim( pdal::Dimension::Id::ReturnNumber );
+		
+		// Get the spatial reference system, it is needed when we save metric rasters.
+		m_srs					  = table_.spatialReference();
+
+		// Create the function-filter set. Do it here so that malformed function-filters at once.
+		pr_metrics_set			  = metrics::metric_set( std::span{ m_metrics }, m_nilsson );
+
+		// Default m_alignment is m_resolution. 
+		if( m_alignment <= 0.0 )	m_alignment = m_resolution;
+
+		DEBUG << "Raster_metrics2::ready end";
+	}
+
+
+	bool Raster_metrics2::processOne( pdal::PointRef & pt_ ) {
+		// Process a point (accumulate the z-values of all pixels). 
+		pr_z_accumulators[ pr_bbox.index( pt_ ) ].push_back( 
+			pt_.getFieldAs< value_type >( pr_height_dimension ), 
+			pr_has_return_number
+				? pt_.getFieldAs< std::uint8_t >( pdal::Dimension::Id::ReturnNumber ) == 1 
+				: false
+		);
+		++m_metadata.points_processed;
+		return true;
+	}
+
+
+	void Raster_metrics2::filter( pdal::PointView & /*view_ptr_*/ ) {
+		DEBUG << "Raster_metrics2::filter start";
+		DEBUG << "Raster_metrics2::filter end";
+	}
+
+
+	pdal::PointViewSet Raster_metrics2::run( pdal::PointViewPtr view_ptr_ ) {
+		DEBUG << "Raster_metrics2::run start";
+		
+		setting_needs_PointView( view_ptr_ );
+
+		// Process the points (accumulate the z-values of each pixel). This is the heavy lifting part!!!
+		auto pt = view_ptr_->point( 0 );
+		for( pdal::PointId idx = 0; idx < view_ptr_->size(); ++idx ) {
+			pt = view_ptr_->point( idx );
+			processOne( pt );
+		}
+
+		pdal::PointViewSet				result;
+		result.insert( view_ptr_ );
+		return result;
+		DEBUG << "Raster_metrics2::run end";
+	}
+
+
+	void Raster_metrics2::done( pdal::PointTableRef /*table_*/ ) {
+		DEBUG << "Raster_metrics2::done start";
 		// Save metrics' rasters.
 	    pdal::gdal::registerDrivers();
 		pdal::gdal::GDALError			err;
@@ -78,9 +179,9 @@ namespace pax {
 
 				// save_metric( acc, m_dest_rasters, m_accumulators );
 			    pdal::gdal::Raster	raster( dest, m_drivername, m_srs, pr_bbox.affine_vector() );
-				err				  = raster.open( pr_bbox.cols(), pr_bbox.rows(), 1, m_dataType, m_noData, m_options );
+				err					  = raster.open( pr_bbox.cols(), pr_bbox.rows(), 1, m_dataType, m_noData, m_options );
 				if( err == pdal::gdal::GDALError::None )
-					err			  = raster.writeBand( pixels.data(), m_noData, 1, to_string( metric ) );
+					err				  = raster.writeBand( pixels.data(), m_noData, 1, to_string( metric ) );
 
 				// Add metadata of the metrics' destination file. 
 				if( err != pdal::gdal::GDALError::None )	throwError( raster.errorMsg() );
@@ -114,63 +215,7 @@ namespace pax {
 			metrics_node.add( to_string( metric ), dest );
 		}
 		meta.add( metrics_node );
-	}
-
-
-	/// Do pre-flight stuff.
-	void Raster_metrics2::prepared( pdal::PointTableRef table_ ) {
-		// "Z" is the standard height, could be either height above ground or height above the geoid (sea level).
-		// "HeightAboveGround", if available, is the height abouve ground. It is possible that both heights are available. 
-		const pdal::PointLayoutPtr	layout = table_.layout();
-		pr_height_dimension		  = layout->hasDim( pdal::Dimension::Id::HeightAboveGround )
-								  ? pdal::Dimension::Id::HeightAboveGround : pdal::Dimension::Id::Z;
-		// Check if the file carry first return information. If not available, no points are treated as first returns. 
-		pr_has_return_number	  = layout->hasDim( pdal::Dimension::Id::ReturnNumber );
-
-		// Create the function-filter set. Do it here so that malformed function-filters at once.
-		pr_metrics_set			  = metrics::metric_set( std::span{ m_metrics }, m_nilsson );
-
-		// Default m_alignment is m_resolution. 
-		if( m_alignment <= 0.0 )	m_alignment = m_resolution;
-
-		pr_bbox					  = Bbox_indexer{ pdal::PointView( table_ ), m_alignment };
-		pr_z_accumulators.resize( pr_bbox.pixels() );
-	}
-
-
-	/// This is called just before the pipeline is executed. 
-	void Raster_metrics2::ready( pdal::PointTableRef /*table_*/ ) {
-	}
-
-
-	void Raster_metrics2::filter( pdal::PointView & /*view_*/ ) {
-	}
-
-
-	bool Raster_metrics2::processOne( pdal::PointRef & pt_ ) {
-		// Process a point (accumulate the z-values of all pixels). 
-		pr_z_accumulators[ pr_bbox.index( pt_ ) ].push_back( 
-			pt_.getFieldAs< value_type >( pr_height_dimension ), 
-			pr_has_return_number
-				? pt_.getFieldAs< std::uint8_t >( pdal::Dimension::Id::ReturnNumber ) == 1 
-				: false
-		);
-		++m_metadata.points_processed;
-		return true;
-	}
-
-
-	pdal::PointViewSet Raster_metrics2::run( pdal::PointViewPtr view_ ) {
-		// Process the points (accumulate the z-values of each pixel). This is the heavy lifting part!!!
-		auto pt = view_->point( 0 );
-		for( pdal::PointId idx = 0; idx < view_->size(); ++idx ) {
-			pt = view_->point( idx );
-			processOne( pt );
-		}
-
-		pdal::PointViewSet				result;
-		result.insert( view_ );
-		return result;
+		DEBUG << "Raster_metrics2::done end";
 	}
 
 }	// namespace pax
