@@ -149,30 +149,26 @@ namespace pax {
 	}
 
 
-	void plot_stuff::filter( pdal::PointView & /*view_*/ ) {
+	void plot_stuff::filter( pdal::PointView & view_ ) {
 		DEBUG << "plot_stuff::filter start";
+
+		setting_needs_PointView( view_.makeNew() );
+
+		// Process the points.
+		auto pt = view_.point( 0 );
+		for( pdal::PointId idx = 0; idx < view_.size(); ++idx ) {
+			pt = view_.point( idx );
+			processOne( pt );
+		}
+
 		DEBUG << "plot_stuff::filter end";
 	}
 
 
-	pdal::PointViewSet plot_stuff::run( pdal::PointViewPtr view_ptr_ ) {
-		DEBUG << "plot_stuff::run start";
-
-		setting_needs_PointView( view_ptr_ );
-
-		// Process the points.
-		auto pt = view_ptr_->point( 0 );
-		for( pdal::PointId idx = 0; idx < view_ptr_->size(); ++idx ) {
-			pt = view_ptr_->point( idx );
-			processOne( pt );
-		}
-
-		pdal::PointViewSet					result;
-		result.insert( view_ptr_ );
-		return result;
-
-		DEBUG << "plot_stuff::run end";
-	}
+	// pdal::PointViewSet plot_stuff::run( pdal::PointViewPtr view_ptr_ ) {
+	// 	DEBUG << "plot_stuff::run start";
+	// 	DEBUG << "plot_stuff::run end";
+	// }
 
 
 	void plot_stuff::done( pdal::PointTableRef /*table_*/ ) {

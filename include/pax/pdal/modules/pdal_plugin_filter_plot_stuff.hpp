@@ -4,7 +4,7 @@
 
 #include <pax/tables/text-table.hpp>	// Handle a csv file.
 #include <pdal/Filter.hpp>
-#include <pdal/Streamable.hpp>
+// #include <pdal/Streamable.hpp>
 #include <string>
 #include <string_view>
 
@@ -15,7 +15,7 @@ namespace pax {
 	
 
 	/// Process point cloud files into individual plot point cloud files. 
-	class PDAL_DLL plot_stuff : public pdal::Filter, public pdal::Streamable {
+	class PDAL_DLL plot_stuff : public pdal::Filter/*, public pdal::Streamable*/ {
 	public:
 		plot_stuff()									  = default;
 		plot_stuff( const plot_stuff & )				  = delete;
@@ -35,9 +35,9 @@ namespace pax {
 		void addArgs( pdal::ProgramArgs & )					override;
 		void prepared( pdal::PointTableRef table_ )			override;
 	    void ready( pdal::PointTableRef table_ )			override;
-		bool processOne( pdal::PointRef & pt_ )				override;
+		bool processOne( pdal::PointRef & pt_ );//				override;
 	    void filter( pdal::PointView & view_ )				override;
-		pdal::PointViewSet run( pdal::PointViewPtr view_ )	override;
+		// pdal::PointViewSet run( pdal::PointViewPtr view_ )	override;
 		void done( pdal::PointTableRef table_ )				override;
 
 		std::string					m_plot_file{}, 

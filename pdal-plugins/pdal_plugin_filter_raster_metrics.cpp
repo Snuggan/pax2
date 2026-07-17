@@ -132,29 +132,26 @@ namespace pax {
 	}
 
 
-	void raster_metrics::filter( pdal::PointView & /*view_ptr_*/ ) {
+	void raster_metrics::filter( pdal::PointView & view_ ) {
 		DEBUG << "raster_metrics::filter start";
+
+		setting_needs_PointView( view_.makeNew() );
+
+		// Process the points (accumulate the z-values of each pixel). This is the heavy lifting part!!!
+		auto pt = view_.point( 0 );
+		for( pdal::PointId idx = 0; idx < view_.size(); ++idx ) {
+			pt = view_.point( idx );
+			processOne( pt );
+		}
+
 		DEBUG << "raster_metrics::filter end";
 	}
 
 
-	pdal::PointViewSet raster_metrics::run( pdal::PointViewPtr view_ptr_ ) {
-		DEBUG << "raster_metrics::run start";
-		
-		setting_needs_PointView( view_ptr_ );
-
-		// Process the points (accumulate the z-values of each pixel). This is the heavy lifting part!!!
-		auto pt = view_ptr_->point( 0 );
-		for( pdal::PointId idx = 0; idx < view_ptr_->size(); ++idx ) {
-			pt = view_ptr_->point( idx );
-			processOne( pt );
-		}
-
-		pdal::PointViewSet				result;
-		result.insert( view_ptr_ );
-		return result;
-		DEBUG << "raster_metrics::run end";
-	}
+	// pdal::PointViewSet raster_metrics::run( pdal::PointViewPtr view_ptr_ ) {
+	// 	DEBUG << "raster_metrics::run start";
+	// 	DEBUG << "raster_metrics::run end";
+	// }
 
 
 	void raster_metrics::done( pdal::PointTableRef /*table_*/ ) {

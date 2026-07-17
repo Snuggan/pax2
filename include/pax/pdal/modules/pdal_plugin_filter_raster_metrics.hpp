@@ -5,7 +5,7 @@
 #include <pax/pdal/metrics-infrastructure/function-filter.hpp>	// Point_aggregator, Function_filter
 #include <pax/pdal/utilities/bbox_indexer.hpp>
 #include <pdal/Filter.hpp>
-#include <pdal/Streamable.hpp>
+// #include <pdal/Streamable.hpp>
 #include <string>
 #include <filesystem>
 
@@ -38,7 +38,7 @@ namespace pax {
 			]
 		}
 	**/
-	class PDAL_DLL raster_metrics : public pdal::Streamable, public pdal::Filter {
+	class PDAL_DLL raster_metrics : public pdal::Filter/*, public pdal::Streamable*/ {
 	public:
 		raster_metrics()										  = default;
 		raster_metrics( const raster_metrics & )				  = delete;
@@ -52,11 +52,11 @@ namespace pax {
 	private:
 		void setting_needs_PointView( pdal::PointViewPtr );
 		void addArgs( pdal::ProgramArgs & )							override;
-		bool processOne( pdal::PointRef & )							override;
 	    void prepared( pdal::PointTableRef )						override;
 	    void ready( pdal::PointTableRef )							override;
+		bool processOne( pdal::PointRef & );//							override;
 	    void filter( pdal::PointView & )							override;
-		pdal::PointViewSet run( pdal::PointViewPtr )				override;
+		// pdal::PointViewSet run( pdal::PointViewPtr )				override;
 		void done( pdal::PointTableRef table_ )						override;
 
 		using coordinate_type		  = double;

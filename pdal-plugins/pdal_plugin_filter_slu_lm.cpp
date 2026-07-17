@@ -41,34 +41,17 @@ namespace pax {
 	}
 
 
-	slu_lm::~slu_lm() {
-		// Create metadata.
-		pdal::MetadataNode					meta = getMetadata();
-		
-		// Metadata: general:
-		meta.add( "points-processed",		m_metadata.points_in );
-		meta.add( "points-passed",			m_metadata.points_out );
-		
-		// Metadata: arguments:
-		pdal::MetadataNode					arguments( "arguments" );
-		arguments.add( "min_z",				m_min_z );
-		arguments.add( "max_z",				m_max_z );
-		arguments.add( "lm_filter",			m_lm_filter );
-		meta.add( arguments );
-		
-		// Metadata: filtering:
-		pdal::MetadataNode					filtering( "filtering" );
-		filtering.add( "z-made-zero",		m_metadata.z_negative );
-		filtering.add( "z-to-small",		m_metadata.z_small );
-		filtering.add( "z-to-large",		m_metadata.z_large );
-		filtering.add( "not-lm",			m_metadata.not_lm );
-		filtering.add( "points-removed",	m_metadata.points_in - m_metadata.points_out );
-		meta.add( filtering );
+	void slu_lm::prepared( pdal::PointTableRef /*table_*/ ) {
+		log()->get( pdal::LogLevel::Debug )
+			<< "\n\tslu_lm arguments:" 
+			<< "\n\tmin_z:             " << m_min_z
+			<< "\n\tmax_z:             " << m_max_z
+			<< "\n\tlm_filter:         " << m_lm_filter
+			<< "\n";
 	}
 
 
-	/// Do pre-flight stuff.
-	void slu_lm::prepared( pdal::PointTableRef table_ ) {
+	void slu_lm::ready( pdal::PointTableRef table_ ) {
 		// The pdal hag_dem filter puts normalized points into a specific dimension: HeightAboveGround. 
 		// We want to overwrite unnormalized z-values with normalized.
 		const pdal::PointLayoutPtr	layout = table_.layout();
@@ -128,6 +111,32 @@ namespace pax {
 		pdal::PointViewSet		result;
 		result.insert( points );
 		return result;
+	}
+
+
+	void slu_lm::done( pdal::PointTableRef /*table_*/ ) {
+		// Create metadata.
+		pdal::MetadataNode					meta = getMetadata();
+		
+		// Metadata: general:
+		meta.add( "points-processed",		m_metadata.points_in );
+		meta.add( "points-passed",			m_metadata.points_out );
+		
+		// Metadata: arguments:
+		pdal::MetadataNode					arguments( "arguments" );
+		arguments.add( "min_z",				m_min_z );
+		arguments.add( "max_z",				m_max_z );
+		arguments.add( "lm_filter",			m_lm_filter );
+		meta.add( arguments );
+		
+		// Metadata: filtering:
+		pdal::MetadataNode					filtering( "filtering" );
+		filtering.add( "z-made-zero",		m_metadata.z_negative );
+		filtering.add( "z-to-small",		m_metadata.z_small );
+		filtering.add( "z-to-large",		m_metadata.z_large );
+		filtering.add( "not-lm",			m_metadata.not_lm );
+		filtering.add( "points-removed",	m_metadata.points_in - m_metadata.points_out );
+		meta.add( filtering );
 	}
 
 }	// namespace pax

@@ -14,7 +14,7 @@ namespace pax {
 		slu_lm & operator=( const slu_lm & )				  = delete;
 		slu_lm & operator=( slu_lm && )						  = delete;
 
-		virtual ~slu_lm();
+		virtual ~slu_lm() {};
 
 		using pdal::Filter::Filter;
 		std::string getName() 									const override;
@@ -22,8 +22,10 @@ namespace pax {
 	private:
 		void addArgs( pdal::ProgramArgs & args_ )				override;
 	    void prepared( pdal::PointTableRef table_ )				override;
+	    void ready( pdal::PointTableRef table_ )				override;
 		bool processOne( pdal::PointRef & pt_ )					override;
 		pdal::PointViewSet run( pdal::PointViewPtr view_ )		override;
+		void done( pdal::PointTableRef )						override;
 
 		using coordinate_type		  = double;
 		
