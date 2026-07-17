@@ -1,4 +1,4 @@
-#include <pax/pdal/modules/pdal_plugin_filter_slu_lm.hpp>
+#include <pax/pdal/modules/pdal_plugin_filter_slu_lm_old.hpp>
 #include <pax/pdal/utilities/classification.hpp>	// normal_lm_filter()
 #include <pax/pdal/utilities/bbox_indexer.hpp>
 
@@ -8,18 +8,18 @@
 namespace pax {
 
 	static pdal::PluginInfo const s_info {
-		"filters.slu_lm",
+		"filters.slu_lm_old",
 		"Filtering according to z-values and point type, see the options below for details. "
 		"If there is a dimension HeightAboveGround, its values are copied into dimension Z. "
-		"Execute 'pdal --options filters.slu_lm' for a list of available parameters. ",
-		"https://github.com/Snuggan/pax2/blob/main/documentation/pdal-slu_lm.md"
+		"Execute 'pdal --options filters.slu_lm_old' for a list of available parameters. ",
+		"This filter is deprecated."
 	};
 
-	CREATE_SHARED_STAGE( Slu_lm, s_info )
-	std::string Slu_lm::getName()		const	{	return s_info.name;		}
+	CREATE_SHARED_STAGE( slu_lm_old, s_info )
+	std::string slu_lm_old::getName()		const	{	return s_info.name;		}
 
 
-	void Slu_lm::addArgs( pdal::ProgramArgs& args_ ) {
+	void slu_lm_old::addArgs( pdal::ProgramArgs& args_ ) {
 		args_.add(	"min_z",
 					"Minimum z: remove points with a z-value smaller than this value. " 
 					"Also, sets all remaining negative z-values to zero. You probably don't want to do use this option "
@@ -41,7 +41,7 @@ namespace pax {
 	}
 
 
-	void Slu_lm::addDimensions( pdal::PointLayoutPtr layout_ ) {
+	void slu_lm_old::addDimensions( pdal::PointLayoutPtr layout_ ) {
 		// Don't know if this is necessary, as we only use standard dimensions...
 		layout_->registerDim( pdal::Dimension::Id::Classification );
 		layout_->registerDim( pdal::Dimension::Id::Z );
@@ -58,10 +58,10 @@ namespace pax {
 	}
 	
 	
-	Slu_lm::~Slu_lm() {}
+	slu_lm_old::~slu_lm_old() {}
 	
 	
-	pdal::PointViewSet Slu_lm::run( pdal::PointViewPtr view_ ) {
+	pdal::PointViewSet slu_lm_old::run( pdal::PointViewPtr view_ ) {
 		// No z-value filtering?
 		if( m_max_z < m_min_z ) {
 			m_min_z = std::numeric_limits< decltype( m_min_z ) >::lowest();
@@ -92,7 +92,7 @@ namespace pax {
 
 
 
-	pdal::PointViewPtr Slu_lm::slu_filter( pdal::PointViewPtr view_ ) const {
+	pdal::PointViewPtr slu_lm_old::slu_filter( pdal::PointViewPtr view_ ) const {
 		// The pdal hag_dem filter puts normalized points into a specific dimension: HeightAboveGround. 
 		// We want to overwrite unnormalized z-values with normalized.
 		const bool				has_hag_dim{ view_->hasDim( pdal::Dimension::Id::HeightAboveGround ) };

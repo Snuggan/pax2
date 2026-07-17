@@ -2,7 +2,7 @@
 //	Contact: peder ( at ) axensten.se
 
 
-#include <pax/pdal/process/plot-metrics.hpp>
+#include <pax/pdal/process_old/plot-metrics.hpp>
 
 #include <pdal/io/LasReader.hpp>
 #include <pdal/io/LasHeader.hpp>

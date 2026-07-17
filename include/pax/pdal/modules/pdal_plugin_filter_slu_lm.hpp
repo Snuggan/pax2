@@ -6,15 +6,15 @@
 
 namespace pax {
 
-	class PDAL_DLL Slu_lm2 : public pdal::Filter, public pdal::Streamable {
+	class PDAL_DLL slu_lm : public pdal::Filter, public pdal::Streamable {
 	public:
-		Slu_lm2()											  = default;
-		Slu_lm2( const Slu_lm2 & )							  = delete;
-		Slu_lm2( Slu_lm2 &&)								  = delete;
-		Slu_lm2 & operator=( const Slu_lm2 & )				  = delete;
-		Slu_lm2 & operator=( Slu_lm2 && )					  = delete;
+		slu_lm()											  = default;
+		slu_lm( const slu_lm & )							  = delete;
+		slu_lm( slu_lm &&)									  = delete;
+		slu_lm & operator=( const slu_lm & )				  = delete;
+		slu_lm & operator=( slu_lm && )						  = delete;
 
-		virtual ~Slu_lm2();
+		virtual ~slu_lm();
 
 		using pdal::Filter::Filter;
 		std::string getName() 									const override;

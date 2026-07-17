@@ -1,6 +1,6 @@
 #include <pax/pdal/modules/pdal_plugin_filter_plot_metrics_old.hpp>
 #include <pax/pdal/utilities/bbox_indexer.hpp>
-#include <pax/pdal/process/plot-metrics.hpp>
+#include <pax/pdal/process_old/plot-metrics.hpp>
 
 #include <pdal/util/FileUtils.hpp>
 #include <pdal/util/ProgramArgs.hpp>

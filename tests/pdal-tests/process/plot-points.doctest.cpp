@@ -2,7 +2,7 @@
 //	Contact: peder ( at ) axensten.se
 
 
-#include <pax/pdal/process/plot-points.hpp>
+#include <pax/pdal/process_old/plot-points.hpp>
 
 #include <pax/doctest.hpp>
 

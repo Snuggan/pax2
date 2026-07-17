@@ -1,4 +1,4 @@
-#include <pax/pdal/modules/pdal_plugin_filter_slu_lm2.hpp>
+#include <pax/pdal/modules/pdal_plugin_filter_slu_lm.hpp>
 #include <pax/pdal/utilities/classification.hpp>	// normal_lm_filter()
 #include <pax/pdal/utilities/bbox_indexer.hpp>
 
@@ -8,18 +8,18 @@
 namespace pax {
 
 	static pdal::PluginInfo const s_info {
-		"filters.slu_lm2",
+		"filters.slu_lm",
 		"Filtering according to z-values and point type, see the options below for details. "
 		"If there is a dimension HeightAboveGround, its values are copied into dimension Z. "
 		"Execute 'pdal --options filters.slu_lm' for a list of available parameters. ",
 		"https://github.com/Snuggan/pax2/blob/main/documentation/pdal-slu_lm.md"
 	};
 
-	CREATE_SHARED_STAGE( Slu_lm2, s_info )
-	std::string Slu_lm2::getName()		const	{	return s_info.name;		}
+	CREATE_SHARED_STAGE( slu_lm, s_info )
+	std::string slu_lm::getName()		const	{	return s_info.name;		}
 
 
-	void Slu_lm2::addArgs( pdal::ProgramArgs& args_ ) {
+	void slu_lm::addArgs( pdal::ProgramArgs& args_ ) {
 		args_.add(	"min_z",
 					"Minimum z: remove points with a z-value smaller than this value. " 
 					"Also, sets all remaining negative z-values to zero. You probably don't want to do use this option "
@@ -41,7 +41,7 @@ namespace pax {
 	}
 
 
-	Slu_lm2::~Slu_lm2() {
+	slu_lm::~slu_lm() {
 		// Create metadata.
 		pdal::MetadataNode					meta = getMetadata();
 		
@@ -68,7 +68,7 @@ namespace pax {
 
 
 	/// Do pre-flight stuff.
-	void Slu_lm2::prepared( pdal::PointTableRef table_ ) {
+	void slu_lm::prepared( pdal::PointTableRef table_ ) {
 		// The pdal hag_dem filter puts normalized points into a specific dimension: HeightAboveGround. 
 		// We want to overwrite unnormalized z-values with normalized.
 		const pdal::PointLayoutPtr	layout = table_.layout();
@@ -85,7 +85,7 @@ namespace pax {
 	}
 
 
-	bool Slu_lm2::processOne( pdal::PointRef & pt_ ) {
+	bool slu_lm::processOne( pdal::PointRef & pt_ ) {
 		++m_metadata.points_in;
 		const auto	z		  = pt_.getFieldAs< coordinate_type >( m_height_id );
 		const auto	classif	  = asprs::Classification( 	// From pax/pdal/utilities/classification.hpp
@@ -112,7 +112,7 @@ namespace pax {
 	}
 
 
-	pdal::PointViewSet Slu_lm2::run( pdal::PointViewPtr view_ ) {
+	pdal::PointViewSet slu_lm::run( pdal::PointViewPtr view_ ) {
 		// Create a new empty point cloud.
 		pdal::PointViewPtr		points{ view_->makeNew() };
 

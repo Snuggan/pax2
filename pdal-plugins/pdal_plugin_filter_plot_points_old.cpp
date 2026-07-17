@@ -1,5 +1,5 @@
 #include <pax/pdal/modules/pdal_plugin_filter_plot_points_old.hpp>
-#include <pax/pdal/process/plot-points.hpp>
+#include <pax/pdal/process_old/plot-points.hpp>
 
 #include <pdal/util/FileUtils.hpp>
 #include <pdal/util/ProgramArgs.hpp>
