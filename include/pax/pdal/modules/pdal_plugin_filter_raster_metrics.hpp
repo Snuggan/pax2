@@ -1,10 +1,15 @@
-// Raster_metrics.hpp
+// raster_metrics.hpp
 
 #pragma once
 
+#include <pax/pdal/metrics-infrastructure/function-filter.hpp>	// Point_aggregator, Function_filter
+#include <pax/pdal/utilities/bbox_indexer.hpp>
 #include <pdal/Filter.hpp>
+#include <pdal/Streamable.hpp>
 #include <string>
 #include <filesystem>
+
+#define PAX_STREAMING	1
 
 
 namespace pax {
@@ -33,24 +38,33 @@ namespace pax {
 			]
 		}
 	**/
-	class PDAL_DLL Raster_metrics : public pdal::Filter {
+	class PDAL_DLL raster_metrics : public pdal::Streamable, public pdal::Filter {
 	public:
-		Raster_metrics()              = default;
-		virtual ~Raster_metrics();
+		raster_metrics()										  = default;
+		raster_metrics( const raster_metrics & )				  = delete;
+		raster_metrics( raster_metrics &&)						  = delete;
+		raster_metrics & operator=( const raster_metrics & )	  = delete;
+		raster_metrics & operator=( raster_metrics && )			  = delete;
 
-		std::string getName()								const override;
+		virtual ~raster_metrics() {};
+		std::string getName()										const override;
 
 	private:
-		void addArgs( pdal::ProgramArgs & )					override;
-		void addDimensions( pdal::PointLayoutPtr layout_ )	override;
-		pdal::PointViewSet run( pdal::PointViewPtr view_ )	override;
+		void setting_needs_PointView( pdal::PointViewPtr );
+		void addArgs( pdal::ProgramArgs & )							override;
+		bool processOne( pdal::PointRef & )							override;
+	    void prepared( pdal::PointTableRef )						override;
+	    void ready( pdal::PointTableRef )							override;
+	    void filter( pdal::PointView & )							override;
+		pdal::PointViewSet run( pdal::PointViewPtr )				override;
+		void done( pdal::PointTableRef table_ )						override;
 
 		using coordinate_type		  = double;
 		using value_type			  = float;
 
 		// pax member variables:
 		std::string						m_dest_rasters{};
-		pdal::StringList				m_metrics;			// Metric accessor names.
+		pdal::StringList				m_metrics{};		// Metric accessor names.
 		double							m_nilsson{ 0.0 };
 		coordinate_type					m_alignment{ 0.0 };
 		coordinate_type					m_resolution{ 12.5 };
@@ -58,7 +72,20 @@ namespace pax {
 		pdal::StringList				m_options{};
 		pdal::Dimension::Type			m_dataType{ pdal::Dimension::Type::Float };
 		double							m_noData{ std::numeric_limits<double>::quiet_NaN() };
-	    pdal::SpatialReference			m_srs;
+	    pdal::SpatialReference			m_srs{};
+		
+		// For processing:
+		std::vector< metrics::Point_aggregator >	pr_z_accumulators;
+		std::vector< metrics::Function_filter >		pr_metrics_set{};
+		pdal::Dimension::Id 			pr_height_dimension{};
+		bool 							pr_has_return_number{};
+		Bbox_indexer					pr_bbox{};
+		
+		struct metadata {
+			std::size_t 	points_processed{};
+		};
+		metadata			m_metadata{};
+
 
 		static std::filesystem::path insert_suffix(
 			const std::filesystem::path		  & dest_,
@@ -71,15 +98,6 @@ namespace pax {
 				+ dest_.extension().native()
 			};
 		}
-
-		// static_assert( insert_suffix( "/dir/file.tif",	"wow" ).native() == "/dir/file.wow.tif" );
-		// static_assert( insert_suffix(  "dir/file.tif",	"wow" ).native() == "dir/file.wow.tif" );
-		// static_assert( insert_suffix( "/file.tif",		"wow" ).native() == "/file.wow.tif" );
-		// static_assert( insert_suffix(  "file.tif",		"wow" ).native() == "file.wow.tif" );
-		// static_assert( insert_suffix( "/dir/",			"wow" ).native() == "/dir/.wow" );
-		// static_assert( insert_suffix(  "dir/",			"wow" ).native() == "dir/.wow" );
-		// static_assert( insert_suffix( "/",				"wow" ).native() == "/.wow" );
-		// static_assert( insert_suffix(  "",				"wow" ).native() == ".wow" );
 	};
 
 } // namespace pdal

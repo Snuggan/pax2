@@ -1,4 +1,4 @@
-#include <pax/pdal/modules/pdal_plugin_filter_plot_points.hpp>
+#include <pax/pdal/modules/pdal_plugin_filter_plot_points_old.hpp>
 #include <pax/pdal/process/plot-points.hpp>
 
 #include <pdal/util/FileUtils.hpp>
@@ -8,18 +8,18 @@
 namespace pax {
 
 	static pdal::PluginInfo const s_info {
-		"filters.plot_points",
+		"filters.plot_points_old",
 		"Save all points within plots [plus an optional buffer] to individual files. "
-		"Execute 'pdal --options filters.plot_points' for a list of available parameters. ",
-		"https://github.com/Snuggan/pax2/blob/main/documentation/pdal-plot_points.md"
+		"Execute 'pdal --options filters.plot_points_old' for a list of available parameters. ",
+		"This filter is deprecated."
 	};
 
-	CREATE_SHARED_STAGE( plot_points, s_info )
-	std::string plot_points::getName()	const	{	return s_info.name;		}
+	CREATE_SHARED_STAGE( plot_points_old, s_info )
+	std::string plot_points_old::getName()	const	{	return s_info.name;		}
 
 
 
-	void plot_points::addArgs( pdal::ProgramArgs & args ) {
+	void plot_points_old::addArgs( pdal::ProgramArgs & args ) {
 		
 		// setPositional() Makes the argument required.
 		args.add( "plot_file", 			"File path to a csv-type file with at least the required columns 'north', 'east', 'radius' and 'id'. "
@@ -33,7 +33,7 @@ namespace pax {
 	}
 
 
-	void pax::plot_points::addDimensions( pdal::PointLayoutPtr layout_ ) {
+	void pax::plot_points_old::addDimensions( pdal::PointLayoutPtr layout_ ) {
 		// Don't know if this is necessary, as we only use standard dimensions...
 		layout_->registerDim( pdal::Dimension::Id::X );
 		layout_->registerDim( pdal::Dimension::Id::Y );
@@ -41,7 +41,7 @@ namespace pax {
 
 
 
-	pdal::PointViewSet plot_points::run( pdal::PointViewPtr view_ ) {
+	pdal::PointViewSet plot_points_old::run( pdal::PointViewPtr view_ ) {
 		pdal::PointViewSet						result;
 		try {
 			if( m_buffer < 0 ) {

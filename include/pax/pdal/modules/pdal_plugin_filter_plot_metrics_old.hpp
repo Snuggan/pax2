@@ -1,4 +1,4 @@
-// plot_points.hpp
+// plot_metrics_old.hpp
 
 #pragma once
 
@@ -9,10 +9,10 @@
 namespace pax {
 
 
-	/// Process point cloud files into individual plot point cloud files. 
-	class PDAL_DLL plot_points : public pdal::Filter {
+	/// Process point cloud files into plot metric files. 
+	class PDAL_DLL plot_metrics_old : public pdal::Filter {
 	public:
-		plot_points()				  = default;
+		plot_metrics_old()			  = default;
 		std::string getName()								const override;
 
 	private:
@@ -24,9 +24,9 @@ namespace pax {
 		using value_type			  = float;
 
 		// pax member variables:
-		std::string						m_plot_file{}, m_dest_plot_points_directory{}, 
-										m_id_column{ "id" }, m_dest_format{ ".laz" };
-		double							m_buffer{ 0.0 };
+		std::string						m_plot_file{}, m_dest_plots{};
+		pdal::StringList				m_metrics;			// Metric accessor names.
+		double							m_nilsson{ 0.0 };
 		pdal::SpatialReference			m_srs;
 	};
 

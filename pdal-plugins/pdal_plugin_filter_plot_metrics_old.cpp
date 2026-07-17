@@ -1,4 +1,4 @@
-#include <pax/pdal/modules/pdal_plugin_filter_plot_metrics.hpp>
+#include <pax/pdal/modules/pdal_plugin_filter_plot_metrics_old.hpp>
 #include <pax/pdal/utilities/bbox_indexer.hpp>
 #include <pax/pdal/process/plot-metrics.hpp>
 
@@ -9,14 +9,14 @@
 namespace pax {
 
 	static pdal::PluginInfo const s_info {
-			"filters.plot_metrics",
+			"filters.plot_metrics_old",
 			"Calculate metrics (statistics) for all points within the plots. "
-			"Execute 'pdal --options filters.plot_metrics' for a list of available parameters and metrics. ",
-			"https://github.com/Snuggan/pax2/blob/main/documentation/pdal-plot_metrics.md"
+			"Execute 'pdal --options filters.plot_metrics_old' for a list of available parameters and metrics. ",
+			"This filter is deprecated."
 	};
 
-	CREATE_SHARED_STAGE( plot_metrics, s_info )
-	std::string plot_metrics::getName()	const	{	return s_info.name;		}
+	CREATE_SHARED_STAGE( plot_metrics_old, s_info )
+	std::string plot_metrics_old::getName()	const	{	return s_info.name;		}
 	
 	
 	
@@ -28,7 +28,7 @@ namespace pax {
 
 
 
-	void plot_metrics::addArgs( pdal::ProgramArgs & args ) {
+	void plot_metrics_old::addArgs( pdal::ProgramArgs & args ) {
 		
 		// setPositional() Makes the argument required.
 		args.add( "plot_file", 			"File path to a csv-type file with at least the required columns 'north', 'east', 'radius' and 'id'. "
@@ -40,7 +40,7 @@ namespace pax {
 	}
 
 
-	void plot_metrics::addDimensions( pdal::PointLayoutPtr layout_ ) {
+	void plot_metrics_old::addDimensions( pdal::PointLayoutPtr layout_ ) {
 		// Don't know if this is necessary, as we only use standard dimensions...
 		layout_->registerDim( pdal::Dimension::Id::X );
 		layout_->registerDim( pdal::Dimension::Id::Y );
@@ -49,7 +49,7 @@ namespace pax {
 
 
 
-	pdal::PointViewSet plot_metrics::run( pdal::PointViewPtr view_ ) {
+	pdal::PointViewSet plot_metrics_old::run( pdal::PointViewPtr view_ ) {
 		pdal::PointViewSet					result;
 		try {
 			// Create the function-filter set. Do it here so that malformed function-filters at once.
