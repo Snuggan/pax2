@@ -24,6 +24,8 @@
 #include <assert.h>				// The classic assert macro.
 #include <stdexcept>			// std::out_of_range.
 
+#include "point-stuff.hpp"		// Temporary, to check point-stuff.hpp
+
 namespace pax {
 	constexpr std::size_t dynamic_extent = traits::dynamic_extent;
 
