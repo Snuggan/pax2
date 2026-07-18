@@ -36,8 +36,8 @@ namespace pax {
 		void prepared( pdal::PointTableRef table_ )			override;
 	    void ready( pdal::PointTableRef table_ )			override;
 		bool processOne( pdal::PointRef & pt_ );//				override;
-	    void filter( pdal::PointView & view_ )				override;
-		// pdal::PointViewSet run( pdal::PointViewPtr view_ )	override;
+	    // void filter( pdal::PointView & view_ )				override;
+		pdal::PointViewSet run( pdal::PointViewPtr view_ )	override;
 		void done( pdal::PointTableRef table_ )				override;
 
 		std::string					m_plot_file{}, 

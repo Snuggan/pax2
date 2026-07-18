@@ -46,14 +46,18 @@ pdal::PointViewSet pax::Remove_overlap::run( pdal::PointViewPtr view_ ) {
 	
 	// Create metadata.
 	pdal::MetadataNode				meta = getMetadata();
-	meta.add( "points-in",			view_->size() );
-	meta.add( "points-out",			filtered->size() );
-	meta.add( "points-removed",		view_->size() - filtered->size() );
 	
-	// Export metadata.
+	// Export arguments.
 	pdal::MetadataNode				arguments( "arguments" );
 	arguments.add( "resolution",	m_overlap_resolution );
 	meta.add( arguments );
+
+	// Export result.
+	pdal::MetadataNode				results( "result" );
+	results.add( "points-in",		view_->size() );
+	results.add( "points-out",		filtered->size() );
+	results.add( "points-removed",	view_->size() - filtered->size() );
+	meta.add( results );
 
 	// Create new point cloud (pdal::PointViewSet) with the result (pdal::PointViewPtr) and return it.
 	pdal::PointViewSet				result;

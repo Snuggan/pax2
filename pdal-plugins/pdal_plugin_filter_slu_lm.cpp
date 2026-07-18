@@ -117,11 +117,7 @@ namespace pax {
 	void slu_lm::done( pdal::PointTableRef /*table_*/ ) {
 		// Create metadata.
 		pdal::MetadataNode					meta = getMetadata();
-		
-		// Metadata: general:
-		meta.add( "points-processed",		m_metadata.points_in );
-		meta.add( "points-passed",			m_metadata.points_out );
-		
+				
 		// Metadata: arguments:
 		pdal::MetadataNode					arguments( "arguments" );
 		arguments.add( "min_z",				m_min_z );
@@ -131,12 +127,18 @@ namespace pax {
 		
 		// Metadata: filtering:
 		pdal::MetadataNode					filtering( "filtering" );
+		filtering.add( "not-lm",			m_metadata.not_lm );
+		filtering.add( "z-to-large",		m_metadata.z_large );
 		filtering.add( "z-made-zero",		m_metadata.z_negative );
 		filtering.add( "z-to-small",		m_metadata.z_small );
-		filtering.add( "z-to-large",		m_metadata.z_large );
-		filtering.add( "not-lm",			m_metadata.not_lm );
-		filtering.add( "points-removed",	m_metadata.points_in - m_metadata.points_out );
 		meta.add( filtering );
+
+		// Metadata: result:
+		pdal::MetadataNode					result( "result" );
+		result.add( "points-in",			m_metadata.points_in );
+		result.add( "points-out",			m_metadata.points_out );
+		result.add( "points-removed",		m_metadata.points_in - m_metadata.points_out );
+		meta.add( result );
 	}
 
 }	// namespace pax

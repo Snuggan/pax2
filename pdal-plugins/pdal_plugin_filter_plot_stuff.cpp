@@ -149,26 +149,31 @@ namespace pax {
 	}
 
 
-	void plot_stuff::filter( pdal::PointView & view_ ) {
-		DEBUG << "plot_stuff::filter start";
+	// void plot_stuff::filter( pdal::PointView & ) {
+	// 	DEBUG << "plot_stuff::filter start";
+	// 	DEBUG << "plot_stuff::filter end";
+	// }
 
-		setting_needs_PointView( view_.makeNew() );
+
+	pdal::PointViewSet plot_stuff::run( pdal::PointViewPtr view_ptr_ ) {
+		DEBUG << "plot_stuff::run start";
+
+		setting_needs_PointView( view_ptr_ );
 
 		// Process the points.
-		auto pt = view_.point( 0 );
-		for( pdal::PointId idx = 0; idx < view_.size(); ++idx ) {
-			pt = view_.point( idx );
+		auto pt = view_ptr_->point( 0 );
+		for( pdal::PointId idx = 0; idx < view_ptr_->size(); ++idx ) {
+			pt = view_ptr_->point( idx );
 			processOne( pt );
 		}
 
-		DEBUG << "plot_stuff::filter end";
+		// Create new point cloud (pdal::PointViewSet) with the result (pdal::PointViewPtr) and return it.
+		pdal::PointViewSet		result;
+		result.insert( view_ptr_ );
+		return result;
+
+		DEBUG << "plot_stuff::run end";
 	}
-
-
-	// pdal::PointViewSet plot_stuff::run( pdal::PointViewPtr view_ptr_ ) {
-	// 	DEBUG << "plot_stuff::run start";
-	// 	DEBUG << "plot_stuff::run end";
-	// }
 
 
 	void plot_stuff::done( pdal::PointTableRef /*table_*/ ) {
@@ -190,9 +195,6 @@ namespace pax {
 
 		// Export metadata.
 		pdal::MetadataNode					meta = getMetadata();
-		meta.add( "plots-processed",		m_plots.size() );
-		meta.add( "points-processed",		m_metadata.points_processed );
-		meta.add( "points-found",			m_metadata.points_in_plots );
 
 		pdal::MetadataNode					arguments( "arguments" );
 		arguments.add( "plot_file",			to_string( m_plot_file ) );
@@ -204,6 +206,12 @@ namespace pax {
 		arguments.add( "id_column",			m_id_column );
 		arguments.add( "plot_buffer",		m_plot_buffer );
 		meta.add( arguments );
+
+		pdal::MetadataNode					result( "result" );
+		result.add( "plots-processed",		m_plots.size() );
+		result.add( "points-processed",		m_metadata.points_processed );
+		result.add( "points-in-plots",		m_metadata.points_in_plots );
+		meta.add( result );
 
 		DEBUG << "plot_stuff::done end";
 	}

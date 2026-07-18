@@ -55,8 +55,8 @@ namespace pax {
 	    void prepared( pdal::PointTableRef )						override;
 	    void ready( pdal::PointTableRef )							override;
 		bool processOne( pdal::PointRef & );//							override;
-	    void filter( pdal::PointView & )							override;
-		// pdal::PointViewSet run( pdal::PointViewPtr )				override;
+	    // void filter( pdal::PointView & )							override;
+		pdal::PointViewSet run( pdal::PointViewPtr )				override;
 		void done( pdal::PointTableRef table_ )						override;
 
 		using coordinate_type		  = double;
