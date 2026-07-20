@@ -78,6 +78,8 @@ namespace pax {
 		DOCTEST_ASCII_CHECK_EQ( sh_.mid( -9, 2 )	, "te" );
 		DOCTEST_ASCII_CHECK_EQ( sh_.mid( -3, 9 )	, "ext" );
 		DOCTEST_FAST_CHECK_UNARY( sh_.starts_with( "tex" ) );
+		DOCTEST_FAST_CHECK_EQ( sh_.last( 3 ), std::span( "ext" ) );
+		DOCTEST_ASCII_CHECK_EQ( sh_.last( 3 ), "ext" );
 		DOCTEST_FAST_CHECK_UNARY( sh_.ends_with( "ext" ) );
 		DOCTEST_FAST_CHECK_EQ( sh_.find( 'x'  ).begin() - sh_.begin(), 2 );
 		DOCTEST_FAST_CHECK_EQ( sh_.find( '8'  ).begin() - sh_.begin(), 4 );

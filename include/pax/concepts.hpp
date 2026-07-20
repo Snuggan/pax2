@@ -126,8 +126,11 @@ namespace pax::traits {
 }	// namespace pax::traits
 
 namespace std {
-	template< pax::traits::character Ch >
-	[[nodiscard]] constexpr Ch * begin( Ch * const & c_ )		noexcept	{	return c_;								}
+	template< typename T >
+	[[nodiscard]] constexpr T * begin( T * const & ptr_ )		noexcept	{	return ptr_;							}
+
+	template< pax::traits::character Ch, std::size_t N >
+	[[nodiscard]] constexpr Ch * begin( Ch( & c_ )[ N ] )		noexcept	{	return c_;								}
 
 	template< pax::traits::character Ch >
 	[[nodiscard]] constexpr Ch * end( Ch * const & c_ )			noexcept	{
@@ -136,16 +139,16 @@ namespace std {
 		return itr;
 	}
 
+	template< pax::traits::character Ch, std::size_t N >		// In char arrays the null character is counted. 
+	[[nodiscard]] constexpr Ch * end( Ch( & c_ )[ N ] )			noexcept	{	return c_ + size( c_ );					}
+
+	template< pax::traits::character Ch, std::size_t N >		// In char arrays the null character is counted. 
+	[[nodiscard]] constexpr std::size_t size( Ch( & c_ )[ N ] )	noexcept	{	return N - !c_[ N - 1 ];				}
+
 	template< pax::traits::character Ch >
 	[[nodiscard]] constexpr Ch * data( Ch * const & c_ )		noexcept	{	return c_;								}
 
 	template< pax::traits::character Ch >
 	[[nodiscard]] constexpr std::size_t size( Ch * const & c_ )	noexcept	{	return end( c_ ) - c_;					}
-
-	template< pax::traits::character Ch, std::size_t N >		// In char arrays the null character is counted. 
-	[[nodiscard]] constexpr std::size_t size( Ch( & c_ )[ N ] )	noexcept	{	return N - !c_[ N - 1 ];				}
-
-	template< pax::traits::character Ch, std::size_t N >		// In char arrays the null character is counted. 
-	[[nodiscard]] constexpr Ch * end( Ch( & c_ )[ N ] )			noexcept	{	return c_ + size( c_ );					}
 
 }	// namespace std

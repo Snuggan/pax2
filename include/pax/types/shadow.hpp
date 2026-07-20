@@ -18,24 +18,26 @@
 /// specifically declared const. 
 
 #pragma once
+
 #include <pax/concepts.hpp>		// traits:: stuff.
+#include "point-stuff.hpp"
+
 #include <algorithm>			// std::ranges::equal, std::lexicographical_compare_three_way, etc.
 #include <iterator>				// std::reverse_iterator.
 #include <assert.h>				// The classic assert macro.
 #include <stdexcept>			// std::out_of_range.
 
-#include "point-stuff.hpp"		// Temporary, to check point-stuff.hpp
 
 namespace pax {
 	constexpr std::size_t dynamic_extent = traits::dynamic_extent;
 
-	template< typename T >
-	[[nodiscard]] constexpr auto no_nullchar_end( T && t_ )				{	using std::end; return end( t_ );		}
-
-	template< traits::character Char, std::size_t N >	requires( N > 0 )
-	[[nodiscard]] constexpr Char const * no_nullchar_end( Char const ( & str_ )[ N ] )	{
-		return str_ + N - !str_[ N - 1 ];
-	}
+	// template< typename T >
+	// [[nodiscard]] constexpr auto no_nullchar_end( T && t_ )				{	using std::end; return end( t_ );		}
+	//
+	// template< traits::character Char, std::size_t N >	requires( N > 0 )
+	// [[nodiscard]] constexpr Char const * no_nullchar_end( Char const ( & str_ )[ N ] )	{
+	// 	return str_ + N - !str_[ N - 1 ];
+	// }
 
 
 	/// The core for span-like utilities of static or dynamic size. A minimal std::ranges::contiguous_range.
@@ -134,8 +136,8 @@ namespace pax {
 		using size_type								  = std::size_t;
 		using difference_type						  = std::ptrdiff_t;
 
-		template< size_type N0 >
-		using shadowN								  = pax::contiguous_shell< shadow_core, const element_type, N0 >;
+		template< size_type I >
+		using shadowN								  = pax::contiguous_shell< shadow_core, const element_type, I >;
 		using shadow0								  = shadowN< dynamic_extent >;
 		using pair									  = std::pair< shadow0, shadow0 >;
 
@@ -153,6 +155,12 @@ namespace pax {
 
 		/// True iff the size is not zero. 
 		[[nodiscard]] constexpr explicit operator bool()const noexcept	{	return  size();							}
+
+		/// True iff the size is not zero. 
+		[[nodiscard]] constexpr std::span< const X, N > span()	const noexcept	{
+			return std::span< const X, N >{ cbegin(), size() };
+		}
+	
 
 		/// Iterators.
 		[[nodiscard]] constexpr const_iterator begin()	const noexcept	{	return data();							}
@@ -198,142 +206,108 @@ namespace pax {
 
 		/// In strings a terminating \0 is ignored.
  		template< std::ranges::contiguous_range U >
-		[[nodiscard]] constexpr bool operator==( U && u_ )					const noexcept	{
-			return std::equal(	begin(), end(), std::ranges::begin( u_ ), no_nullchar_end( u_ ) );
-		}
+		[[nodiscard]] constexpr bool operator==( U && u_ )					const noexcept	{	return span() == u_;	}
 
 		/// In strings a terminating \0 is ignored.
  		template< std::ranges::contiguous_range U >
-		[[nodiscard]] constexpr auto operator<=>( U && u_ )					const noexcept	{
-			return std::lexicographical_compare_three_way(
-								begin(), end(), std::ranges::begin( u_ ), no_nullchar_end( u_ ) );
-		}
+		[[nodiscard]] constexpr auto operator<=>( U && u_ )					const noexcept	{	return span() <=> u_;	}
 
 		/// Return `true`, iff `ptr_` references an element in this..
 		[[nodiscard]] constexpr bool within( const const_pointer ptr_ )		const noexcept	{
-			return ( cbegin() <= ptr_ ) && ( ptr_ < cend() );
+			return pax::within( span(), ptr_ );
 		}
 
 		/// Return a dynamic shadow of the first min(n_, size()) elements.
-		[[nodiscard]] constexpr auto first( const size_type n_ )			const noexcept	{
-			return shadow0{ data(), std::min( n_, size() ) };
+		[[nodiscard]] constexpr auto first( const size_type n_ = 1 ) 		const noexcept	{
+			return pax::first( span(), n_ );
 		}
 
 		/// Return a static shadow of the first min(N, extent) elements.
 		/// Does assert( N <= size() && !is_static ).
-		template< std::size_t N0 >		requires( N0 != dynamic_extent )
-		[[nodiscard]] constexpr auto first() 								const noexcept	{
-			if constexpr( !is_static )	assert( N0 <= size() && "first< N >() requires N <= size()." );
-			return shadowN< std::min( N0, extent ) >( data() );
-		}
+		template< std::size_t I >							requires( I != dynamic_extent )
+		[[nodiscard]] constexpr auto first() 				const noexcept	{	return pax::first< I >( span() );		}
 
 		/// Return a dynamic shadow of the last size() - min(n_, size()) elements.
 		[[nodiscard]] constexpr auto not_first( size_type n_ = 1 )			const noexcept	{
-			n_ = std::min( n_, size() );
-			return shadow0{ data() + n_, size() - n_ };
+			return pax::not_first( span(), n_ );
 		}
 
 		/// Return a static shadow of the last size() - min(N, extent) elements.
 		/// Does assert( N <= size() && !is_static ).
-		template< std::size_t N0 >		requires( is_static )
-		[[nodiscard]] constexpr auto not_first() 							const noexcept	{
-			return last< extent - std::min( N0, extent ) >();
-		}
+		template< std::size_t I >							requires( is_static && ( I != dynamic_extent ) )
+		[[nodiscard]] constexpr auto not_first() 			const noexcept	{	return pax::not_first< I >( span() );	}
 
 		/// Return a dynamic shadow of the last min(n_, size()) elements.
-		[[nodiscard]] constexpr auto last( size_type n_ )					const noexcept	{
-			n_ = std::min( n_, size() );
-			return shadow0{ data() + size() - n_, n_ };
+		[[nodiscard]] constexpr auto last( size_type n_ = 1 )				const noexcept	{
+			return pax::last( span(), n_ );
 		}
 
 		/// Return a static shadow of the first min(N, extent) elements.
 		/// Does assert( N <= size() && !is_static ).
-		template< std::size_t N0 >		requires( N0 != dynamic_extent )
-		[[nodiscard]] constexpr auto last() 								const noexcept	{
-			if constexpr( !is_static )	assert( N0 <= size() && "last< N0 >() requires N0 <= size()." );
-			return shadowN< std::min( N0, extent ) >{ data() + size() - std::min( N0, size() ) };
-		}
+		template< std::size_t I >							requires( I != dynamic_extent )
+		[[nodiscard]] constexpr auto last() 				const noexcept	{	return pax::last< I >( span() );		}
 
 		/// Return a dynamic shadow of the first size() - min(n_, size()) elements.
 		[[nodiscard]] constexpr auto not_last( const size_type n_ = 1 )		const noexcept	{
-			return shadow0{ data(), size() - std::min( n_, size() ) };
+			return pax::not_last( span(), n_ );
 		}
 
 		/// Return a static shadow of the first size() - min(N, extent) elements.
 		/// Does assert( N <= size() && !is_static ).
-		template< std::size_t N0 >		requires( traits::has_extent< contiguous_shell > )
-		[[nodiscard]] constexpr auto not_last() 							const noexcept 	{
-			return first< extent - std::min( N0, size() ) >();
-		}
+		template< std::size_t I >							requires( is_static && ( I != dynamic_extent ) )
+		[[nodiscard]] constexpr auto not_last() 			const noexcept 	{	return pax::not_last< I >( span() );	}
 
 		/// Return a dynamic shadow of the n_ elements starting with offs_, but restricted to the bounds of this.
 		/// A negative offs_ is counted from the end.
 		[[nodiscard]] constexpr auto mid( difference_type offs_, const size_type n_ )	const noexcept	{
-			offs_ =	( offs_ >= 0 )	?		   std::min( size_type(  offs_ ), size() )
-									: size() - std::min( size_type( -offs_ ), size() );
-			return shadow0{ data() + offs_, std::min( size() - offs_, n_ ) };
+			return pax::mid( span(), offs_, n_ );
 		}
 
 		/// Return a static shadow of the N elements starting with offs_, but restricted to the bounds of this.
 		/// A negative offs_ is counted from the back. Does assert( offs_ + N <= size() ).
-		template< std::size_t N0 >		requires( N0 != dynamic_extent && N0 <= extent )
+		template< std::size_t I >							requires( I != dynamic_extent && I <= extent )
 		[[nodiscard]] constexpr auto mid( difference_type offs_ )			const noexcept	{
-			offs_ =	( offs_ >= 0 )	?		   std::min( size_type(  offs_ ), size() )
-									: size() - std::min( size_type( -offs_ ), size() );
-			assert( offs_ + N0 <= size() && "mid< N0 >() requires offs_ + N0 <= size()." );
-			return shadowN< N0 >{ data() + offs_ };
+			return pax::mid< I >( span(), offs_ );
 		}
 
 		/// Return true iff u_ equals the first elements of this.
  		template< std::ranges::contiguous_range U >
 		[[nodiscard]] constexpr bool starts_with( U && u_ )					const noexcept	{
-			const auto sz = no_nullchar_end( u_ ) - std::ranges::begin( u_ );
-			return std::equal( begin(), first( sz ).end(), std::ranges::begin( u_ ), no_nullchar_end( u_ ) );
-			// return std::ranges::starts_with( *this, shadow_core( u_ ) );	// Ubuntu does not...
+			return pax::starts_with( span(), u_ );
 		}
 
 		/// Return true iff u_ equals the last elements of this.
  		template< std::ranges::contiguous_range U >
 		[[nodiscard]] constexpr bool ends_with( U && u_ )					const noexcept	{
-			const auto sz = no_nullchar_end( u_ ) - std::ranges::begin( u_ );
-			return std::equal( last( sz ).begin(), end(), std::ranges::begin( u_ ), no_nullchar_end( u_ ) );
-			// return std::ranges::ends_with( *this, shadow_core( u_ ) );	// Ubuntu does not...
+			return pax::ends_with( span(), u_ );
 		}
 
 		/// Return a shadow of where t_ is -- or a zereo-sized shadow located at end().
 		[[nodiscard]] constexpr shadow0 find( const value_type t_ )			const noexcept	{
-			const auto result = std::find( begin(), end(), t_ );
-			return { result, result != end() };
+			const auto temp = pax::find( span(), t_ );
+			return shadow0( temp.data(), temp.size() );
 		}
 
 		/// Return a shadow of where u_ is -- or a zereo-sized shadow located at end().
  		template< std::ranges::contiguous_range U >
 		[[nodiscard]] constexpr shadow0 find( U && u_ )						const noexcept	{
-			const shadow_core		vw( u_ );
-			const auto result = std::search( begin(), end(), vw.begin(), vw.end() );
-			return { result, ( result == end() ) ? 0u : vw.size() };
+			const auto temp = pax::find( span(), u_ );
+			return shadow0( temp.data(), temp.size() );
 		}
 
 		/// Return a shadow of the first contigous range where all Test( value ) are true.
 		/// If none is found, { end(), 0u } is returned.
 		template< typename Test >	requires std::is_invocable_r_v< bool, Test, value_type >
 		[[nodiscard]] constexpr shadow0 find( Test && test_ )				const noexcept	{
-			const auto	b = std::ranges::find_if( *this, test_ );
-			auto 		e = b;
-			while( ( e != end() ) && test_( *e ) ) 	++e;
-			return { b, e };
+			const auto temp = pax::find( span(), test_ );
+			return shadow0( temp.data(), temp.size() );
 		}
 
 		/// Find any of "\n\r", "\n", "\r\n", or "\r" and return a shadow reference to it.
 		/// If none is found, { end(), 0u } is returned.
 		[[nodiscard]] constexpr shadow0 find_linebreak()					const noexcept requires( is_string ) {
-			value_type		previous{ ' ' };
-			for( element_type & c : *this )	{
-				[[unlikely]] if( previous == '\n' )	return { &c - 1, 1u + ( c == '\r' ) };
-				[[unlikely]] if( previous == '\r' )	return { &c - 1, 1u + ( c == '\n' ) };
-				previous = c;
-			}
-			return { end() - ( ( previous == '\n' ) || ( previous == '\r' ) ), end() };
+			const auto temp = pax::find_linebreak( span() );
+			return shadow0( temp.data(), temp.size() );
 		};
 
 		/// Split this in two at offset t_ so that first.end() == second.begin() and first.size() == t_.
@@ -362,14 +336,7 @@ namespace pax {
 		/// Stream the elements to out_.
 		template< typename Out >
 		friend Out & operator<<( Out & out_, const contiguous_shell & sh_ )	{
-			if constexpr( is_string )	out_.write( sh_.data(), sh_.size() );
-			else if( sh_.empty() )		out_ << "[]";
-			else {
-				out_ << '[' << sh_.front();
-				for( const auto & item : sh_.not_first() )	out_ << ", " << item;
-				out_ << ']';
-			}
-			return out_;
+			return out_ << sh_.span();
 		}
  	};
 
