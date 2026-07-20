@@ -9,60 +9,59 @@
 
 namespace pax {
 	
-	using std::get, std::array, std::span;
+	template< std::size_t N >
+	using Index = Point< std::size_t, N >;
 
 
 	/// Let the specialisation of unsigned always have zero as minimum. Useful for indeces.
-	template< uinteger U, std::size_t N >						requires( N != std::dynamic_extent )
+	template< std::size_t N >									requires( N != std::dynamic_extent )
 	class Indexer {
-		Point< U, N >											m_max{}, m_offsets{};
-		static constexpr Point< U, N >							m_min{};
-		using 										Span	  = span< U, N >;
+		using Idx					  = Index< N >;
+		Idx								m_size{}, m_offsets{};
+		static constexpr Idx			noll{};
 		
-		static constexpr Point< U, N > do_offsets( Span pt_ )	noexcept	{
-			U						product{};
-			static constexpr auto	f = [ & product ]( U t_ )	{	return product *= t_;	};
-			auto [ ... t, tn ] = pt_;
-			return { 1u, f( t ) ... };
+		static constexpr Idx do_offs( const Idx & idx_ )		noexcept	{
+			std::size_t					product{ 1u };
+			auto [ ... t, tn ]		  = idx_;
+			return { product, ( product *= t ) ... };
 		}
 		
 	public:
-		static constexpr std::size_t 				rank	  = N;
-		using 										Point	  = array< U, N >;
-		using Point::value_type;
+		static constexpr std::size_t	rank  = N;
+		using Idx::value_type;
 
 		constexpr Indexer()									  = default;
 		constexpr Indexer( const Indexer & )				  = default;
 		constexpr Indexer( Indexer && )						  = default;
 		constexpr Indexer & operator=( const Indexer & )	  = default;
 		constexpr Indexer & operator=( Indexer && )			  = default;
-		constexpr Indexer( Span size_ )  noexcept : m_max( size_ ), m_offsets{ do_offsets( size_ ) } {}
+		constexpr Indexer( const Idx & size_ )  				noexcept : m_size( size_ ), m_offsets{ do_offs( size_ ) } {}
 
-		constexpr Indexer grow( Span pt_ )						const noexcept	{	return { max( m_max, pt_ ) };			}
-
-		constexpr const Point & min()							const noexcept	{	return m_min;							}
-		constexpr const Point & max()							const noexcept	{	return m_max;							}
-		constexpr const Point & offsets()						const noexcept	{	return m_offsets;						}
-
-		constexpr bool strictly_inside( Span pt_ )				const noexcept	{	return all_lt( pt_, max() );			}
-		constexpr bool inside_or_on( Span pt_ )					const noexcept	{	return all_le( pt_, max() );			}
-		constexpr bool in_range( Span pt_ )						const noexcept	{	return strictly_inside( pt_ );			}
+		constexpr const Idx & size()							const noexcept	{	return m_size;							}
+		constexpr const Idx & offsets()							const noexcept	{	return m_offsets;						}
+		constexpr std::size_t elements()						const noexcept	{	return offsets().back();				}
+		constexpr std::size_t cols()							const noexcept	{	return col( size() );					}
+		constexpr std::size_t rows()							const noexcept	{	return row( size() );					}
+		constexpr bool valid_index( const Idx & idx_ )			const noexcept	{	return all_lt( idx_, size() );			}
+		constexpr Indexer grow( const Idx & idx_ )				const noexcept	{	return { max( idx_, size() ) };			}
+		friend constexpr const Idx & min( const Indexer & i_ )	noexcept		{	return i_.noll;							}
+		friend constexpr const Idx & max( const Indexer & i_ )	noexcept		{	return i_.m_size;						}
 		
 		/// Calculate an index into a vector for the index represented by pt_.
-		template< uinteger ...U2 >								requires( sizeof...( U2 ) == N )
-		constexpr U operator[]( U2 && ... u_ )					const noexcept	{	return operator[]( Point( u_ ... ) );	}
+		template< uinteger ...U >								requires( sizeof...( U ) == N )
+		constexpr std::size_t operator[]( U && ... u_ )			const noexcept	{	return operator[]( Idx( u_ ... ) );		}
 		
 		/// Calculate an index into a vector for the index represented by pt_.
-		constexpr U operator[]( Point pt_ )						const noexcept	{	return dot_product( pt_, m_offsets );	}
+		constexpr std::size_t operator[]( const Idx & idx_ )	const noexcept	{	return dot_product( idx_, offsets() );	}
 		
 		/// Calculate an index into a vector for the index represented by pt_.
-		template< uinteger ...U2 >								requires( sizeof...( U2 ) == N )
-		constexpr U at( U2 && ...u_ )							const noexcept	{	return at( Point( u_ ... ) );			}
+		template< uinteger ...U >								requires( sizeof...( U ) == N )
+		constexpr std::size_t at( U && ...u_ )					const noexcept	{	return at( Idx( u_ ... ) );				}
 		
 		/// Calculate an index into a vector for the index represented by pt_.
-		constexpr U at( Point pt_ )								const noexcept	{
-			assert( all_lt( pt_, max() ) );
-			return dot_product( pt_, m_offsets );
+		constexpr std::size_t at( const Idx & idx_ )			const noexcept	{
+			assert( all_lt( idx_, size() ) );
+			return dot_product( idx_, offsets() );
 		}
 	};
 

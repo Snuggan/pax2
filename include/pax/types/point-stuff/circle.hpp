@@ -9,7 +9,7 @@
 
 namespace pax {
 	
-	using std::get, std::array, std::span;
+	using std::span;
 
 
 	template< arithmetic A, std::size_t N >						requires( N != std::dynamic_extent )

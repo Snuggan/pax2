@@ -95,35 +95,6 @@ namespace pax {
 	}
 
 
-	/// Check if all elements in pt0_ are smaller than the counterpart in pt1_.
-	template< typename T, std::size_t N >									requires( is_static< N > )
-	constexpr bool all_lt( span< T, N > pt0_, span< T, N > pt1_ )							noexcept	{
-		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
-		return ( true && ... && ( t0 <  t1 ) );
-	}
-
-	/// Check if all elements in pt0_ are smaller or equal than the counterpart in pt1_.
-	template< typename T, std::size_t N >									requires( is_static< N > )
-	constexpr bool all_le( span< T, N > pt0_, span< T, N > pt1_ )							noexcept	{
-		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
-		return ( true && ... && ( t0 <= t1 ) );
-	}
-
-	/// Return a pairwise min() of the elements of the arguments.
-	template< typename T, std::size_t N >									requires( is_static< N > )
-	constexpr array< T, N > min( span< T, N > pt0_, span< T, N > pt1_ )						noexcept	{
-		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
-		return Point< T, N >({ ( ( t0 <= t1 ) ? t0 : t1 ) ... });
-	}
-
-	/// Return a pairwise min() of the elements of the arguments.
-	template< typename T, std::size_t N >									requires( is_static< N > )
-	constexpr array< T, N > max( span< T, N > pt0_, span< T, N > pt1_ )						noexcept	{
-		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
-		return Point< T, N >({ ( ( t0 >= t1 ) ? t0 : t1 ) ... });
-	}
-
-
 	/// Return a dynamic shadow of the first min(n_, size()) elements.
 	template< typename T, std::size_t N >
 	[[nodiscard]] constexpr auto first( span< T, N > sp_, std::size_t n_ = 1 )				noexcept	{
@@ -211,7 +182,7 @@ namespace pax {
 	/// Return true iff u_ equals the last elements of this.
 	template< typename T, std::size_t N, std::ranges::contiguous_range Cont >
 	[[nodiscard]] constexpr bool ends_with( span< T, N > sp_, Cont && cont_ )				noexcept	{
-		using std::begin, std::size;
+		using std::begin;
 		const std::size_t sz	  = no_nullchar_end( cont_ ) - begin( cont_ );
 		return ( sz <= sp_.size() ) && ( last( sp_, sz ) == make_span( cont_ ) );
 	}

@@ -14,8 +14,6 @@
 
 
 /**	To do:
-	– Add the basic stuff – first, not_first, last, not_last, mid.
-	– Add other missing parts from shadow.
 	– Eliminate dependance on <pax/math/power.hpp>.
 	– Eliminate dependance on <pax/std/algorithm.hpp>.
 	– Eliminate dependance on <numeric>?
