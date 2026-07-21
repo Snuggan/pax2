@@ -5,6 +5,7 @@
 #pragma once
 
 #include "seconds_to_string.hpp"
+#include <print>
 
 
 namespace pax {
@@ -12,9 +13,9 @@ namespace pax {
 	class Progress;
 
 	struct Reporter {
-		virtual ~Reporter()						  = default;
+		virtual ~Reporter()							{}
 		virtual void report( const Progress & )		const {};
-		virtual void clear()						const {};
+		virtual void clear()						const noexcept {};
 	};
 
 
@@ -135,39 +136,44 @@ namespace pax {
 
 	class Textual : public Reporter {
 		std::string					m_text{};
-		mutable unsigned			m_last_length{};
 
 	public:
 		/// if end_ is zero, progress will be active but there will obviously be no ETL.
 		Textual( const std::string text_ = "" ) 
-			: m_text{ std::string( " " ) + text_ + ( text_.empty() ? "" : ": " ) }, m_last_length{} {}
+			: m_text{ std::string( " " ) + text_ + ( text_.empty() ? "" : ": " ) } {}	//, m_last_length{} {}
 
 		Textual( const Textual & ) 								=	default;
 		Textual( Textual && ) 						noexcept	=	default;
 		Textual & operator=( const Textual & )					=	default;
 		Textual & operator=( Textual && ) 			noexcept	=	default;
-		~Textual()												{	try{ clear(); } catch( ... ) {}		}
+		virtual ~Textual();
 
 		/// Print status message to stderr.
 		void report( const Progress & pr_ )			const override	{
-  			const std::string		message{ m_text + pr_.report() };
-			const auto				diff{ ( m_last_length > message.size() ) ? ( m_last_length - message.size() ) : 0 };
-			m_last_length		  = message.size();
-			std::fprintf( stderr, "%s%s\r", message.c_str(), std::string( diff, ' ' ).c_str() );
+			std::print( std::cerr, "\r\033[K{}{}", m_text, pr_.report() );
+			std::flush( std::cerr );
 		}
 	
-		/// Clear the status report from stderr.
-		void clear()								const override	{
-			std::fprintf( stderr, "%s\r", std::string( m_last_length, ' ' ).c_str() );
-			m_last_length	  = 0;
+		/// Clear the status line from stderr.
+		void clear()								const noexcept override	{
+			try {	// Called from the destructor, so make sure it doesn't throw.
+				std::print( std::cerr, "\r\033[K" );
+				std::flush( std::cerr );
+			} catch( ... ) {}
 		}
 	};
 	
-	
-	
+
 	inline Progress textual_progress(
 		const std::string 		  & text_	= "",	///< Prefix string.
 		const std::size_t			end_	= 0		///< Total number of iterations.
 	) {	return Progress{ Textual{ text_ }, end_ };					}
+
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+	// GCC-16 gave me a strange error that neither I or AI really understood.
+	Textual::~Textual() {	clear();	}
+#pragma GCC diagnostic pop
 
 }	// namespace pax
