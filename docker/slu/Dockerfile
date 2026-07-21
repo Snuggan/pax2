@@ -40,7 +40,9 @@ RUN		echo "\n\n--- Main stuff ---" \
 		# &&	update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-15 50 \
 		# Remove the apt-get cache, as it is needed no longer:
 		&&	rm -Rf /var/lib/apt/lists/* \
-		&&	update-alternatives --set gcc /usr/bin/gcc-16 \
+		# Make g++-16 et al. the default compiler:
+		&&	update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-16 100 \
+		&&	update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-16 100 \
 		&&	ldconfig 
 
 
