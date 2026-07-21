@@ -10,11 +10,11 @@
 namespace pax {
 	
 	template< std::size_t N >
-	using Index = Point< std::size_t, N >;
+	using Index = std::array< std::size_t, N >;
 
 
 	/// Let the specialisation of unsigned always have zero as minimum. Useful for indeces.
-	template< std::size_t N >									requires( N != std::dynamic_extent )
+	template< std::size_t N >									requires( is_static< N > )
 	class Indexer {
 		using Idx					  = Index< N >;
 		Idx								m_size{}, m_offsets{};

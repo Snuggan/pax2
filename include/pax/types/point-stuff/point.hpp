@@ -4,27 +4,16 @@
 
 #pragma once
 
-#include <span>
+#include "base.hpp"
 #include <array>
-#include <concepts>
 
 
 namespace pax {
 	
 	using std::get;
 
-	// Make it possible to incude other types in the concepts below:
-	template< typename U >	struct is_uinteger	  : std::false_type  {};
-	template< typename I >	struct is_integer	  : is_uinteger< I > {};
-	template< typename F >	struct is_floating	  : std::false_type  {};
 
-	template< typename I >	concept integer		  = std::integral< I >			|| is_integer < I >::value;
-	template< typename U >	concept uinteger	  = std::unsigned_integral< U > || is_uinteger< U >::value;
-	template< typename F >	concept floating	  = std::floating_point< F >	|| is_floating< F >::value;
-	template< typename A >	concept arithmetic	  = floating< A > || integer< A >;
-	
-
-	template< arithmetic A, std::size_t N >							requires( N != std::dynamic_extent )
+	template< arithmetic A, std::size_t N >				requires( is_static< N > )
 	using Point = std::array< A, N >;
 	
 
@@ -40,76 +29,55 @@ namespace pax {
 	/// Using them makes the code clearer and guarantees a consistent mapping name -> index.
 	/// col, east, x -> 0, row, north, y -> 1, z -> 2.
 	/// @{
-	template< uinteger U, std::size_t N >							requires( N > 0 )
-	constexpr U   col  ( Point< const U, N > pt_ )	noexcept	{	return get< 0 >( pt_ );		}
+	template< uinteger U, std::size_t N >				requires( N > 0 )
+	constexpr U & col  ( const Point< U, N > & pt_ )	noexcept	{	return get< 0 >( pt_ );		}
 
-	template< uinteger U, std::size_t N >							requires( N > 0 )
-	constexpr U & col  ( Point<       U, N > pt_ )	noexcept	{	return get< 0 >( pt_ );		}
-
-	template< uinteger U, std::size_t N >							requires( N > 1 )
-	constexpr U   row  ( Point< const U, N > pt_ )	noexcept	{	return get< 1 >( pt_ );		}
-
-	template< uinteger U, std::size_t N >							requires( N > 1 )
-	constexpr U & row  ( Point<       U, N > pt_ )	noexcept	{	return get< 1 >( pt_ );		}
+	template< uinteger U, std::size_t N >				requires( N > 1 )
+	constexpr U & row  ( const Point< U, N > & pt_ )	noexcept	{	return get< 1 >( pt_ );		}
 
 
-	template< floating F, std::size_t N >							requires( N > 0 )
-	constexpr F   east ( Point< const F, N > pt_ )	noexcept	{	return get< 0 >( pt_ );		}
+	template< floating F, std::size_t N >				requires( N > 0 )
+	constexpr F & east ( const Point< F, N > & pt_ )	noexcept	{	return get< 0 >( pt_ );		}
 
-	template< floating F, std::size_t N >							requires( N > 0 )
-	constexpr F & east ( Point<       F, N > pt_ )	noexcept	{	return get< 0 >( pt_ );		}
-
-	template< floating F, std::size_t N >							requires( N > 1 )
-	constexpr F   north( Point< const F, N > pt_ )	noexcept	{	return get< 1 >( pt_ );		}
-
-	template< floating F, std::size_t N >							requires( N > 1 )
-	constexpr F & north( Point<       F, N > pt_ )	noexcept	{	return get< 1 >( pt_ );		}
+	template< floating F, std::size_t N >				requires( N > 1 )
+	constexpr F & north( const Point< F, N > & pt_ )	noexcept	{	return get< 1 >( pt_ );		}
 
 
-	template< floating F, std::size_t N >							requires( N > 0 )
-	constexpr F   x    ( Point< const F, N > pt_ )	noexcept	{	return get< 0 >( pt_ );		}
+	template< floating F, std::size_t N >				requires( N > 0 )
+	constexpr F x    ( const Point< F, N > & pt_ )		noexcept	{	return get< 0 >( pt_ );		}
 
-	template< floating F, std::size_t N >							requires( N > 0 )
-	constexpr F & x    ( Point<     F, N > pt_ )	noexcept	{	return get< 0 >( pt_ );		}
+	template< floating F, std::size_t N >				requires( N > 1 )
+	constexpr F y    ( const Point< F, N > & pt_ )		noexcept	{	return get< 1 >( pt_ );		}
 
-	template< floating F, std::size_t N >							requires( N > 1 )
-	constexpr F   y    ( Point< const F, N > pt_ )	noexcept	{	return get< 1 >( pt_ );		}
-
-	template< floating F, std::size_t N >							requires( N > 1 )
-	constexpr F & y    ( Point<       F, N > pt_ )	noexcept	{	return get< 1 >( pt_ );		}
-
-	template< floating F, std::size_t N >							requires( N > 2 )
-	constexpr F   z    ( Point< const F, N > pt_ )	noexcept	{	return get< 2 >( pt_ );		}
-
-	template< floating F, std::size_t N >							requires( N > 2 )
-	constexpr F & z    ( Point<       F, N > pt_ )	noexcept	{	return get< 2 >( pt_ );		}
+	template< floating F, std::size_t N >				requires( N > 2 )
+	constexpr F z    ( const Point< F, N > & pt_ )		noexcept	{	return get< 2 >( pt_ );		}
 	/// @}
 
 
 	/// Check if all elements in pt0_ are smaller than the counterpart in pt1_.
 	template< arithmetic A, std::size_t N >
-	constexpr bool all_lt( Point< A, N > pt0_, Point< A, N > pt1_ )					noexcept	{
+	constexpr bool all_lt( Point< A, N > pt0_, Point< A, N > pt1_ )				noexcept	{
 		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
 		return ( true && ... && ( t0 <  t1 ) );
 	}
 
 	/// Check if all elements in pt0_ are smaller or equal than the counterpart in pt1_.
 	template< arithmetic A, std::size_t N >
-	constexpr bool all_le( Point< A, N > pt0_, Point< A, N > pt1_ )					noexcept	{
+	constexpr bool all_le( Point< A, N > pt0_, Point< A, N > pt1_ )				noexcept	{
 		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
 		return ( true && ... && ( t0 <= t1 ) );
 	}
 
 	/// Return a pairwise min() of the elements of the arguments.
 	template< arithmetic A, std::size_t N >
-	constexpr Point< A, N > min( Point< A, N > pt0_, Point< A, N > pt1_ )			noexcept	{
+	constexpr Point< A, N > min( Point< A, N > pt0_, Point< A, N > pt1_ )		noexcept	{
 		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
 		return Point< A, N >({ ( ( t0 <= t1 ) ? t0 : t1 ) ... });
 	}
 
 	/// Return a pairwise min() of the elements of the arguments.
 	template< arithmetic A, std::size_t N >
-	constexpr Point< A, N > max( Point< A, N > pt0_, Point< A, N > pt1_ )			noexcept	{
+	constexpr Point< A, N > max( Point< A, N > pt0_, Point< A, N > pt1_ )		noexcept	{
 		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
 		return Point< A, N >({ ( ( t0 >= t1 ) ? t0 : t1 ) ... });
 	}
@@ -117,14 +85,14 @@ namespace pax {
 
 	/// Add the elements pairwise.
 	template< arithmetic A, std::size_t N >
-	constexpr Point< A, N > operator+( Point< A, N > pt0_, Point< A, N > pt1_ )		noexcept	{
+	constexpr Point< A, N > operator+( Point< A, N > pt0_, Point< A, N > pt1_ )	noexcept	{
 		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
 		return Point< A, N >({ ( t0 + t1 ) ... });
 	}
 
 	/// Subtract the elements pairwise.
 	template< arithmetic A, std::size_t N >
-	constexpr Point< A, N > operator-( Point< A, N > pt0_, Point< A, N > pt1_ )		noexcept	{
+	constexpr Point< A, N > operator-( Point< A, N > pt0_, Point< A, N > pt1_ )	noexcept	{
 		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
 		return Point< A, N >({ ( t0 - t1 ) ... });
 	}
@@ -132,7 +100,7 @@ namespace pax {
 	/// Calculate the euclidian distance squared between two points.
 	/// Aake the std::sqrt on the result to get the actual euclidian distance.
 	template< arithmetic A, std::size_t N >
-	constexpr A distance2( Point< A, N > pt0_, Point< A, N > pt1_ )					noexcept	{
+	constexpr A distance2( Point< A, N > pt0_, Point< A, N > pt1_ )				noexcept	{
 		static constexpr auto square =			  []( A t ){ return t*t; };
 		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
 		return ( A{} + ... + square( t0 - t1 ));
@@ -140,14 +108,17 @@ namespace pax {
 
 	/// Calculate the dot product of two points. 
 	template< arithmetic A, std::size_t N >
-	constexpr A dot_product( Point< A, N > pt0_, Point< A, N > pt1_ )				noexcept	{
+	constexpr A dot_product( Point< A, N > pt0_, Point< A, N > pt1_ )			noexcept	{
 		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
 		return ( A{} + ... + ( t0*t1 ) );
 	}
 
-	/// The cross-product.
+	/// The vector cross product.
 	template< arithmetic A >
-	constexpr Point< A, 3 > cross_product( Point< A, 3 > pt0_, Point< A, 3 > pt1_ ) noexcept	{
+	constexpr Point< A, 3 > cross_product(
+		Point< A, 3 > pt0_, 
+		Point< A, 3 > pt1_ 
+	) noexcept {
 		return Point({ 
 			pt0_[ 1 ]*pt1_[ 2 ] - pt0_[ 2 ]*pt1_[ 1 ],
 			pt0_[ 2 ]*pt1_[ 0 ] - pt0_[ 0 ]*pt1_[ 2 ],

@@ -4,11 +4,10 @@
 
 #pragma once
 
-#include "../../concepts.hpp"
+#include "base.hpp"
 
 #include <span>
 #include <array>
-#include <utility>				// std::pair.
 #include <algorithm>			// std::ranges::equal, std::lexicographical_compare_three_way, etc.
 #include <assert.h>				// The classic assert macro.
 
@@ -16,31 +15,6 @@
 namespace pax {
 	
 	using std::array, std::span;
-	
-	template< std::size_t N >
-	constexpr bool is_static  = ( N != std::dynamic_extent );
-	
-	template< std::size_t N >
-	constexpr bool not_static = ( N == std::dynamic_extent );
-
-	template< typename T >
-	[[nodiscard]] constexpr auto no_nullchar_end( T && t_ )				{	using std::end; return end( t_ );		}
-
-	template< traits::character Char, std::size_t N >	requires( N > 0 )
-	[[nodiscard]] constexpr Char const * no_nullchar_end( Char const ( & str_ )[ N ] )	{
-		return str_ + N - !str_[ N - 1 ];
-	}
-
-	template< std::ranges::contiguous_range Cont >		requires( traits::character< traits::element_type_t< Cont > > )
-	[[nodiscard]] constexpr auto no_nullchar_end( Cont && cont_ )	{
-		using std::end, std::empty;
-		return end( cont_ ) - !( empty( cont_ ) || *( end( cont_ ) - 1 ) );
-	}
-
-	template< traits::character Char, std::size_t N >	requires( N > 0 )
-	[[nodiscard]] constexpr auto no_nullchar_end( std::span< Char, N > sp_ )	{
-		return sp_.end() - !( sp_.empty() || sp_.back() );
-	}
 
 
 	/// Create a span of elements.
@@ -57,6 +31,9 @@ namespace pax {
 		return { span_.begin(), span_.end() };
 	}
 
+	template< typename T, std::size_t N >
+	[[nodiscard]] constexpr auto not_first( span< T, N > sp_, std::size_t n_ = 1 )			noexcept;
+
 }	// namespace pax
 
 
@@ -67,7 +44,6 @@ namespace std {
 		return *( sp_.data() + I );
 	}
 
-
 	/// In strings a terminating \0 is ignored.
 	template< typename T, std::size_t N, typename Cont >
 	[[nodiscard]] constexpr bool operator==( span< T, N > pt_, Cont && cont_ )				noexcept	{
@@ -77,10 +53,24 @@ namespace std {
 
 	/// In strings a terminating \0 is ignored.
 	template< typename T, std::size_t N, typename Cont >
-	[[nodiscard]] constexpr auto operator<=>( span< T, N > pt_, Cont && cont_ )	noexcept	{
+	[[nodiscard]] constexpr auto operator<=>( span< T, N > pt_, Cont && cont_ )				noexcept	{
 		using std::begin;
 		return std::lexicographical_compare_three_way(
 							pt_.begin(), pax::no_nullchar_end( pt_ ), begin( cont_ ), pax::no_nullchar_end( cont_ ) );
+	}
+
+	/// Stream the elements to out_.
+	template< typename Out, typename T, std::size_t N >
+	Out & operator<<( Out & out_, span< T, N > sp_ ) {
+		if constexpr( pax::traits::character< T > )
+			out_.write( sp_.data(), sp_.size() );
+		else if( sp_.empty() )		out_ << "[]";
+		else {
+			out_ << '[' << sp_.front();
+			for( const auto & item : pax::not_first( sp_ ) )	out_ << ", " << item;
+			out_ << ']';
+		}
+		return out_;
 	}
 
 }	// namespace std
@@ -94,7 +84,6 @@ namespace pax {
 		return ( sp_.data() <= ptr_ ) && ( ptr_ < &*no_nullchar_end( sp_ ) );
 	}
 
-
 	/// Return a dynamic shadow of the first min(n_, size()) elements.
 	template< typename T, std::size_t N >
 	[[nodiscard]] constexpr auto first( span< T, N > sp_, std::size_t n_ = 1 )				noexcept	{
@@ -102,16 +91,16 @@ namespace pax {
 	}
 
 	/// Return a static shadow of the first min(N, extent) elements.
-	/// Does assert( N <= size() && not_static< I > ).
+	/// Does assert( N <= size() && !is_static< I > ).
 	template< std::size_t I, typename T, std::size_t N >					requires( is_static< I > )
 	[[nodiscard]] constexpr auto first( span< T, N > sp_ ) 									noexcept	{
-		if constexpr( not_static< N > )	assert( I <= sp_.size() && "first< I >( sp_ ) requires I <= sp_.size()." );
+		if constexpr( !is_static< N > )	assert( I <= sp_.size() && "first< I >( sp_ ) requires I <= sp_.size()." );
 		return span< T, std::min( I, N ) >( sp_.data(), std::min( I, N ) );
 	}
 
 	/// Return a dynamic shadow of the last size() - min(n_, size()) elements.
 	template< typename T, std::size_t N >
-	[[nodiscard]] constexpr auto not_first( span< T, N > sp_, std::size_t n_ = 1 )			noexcept	{
+	[[nodiscard]] constexpr auto not_first( span< T, N > sp_, std::size_t n_ /*= 1*/ )		noexcept	{
 		n_ = std::min( n_, sp_.size() );
 		return span{ sp_.data() + n_, sp_.size() - n_ };
 	}
@@ -120,7 +109,7 @@ namespace pax {
 	/// Does assert( N <= size() && !is_static ).
 	template< std::size_t I, typename T, std::size_t N >					requires( is_static< I > && is_static< N > )
 	[[nodiscard]] constexpr auto not_first( span< T, N > sp_ ) 								noexcept	{
-		if constexpr( not_static< N > )	assert( I <= sp_.size() && "not_first< I >( sp_ ) requires I <= sp_.size()." );
+		if constexpr( !is_static< N > )	assert( I <= sp_.size() && "not_first< I >( sp_ ) requires I <= sp_.size()." );
 		return span< T, N - std::min( I, N ) >{ sp_.data() + std::min( I, N ), N - std::min( I, N ) };
 	}
 
@@ -135,7 +124,7 @@ namespace pax {
 	/// Does assert( N <= size() && !is_static ).
 	template< std::size_t I, typename T, std::size_t N >					requires( is_static< I > )
 	[[nodiscard]] constexpr auto last( span< T, N > sp_ ) 									noexcept	{
-		if constexpr( not_static< N > )	assert( I <= sp_.size() && "last< I >( sp_ ) requires I <= sp_.size()." );
+		if constexpr( !is_static< N > )	assert( I <= sp_.size() && "last< I >( sp_ ) requires I <= sp_.size()." );
 		return span< T, std::min( I, N ) >{ sp_.data() + sp_.size() - std::min( I, N ), std::min( I, N ) };
 	}
 
@@ -229,34 +218,24 @@ namespace pax {
 		}
 		return { e - ( ( previous == '\n' ) || ( previous == '\r' ) ), e };
 	};
+	
+	
+	template< typename T >
+	struct split_result {	std::span< T > first, rest;		};
 
-	/// Split this in two at offset t_ so that first.end() == second.begin() and first.size() == t_.
+	/// Split this in two at offset t_ so that first.end() == rest.begin() and first.size() == t_.
 	template< typename T, std::size_t N >
-	[[nodiscard]] constexpr std::pair< span< T >, span< T > > split( span< T, N > sp_, std::size_t mid_ )	noexcept	{
+	[[nodiscard]] constexpr split_result< T > split( span< T, N > sp_, std::size_t mid_ )	noexcept	{
 		mid_		  = std::min( mid_, sp_.size() );
 		return { { sp_.begin(), mid_ }, { sp_.begin() + mid_, no_nullchar_end( sp_ ) } };
 	}
 
 	/// Split this in two: before and after gap_, but everything clamped to [begin(), end()].
 	template< typename T, std::size_t N, std::size_t G >
-	[[nodiscard]] constexpr std::pair< span< T >, span< T > > split( span< T, N > sp_, span< T, G > gap_ )	noexcept	{
+	[[nodiscard]] constexpr split_result< T > split( span< T, N > sp_, span< T, G > gap_ )	noexcept	{
 		const auto 		e = no_nullchar_end( sp_ );
 		return { { sp_.begin(), std::clamp( gap_.begin(), sp_.begin(), e ) },
 				 { std::clamp( no_nullchar_end( gap_ ),   sp_.begin(), e ), e } };
-	}
-
-	/// Stream the elements to out_.
-	template< typename Out, typename T, std::size_t N >
-	Out & operator<<( Out & out_, span< T, N > sp_ )	{
-		if constexpr( traits::character< T > )
-			out_.write( sp_.data(), sp_.size() );
-		else if( sp_.empty() )		out_ << "[]";
-		else {
-			out_ << '[' << sp_.front();
-			for( const auto & item : not_first( sp_ ) )	out_ << ", " << item;
-			out_ << ']';
-		}
-		return out_;
 	}
 
 }	// namespace pax
