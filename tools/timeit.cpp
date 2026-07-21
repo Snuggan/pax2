@@ -4,6 +4,8 @@
 #include <iostream>
 #include <vector>
 #include <unistd.h>
+#include <cstring>
+#include <sys/wait.h>
 
 
 int main( const int argc, char * argv[] ) {
