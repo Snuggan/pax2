@@ -18,6 +18,7 @@ cmake-build-debug/**
 docker/slu/tmp-post/pax.regression.tar.gz
 docker/slu/usr/local/lib/**
 docker/slu/usr/local/bin/pax-**
+docker/slu/usr/local/bin/timeit
 docker/slu/.docker/.buildNodeID
 include/pax/meta/version/version_**
 R/pax.regression.Rcheck/**
