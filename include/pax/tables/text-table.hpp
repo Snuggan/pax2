@@ -12,7 +12,7 @@
 #include "../std/file.hpp"
 #include "../reporting/error_message.hpp"
 #include "../external/type_name_rt.hpp"		// type_name_rt
-#include "../meta/class-meta.hpp"
+#include "meta.hpp"
 
 #include <span>
 #include <sstream>
@@ -55,7 +55,7 @@ namespace pax {
 		template< typename T, typename ...U, typename Predicate, Size ...I >
 			requires( std::is_invocable_r_v< bool, Predicate, Size > )
 		constexpr std::vector< T > export_values_impl( 
-			const class_meta< T, U... >	  & meta_,
+			const Table_meta< T, U... >	  & meta_,
 			Predicate					 && pred_,
 			std::integer_sequence< Size, I... >
 		) const {
@@ -169,7 +169,7 @@ namespace pax {
 		template< typename Predicate = const decltype( always_true ) &, typename T, typename ...U >
 			requires( std::is_invocable_r_v< bool, Predicate, Size > )
 		constexpr std::vector< T > export_values( 
-			const class_meta< T, U... >	  & meta_,
+			const Table_meta< T, U... >	  & meta_,
 			Predicate					 && pred_ = always_true
 		) const {
 			return export_values_impl( meta_, pred_, std::make_index_sequence< sizeof ...( U ) >{} );
@@ -184,7 +184,7 @@ namespace pax {
 			const Str					  & col_id_,
 			Predicate					 && pred_ = always_true
 		) const {
-			return export_values_impl( class_meta< T, T >{ col_id_ }, pred_, std::make_index_sequence< 1 >{} );
+			return export_values_impl( Table_meta< T, T >{ col_id_ }, pred_, std::make_index_sequence< 1 >{} );
 		}
 
 

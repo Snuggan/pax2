@@ -9,7 +9,6 @@
 
 // Read a csv file
 #include <pax/tables/text-table.hpp>
-#include <pax/meta/class-meta.hpp>
 
 // pdal stuff
 #include <pdal/PointView.hpp>
@@ -19,7 +18,7 @@ namespace pax {
 	
 	/// A simple container for the spacial data of a plot.
 	class Plot_metrics : public Plot, public metrics::Point_aggregator {
-		using Meta = class_meta< Plot_metrics, coord_type, coord_type, coord_type >;
+		using Meta = Table_meta< Plot_metrics, coord_type, coord_type, coord_type >;
 		
 	public:
 		using Plot::coord_type;

@@ -28,7 +28,7 @@ namespace pax {
 		static constexpr const char *	laz_suffix  = ".laz";
 		static constexpr const char *	file_suffix = laz_suffix;
 		
-		using Meta = class_meta< Plot_points, Plot::coord_type, Plot::coord_type, Plot::coord_type, std::string >;
+		using Meta = Table_meta< Plot_points, Plot::coord_type, Plot::coord_type, Plot::coord_type, std::string >;
 		using string_view			  = std::string_view;
 
 		static_assert( sizeof( pdal::PointId ) == 8 );

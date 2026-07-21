@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <pax/meta/class-meta.hpp>
+#include <pax/tables/meta.hpp>
 #include <pdal/PointRef.hpp>
 #include <array>
 #include <string>
@@ -88,7 +88,7 @@ namespace pax {
 
 
 		/// This is used to read values from a csv file.
-		using Meta = class_meta< Plot, coord_type, coord_type, coord_type >;
+		using Meta = Table_meta< Plot, coord_type, coord_type, coord_type >;
 		static constexpr Meta table_meta()  							noexcept	{
 			return { "east", "north", "radius" };
 		}
@@ -151,7 +151,7 @@ namespace pax {
 
 
 		/// This is used to read values from a csv file.
-		using Meta = class_meta< Plot_w_id, coord_type, coord_type, coord_type, std::string >;
+		using Meta = Table_meta< Plot_w_id, coord_type, coord_type, coord_type, std::string >;
 		static constexpr Meta table_meta( const std::string_view id_col_ ) noexcept {
 			return { "east", "north", "radius", id_col_ };
 		}

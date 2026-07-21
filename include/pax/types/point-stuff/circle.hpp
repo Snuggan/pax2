@@ -11,10 +11,12 @@
 
 namespace pax {
 
-	template< typename T > struct Table_meta;
+	template< typename T, typename ... P >	struct Table_meta;
+	template< floating F >					struct Object_meta;
 
 
 	
+	/// Implements an object with coordinates and a scalar value.
 	template< floating F, std::size_t N >						requires( is_static< N > )
 	class Circle {
 		Point< F, N >											m_center{};
@@ -60,14 +62,26 @@ namespace pax {
 		constexpr bool inside_or_on( const Point< F, N > & pt_ )	const noexcept	{
 			return distance2( center(), pt_ ) <= radius()*radius();
 		}
+	};
 
-		constexpr bool contains( const Point< F, N > & pt_ )		const noexcept	{
-			return inside_or_on( pt_ );
-		}
+	/// This is used to read Circle values from a csv file using Text_table.
+	template< floating F >
+	struct Object_meta< Circle< F, 2 > > {
+		static constexpr auto value = Table_meta< Circle< F, 2 >, F, F, F >{ "east", "north", "radius" };
 	};
 
 
-	/// Does the box_contain the circle_? (They may touch.)
+	/// Does the Circle contain the point? (They may touch.)
+	template< floating F, std::size_t N >						requires( is_static< N > )
+	constexpr bool contains( 
+		const Circle< F, N >	  & circle_,
+		const Point< F, N >		  & pt_
+	) noexcept {
+		return	circle_.inside_or_on( pt_ );
+	}
+
+
+	/// Does the Box contain the Circle_? (They may touch.)
 	template< floating F, std::size_t N >						requires( is_static< N > )
 	constexpr bool contains( 
 		const Box< F, N >		  & box_, 
@@ -76,25 +90,11 @@ namespace pax {
 		return	all_le( min( box_ ),	min( circle_ )	)
 			&&	all_le( max( circle_ ),	max( box_ )		);
 	}
-
-	/// This is used to read Circle values from a csv file using Text_table.
-	template< floating F >
-	struct Table_meta< Circle< F, 2 > > {
-		static constexpr unsigned 	rank		  = 3u;
-		using						value		  = std::remove_cv_t< F >;
-
-		using 						type		  = Circle< value, rank >;
-		using 						types		  = std::tuple< value, value, value >;
-
-		static constexpr auto names() noexcept {
-			static constexpr  const char *	ids[ rank ]	  = { "east", "north", "radius" };
-			return std::span< const char * const, rank >{ ids };
-		}
-	};
+	
 
 
 
-	/// A simple container for the spacial data of a plot with an id.
+	/// A simple container for the spacial data of a plot/circle with an id.
 	template< floating F, std::size_t N >
 	class Plot_w_id : public Circle< F, N > {
 		std::string						m_id{};
@@ -122,20 +122,12 @@ namespace pax {
 		/// Return the id.
 		constexpr std::string id() 								const noexcept	{	return m_id;	}
 	};
-
-	/// This is used to read Circle values from a csv file using Text_table.
+	
+	/// This is used to read values from a csv file using Text_table.
 	template< floating F >
-	struct Table_meta< Plot_w_id< F, 2 > > {
-		static constexpr unsigned 	rank		  = 4u;
-		using						value		  = std::remove_cv_t< F >;
-
-		using 						type		  = Circle< value, rank >;
-		using 						types		  = std::tuple< value, value, value, std::string_view >;
-
-		static constexpr auto names() noexcept {
-			static constexpr  const char *	ids[ rank ]	  = { "east", "north", "radius", "id" };
-			return std::span< const char * const, rank >{ ids };
-		}
+	struct Object_meta< Plot_w_id< F, 2 > > {
+		static constexpr auto value = Table_meta< Plot_w_id< F, 2 >, F, F, F, std::string >
+			{ "east", "north", "radius", "id" };
 	};
 
 }	// namespace pax

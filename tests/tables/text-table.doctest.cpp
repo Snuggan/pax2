@@ -44,7 +44,7 @@ namespace pax {
 		}
 		{	// Export a tuple.
 			using Testtuple = std::tuple< double, int, std::string >;
-			static constexpr class_meta< Testtuple, double, int, std::string >	meta{ "r3", "r2", "R1" };
+			static constexpr Table_meta< Testtuple, double, int, std::string >	meta{ "r3", "r2", "R1" };
 
 			const auto exported	  = table.export_values( meta );
 			DOCTEST_FAST_CHECK_EQ( exported.size(),				3 );
