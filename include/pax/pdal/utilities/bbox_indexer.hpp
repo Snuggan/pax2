@@ -6,7 +6,7 @@
 
 #include <pax/reporting/error_message.hpp>
 #include <pax/math/adjust.hpp>		// align_le, align_ge
-#include <pdal/Filter.hpp>			// PointViewPtr, PointId
+#include <pdal/PointView.hpp>		// PointViewPtr, PointId
 #include <algorithm>				// std::clamp
 
 
@@ -24,12 +24,6 @@ namespace pax {
 		pdal::BOX2D					box_;
 		view_.calculateBounds( box_ );
 		return box_;
-	}
-
-	/// Return a bounding box for the point cloud. 
-	inline Box2 bbox( pdal::PointTableRef pt_table_ ) noexcept {
-		auto view_ptr			  = std::make_shared< pdal::PointView >( pt_table_ );
-		return bbox( *view_ptr );
 	}
 
 
