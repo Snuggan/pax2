@@ -18,11 +18,9 @@
 # This specifies what metrics to calculate.
 # Lots and lots of extra metrics:
 #metrics_set								:= extra-allt
+
 # Necessary metrics only:
 metrics_set								:= basic-linear
-
-# Set the debug level of info for pdal. 0 (zero) is for normal production, 3 is for debugging.
-pdal_debug								:= 0
 
 
 # This specifies the nilsson height filter value.
@@ -140,8 +138,9 @@ ALL_SOURCE_DIRS				 =	$(base_data_dir) $(pc_source_dir) $(pc_filtered_dir)		\
 								$(raster_metrics_dir) $(plots_dest_dir)						\
 								$(estimates_dir) $(mosaic_dir) $(temporary_dir) #$(rar_source_dir) 
 
-PDAL_PLUGIN_raster_metrics	 =	"filters.raster_metrics"
-PDAL_PLUGIN_plot_stuff		 =	"filters.plot_stuff"
+PDAL_PLUGIN_raster_metrics	 =	"filters.raster_metrics_old"
+PDAL_PLUGIN_plot_metrics	 =	"filters.plot_metrics_old"
+PDAL_PLUGIN_plot_points		 =	"filters.plot_points_old"
 TOOL_concat_plot_metrics	 =	$(TOOL_PREFIX)concat-tables
 TOOL_metrics				 =	$(TOOL_PREFIX)metrics
 
@@ -172,50 +171,61 @@ $(ALL_SOURCE_DIRS) $(plots_individual_metrics_dir) $(plots_individual_points_dir
 
 ####	FILTER					######################################
 
-FILTER_DEM				:= $(base_data_dir)dem.tif
-FILTER_MIN_Z			:= -2
-FILTER_MAX_Z			:= 50
-FILTER_LM				:= true
+FILTER_DEM						:= $(base_data_dir)dem.tif
+FILTER_MIN_Z					:= -2
+FILTER_MAX_Z					:= 50
+FILTER_LM						:= true
 
-PDAL_FILTER_PIPELINE	:=	{	"pipeline":[ 											\
-	{																					\
-		"type":"filters.hag_dem",														\
-		"raster":"$(strip $(FILTER_DEM))",												\
-		"band":"1",																		\
-		"zero_ground":"false"															\
-	},{																					\
-		"type":"filters.slu_lm",														\
-		"min_z":"$(strip $(FILTER_MIN_Z))",												\
-		"max_z":"$(strip $(FILTER_MAX_Z))",												\
-		"lm_filter":"$(strip $(FILTER_LM))"												\
-	},{																					\
-		"type":"filters.remove_overlap",												\
-		"overlap_resolution":"$(strip $(FILTER_OVERLAP_RESOLUTION))"					\
-	}																					\
-] }
+# PAX_FILTER0						:= $(TOOL_PREFIX)pc $(GENERAL_ARGUMENTS)									\
+# 										--dem="$(strip $(FILTER_DEM))"										\
+# 										--overlap_resolution="$(strip $(FILTER_OVERLAP_RESOLUTION))"		\
+# 										--max_z=$(strip $(FILTER_MAX_Z)) --min_z=$(strip $(FILTER_MIN_Z))
+#
+# PAX_FILTER						 = $(PAX_FILTER0) --source=\"$(strip $<)\" --pc_dest=\"$(strip $@)\"
 
-PDAL_FILTER 			 = timeit pdal translate 										\
-							--verbose=$(pdal_debug)  									\
-							--json="$(strip $(subst ",\",$(PDAL_FILTER_PIPELINE)))"		\
-							--input="$(strip $<)" 										\
-							--output="$(strip $(temporary_dir)$@)" 						\
-							--metadata="$(strip $(temporary_dir)$@).json"
+PDAL_FILTER_PIPELINE			:=	{	"pipeline":[ 														\
+										{																	\
+											"type":"filters.hag_dem",										\
+											"raster":"$(strip $(FILTER_DEM))",								\
+											"band":"1",														\
+											"zero_ground":"false"											\
+										},{																	\
+											"type":"filters.slu_lm_old",									\
+											"min_z":"$(strip $(FILTER_MIN_Z))",								\
+											"max_z":"$(strip $(FILTER_MAX_Z))",								\
+											"lm_filter":"$(strip $(FILTER_LM))"								\
+										},{																	\
+											"type":"filters.remove_overlap",								\
+											"overlap_resolution":"$(strip $(FILTER_OVERLAP_RESOLUTION))"	\
+										}																	\
+									] }
 
-PDAL_FILTER_PROGRESS	:= `date "+%H:%M:%S"`: pdal filtered: 							\
-							overlap_res=$(FILTER_OVERLAP_RESOLUTION), 					\
-							keep=[$(FILTER_MIN_Z),$(FILTER_MAX_Z)], 
+PDAL_FILTER0					:= timeit pdal translate --verbose=0 --json="$(strip $(subst ",\",$(PDAL_FILTER_PIPELINE)))"
+PDAL_FILTER						 = $(PDAL_FILTER0)															\
+											--input="$(strip $<)" 											\
+											--output="$(strip $(temporary_dir)$@)" 							\
+											--metadata="$(strip $(temporary_dir)$@).json"
 
-POINT_CLOUD_SUFFICES	 =  .las .laz .LAS .LAZ
-POINT_CLOUD_TARGET_SUFFIX = .laz
+PDAL_FILTER_PROGRESS			:= `date "+%H:%M:%S"`: pdal filtered: 					\
+											overlap_res=$(FILTER_OVERLAP_RESOLUTION), 	\
+											keep=[$(FILTER_MIN_Z),$(FILTER_MAX_Z)], 
 
-SOURCE_FILTER_FILES		:= $(foreach suffix,$(POINT_CLOUD_SUFFICES),\
-							$(shell find $(pc_source_dir) -type f -name "*$(suffix)"))
-SOURCE_FILTER_FILES		+= $(DEST_RAR_FILES)
-SOURCE_FILTER_FILES		:= $(sort $(SOURCE_FILTER_FILES))
+POINT_CLOUD_SUFFICES			 = .las .laz .LAS .LAZ
+POINT_CLOUD_TARGET_SUFFIX		 = .laz
 
-DEST_FILTER_FILES		 = $(SOURCE_FILTER_FILES)
-DEST_FILTER_FILES		:= $(patsubst $(pc_source_dir)%,$(pc_filtered_dir)%,$(DEST_FILTER_FILES))		# Change folder
+SOURCE_FILTER_FILES				:= $(foreach suffix,$(POINT_CLOUD_SUFFICES),\
+										$(shell find $(pc_source_dir) -type f -name "*$(suffix)"))
+SOURCE_FILTER_FILES				+= $(DEST_RAR_FILES)
+SOURCE_FILTER_FILES				:= $(sort $(SOURCE_FILTER_FILES))
 
+DEST_FILTER_FILES				 = $(SOURCE_FILTER_FILES)
+DEST_FILTER_FILES				:= $(patsubst $(pc_source_dir)%,$(pc_filtered_dir)%,$(DEST_FILTER_FILES))		# Change folder
+
+
+# The following line was an intent to produce compressed .laz files also from uncompressed .las files.
+# To actually do this would require two distinct rules, one for .las and one for .laz.
+# This would result in a more complex makefile, so instead either is just passed through.
+# Thus, .laz files will result in .laz files and .las files will result in .las files -- but either is processed. 
 
 .PHONY: filter
 filter: create_dirs $(DEST_FILTER_FILES)
@@ -242,25 +252,27 @@ PDAL_METRICS_PIPELINE	:=	{	"pipeline":[						\
 		"gdalopts":"BIGTIFF=IF_SAFER,COMPRESS=DEFLATE",				\
 		"data_type":"float"											\
 	},{																\
-		"type":$(PDAL_PLUGIN_plot_stuff),							\
+		"type":$(PDAL_PLUGIN_plot_metrics),							\
 		"plot_file":"$(base_data_dir)plots.csv",					\
-		"plot_points_dest":"$(plots_individual_points_dir)",		\
 		"metrics":"$(strip $(metrics_set))",						\
-		"nilsson_level":"$(nilsson_level)",							\
-		"points_format":".laz",										\
+		"nilsson_level":"$(nilsson_level)" 							\
+	},{																\
+		"type":$(PDAL_PLUGIN_plot_points),							\
+		"plot_file":"$(base_data_dir)plots.csv",					\
+		"dest_plot_points":"$(plots_individual_points_dir)",		\
+		"max_distance":"$(plots_individual_points_dir_max_dist)",	\
 		"id_column":"id",											\
-		"plot_buffer":"$(plots_individual_points_dir_max_dist)"		\
+		"dest_format":".laz"										\
 	}																\
 ] }
 
-PDAL_METRICS			 = timeit pdal translate 															\
-							--verbose=$(pdal_debug)  														\
-							--json="$(strip $(subst ",\",$(PDAL_METRICS_PIPELINE)))"						\
+PDAL_METRICS0			:= timeit pdal translate --verbose=0 --json="$(strip $(subst ",\",$(PDAL_METRICS_PIPELINE)))" 
+PDAL_METRICS			 = $(PDAL_METRICS0)																	\
 							--input="$(strip $<)" 															\
 							--output="$(temporary_dir)/null.bull" 											\
 							--writer="writers.null" 														\
-							--$(PDAL_PLUGIN_plot_stuff).plot_metrics_dest="$(strip $(_plot_metric_dest))"	\
 							--$(PDAL_PLUGIN_raster_metrics).dest="$(strip $(_raster_metric_dest))" 			\
+							--$(PDAL_PLUGIN_plot_metrics).dest_plot_metrics="$(strip $(_plot_metric_dest))" \
 							--metadata="$(strip $($@_raster_metric_dest)).json"
 
 PDAL_METRICS_PROGRESS	:= `date "+%H:%M:%S"`: "pdal metrics using '$(strip $(metrics_set))': "
@@ -293,18 +305,16 @@ $(DEST_METRIC_FILES): $(raster_metrics_dir)%$(RASTER_DEST_SUFFIX): $(pc_filtered
 
 ####	METRICS (aggregate individual metric files)	######################################
 
-APPEND_PLOT_METRICS		 = $(TOOL_concat_plot_metrics)							\
-							--source="$(strip $(plots_individual_metrics_dir))"			\
-							--dest="$(strip $(plots_aggregated_metrics))"				\
-							--verbose 													\
-							--meta
+APPEND_PLOT_METRICS				 = timeit $(TOOL_concat_plot_metrics) $(GENERAL_ARGUMENTS)
+APPEND_PLOT_METRICS				+= --source="$(strip $(plots_individual_metrics_dir))"
+APPEND_PLOT_METRICS				+= --dest="$(strip $(plots_aggregated_metrics))"
 
-APPEND_INDIVIDUAL_FILES	 = $(shell find $(plots_individual_metrics_dir) -type f -name *.csv)
+APPEND_INDIVIDUAL_FILES			 = $(shell find $(plots_individual_metrics_dir) -type f -name *.csv)
 
 .PHONY: pre_estimate
 pre_estimate: metrics $(plots_aggregated_metrics)
 $(plots_aggregated_metrics): $(DEST_METRIC_FILES) $(APPEND_INDIVIDUAL_FILES) 
-	@$(APPEND_PLOT_METRICS) --count=$(words $(APPEND_INDIVIDUAL_FILES))
+	@$(APPEND_PLOT_METRICS) --count=$(words $(APPEND_PLOT_FILES))
 	@echo $(plots_aggregated_metrics)
 
 
@@ -312,40 +322,41 @@ $(plots_aggregated_metrics): $(DEST_METRIC_FILES) $(APPEND_INDIVIDUAL_FILES)
 
 ####	ESTIMATION				######################################
 
-ESTIMATE				 = $(TOOL_PREFIX)regression $(GENERAL_ARGUMENTS)			\
-							--plots_with_metrics=$(plots_aggregated_metrics)			\
-							--number_of_candidates=$(number_of_candidates)				\
-							--outlier_removal_perc=$(outlier_removal_percentage)		\
-							--aux_dir=$(strip $(base_data_dir))
+ESTIMATE						 = timeit $(TOOL_PREFIX)regression $(GENERAL_ARGUMENTS)
+ESTIMATE						+= --plots_with_metrics=$(plots_aggregated_metrics)
+ESTIMATE						+= --number_of_candidates=$(number_of_candidates)
+ESTIMATE						+= --outlier_removal_perc=$(outlier_removal_percentage)
+ESTIMATE						+= --aux_dir=$(strip $(base_data_dir))
+#ESTIMATE						+= --debug
 
-RUTA_METADATA_FILE		:= $(base_data_dir)ruta_meta.csv
+RUTA_METADATA_FILE				:= $(base_data_dir)ruta_meta.csv
 
 # These files will also ber produced.
-METRIC_FILTER_FILES		 = $(SOURCE_FILTER_FILES)
-METRIC_FILTER_FILES		:= $(patsubst $(pc_source_dir)%,$(raster_metrics_dir)%,$(METRIC_FILTER_FILES))
-METRIC_FILTER_FILES		:= $(addsuffix $(RASTER_DEST_SUFFIX),$(basename $(METRIC_FILTER_FILES)))
+METRIC_FILTER_FILES				 = $(SOURCE_FILTER_FILES)
+METRIC_FILTER_FILES				:= $(patsubst $(pc_source_dir)%,$(raster_metrics_dir)%,$(METRIC_FILTER_FILES))
+METRIC_FILTER_FILES				:= $(addsuffix $(RASTER_DEST_SUFFIX),$(basename $(METRIC_FILTER_FILES)))
 
 
 # There are three sources of source files for the estimation rule.
 # The first source is files that are in raster_metrics_dir from the beginning:
-ESTIMATION_FILES		 = $(shell find $(raster_metrics_dir) -type f -name $(RASTER_DEST_SUFFIX))
+ESTIMATION_FILES				 = $(shell find $(raster_metrics_dir) -type f -name $(RASTER_DEST_SUFFIX))
 
 # The second source is from the rule 'metrics':
-ESTIMATION_FILES		+= $(DEST_METRIC_FILES)
+ESTIMATION_FILES				+= $(DEST_METRIC_FILES)
 
 # The third source is from the rule 'filter':
-ESTIMATION_FILES		+= $(METRIC_FILTER_FILES)
+ESTIMATION_FILES				+= $(METRIC_FILTER_FILES)
 
 # Change folder from raster_metrics_dir to estimates_dir.
-ESTIMATION_FILES		:= $(patsubst $(raster_metrics_dir)%,$(estimates_dir)%,$(ESTIMATION_FILES))
+ESTIMATION_FILES				:= $(patsubst $(raster_metrics_dir)%,$(estimates_dir)%,$(ESTIMATION_FILES))
 
 # Sorting also removes doubles.
-ESTIMATION_FILES		:= $(sort $(ESTIMATION_FILES))
+ESTIMATION_FILES				:= $(sort $(ESTIMATION_FILES))
 
-ESTIMATION_FILES		:= $(addsuffix $(RASTER_DEST_SUFFIX),$(basename $(ESTIMATION_FILES)))
+ESTIMATION_FILES				:= $(addsuffix $(RASTER_DEST_SUFFIX),$(basename $(ESTIMATION_FILES)))
 
 # Sorting removes doubles.
-ESTIMATION_FILES		:= $(sort $(ESTIMATION_FILES))
+ESTIMATION_FILES				:= $(sort $(ESTIMATION_FILES))
 
 
 .PHONY: estimate 
@@ -361,38 +372,38 @@ $(ESTIMATION_FILES): $(estimates_dir)%: $(raster_metrics_dir)% $(plots_aggregate
 
 ####	MOSAIC, variables		######################################
 
-MOSAIC_METRICS			:= $(shell $(TOOL_metrics) --metrics $(metrics_set) --nilsson_level $(nilsson_level))
-MOSAIC_VARIABLES		:= Basal_area Biomass_above Biomass_below Dgv Hgv_dm Volume
-MOSAIC_SUFFICES			:= $(sort $(MOSAIC_VARIABLES) $(MOSAIC_METRICS))
-MOSAIC_DEST				:= $(addprefix $(mosaic_dir),$(MOSAIC_SUFFICES))
-MOSAIC_DEST				:= $(addsuffix .tif,$(MOSAIC_DEST))
+MOSAIC_METRICS					:= $(shell $(TOOL_metrics) --metrics $(metrics_set) --nilsson_level $(nilsson_level))
+MOSAIC_VARIABLES				:= Basal_area Biomass_above Biomass_below Dgv Hgv_dm Volume
+MOSAIC_SUFFICES					:= $(sort $(MOSAIC_VARIABLES) $(MOSAIC_METRICS))
+MOSAIC_DEST						:= $(addprefix $(mosaic_dir),$(MOSAIC_SUFFICES))
+MOSAIC_DEST						:= $(addsuffix .tif,$(MOSAIC_DEST))
 
-NOOP					:=
-SPACE					:= $(NOOP) $(NOOP)
+NOOP							:=
+SPACE							:= $(NOOP) $(NOOP)
 
-GDALBUILDVRT			 = gdalbuildvrt -q -overwrite 				\
-								"$(strip $(temporary_dir)$@).vrt" 	\
-								-input_file_list "$(strip $(temporary_dir)$@).txt"
+GDALBUILDVRT					 = gdalbuildvrt -q -overwrite 				\
+										"$(strip $(temporary_dir)$@).vrt" 	\
+										-input_file_list "$(strip $(temporary_dir)$@).txt"
 
 # Cloud Optimized GeoTIFF: https://geoexamples.com/other/2019/02/08/cog-tutorial.html
 # COMPRESS=DEFLATE: DEFLATE or LZW -- the first compresses better, but is less compatible.
 # TILED=YES: The image is divided in small tiles, for easy partial download.
 # INTERLEAVE=BAND: You may want to download only one band at once. 
-GDAL_TRANSLATE			 = gdal_translate -q -of GTiff				\
-								-co BIGTIFF=IF_SAFER 				\
-								-co COMPRESS=DEFLATE				\
-								-co TILED=YES						\
-								-co INTERLEAVE=BAND					\
-								"$(strip $(temporary_dir)$@).vrt" 	\
-								"$(strip $(temporary_dir)$@)"
+GDAL_TRANSLATE					 = gdal_translate -q -of GTiff				\
+										-co BIGTIFF=IF_SAFER 				\
+										-co COMPRESS=DEFLATE				\
+										-co TILED=YES						\
+										-co INTERLEAVE=BAND					\
+										"$(strip $(temporary_dir)$@).vrt" 	\
+										"$(strip $(temporary_dir)$@)"
 
 # -ro: Create an external overview file (.ovr).
 # COMPRESS_OVERVIEW DEFLATE: DEFLATE or LZW -- the first compresses better, but is less compatible.
-GDALADDO				 = gdaladdo -q -r average 					\
-								-ro 								\
-								--config BIGTIFF_OVERVIEW IF_SAFER 	\
-								--config COMPRESS_OVERVIEW DEFLATE 	\
-								"$(strip $(temporary_dir)$@)"
+GDALADDO						 = gdaladdo -q -r average 					\
+										-ro 								\
+										--config BIGTIFF_OVERVIEW IF_SAFER 	\
+										--config COMPRESS_OVERVIEW DEFLATE 	\
+										"$(strip $(temporary_dir)$@)"
 
 .PHONY: mosaic 
 mosaic: estimate $(MOSAIC_DEST)
@@ -417,4 +428,5 @@ arg = svejs
 .PHONY: debug
 debug:
 	@echo "Debuginfo -------------------------------------------------------- $(NAME)"
-	@echo "ESTIMATE                            $(ESTIMATE) --source=$(strip $<) --dest=$(strip $(dir $@)) #--debug"
+	@echo "APPEND_PLOT_METRICS                 $(APPEND_PLOT_METRICS) --count=$(words $(APPEND_PLOT_FILES))"
+	@echo "ESTIMATE                            $(ESTIMATE) --source=$(strip $<) --dest=$(strip $(dir $@))"
