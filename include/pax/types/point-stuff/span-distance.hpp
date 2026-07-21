@@ -6,7 +6,7 @@
 
 #include "base.hpp"
 
-#include <pax/std/algorithm.hpp>
+// #include <pax/std/algorithm.hpp>
 #include <pax/math/power.hpp>
 
 #include <span>
