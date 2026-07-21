@@ -9,6 +9,7 @@ RUN		echo "\n\n--- Main stuff ---" \
 		&&	ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
 		&&	apt-get update \
 		&&	apt-get install -y --no-install-recommends \
+				gcc-16 g++-16 \
 				git \
 				curl \
 			# Compilation and related tools:
@@ -39,6 +40,7 @@ RUN		echo "\n\n--- Main stuff ---" \
 		# &&	update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-15 50 \
 		# Remove the apt-get cache, as it is needed no longer:
 		&&	rm -Rf /var/lib/apt/lists/* \
+		&&	update-alternatives --set gcc /usr/bin/gcc-16 \
 		&&	ldconfig 
 
 

@@ -4,7 +4,7 @@ cmake_minimum_required( VERSION 3.12 )
 set( CMAKE_EXPORT_COMPILE_COMMANDS 		ON )
 
 project( "pax2" 
-	VERSION		1.0.0	# Always use 3 numbers -- no fewer, no more!
+	VERSION		1.1.0	# Always use 3 numbers -- no fewer, no more!
 	DESCRIPTION	"A personal library of handy things and pdal modules."
 	LANGUAGES	CXX
 )
@@ -18,7 +18,7 @@ else()
 	set(CMAKE_SYSTEM_NAME Linux)
 	set(CMAKE_SYSTEM_PROCESSOR x86_64)
 endif()
-set( CMAKE_CXX_STANDARD_REQUIRED 		ON )
+set( CMAKE_CXX_STANDARD_REQUIRED 		OFF )
 set( CMAKE_CXX_EXTENSIONS 				OFF )
 
 
