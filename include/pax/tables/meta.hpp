@@ -27,8 +27,8 @@ namespace pax {
 	};
 	
 
-	template< typename Object > 
-	struct Object_meta;	// {
+	template< typename Object > struct Object_meta;	
+	// {
 	// 	constexpr auto value = Table_meta< A, int, unsigned, std::string >{ "A", "B", "C" };
 	// }
 
