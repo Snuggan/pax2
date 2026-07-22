@@ -14,8 +14,9 @@ namespace pdal {
 	inline constexpr double x    ( PointRef pt_ )			{	return pt_.getFieldAs< double >( Dimension::Id::X );	}
 	inline constexpr double y    ( PointRef pt_ )			{	return pt_.getFieldAs< double >( Dimension::Id::Y );	}
 	inline constexpr double z    ( PointRef pt_ )			{	return pt_.getFieldAs< double >( Dimension::Id::Z );	}
-	inline constexpr double east ( PointRef pt_ ) 						{	return x( pt_ );							}
-	inline constexpr double north( PointRef pt_ ) 						{	return y( pt_ );							}
+	inline constexpr double east ( PointRef pt_ ) 			{	return x( pt_ );										}
+	inline constexpr double north( PointRef pt_ ) 			{	return y( pt_ );										}
+
 	inline constexpr double x    ( PointViewPtr view_, PointId idx_ )	{
 		return view_->getFieldAs< double >( Dimension::Id::X, idx_ );
 	}
@@ -46,11 +47,9 @@ namespace pdal {
 	inline constexpr pax::Point< double, 3 > min( const BOX3D & box_ )	{	return { box_.minx, box_.miny, box_.minz };	}
 	inline constexpr pax::Point< double, 3 > max( const BOX3D & box_ )	{	return { box_.maxx, box_.maxy, box_.maxz };	}
 
-	// Convert pdal boxe to pax::Box.
+	// Convert a pdal box to pax::Box.
 	inline constexpr pax::Box  < double, 2 > box( const BOX2D & box_ )	{	return { min( box_ ), max( box_ )		 };	}
 	inline constexpr pax::Box  < double, 3 > box( const BOX3D & box_ )	{	return { min( box_ ), max( box_ )		 };	}
-
-
 
 	// Convert pdal PointView to pax::Box.
 	inline constexpr pax::Box< double, 2 > box( const PointView & view_ )	{

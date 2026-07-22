@@ -11,7 +11,8 @@
 namespace pax {
 
 	DOCTEST_TEST_CASE( "pdal" ) {
-		// DOCTEST_FAST_CHECK_EQ ( 42, 37 );
+		// I don't know how to get a pdal view or point ref without reading a point cloud file.
+		// But at least the syntax is ok and if there are problems they will show when we use the filter.
 	}
 	
 }	// namespace pax

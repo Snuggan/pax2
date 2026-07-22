@@ -40,15 +40,19 @@ namespace pax {
 	/// Minkowski P distance with no root.
 	template< std::size_t P, arithmetic A, std::size_t N >
 	constexpr A minkowskiP(
-		span< A, N > 			pt0_,
-		span< A, N > 			pt1_
+		std::array< A, N > 			pt0_,
+		std::array< A, N > 			pt1_
 	) noexcept {
 		constexpr const auto absdiff = []( A a, A b ){	return ( a > b ) ? a-b : b-a;	};
 		constexpr const auto max     = []( A a, A b ){	return ( a > b ) ? a   : b; 	};
-		A							acc{};
+		A						acc{};
+		// auto [ ... p0 ]		  = pt0_;
+		// auto [ ... p1 ]		  = pt1_;
 		if constexpr( P == 0 ) {
+			// { ( acc  = max( acc, absdiff( p0, p1 ) ) ... };
 			on_each_pair( pt0_, pt1_, [ &acc ]( auto a, auto b ){ acc =  max( acc, absdiff( a, b ) ); } );
 		} else {
+			// { ( acc += power( absdiff( p0, p1 ), P ) ) ... };
 			on_each_pair( pt0_, pt1_, [ &acc ]( auto a, auto b ){ acc += power( absdiff( a, b ), P ); } );
 		}
 		return acc;
@@ -73,19 +77,19 @@ namespace pax {
 	}
 
 	/// Chebyshev distance (minkowski distance, with infinite P).
-	template< arithmetic ...A >
+	template< typename ... A >
 	constexpr auto chebyshev ( A && ...t_ )		noexcept	{	return minkowski < 0 >( std::forward< A >( t_ )... );		}
 
 	/// Manhattan distance (minkowski distance, with P = 1).
-	template< arithmetic ...A >
+	template< typename ... A >
 	constexpr auto manhattan ( A && ...t_ )		noexcept	{	return minkowski < 1 >( std::forward< A >( t_ )... );		}
 
 	/// Euclidean distance (minkowski distance, with P = 2).
-	template< arithmetic ...A >
+	template< typename ... A >
 	constexpr auto euclidean ( A && ...t_ )		noexcept	{	return minkowski < 2 >( std::forward< A >( t_ )... );		}
 
 	/// Squared euclidean distance (squared minkowski distance, with P = 2).
-	template< arithmetic ...A >
+	template< typename ... A >
 	constexpr auto euclidean2( A && ...t_ )		noexcept	{	return minkowskiP< 2 >( std::forward< A >( t_ )... );		}
 
 
