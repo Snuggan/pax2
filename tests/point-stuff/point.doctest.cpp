@@ -13,7 +13,7 @@ namespace pax {
 	constexpr Point< double,   5 > pt  = point< double   >( 0.0, 1, 2u, 3.0f, char( 4 ) );
 	constexpr Point< unsigned, 5 > idx = point< unsigned >( 0.0, 1, 2u, 3.0f, char( 4 ) );
 
-	DOCTEST_TEST_CASE( "point accessors" ) {
+	DOCTEST_TEST_CASE( "Point accessors" ) {
 		DOCTEST_FAST_CHECK_EQ( x    ( pt ),  0 );
 		DOCTEST_FAST_CHECK_EQ( y    ( pt ),  1 );
 		DOCTEST_FAST_CHECK_EQ( z    ( pt ),  2 );
@@ -39,7 +39,7 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( col  ( idx2 ), 10 );
 		DOCTEST_FAST_CHECK_EQ( row  ( idx2 ), 11 );
 	}
-	DOCTEST_TEST_CASE( "point comparison" ) {
+	DOCTEST_TEST_CASE( "Point comparison" ) {
 		auto pt2  = point< double >( 1.0, 2, 3u, 4.0f, 5.f );
 		DOCTEST_FAST_CHECK_UNARY(  all_lt( pt, pt2 ) );
 		z( pt2 )  = z( pt );
@@ -53,7 +53,7 @@ namespace pax {
 		DOCTEST_FAST_CHECK_LT( pt, pt2 );
 		DOCTEST_FAST_CHECK_LE( pt, pt2 );
 	}
-	DOCTEST_TEST_CASE( "point other" ) {
+	DOCTEST_TEST_CASE( "Point other" ) {
 		auto pt2  = Point{ 0.0, 1.0, 4.0, 1.0, 4.0 };
 		DOCTEST_FAST_CHECK_EQ( min( pt, pt2 ), Point{ 0.0, 1.0, 2.0, 1.0, 4.0 } );
 		DOCTEST_FAST_CHECK_EQ( max( pt, pt2 ), Point{ 0.0, 1.0, 4.0, 3.0, 4.0 } );

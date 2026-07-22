@@ -6,7 +6,8 @@
 
 #include "base.hpp"
 #include <array>
-#include <utility>
+#include <utility>		// std::forward
+#include <format>
 
 
 namespace pax {
@@ -18,12 +19,20 @@ namespace pax {
 
 
 	/// This is the type used for arithmetic vectors with a fixed size.
-	template< arithmetic A, std::size_t N >											requires( is_static< N > )
+	template< arithmetic A, std::size_t N >										requires( is_static< N > )
 	using Point = std::array< A, N >;
+
+	using Point2d		  = Point< double, 2 >;
+	using Point3d		  = Point< double, 3 >;
+	
+	template< typename Out, arithmetic A, std::size_t N >
+	constexpr Out & operator<<( Out & out_, const Point< A, N > & pt_ ) {
+		return out_ << std::format( "{}", pt_ );
+	}
 
 	/// Create a Point out of a bunch of elements.
 	template< arithmetic A, arithmetic ... As >	
-	constexpr Point< A, sizeof...( As ) > point( As && ... as_ )					noexcept	{
+	constexpr Point< A, sizeof...( As ) > point( As && ... as_ )				noexcept	{
 		return { static_cast< A >( std::forward< As >( as_ ) ) ... };
 	}
 
@@ -44,6 +53,20 @@ namespace pax {
 	/// This is the type used for a fixed number of multiople "dimensions, i.e. idex into a matrix.
 	template< std::size_t N >							requires( is_static< N > )
 	using Index = std::array< std::size_t, N >;
+
+	using Index2d		  = Index< 2 >;
+	using Index3d		  = Index< 3 >;
+	
+	template< typename Out, std::size_t N >
+	constexpr Out & operator<<( Out & out_, const Index< N > & idx_ ) {
+		return out_ << std::format( "{}", idx_ );
+	}
+
+	/// Create a Point out of a bunch of elements.
+	template< uinteger ... Uis >	
+	constexpr Index< sizeof...( Uis ) > index( Uis && ... uis_ )				noexcept	{
+		return { static_cast< std::size_t >( std::forward< Uis >( uis_ ) ) ... };
+	}
 	
 
 
