@@ -18,22 +18,6 @@
 
 namespace pax {
 
-	struct meta {
-		static constexpr const char * 	name			=	"pax-span";
-		static constexpr const char * 	named_version	=	"pax-span 1.0.0";
-		static constexpr unsigned     	version[]		=	{ 
-			PAX_SPANTOOLS_VERSION_MAJOR, 
-			PAX_SPANTOOLS_VERSION_MINOR, 
-			PAX_SPANTOOLS_VERSION_PATCH 
-		};
-		static constexpr const unsigned	vernum			=	PAX_SPANTOOLS_VERSION;
-		static constexpr const char *   author			=	"Peder Axensten, peder#axensten.se";
-		static constexpr const char *   maintainer		=	author;
-		static constexpr const char *   copyright		=	author;
-		static constexpr const char *   license			=	"The 2-Clause BSD License";
-	};
-
-
 	template< typename I >	concept integer		  = std::integral< I >;
 	template< typename U >	concept uinteger	  = std::unsigned_integral< U >;
 	template< typename F >	concept floating	  = std::floating_point< F >;

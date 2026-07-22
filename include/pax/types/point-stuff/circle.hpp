@@ -17,6 +17,7 @@ namespace pax {
 
 	
 	/// Implements an object with coordinates and a scalar value.
+	/// It can have any rank you please, but two is probably usual.
 	template< floating F, std::size_t N >						requires( is_static< N > )
 	class Circle {
 		Point< F, N >											m_center{};
@@ -44,23 +45,36 @@ namespace pax {
 		) noexcept : m_center{ F( std::forward< Coords >( coords_ ) ) ... }, m_radius{ radius_ } {}
 
 
+		/// The center coordinates.
 		friend constexpr const Circle & center( const Circle & c_ ) noexcept		{	return c_.center();	}
 		constexpr value_type radius()								const noexcept	{	return m_radius;	}
 
+		/// The minimal coordinates of a bounding box of circle's.
 		friend constexpr const Circle & min   ( const Circle & c_ )	noexcept		{
 			return c_.center() - Pt( c_.radius() );
 		}
 
+		/// The maximal coordinates of a bounding box of circle's.
 		friend constexpr const Circle & max   ( const Circle & c_ )	noexcept		{
 			return c_.center() + Pt( c_.radius() );
 		}
 
+		/// The point is inside, but not on, the circle.
 		constexpr bool strictly_inside( const Point< F, N > & pt_ )	const noexcept	{
 			return distance2( center(), pt_ ) <  radius()*radius();
 		}
 
+		/// The point is either inside or on the circle.
 		constexpr bool inside_or_on( const Point< F, N > & pt_ )	const noexcept	{
 			return distance2( center(), pt_ ) <= radius()*radius();
+		}
+
+		/// The point is either inside or on the circle.
+		friend constexpr bool contains( 
+			const Circle			  & circle_,
+			const Pt				  & pt_
+		) noexcept {
+			return	circle_.inside_or_on( pt_ );
 		}
 	};
 
@@ -69,16 +83,6 @@ namespace pax {
 	struct Object_meta< Circle< F, 2 > > {
 		static constexpr auto value = Table_meta< Circle< F, 2 >, F, F, F >{ "east", "north", "radius" };
 	};
-
-
-	/// Does the Circle contain the point? (They may touch.)
-	template< floating F, std::size_t N >						requires( is_static< N > )
-	constexpr bool contains( 
-		const Circle< F, N >	  & circle_,
-		const Point< F, N >		  & pt_
-	) noexcept {
-		return	circle_.inside_or_on( pt_ );
-	}
 
 
 	/// Does the Box contain the Circle_? (They may touch.)
@@ -119,7 +123,7 @@ namespace pax {
 			const std::string_view		id_
 		) noexcept : Plot_w_id{ Base{ std::forward< Coords >( coords_ ) ..., radius_ }, id_ } {}		
 		
-		/// Return the id.
+		/// Return the [unique] id. No other circle/plot may have the same. 
 		constexpr std::string id() 								const noexcept	{	return m_id;	}
 	};
 	

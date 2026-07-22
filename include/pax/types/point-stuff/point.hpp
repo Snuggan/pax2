@@ -15,7 +15,10 @@ namespace pax {
 
 	template< arithmetic A, std::size_t N >				requires( is_static< N > )
 	using Point = std::array< A, N >;
-	
+
+	template< std::size_t N >							requires( is_static< N > )
+	using Index = std::array< std::size_t, N >;
+
 
 	/// Create a Point out of a bunch of elements.
 	template< arithmetic A, arithmetic ... As >	
