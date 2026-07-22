@@ -11,20 +11,38 @@
 namespace pax {
 	
 	using std::get;
+	template< typename T, typename ... P >	struct Table_meta;
+	template< floating F >					struct Object_meta;
 
 
-	template< arithmetic A, std::size_t N >				requires( is_static< N > )
+
+	/// This is the type used for arithmetic vectors with a fixed size.
+	template< arithmetic A, std::size_t N >							requires( is_static< N > )
 	using Point = std::array< A, N >;
-
-	template< std::size_t N >							requires( is_static< N > )
-	using Index = std::array< std::size_t, N >;
-
 
 	/// Create a Point out of a bunch of elements.
 	template< arithmetic A, arithmetic ... As >	
 	constexpr Point< A, sizeof...( As ) > make_point( As ... as_ )	noexcept	{
 		return { static_cast< A >( std::forward( as_ ) ) ... };
 	}
+
+	/// This is used to read Point values from a csv file using Text_table.
+	template< floating F >
+	struct Object_meta< Point< F, 2 > > {
+		static constexpr auto value = Table_meta< Point< F, 2 >, F, F >{ "east", "north" };
+	};
+
+	/// This is used to read Point values from a csv file using Text_table.
+	template< floating F >
+	struct Object_meta< Point< F, 3 > > {
+		static constexpr auto value = Table_meta< Point< F, 3 >, F, F, F >{ "east", "north", "height" };
+	};
+
+
+
+	/// This is the type used for a fixed number of multiople "dimensions, i.e. idex into a matrix.
+	template< std::size_t N >							requires( is_static< N > )
+	using Index = std::array< std::size_t, N >;
 	
 
 
@@ -33,27 +51,58 @@ namespace pax {
 	/// col, east, x -> 0, row, north, y -> 1, z -> 2.
 	/// @{
 	template< uinteger U, std::size_t N >				requires( N > 0 )
-	constexpr U & col  ( const Point< U, N > & pt_ )	noexcept	{	return get< 0 >( pt_ );		}
+	constexpr U   col  ( const Point< U, N > & pt_ )	noexcept	{	return std::get< 0 >( pt_ );	}
+
+	template< uinteger U, std::size_t N >				requires( N > 0 )
+	constexpr U & col  (       Point< U, N > & pt_ )	noexcept	{	return std::get< 0 >( pt_ );	}
 
 	template< uinteger U, std::size_t N >				requires( N > 1 )
-	constexpr U & row  ( const Point< U, N > & pt_ )	noexcept	{	return get< 1 >( pt_ );		}
+	constexpr U   row  ( const Point< U, N > & pt_ )	noexcept	{	return std::get< 1 >( pt_ );	}
 
-
-	template< floating F, std::size_t N >				requires( N > 0 )
-	constexpr F & east ( const Point< F, N > & pt_ )	noexcept	{	return get< 0 >( pt_ );		}
-
-	template< floating F, std::size_t N >				requires( N > 1 )
-	constexpr F & north( const Point< F, N > & pt_ )	noexcept	{	return get< 1 >( pt_ );		}
-
+	template< uinteger U, std::size_t N >				requires( N > 1 )
+	constexpr U & row  (       Point< U, N > & pt_ )	noexcept	{	return std::get< 1 >( pt_ );	}
 
 	template< floating F, std::size_t N >				requires( N > 0 )
-	constexpr F x    ( const Point< F, N > & pt_ )		noexcept	{	return get< 0 >( pt_ );		}
+	constexpr F   x    ( const Point< F, N > & pt_ )	noexcept	{	return std::get< 0 >( pt_ );	}
+
+	template< floating F, std::size_t N >				requires( N > 0 )
+	constexpr F & x    (       Point< F, N > & pt_ )	noexcept	{	return std::get< 0 >( pt_ );	}
 
 	template< floating F, std::size_t N >				requires( N > 1 )
-	constexpr F y    ( const Point< F, N > & pt_ )		noexcept	{	return get< 1 >( pt_ );		}
+	constexpr F   y    ( const Point< F, N > & pt_ )	noexcept	{	return std::get< 1 >( pt_ );	}
+
+	template< floating F, std::size_t N >				requires( N > 1 )
+	constexpr F & y    (       Point< F, N > & pt_ )	noexcept	{	return std::get< 1 >( pt_ );	}
 
 	template< floating F, std::size_t N >				requires( N > 2 )
-	constexpr F z    ( const Point< F, N > & pt_ )		noexcept	{	return get< 2 >( pt_ );		}
+	constexpr F   z    ( const Point< F, N > & pt_ )	noexcept	{	return std::get< 2 >( pt_ );	}
+
+	template< floating F, std::size_t N >				requires( N > 2 )
+	constexpr F & z    (       Point< F, N > & pt_ )	noexcept	{	return std::get< 2 >( pt_ );	}
+
+	template< floating F, std::size_t N >				requires( N > 0 )
+	constexpr F   east ( const Point< F, N > & pt_ )	noexcept	{	return x( pt_ );				}
+
+	template< floating F, std::size_t N >				requires( N > 0 )
+	constexpr F & east (       Point< F, N > & pt_ )	noexcept	{	return x( pt_ );				}
+
+	template< floating F, std::size_t N >				requires( N > 1 )
+	constexpr F   north( const Point< F, N > & pt_ )	noexcept	{	return y( pt_ );				}
+
+	template< floating F, std::size_t N >				requires( N > 1 )
+	constexpr F & north(       Point< F, N > & pt_ )	noexcept	{	return y( pt_ );				}
+
+	template< floating F, std::size_t N >				requires( N > 0 )
+	constexpr F   lon  ( const Point< F, N > & pt_ )	noexcept	{	return x( pt_ );				}
+
+	template< floating F, std::size_t N >				requires( N > 0 )
+	constexpr F & lon  (       Point< F, N > & pt_ )	noexcept	{	return x( pt_ );				}
+
+	template< floating F, std::size_t N >				requires( N > 1 )
+	constexpr F   lat  ( const Point< F, N > & pt_ )	noexcept	{	return y( pt_ );				}
+
+	template< floating F, std::size_t N >				requires( N > 1 )
+	constexpr F & lat  (       Point< F, N > & pt_ )	noexcept	{	return y( pt_ );				}
 	/// @}
 
 

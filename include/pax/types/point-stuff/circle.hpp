@@ -91,8 +91,19 @@ namespace pax {
 		const Box< F, N >		  & box_, 
 		const Circle< F, N >	  & circle_ 
 	) noexcept {
-		return	all_le( min( box_ ),	min( circle_ )	)
-			&&	all_le( max( circle_ ),	max( box_ )		);
+		return	all_le( min( box_    ),	min( circle_ ) )
+			&&	all_le( max( circle_ ),	max( box_    ) );
+	}
+
+
+	/// Does the Box contain the Circle_? (They may touch.)
+	template< floating F, std::size_t N >						requires( is_static< N > )
+	constexpr bool overlap( 
+		const Box< F, N >		  & box_, 
+		const Circle< F, N >	  & circle_ 
+	) noexcept {
+		return	all_lt( min( box_    ), max( circle_ ) )
+			&&	all_lt( min( circle_ ), max( box_    ) );
 	}
 	
 
