@@ -161,9 +161,10 @@ namespace pax {
 			const Point< A, N >			  & sides_,
 			const A							resolution_
 		) noexcept {
-			static constexpr auto mini	  = []( index_type i_ ) { return ( i_ > 1u ) ? i_ : 1u; };
+			// We want no zero-length dimension.
+			static constexpr auto mini	  = []( int i_ ) { return ( i_ > 1u ) ? i_ : 1u; };
 			auto [ ... s ]				  = sides_;
-			return { mini( index_type( s/resolution_ ) ) ... };
+			return { mini( s/resolution_ ) ... };
 		}
 
 	public:
