@@ -171,6 +171,20 @@ namespace pax {
 			assert( all_lt( idx_, size() ) );
 			return dot_product( idx_, offsets() );
 		}
+
+		/// Box contents to std::string.
+		explicit constexpr operator std::string() 					const			{
+			return std::format( "[{}]", size() );
+		}
+
+		/// Stream a box contents.
+		template< typename Out >
+		friend constexpr Out & operator<<(
+			Out				  & out_,
+			const Indexer	  & idxer_
+		) {
+			return out_ << std::string( idxer_ );
+		}
 	};
 	
 	using Indexer2d			  = Indexer< 2 >;
@@ -254,6 +268,20 @@ namespace pax {
 	    		double( x( min( *this ) ) ),	double( resolution() ),	   double{},
 				double( y( max( *this ) ) ),	double{},				( -resolution() )
 			};
+		}
+
+		/// Box contents to std::string.
+		explicit constexpr operator std::string() const {
+			return std::format( "{{{}, {}}}", std::string( BBox( *this ) ), resolution() );
+		}
+
+		/// Stream a box contents.
+		template< typename Out >
+		friend constexpr Out & operator<<(
+			Out					  & out_,
+			const Box_indexer	  & boxi_
+		) {
+			return out_ << std::string( boxi_ );
 		}
 	};
 	
