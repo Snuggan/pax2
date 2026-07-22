@@ -6,6 +6,7 @@
 
 #include "base.hpp"
 #include <array>
+#include <utility>
 
 
 namespace pax {
@@ -17,13 +18,13 @@ namespace pax {
 
 
 	/// This is the type used for arithmetic vectors with a fixed size.
-	template< arithmetic A, std::size_t N >							requires( is_static< N > )
+	template< arithmetic A, std::size_t N >											requires( is_static< N > )
 	using Point = std::array< A, N >;
 
 	/// Create a Point out of a bunch of elements.
 	template< arithmetic A, arithmetic ... As >	
-	constexpr Point< A, sizeof...( As ) > point( As ... as_ )		noexcept	{
-		return { static_cast< A >( std::forward( as_ ) ) ... };
+	constexpr Point< A, sizeof...( As ) > point( As && ... as_ )					noexcept	{
+		return { static_cast< A >( std::forward< As >( as_ ) ) ... };
 	}
 
 	/// This is used to read Point values from a csv file using Text_table.
@@ -171,11 +172,11 @@ namespace pax {
 		Point< A, 3 > pt0_, 
 		Point< A, 3 > pt1_ 
 	) noexcept {
-		return Point({ 
+		return Point{ 
 			pt0_[ 1 ]*pt1_[ 2 ] - pt0_[ 2 ]*pt1_[ 1 ],
 			pt0_[ 2 ]*pt1_[ 0 ] - pt0_[ 0 ]*pt1_[ 2 ],
 			pt0_[ 0 ]*pt1_[ 1 ] - pt0_[ 1 ]*pt1_[ 0 ]
-		});
+		};
 	}
 
 }	// namespace pax
