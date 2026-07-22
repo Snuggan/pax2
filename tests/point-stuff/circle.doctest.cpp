@@ -41,7 +41,7 @@ namespace pax {
 		}
 	}
 	DOCTEST_TEST_CASE( "Circle_w_id object" ) {
-		constexpr auto circ2		  = Circle_w_id3d( { 1., 2., 3. }, -1., "my_id" );
+		const auto circ2		  = Circle_w_id3d( { 1., 2., 3. }, -1., "my_id" );
 		DOCTEST_FAST_CHECK_EQ( circ2,  				circ2 );
 		DOCTEST_FAST_CHECK_EQ( min( circ2 ),  		Point{ 0., 1., 2. } );
 		DOCTEST_FAST_CHECK_EQ( center( circ2 ),  	Point{ 1., 2., 3. } );
