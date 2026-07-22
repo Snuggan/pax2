@@ -22,7 +22,7 @@ namespace pax {
 
 	/// Create a Point out of a bunch of elements.
 	template< arithmetic A, arithmetic ... As >	
-	constexpr Point< A, sizeof...( As ) > make_point( As ... as_ )	noexcept	{
+	constexpr Point< A, sizeof...( As ) > point( As ... as_ )		noexcept	{
 		return { static_cast< A >( std::forward( as_ ) ) ... };
 	}
 
