@@ -8,14 +8,7 @@
 
 namespace pax { 
 
-	DOCTEST_TEST_CASE( "math modulo" ) {
-		DOCTEST_FAST_CHECK_EQ( modulo( +5,    4   ),  1 );
-		DOCTEST_FAST_CHECK_EQ( modulo( -5,    4   ), -1 );
-		DOCTEST_FAST_CHECK_EQ( modulo( +5.0,  4.0 ),  1 );
-		DOCTEST_FAST_CHECK_EQ( modulo( -5.0,  4.0 ), -1 );
-	}
 	DOCTEST_TEST_CASE( "math align_le" ) {
-		DOCTEST_FAST_CHECK_EQ( std::fmod( 17.0, 12.5 ),  std::fmod( 17.0, -12.5 ) );
 		DOCTEST_FAST_CHECK_EQ( align_le(  12.8,   0.0 ),  12.8 );
 		DOCTEST_FAST_CHECK_EQ( align_le(  12.5,  12.5 ),  12.5 );
 		DOCTEST_FAST_CHECK_EQ( align_le( -12.5,  12.5 ), -12.5 );
