@@ -28,7 +28,7 @@ namespace pax {
 	public:
 		static constexpr std::size_t 				rank		  = N;
 		using 										Pt			  = Point< F, N >;
-		using value_type = Pt::value_type;
+		using coord_type = Pt::value_type;
 
 		constexpr Circle()									 	 = default;
 		constexpr Circle( const Circle & )						  = default;
@@ -46,7 +46,7 @@ namespace pax {
 		) noexcept requires( rank == 2 ) : Circle( Pt{ east_, north_ }, radius_ ) {}
 
 
-		constexpr value_type radius()								const noexcept	{	return m_radius;	}
+		constexpr coord_type radius()								const noexcept	{	return m_radius;	}
 
 		/// The center coordinates.
 		constexpr bool operator==( const Circle & c_ ) 				const noexcept	{

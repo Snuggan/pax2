@@ -49,11 +49,14 @@ namespace pax {
 			const Point< A, N > & pt1_ 
 		) noexcept : m_box({ pax::min( pt0_, pt1_ ), pax::max( pt0_, pt1_ ) }) {}
 
-		constexpr const Pt & min()									const noexcept	{	return m_box.front();	}
-		constexpr const Pt & max()									const noexcept	{	return m_box.back();	}
-		constexpr       Pt   sides()								const noexcept	{	return max() - min();	}
-		friend constexpr const Pt & min( const Box & b_ )			noexcept		{	return b_.min();		}
-		friend constexpr const Pt & max( const Box & b_ )			noexcept		{	return b_.max();		}
+		constexpr const Pt & min()									const noexcept	{	return m_box.front();			}
+		constexpr const Pt & max()									const noexcept	{	return m_box.back();			}
+		constexpr bool empty() 										const noexcept	{	return !all_lt( min(), max() );	}
+		constexpr       Pt   sides()								const noexcept	{	return max() - min();			}
+		friend constexpr const Pt & min( const Box & b_ )			noexcept		{	return b_.min();				}
+		friend constexpr const Pt & max( const Box & b_ )			noexcept		{	return b_.max();				}
+		friend constexpr bool empty( const Box & b_ )				noexcept		{	return b_.empty();				}
+
 		friend constexpr bool operator==( const Box & b0_, const Box & b1_ ) noexcept {
 			return ( b0_.min() == b1_.min() ) && ( b0_.max() == b1_.max() );
 		}

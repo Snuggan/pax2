@@ -1,6 +1,6 @@
 #include <pax/pdal/modules/pdal_plugin_filter_remove_overlap.hpp>
 #include <pax/types/point-stuff/box.hpp>
-#include <pax/types/point-stuff/pdal.hpp>
+#include <pax/pdal/utilities/pdal.hpp>
 
 #include <pdal/pdal_internal.hpp>
 

@@ -9,7 +9,6 @@
 #include "point-stuff/circle.hpp"
 #include "point-stuff/span-base.hpp"
 #include "point-stuff/span-distance.hpp"
-#include "point-stuff/pdal.hpp"
 
 
 

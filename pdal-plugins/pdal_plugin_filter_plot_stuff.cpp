@@ -1,7 +1,6 @@
 #include <pax/pdal/modules/pdal_plugin_filter_plot_stuff.hpp>
-#include <pax/types/point-stuff/pdal.hpp>
+#include <pax/pdal/utilities/pdal.hpp>
 #include <pax/pdal/utilities/plot-stuff.hpp>
-#include <pax/types/point-stuff/pdal.hpp>
 
 #include <pdal/util/FileUtils.hpp>
 #include <pdal/util/ProgramArgs.hpp>
@@ -83,7 +82,7 @@ namespace pax {
 	std::vector< Plot_stuff > plot_stuff::get_plots( pdal::PointViewPtr view_ptr_ ) {
 		DEBUG << "plot_stuff::get_plots start";
 
-		const auto							bbox = pax::bbox( *view_ptr_ );
+		const auto							bbox = box( *view_ptr_ );
 		// const pdal::PointLayoutPtr 			layout = pt_table_.layout();
 		const auto height_dim			  = view_ptr_->hasDim( pdal::Dimension::Id::HeightAboveGround )
 									  	  ? pdal::Dimension::Id::HeightAboveGround : pdal::Dimension::Id::Z;
@@ -94,13 +93,14 @@ namespace pax {
 		// First, read in all plots from the csv file.
 		if( !empty( bbox ) ) {	
 			m_all_plots_table			  =	Text_table< char >{ m_plot_file };
-			std::vector< Plot_w_id >		basic_plots = m_all_plots_table.export_values( Plot_w_id::table_meta( m_id_column ) );
+			std::vector< Plot_w_id >		basic_plots 
+				= m_all_plots_table.export_values( Object_meta< Plot_w_id >::value );
 		
 			// Then, only keep the plots that overlap the bbox.
 			// Copy the relevant plots to the begining of 'plots' and...
 			auto itr					  = basic_plots.begin();
 			for( Plot_w_id & plot : basic_plots )
-				if( plot.in_box( bbox ) )  * ( itr++ ) = plot;
+				if( contains( bbox, plot ) )  * ( itr++ ) = plot;
 
 			// ...resize it to contain just those relevant plots.
 			basic_plots.resize( std::size_t( itr - basic_plots.begin() ) );
@@ -108,7 +108,7 @@ namespace pax {
 
 			// Now, create the Plot_stuff vector.
 			for( Plot_w_id & plot : basic_plots ) {
-				if( m_plot_buffer > 0 )		plot.set_radius( m_plot_buffer );
+				if( m_plot_buffer > 0 )		plot = Plot_w_id( center( plot ), m_plot_buffer, plot.id() );
 				plots.emplace_back(
 					plot, 
 					!m_metrics_dest.empty(), 
@@ -195,7 +195,7 @@ namespace pax {
 		try {
 			const auto metric_set		  = metrics::metric_set( std::span{ m_metrics }, m_metrics_nilsson );
 			save_metrics( m_all_plots_table, m_plots, m_metrics_dest, metric_set, m_id_column );
-			for( const auto & plot : m_plots )	if( !plot.empty() )				
+			for( const auto & plot : m_plots )	if( plot.num_of_points() )				
 				plot.save_plot_points( 
 					m_view_ptr, 
 					m_points_dest_dir, 

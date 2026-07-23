@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include "plot.hpp"
+#include <pax/pdal/utilities/pdal.hpp>
+#include <pax/types/point-stuff/circle.hpp>
 #include <pax/pdal/metrics-infrastructure/function-filter.hpp>
 
 // Read a csv file
@@ -19,6 +20,9 @@
 
 
 namespace pax {
+	
+	using Plot_w_id		  = Circle_w_id< double, 2 >;
+
 
 	/// A simple container for the spacial data of a plot.
 	/// It has the plot stuff + an id and a vector of pdal points. 
@@ -57,7 +61,7 @@ namespace pax {
 
 		/// Process a point. Return true if it was inside the plot.
 		bool process( const pdal::PointRef & pt_ ) 			noexcept		{
-			if( Plot::contains( pt_ ) ) {
+			if( contains( *this, point( pt_ ) ) ) {
 				if( m_do_points )			m_points_idx.push_back( pt_.pointId() );
 				if( m_do_metrics )			m_metric_agg.push_back(
 					pt_.getFieldAs< coord_type >( m_height_dimension ),
@@ -69,8 +73,12 @@ namespace pax {
 		}
 		
 		
+		/// Number of point so far accumulated.
+		std::size_t num_of_points()							const noexcept	{	return m_points_idx.size();		}
+		
+		
 		/// Access the metrics aggregator.
-		metrics::Point_aggregator & metric_aggregator()		noexcept	{	return m_metric_agg;	}
+		metrics::Point_aggregator & metric_aggregator()		noexcept		{	return m_metric_agg;			}
 
 
 		/// Save the results, the point cloud[s] and the metric[s].
@@ -81,7 +89,8 @@ namespace pax {
 			const dir_path					  & plot_points_dest_dir_,
 			std::string_view					plot_points_file_format_
 		) const {
-			const std::filesystem::path	plot_points_dest   = plot_points_dest_dir_ / ( Plot_w_id::id() + plot_points_file_format_ );
+			const std::filesystem::path	plot_points_dest   
+				  = plot_points_dest_dir_ / ( Plot_w_id::id() + plot_points_file_format_ );
 			try{
 				if( m_do_points && !m_points_idx.empty() && !plot_points_dest_dir_.empty() ) {
 					// Create a new view and add the plot's points to it. 
