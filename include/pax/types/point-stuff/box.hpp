@@ -23,28 +23,20 @@ namespace pax {
 	private:
 		std::array< Point< A, N >, 2 >				m_box{};
 
-		/// Returns the modulo of x_ and y_ (floating point or integer).
-		/** If y_ == 0, 0 is returned.																	**/
-		static constexpr A modulo( const A x_, const A y_ ) 		noexcept		{
-			return y_ ? std::fmod( x_, y_ )	: A{};
+		static constexpr A align( const A value_, const A factor_ ) noexcept {
+			return factor_ ? ( factor_ * std::floor( value_ / factor_ ) ) : value_;
 		}
 
-		/// Returns the closest number less than or equal to v_ that is evenly divisible by factor_.
-		/// If factor_ == 0, v_ is returned.
-		static constexpr A align_le( const A v_, const A factor_ )	noexcept		{
-			const A	mod{ modulo( v_, factor_ ) };
-			return	( ( v_ >= A{} ) || ( mod == A{} ) )	
-				? ( v_ - mod )
-				: ( v_ - mod + ( ( factor_ >= A{} ) ? -factor_ : factor_ ) );
+		/// Returns the closest number less than or equal to value_ that is evenly divisible by actor_.
+		static constexpr A align_le( const A value_, const A factor_ ) noexcept {
+			const A temp = align( value_, factor_ );
+			return  temp - ( ( temp > value_ ) ? factor_ : A{} );
 		}
 
-		/// Returns the closest number greater than or equal to v_ that is evenly divisible by factor_.
-		/// If factor_ == 0, v_ is returned.
-		static constexpr A align_ge( const A v_, const A factor_ )	noexcept		{
-			const A	mod{ modulo( v_, factor_ ) };
-			return	( ( v_ <  A{} ) || ( mod == A{} ) )	
-				? ( v_ - mod )
-				: ( v_ - mod + ( ( factor_ <  A{} ) ? -factor_ : factor_ ) );
+		/// Returns the closest number greater than or equal to value_ that is evenly divisible by factor_.
+		static constexpr A align_ge( const A value_, const A factor_ ) noexcept {
+			const A temp = align( value_, factor_ );
+			return temp + ( ( temp < value_) ? factor_ : A{} );
 		}
 		
 	public:
@@ -67,7 +59,8 @@ namespace pax {
 		}
 
 		/// Returns the minimal Box that contains both the original Box and pt_.
-		constexpr Box aligned( const value_type resolution_ )		const noexcept	{
+		constexpr Box aligned( value_type resolution_ )				const noexcept	{
+			resolution_			  = std::abs( resolution_ );
 			auto [ ... small ]	  = min();
 			auto [ ... large ]	  = max();
 			return { Pt{ align_le( small, resolution_ ) ... }, Pt{ align_ge( large, resolution_ ) ... } };
