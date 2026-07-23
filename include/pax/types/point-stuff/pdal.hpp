@@ -8,23 +8,24 @@
 #include <pdal/PointView.hpp>			// PointViewPtr, PointId
 
 
-namespace pdal {
+namespace pax {
+	using	pdal::BOX2D, pdal::BOX3D, pdal::PointRef, pdal::PointView, pdal::PointViewPtr, pdal::PointId, pdal::Dimension::Id;
 	
 	// Access a coordinate in an easier way.
-	inline constexpr double x    ( PointRef pt_ )			{	return pt_.getFieldAs< double >( Dimension::Id::X );	}
-	inline constexpr double y    ( PointRef pt_ )			{	return pt_.getFieldAs< double >( Dimension::Id::Y );	}
-	inline constexpr double z    ( PointRef pt_ )			{	return pt_.getFieldAs< double >( Dimension::Id::Z );	}
-	inline constexpr double east ( PointRef pt_ ) 			{	return x( pt_ );										}
-	inline constexpr double north( PointRef pt_ ) 			{	return y( pt_ );										}
+	inline constexpr double x    ( PointRef pt_ )						{	return pt_.getFieldAs< double >( Id::X );	}
+	inline constexpr double y    ( PointRef pt_ )						{	return pt_.getFieldAs< double >( Id::Y );	}
+	inline constexpr double z    ( PointRef pt_ )						{	return pt_.getFieldAs< double >( Id::Z );	}
+	inline constexpr double east ( PointRef pt_ ) 						{	return x( pt_ );							}
+	inline constexpr double north( PointRef pt_ ) 						{	return y( pt_ );							}
 
 	inline constexpr double x    ( PointViewPtr view_, PointId idx_ )	{
-		return view_->getFieldAs< double >( Dimension::Id::X, idx_ );
+		return view_->getFieldAs< double >( Id::X, idx_ );
 	}
 	inline constexpr double y    ( PointViewPtr view_, PointId idx_ )	{
-		return view_->getFieldAs< double >( Dimension::Id::Y, idx_ );
+		return view_->getFieldAs< double >( Id::Y, idx_ );
 	}
 	inline constexpr double z    ( PointViewPtr view_, PointId idx_ )	{
-		return view_->getFieldAs< double >( Dimension::Id::Z, idx_ );
+		return view_->getFieldAs< double >( Id::Z, idx_ );
 	}
 	inline constexpr double east ( PointViewPtr view_, PointId idx_ )	{	return x( view_, idx_ );					}
 	inline constexpr double north( PointViewPtr view_, PointId idx_ )	{	return y( view_, idx_ );					}

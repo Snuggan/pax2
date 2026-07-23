@@ -1,6 +1,5 @@
 #include <pax/pdal/modules/pdal_plugin_filter_slu_lm.hpp>
 #include <pax/pdal/utilities/classification.hpp>	// normal_lm_filter()
-#include <pax/pdal/utilities/bbox_indexer.hpp>
 
 #include <pdal/pdal_internal.hpp>
 

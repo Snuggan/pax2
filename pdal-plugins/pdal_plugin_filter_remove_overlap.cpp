@@ -1,5 +1,6 @@
 #include <pax/pdal/modules/pdal_plugin_filter_remove_overlap.hpp>
-#include <pax/pdal/utilities/bbox_indexer.hpp>
+#include <pax/types/point-stuff/box.hpp>
+#include <pax/types/point-stuff/pdal.hpp>
 
 #include <pdal/pdal_internal.hpp>
 
@@ -88,12 +89,12 @@ pdal::PointViewPtr pax::Remove_overlap::overlap_filter( pdal::PointViewPtr view_
 
 	if(	active ) {
 		// Get the bbox, aligned as specified. 
-		const Bbox_indexer			bbox{ *view_, m_overlap_resolution };
-		std::vector< Angle_source >	min_angle{ bbox.pixels(), Angle_source{} };
+		const Box_indexer			bbox{ pax::box( *view_ ), m_overlap_resolution };
+		std::vector< Angle_source >	min_angle{ bbox.elements(), Angle_source{} };
 		
 		// Create a raster of minimal angle/point-id pairs.
 		for( const auto & pt : *view_ ) {
-			min_angle[ bbox.index( pt ) ].update(
+			min_angle[ bbox.index( point( pt ) ) ].update(
 				pt.getFieldAs< angle_type     >( ID::ScanAngleRank ), 
 				pt.getFieldAs< source_id_type >( ID::PointSourceId )
 			);
@@ -103,7 +104,8 @@ pdal::PointViewPtr pax::Remove_overlap::overlap_filter( pdal::PointViewPtr view_
 		pdal::PointViewPtr			points{ view_->makeNew() };
 		for( pdal::PointId idx = 0; idx < size0; ++idx ) {
 			const source_id_type	source_id{ view_->getFieldAs< source_id_type >( ID::PointSourceId, idx ) };
-			if( min_angle[ bbox.index( view_, idx ) ].source_id() == source_id ) 
+			const auto pt		  = point( view_, idx );
+			if( min_angle[ bbox.index( pt ) ].source_id() == source_id ) 
 				points->appendPoint( *view_, idx );
 		}
 

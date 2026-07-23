@@ -4,13 +4,14 @@
 
 #pragma once
 
+#include <pax/types/point-stuff/pdal.hpp>
 #include "../utilities/plot.hpp"
 
 // Read a csv file
 #include <pax/tables/text-table.hpp>
 
 // pdal stuff
-#include "../utilities/bbox_indexer.hpp"	// bbox( pdal::PointViewPtr )
+#include <pax/types/point-stuff/pdal.hpp>
 #include <pdal/PointView.hpp>
 #include <pdal/PointTable.hpp>
 #include <pdal/Dimension.hpp>
@@ -20,6 +21,14 @@
 
 
 namespace pax {
+
+	/// Return a bounding box for the point cloud.
+	inline pdal::BOX2D bbox( const pdal::PointView & view_ ) noexcept {
+		pdal::BOX2D					box_;
+		view_.calculateBounds( box_ );
+		return box_;
+	}
+
 
 	/// A simple container for the spacial data of a plot.
 	/// It has the plot stuff + an id and a vector of pdal points. 

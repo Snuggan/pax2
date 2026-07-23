@@ -3,7 +3,7 @@
 #pragma once
 
 #include <pax/pdal/metrics-infrastructure/function-filter.hpp>	// Point_aggregator, Function_filter
-#include <pax/pdal/utilities/bbox_indexer.hpp>
+#include <pax/types/point-stuff/box.hpp>						// Box_indexer< double, 2 >
 #include <pdal/Filter.hpp>
 // #include <pdal/Streamable.hpp>
 #include <string>
@@ -54,7 +54,7 @@ namespace pax {
 		void addArgs( pdal::ProgramArgs & )							override;
 	    void prepared( pdal::PointTableRef )						override;
 	    void ready( pdal::PointTableRef )							override;
-		bool processOne( pdal::PointRef & );//							override;
+		bool processOne( pdal::PointRef & );
 	    // void filter( pdal::PointView & )							override;
 		pdal::PointViewSet run( pdal::PointViewPtr )				override;
 		void done( pdal::PointTableRef table_ )						override;
@@ -71,7 +71,7 @@ namespace pax {
 		std::string						m_drivername{ "GTiff" };
 		pdal::StringList				m_options{};
 		pdal::Dimension::Type			m_dataType{ pdal::Dimension::Type::Float };
-		double							m_noData{ std::numeric_limits<double>::quiet_NaN() };
+		double							m_noData{ std::numeric_limits< double >::quiet_NaN() };
 	    pdal::SpatialReference			m_srs{};
 		
 		// For processing:
@@ -79,7 +79,7 @@ namespace pax {
 		std::vector< metrics::Function_filter >		pr_metrics_set{};
 		pdal::Dimension::Id 			pr_height_dimension{};
 		bool 							pr_has_return_number{};
-		Bbox_indexer					pr_bbox{};
+		Box_indexer< double, 2 >		pr_bbox{};
 		
 		struct metadata {
 			std::size_t 	points_processed{};

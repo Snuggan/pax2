@@ -5,7 +5,6 @@
 #pragma once
 
 #include "plot.hpp"
-#include "bbox_indexer.hpp"		// bbox( pdal::PointViewPtr )
 #include <pax/pdal/metrics-infrastructure/function-filter.hpp>
 
 // Read a csv file

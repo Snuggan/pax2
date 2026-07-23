@@ -14,7 +14,7 @@ namespace pax {
 	
 	using std::get;
 	template< typename T, typename ... P >	struct Table_meta;
-	template< floating F >					struct Object_meta;
+	template< typename F >					struct Object_meta;
 
 
 

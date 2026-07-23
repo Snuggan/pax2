@@ -23,7 +23,7 @@ namespace pax {
 		plot_stuff & operator=( const plot_stuff & )	  = delete;
 		plot_stuff & operator=( plot_stuff && )			  = delete;
 
-		virtual ~plot_stuff() {};
+		virtual ~plot_stuff();
 		std::string getName()								const override;
 
 	private:

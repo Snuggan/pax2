@@ -23,19 +23,19 @@ namespace pax {
 	private:
 		std::array< Point< A, N >, 2 >				m_box{};
 
-		static constexpr A align( const A value_, const A factor_ ) noexcept {
+		static constexpr A align_( const A value_, const A factor_ ) noexcept {
 			return factor_ ? ( factor_ * std::floor( value_ / factor_ ) ) : value_;
 		}
 
 		/// Returns the closest number less than or equal to value_ that is evenly divisible by actor_.
 		static constexpr A align_le( const A value_, const A factor_ ) noexcept {
-			const A temp = align( value_, factor_ );
+			const A temp = align_( value_, factor_ );
 			return  temp - ( ( temp > value_ ) ? factor_ : A{} );
 		}
 
 		/// Returns the closest number greater than or equal to value_ that is evenly divisible by factor_.
 		static constexpr A align_ge( const A value_, const A factor_ ) noexcept {
-			const A temp = align( value_, factor_ );
+			const A temp = align_( value_, factor_ );
 			return temp + ( ( temp < value_) ? factor_ : A{} );
 		}
 		

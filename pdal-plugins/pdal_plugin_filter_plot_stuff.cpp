@@ -1,5 +1,7 @@
-#include <pax/pdal/utilities/plot-stuff.hpp>
 #include <pax/pdal/modules/pdal_plugin_filter_plot_stuff.hpp>
+#include <pax/types/point-stuff/pdal.hpp>
+#include <pax/pdal/utilities/plot-stuff.hpp>
+#include <pax/types/point-stuff/pdal.hpp>
 
 #include <pdal/util/FileUtils.hpp>
 #include <pdal/util/ProgramArgs.hpp>
@@ -63,6 +65,17 @@ namespace pax {
 		args.add( "plot_buffer",		"How much to enlarge the plot diameters. A zero value (the default) will use the plot diameter. ",
 											m_plot_buffer, m_plot_buffer );
 		DEBUG << "plot_stuff::addArgs end";
+	}
+
+
+	plot_stuff::~plot_stuff() {}
+
+
+	/// Return a bounding box for the point cloud.
+	inline pdal::BOX2D bbox( const pdal::PointView & view_ ) noexcept {
+		pdal::BOX2D					box_;
+		view_.calculateBounds( box_ );
+		return box_;
 	}
 
 
