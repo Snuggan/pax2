@@ -78,12 +78,11 @@ namespace pax {
 		
 		
 		/// Access the metrics aggregator.
+		/// Calculating the metrics mutates the aggregator (the z-values are sorted in place), so no 'const'. 
 		metrics::Point_aggregator & metric_aggregator()		noexcept		{	return m_metric_agg;			}
 
 
-		/// Save the results, the point cloud[s] and the metric[s].
-
-
+		/// Save the points of each found plot.
 		void save_plot_points( 
 			const pdal::PointViewPtr		  & view_ptr_,
 			const dir_path					  & plot_points_dest_dir_,
@@ -132,7 +131,8 @@ namespace pax {
 	};
 
 	
-	/// Seve the metrics from a bunch of plots to a .csv file, not discarding previous columns.
+	/// Seve the metrics from each plot to a .csv file, not discarding previous columns. 
+	/// It is a bit roundabout, but we need to include the other columns.
 	inline void save_metrics(
 		const Text_table< char >						  & plots_table_,
 		const std::span< Plot_stuff >						plots_,
@@ -164,8 +164,7 @@ namespace pax {
 					) );
 				}
 
-				// Usually very few plots in the plots__table total are processed, 
-				// so we optimize by only working on those rows.
+				// Usually there are few plots in the plots_table, so we optimize by only working on those few rows.
 				// Carculate a reduced Text_table, with only the rows corresponding to the plots in plots_.
 				Text_table< char >				reduced_table{};
 				{
