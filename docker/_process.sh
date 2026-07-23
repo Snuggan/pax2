@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
-PROCESSING="/Volumes/ssd-pax-testdata/lidar/small-files/data"
-#PROCESSING=$(cd "$(dirname "$0")" && pwd)    # absolutized and normalized path to this script
+# PROCESSING="/Volumes/ssd-pax-testdata/lidar/small-files/data"
+PROCESSING="/Users/pax/Desktop/test-las/data"
+# PROCESSING=$(cd "$(dirname "$0")" && pwd)    # absolutized and normalized path to this script
 echo "### Working directory: $PROCESSING"
 
 # There are three options to the -v flag:

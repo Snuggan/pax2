@@ -22,8 +22,6 @@ namespace pax {
 	class Circle {
 		Point< F, N >												m_center{};
 		F															m_radius{};
-
-		constexpr const Point< F, N > & center()					const noexcept	{	return m_center;	}
 		
 	public:
 		static constexpr std::size_t 				rank		  = N;
@@ -52,6 +50,9 @@ namespace pax {
 		constexpr bool operator==( const Circle & c_ ) 				const noexcept	{
 			return ( center() == c_.center() ) && ( radius() == c_.radius() );
 		}
+
+		/// The center coordinates.
+		constexpr const Point< F, N > & center()					const noexcept	{	return m_center;	}
 
 		/// The center coordinates.
 		friend constexpr const Pt & center( const Circle & c_ ) 	noexcept		{	return c_.center();	}
@@ -163,7 +164,7 @@ namespace pax {
 			const Base::Pt			  & center_,
 			const F						radius_,
 			const std::string_view		id_
-		) noexcept : Base{ center_, radius_ }, m_id{ id_ } {}
+		) noexcept : Circle_w_id( Base{ center_, radius_ }, id_ ) {}
 
 		constexpr Circle_w_id(
 			const F						east_,

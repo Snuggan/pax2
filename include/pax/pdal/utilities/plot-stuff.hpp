@@ -5,7 +5,7 @@
 #pragma once
 
 #include <pax/pdal/utilities/pdal.hpp>
-#include <pax/types/point-stuff/circle.hpp>
+#include <pax/types/point-stuff/circle.hpp>		// Circle_w_id
 #include <pax/pdal/metrics-infrastructure/function-filter.hpp>
 
 // Read a csv file

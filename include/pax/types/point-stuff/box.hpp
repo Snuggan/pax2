@@ -13,6 +13,8 @@ namespace pax {
 	
 	/// Implements an object with two corner coordinates, a bounding box.
 	/// It can have any rank you please, but two (and sometimes three) is probably the usual.
+	/// It may be used as a simple bounding box, to check if points or circles/plots are inside. 
+	/// It is a superclass for Box_indexer, below, a tool to convert coordinates to a pixel in a raster.
 	template< arithmetic A, std::size_t N >			requires( is_static< N > )
 	struct Box {
 		static constexpr std::size_t 				rank		  = N;
@@ -115,6 +117,8 @@ namespace pax {
 
 	/// Handles transformation of multiple indices (of matrix) to scalar index [into a vector]. 
 	/// It can have any rank you please, but two (and sometimes three) is probably the usual.
+	/// It may be used to handle multiple indeces, such as for rasters and multi-dimensional arrays.
+	/// It is a superclass for Box_indexer, below, together with Box.
 	template< std::size_t N >									requires( is_static< N > )
 	struct Indexer {
 		static constexpr std::size_t	rank				  = N;
