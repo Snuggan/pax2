@@ -1,16 +1,22 @@
+//	Copyright (c) 2014-2016, Peder Axensten, all rights reserved.
+//	Contact: peder ( at ) axensten.se
 
-#include <pax/reporting/seconds_to_string.hpp>
-#include <chrono>
-#include <iostream>
+
+#include <pax/reporting/timers.hpp>
+
 #include <vector>
-#include <unistd.h>
 #include <cstring>
-#include <sys/wait.h>
+#include <unistd.h>			// fork, execvp, exit
+#include <sys/wait.h>		// Linux: waitpid
 
 
 int main( const int argc, char * argv[] ) {
-	const auto	start	  = std::chrono::steady_clock::now();
-	int			status	  = 0;
+	int								status{};
+	// const pax::Time_local			local( true );
+	// const pax::Time_utc				utc ( true );
+	// const pax::Clock_duration		cpu2( "clock", true );
+	const pax::Usr_sys_duration		cpu ( "cpu",   true );
+	const pax::Wall_duration		wall( "wall",  true );
 
 	if( argc > 1 ) {
 		// Build args for execvp (need char* array)
@@ -42,10 +48,6 @@ int main( const int argc, char * argv[] ) {
 			break;
 		}
 	}
-
-	const auto end		  = std::chrono::steady_clock::now();
-	const double duration = std::chrono::duration_cast< std::chrono::nanoseconds >( end - start ).count()*1e-9;
-	std::cout	<< pax::seconds_to_string( duration ) << " (wall) ";
 
 	// Exit with the child's exit code (like time usually doesn’t change success)
 	if( argc < 2 )				return status;
