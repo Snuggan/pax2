@@ -36,7 +36,7 @@ namespace pax {
 			else if( std::isinf( duration ) )	{	unit = "  time";							}
 			else 								{	unit = " years";	duration/= year;		}
 
-			result = std20::format( std20::runtime_format( "{:.{}f}" ), duration, ( ( digits_ < 0 ) ? -digits_ : digits_ ) );
+			result = std20::format( std20::runtime_format( "{:.{}g}" ), duration, ( ( digits_ < 0 ) ? -digits_ : digits_ ) );
 			result+= ( ( result.back() >= '0' ) && ( result.back() <= '9' ) ) ? unit : unit.substr( 1 );
 		}
 
