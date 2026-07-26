@@ -12,11 +12,10 @@
 
 int main( const int argc, char * argv[] ) {
 	int								status{};
-	// const pax::Time_local			local( true );
-	// const pax::Time_utc				utc  ( true );
+	// const pax::Time					time{};
 	// const pax::Clock_duration		cpu2 ( true );
-	const pax::Usr_sys_duration		cpu  ( true );
 	// const pax::Boost_duration		boost( true );
+	const pax::Usr_sys_duration		cpu  ( true );
 	const pax::Wall_duration		wall ( true );
 
 	if( argc > 1 ) {

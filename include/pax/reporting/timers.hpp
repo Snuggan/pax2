@@ -20,35 +20,16 @@
 
 namespace pax {
 
-
-	class Time_local {
-		bool										m_auto;
-
-	public:
-		Time_local( const bool autoout_ = false ) : m_auto{ autoout_ } {}
-		~Time_local() 							{	if( m_auto )	std::cout << now_string();		}
-	
-		static std::string now_string() 		{
-			// const auto now				  = std::chrono::system_clock::now();
-			// const auto seconds			  = std::chrono::time_point_cast< std::chrono::seconds >( now );
-			// const auto local_time		  = std::chrono::zoned_time{ std::chrono::current_zone(), seconds };
-			// return std::format( "%T", local_time );
-			return std::string( "<local time not implemented>" );
-		}
-	};
-
-
-	class Time_utc {
-		bool										m_auto;
-
-	public:
-		Time_utc( const bool autoout_ = false ) :	m_auto{ autoout_ } {}
-		~Time_utc() 							{	if( m_auto )	std::cout << now_string();		}
-	
-		static std::string now_string() 		{
-			const auto now						  = std::chrono::system_clock::now();
-			const auto seconds					  = std::chrono::time_point_cast< std::chrono::seconds >( now );
-			return std::vformat( "{:%T} (utc) ", std::make_format_args( seconds ) );
+	struct Time {
+		Time() {}
+		~Time() {
+			try{
+				const auto now					  = std::chrono::system_clock::now();
+				const auto seconds				  = std::chrono::time_point_cast< std::chrono::seconds >( now );
+				// const auto local_time			  = std::chrono::zoned_time{ std::chrono::current_zone(), seconds };
+				// std::cout << std::format( "%T ", local_time );
+				std::cout << std::vformat( "{:%T} (utc) ", std::make_format_args( seconds ) );
+			} catch( ... ){}
 		}
 	};
 
@@ -65,8 +46,8 @@ namespace pax {
 	
 		std::string now_string()		const	{
 			return Timer::valid()
-				?	std::format( "{} ({}) ", pax::seconds_to_string( Timer::seconds() ), Timer::suffix() )
-				:	std::format( "not_valid ({}) ", Timer::suffix() );
+				?	std::format( "{} ({}) ", seconds_to_string( Timer::seconds() ), Timer::suffix() )
+				:	std::string{};
 		}
 	};
 
@@ -85,7 +66,7 @@ namespace pax {
 		static auto suffix()					{	return "wall";									}
 		static constexpr bool valid()			{	return true;									}
 	};
-	using Wall_duration							  = Duration< Wall_timer >;
+	using Wall_duration							=	Duration< Wall_timer >;
 
 
 	/// Based on rusage.
@@ -119,7 +100,7 @@ namespace pax {
 		constexpr bool valid()			const	{	return m_ok;									}
 		static auto suffix()					{	return "cpu";									}
 	};
-	using Usr_sys_duration						  = Duration< Usr_sys_timer >;
+	using Usr_sys_duration						=	Duration< Usr_sys_timer >;
 	
 	
 	class Boost_timer {
@@ -134,9 +115,9 @@ namespace pax {
 		double  cpu_seconds()			const	{	return user_seconds() + sys_seconds();			}
 		double seconds() 				const	{	return cpu_seconds();							}
 		static constexpr bool valid()			{	return true;									}
-		static auto suffix()					{	return "b-cpu";									}
+		static auto suffix()					{	return "cpu";									}
 	};
-	using Boost_duration						  = Duration< Boost_timer >;
+	using Boost_duration						=	Duration< Boost_timer >;
 
 
 	/// Cpu timer ased on clock_t and clock().
@@ -149,7 +130,7 @@ namespace pax {
 		static constexpr bool valid()			{	return true;									}
 		static auto suffix()					{	return "clock";									}
 	};
-	using Clock_duration						  = Duration< Clock_timer >;
+	using Clock_duration						=	Duration< Clock_timer >;
 
 
 }	// namespace pax
