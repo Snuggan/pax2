@@ -45,7 +45,7 @@ namespace pax {
 		{
 			std::stringstream		s;
 			s << sh_.first( 0 ) << "--" << sh_;
-			DOCTEST_FAST_CHECK_EQ( s.str()			, "--text" );
+			DOCTEST_ASCII_CHECK_EQ( s.str()			, "--text" );
 		}
 
 		DOCTEST_ASCII_CHECK_EQ( sh_					, "text" );
@@ -215,7 +215,7 @@ namespace pax {
 		{
 			std::stringstream		s;
 			s << sh_.first( 0 ) << sh_;
-			DOCTEST_FAST_CHECK_EQ( s.str()			, "[][0, 1, 2, 3, 4, 5, 0]" );
+			DOCTEST_ASCII_CHECK_EQ( s.str()			, "[][0, 1, 2, 3, 4, 5, 0]" );
 		}
 
 		DOCTEST_FAST_CHECK_EQ( sh_					, nums );

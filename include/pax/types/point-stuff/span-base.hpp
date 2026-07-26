@@ -21,53 +21,63 @@ namespace pax {
 	template< std::ranges::contiguous_range Cont >
 	constexpr auto make_span( Cont && const_ )												noexcept	{
 		using std::begin;
-		using S = std::span< traits::element_type_t< Cont >, traits::extent_v< Cont > >;
-		return S{ begin( const_ ), no_nullchar_end( const_ ) };
+		using Sp = std::span< traits::element_type_t< Cont >, traits::extent_v< Cont > >;
+		return Sp{ begin( const_ ), no_nullchar_end( const_ ) };
 	}
 
 	/// Create a span of elements.
-	template< typename T, std::size_t N >									requires( is_static< N > )
-	constexpr span< const T, N > make_const_span( span< T, N > span_ )						noexcept	{
-		return { span_.begin(), span_.end() };
+	template< traits::contiguous Cont >
+	constexpr auto make_const_span( Cont && cont_ )											noexcept	{
+		using std::begin;
+		using Sp = std::span< const traits::element_type_t< Cont >, traits::extent_v< Cont > >;
+		return Sp{ begin( cont_ ), no_nullchar_end( cont_ ) };
 	}
 
-	template< typename T, std::size_t N >
-	[[nodiscard]] constexpr auto not_first( span< T, N > sp_, std::size_t n_ = 1 )			noexcept;
+	template< traits::contiguous Cont >
+	[[nodiscard]] constexpr std::span< traits::element_type_t< Cont > > 
+		not_first( Cont && cont_, std::size_t n_ = 1 ) noexcept;
 
 }	// namespace pax
 
 
 namespace std {
 
-	template< std::size_t I, typename T, std::size_t N >					requires( pax::is_static< N > && ( I < N ) )
-	[[nodiscard]] T & get( span< T, N > sp_  )												noexcept	{
-		return *( sp_.data() + I );
-	}
-
-	/// In strings a terminating \0 is ignored.
-	template< typename T, std::size_t N, typename Cont >
-	[[nodiscard]] constexpr bool operator==( span< T, N > pt_, Cont && cont_ )				noexcept	{
+	template< std::size_t I, pax::traits::sized_contiguous Cont >			requires( I < pax::traits::extent_v< Cont > )
+	[[nodiscard]] auto & get( Cont && cont_  )												noexcept	{
 		using std::begin;
-		return std::equal(	pt_.begin(), pax::no_nullchar_end( pt_ ), begin( cont_ ), pax::no_nullchar_end( cont_ ) );
+		return *( begin( cont_ ) + I );
 	}
 
 	/// In strings a terminating \0 is ignored.
-	template< typename T, std::size_t N, typename Cont >
-	[[nodiscard]] constexpr auto operator<=>( span< T, N > pt_, Cont && cont_ )				noexcept	{
+	/// If a string ends with a '\0', it is ignored.
+	template< pax::traits::contiguous Cont0, pax::traits::contiguous Cont1 >
+	[[nodiscard]] constexpr bool operator==( Cont0 && cont0_ , Cont1 && cont1_ )			noexcept	{
+		using std::begin;
+		return std::equal(	begin( cont0_ ), pax::no_nullchar_end( cont0_ ), begin( cont1_ ), pax::no_nullchar_end( cont1_ ) );
+	}
+
+	/// In strings a terminating \0 is ignored.
+	/// If a string ends with a '\0', it is ignored.
+	template< pax::traits::contiguous Cont0, pax::traits::contiguous Cont1 >
+	[[nodiscard]] constexpr auto operator<=>( Cont0 && cont0_, Cont1 && cont1_ )			noexcept	{
 		using std::begin;
 		return std::lexicographical_compare_three_way(
-							pt_.begin(), pax::no_nullchar_end( pt_ ), begin( cont_ ), pax::no_nullchar_end( cont_ ) );
+							begin( cont0_ ), pax::no_nullchar_end( cont0_ ), begin( cont1_ ), pax::no_nullchar_end( cont1_ ) );
 	}
 
 	/// Stream the elements to out_.
 	template< typename Out, typename T, std::size_t N >
 	Out & operator<<( Out & out_, span< T, N > sp_ ) {
+		using std::data, std::size;
+		auto		itr = data( sp_ );
+		const auto	end = itr + size( sp_ );
 		if constexpr( pax::traits::character< T > )
-			out_.write( sp_.data(), sp_.size() );
-		else if( sp_.empty() )		out_ << "[]";
+			out_.write( itr, size( sp_ ) );
+		else if( itr == end )
+			out_ << "[]";
 		else {
-			out_ << '[' << sp_.front();
-			for( const auto & item : pax::not_first( sp_ ) )	out_ << ", " << item;
+			out_ << '[' << *itr;
+			while( ++itr < end )	out_ << ", " << *itr;
 			out_ << ']';
 		}
 		return out_;
@@ -85,9 +95,10 @@ namespace pax {
 	}
 
 	/// Return a dynamic shadow of the first min(n_, size()) elements.
-	template< typename T, std::size_t N >
-	[[nodiscard]] constexpr auto first( span< T, N > sp_, std::size_t n_ = 1 )				noexcept	{
-		return span{ sp_.data(), std::min( n_, sp_.size() ) };
+	template< traits::contiguous Cont >
+	[[nodiscard]] constexpr auto first( Cont && cont_, std::size_t n_ = 1 )					noexcept	{
+		using std::data, std::size;
+		return span{ data( cont_ ), std::min( n_, size( cont_ ) ) };
 	}
 
 	/// Return a static shadow of the first min(N, extent) elements.
@@ -99,60 +110,64 @@ namespace pax {
 	}
 
 	/// Return a dynamic shadow of the last size() - min(n_, size()) elements.
-	template< typename T, std::size_t N >
-	[[nodiscard]] constexpr auto not_first( span< T, N > sp_, std::size_t n_ /*= 1*/ )		noexcept	{
-		n_ = std::min( n_, sp_.size() );
-		return span{ sp_.data() + n_, sp_.size() - n_ };
+	template< traits::contiguous Cont >
+	[[nodiscard]] constexpr std::span< traits::element_type_t< Cont > > 
+										not_first( Cont && cont_, std::size_t n_ )			noexcept	{
+		using std::data, std::size;
+		n_ = std::min( n_, size( cont_ ) );
+		return span{ data( cont_ ) + n_, size( cont_ ) - n_ };
 	}
 
 	/// Return a static shadow of the last size() - min(N, extent) elements.
 	/// Does assert( N <= size() && !is_static ).
-	template< std::size_t I, typename T, std::size_t N >					requires( is_static< I > && is_static< N > )
+	template< std::size_t I, typename T, std::size_t N >						requires( is_static< I > )
 	[[nodiscard]] constexpr auto not_first( span< T, N > sp_ ) 								noexcept	{
 		if constexpr( !is_static< N > )	assert( I <= sp_.size() && "not_first< I >( sp_ ) requires I <= sp_.size()." );
 		return span< T, N - std::min( I, N ) >{ sp_.data() + std::min( I, N ), N - std::min( I, N ) };
 	}
 
 	/// Return a dynamic shadow of the last min(n_, size()) elements.
-	template< typename T, std::size_t N >
-	[[nodiscard]] constexpr auto last( span< T, N > sp_, std::size_t n_ = 1 )				noexcept	{
-		n_ = std::min( n_, sp_.size() );
-		return span{ sp_.data() + sp_.size() - n_, n_ };
+	template< traits::contiguous Cont >
+	[[nodiscard]] constexpr auto last( Cont && cont_, std::size_t n_ = 1 )					noexcept	{
+		using std::data, std::size;
+		n_ = std::min( n_, size( cont_ ) );
+		return span{ data( cont_ ) + size( cont_ ) - n_, n_ };
 	}
 
 	/// Return a static shadow of the first min(N, extent) elements.
 	/// Does assert( N <= size() && !is_static ).
-	template< std::size_t I, typename T, std::size_t N >					requires( is_static< I > )
+	template< std::size_t I, typename T, std::size_t N >						requires( is_static< I > )
 	[[nodiscard]] constexpr auto last( span< T, N > sp_ ) 									noexcept	{
 		if constexpr( !is_static< N > )	assert( I <= sp_.size() && "last< I >( sp_ ) requires I <= sp_.size()." );
 		return span< T, std::min( I, N ) >{ sp_.data() + sp_.size() - std::min( I, N ), std::min( I, N ) };
 	}
 
 	/// Return a dynamic shadow of the first size() - min(n_, size()) elements.
-	template< typename T, std::size_t N >
-	[[nodiscard]] constexpr auto not_last( span< T, N > sp_, std::size_t n_ = 1 )			noexcept	{
-		return span{ sp_.data(), sp_.size() - std::min( n_, sp_.size() ) };
+	template< traits::contiguous Cont >
+	[[nodiscard]] constexpr auto not_last( Cont && cont_, std::size_t n_ = 1 )				noexcept	{
+		using std::data, std::size;
+		return span{ data( cont_ ), size( cont_ ) - std::min( n_, size( cont_ ) ) };
 	}
 
 	/// Return a static shadow of the first size() - min(N, extent) elements.
 	/// Does assert( N <= size() && !is_static ).
-	template< std::size_t I, typename T, std::size_t N >					requires( is_static< I > && is_static< N > )
+	template< std::size_t I, typename T, std::size_t N >						requires( is_static< I > )
 	[[nodiscard]] constexpr auto not_last( span< T, N > sp_ ) 								noexcept 	{
 		return first< N - std::min( I, N ) >( sp_ );
 	}
 
 	/// Return a dynamic shadow of the n_ elements starting with offs_, but restricted to the bounds of this.
 	/// A negative offs_ is counted from the end.
-	template< typename T, std::size_t N >
-	[[nodiscard]] constexpr auto mid( span< T, N > sp_, std::ptrdiff_t offs_, std::size_t n_ ) noexcept	{
-		offs_ =	( offs_ >= 0 )	?				std::min( std::size_t(  offs_ ), sp_.size() )
-								: sp_.size() -	std::min( std::size_t( -offs_ ), sp_.size() );
-		return span{ sp_.data() + offs_, std::min( sp_.size() - offs_, n_ ) };
+	template< traits::contiguous Cont >
+	[[nodiscard]] constexpr auto mid( Cont && cont_, std::ptrdiff_t offs_, std::size_t n_ ) noexcept	{
+		offs_ =	( offs_ >= 0 )	?					std::min( std::size_t(  offs_ ), size( cont_ ) )
+								: size( cont_ ) -	std::min( std::size_t( -offs_ ), size( cont_ ) );
+		return span{ data( cont_ ) + offs_, std::min( size( cont_ ) - offs_, n_ ) };
 	}
 
 	/// Return a static shadow of the N elements starting with offs_, but restricted to the bounds of sp_.
 	/// A negative offs_ is counted from the back. Does assert( offs_ + N <= sp_.size() ).
-	template< std::size_t I, typename T, std::size_t N >					requires( is_static< I > && ( I <= N ) )
+	template< std::size_t I, typename T, std::size_t N >						requires( is_static< I > )
 	[[nodiscard]] constexpr auto mid( span< T, N > sp_, std::ptrdiff_t offs_ )				noexcept	{
 		offs_ =	( offs_ >= 0 )	?				std::min( std::size_t(  offs_ ), sp_.size() )
 								: sp_.size() -	std::min( std::size_t( -offs_ ), sp_.size() );
