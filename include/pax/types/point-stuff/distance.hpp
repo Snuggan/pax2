@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "base.hpp"
+#include "point.hpp"
 
 // #include <pax/std/algorithm.hpp>
 #include <pax/math/power.hpp>
@@ -12,6 +12,7 @@
 #include <span>
 #include <vector>
 #include <numeric>
+#include <cmath>
 
 
 namespace pax {
@@ -21,59 +22,42 @@ namespace pax {
 
 	/// Minkowski P size/distance with no root.
 	template< std::size_t P, arithmetic A, std::size_t N > 
-	constexpr A minkowskiP( span< A, N > pt_ ) 											noexcept	{
-		if constexpr( P == 0 )
-			return std::accumulate( pt_.begin(), pt_.end(), A{}, []( const A & acc, const A & a ) ->A {
-				A t = ( a < 0 ) ? -a : a;
-				return ( acc < t ) ? t : acc; 
-			} );
-		else if constexpr( N > 3 )
-			return std::accumulate( pt_.begin(), pt_.end(), A{}, []( const A & acc, A a ) ->A { return acc + abs_power( a, P ); } );
-		else {
-			auto					acc  = abs_power( pt_.back(),  P );
-			if constexpr( N > 2 )	acc += abs_power( pt_[ 1 ],    P );
-			if constexpr( N > 1 )	acc += abs_power( pt_.front(), P );
-			return	acc;
-		}
+	constexpr A minkowskiP( std::array< A, N > pt_ ) 							noexcept	{
+		auto [ ... p ]			  = pt_;
+		if constexpr( P == 0 )		return std::max({ A{}, ( ( p >= 0 ) ? p : -p ) ... });
+		else						return ( abs_power( p, P ) + ... + A{} );
 	}
 
 	/// Minkowski P distance with no root.
 	template< std::size_t P, arithmetic A, std::size_t N >
 	constexpr A minkowskiP(
-		std::array< A, N > 			pt0_,
-		std::array< A, N > 			pt1_
+		const std::array< A, N >  & pt0_,
+		const std::array< A, N >  & pt1_
 	) noexcept {
 		constexpr const auto absdiff = []( A a, A b ){	return ( a > b ) ? a-b : b-a;	};
-		constexpr const auto max     = []( A a, A b ){	return ( a > b ) ? a   : b; 	};
-		A						acc{};
-		// auto [ ... p0 ]		  = pt0_;
-		// auto [ ... p1 ]		  = pt1_;
-		if constexpr( P == 0 ) {
-			// { ( acc  = max( acc, absdiff( p0, p1 ) ) ... };
-			on_each_pair( pt0_, pt1_, [ &acc ]( auto a, auto b ){ acc =  max( acc, absdiff( a, b ) ); } );
-		} else {
-			// { ( acc += power( absdiff( p0, p1 ), P ) ) ... };
-			on_each_pair( pt0_, pt1_, [ &acc ]( auto a, auto b ){ acc += power( absdiff( a, b ), P ); } );
-		}
-		return acc;
+		auto [ ... p0 ]			  = pt0_;
+		auto [ ... p1 ]			  = pt1_;
+		if constexpr( P == 0 )		return std::max({ A{}, absdiff( p0, p1 ) ... });
+		else						return ( power( absdiff( p0, p1 ), P ) + ... + A{} );
 	}
 
 	/// Minkowski P distance.
 	template< std::size_t P, typename A, std::size_t N >
-	constexpr auto minkowski( span< A, N > pt_ ) 											noexcept	{
-		using F = std::common_type_t< A, float >;
-		if constexpr ( P == 0 )	return          minkowskiP< P >( pt_ );
-		else					return root( F( minkowskiP< P >( pt_ ) ), P );
+	constexpr auto minkowski( std::array< A, N > pt_ ) 							noexcept	{
+		using F = std::common_type_t< A, double >;
+		if constexpr ( P == 0 )		return			minkowskiP< P >( pt_ );
+		else						return root( F( minkowskiP< P >( pt_ ) ), P );
 	}
 
 	/// Minkowski P distance.
 	template< std::size_t P, arithmetic A, std::size_t N >
 	constexpr auto minkowski(
-		const span< A, N >		pt0_,
-		const span< A, N >		pt1_
+		const std::array< A, N >   & pt0_,
+		const std::array< A, N >   & pt1_
 	) noexcept {
-		if constexpr ( P == 0 )	return       minkowskiP< P >( pt0_, pt1_ );
-		else					return root( minkowskiP< P >( pt0_, pt1_ ), P );
+		using F = std::common_type_t< A, double >;
+		if constexpr ( P == 0 )		return			minkowskiP< P >( pt0_, pt1_ );
+		else						return root( F( minkowskiP< P >( pt0_, pt1_ ) ), P );
 	}
 
 	/// Chebyshev distance (minkowski distance, with infinite P).
@@ -95,28 +79,29 @@ namespace pax {
 
 
 	/// Hamming distance.
-	template< arithmetic A, std::size_t N >
-	constexpr A hamming(
-		const span< A, N >			pt0_,
-		const span< A, N >			pt1_
+	template< integer Int, std::size_t N >
+	constexpr Int hamming(
+		const std::array< Int, N >   & pt0_,
+		const std::array< Int, N >   & pt1_
 	) noexcept {
 		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
-		return ( A{} + ... + ( t0 != t1 ) );
+		return ( Int{} + ... + ( t0 != t1 ) );
 	}
 
 
 	/// Canberra distance.
-	template< floating F, std::size_t N >
+	template< arithmetic A, std::size_t N >
 	constexpr auto canberra(
-		const span< F, N >			pt0_,
-		const span< F, N >			pt1_
+		const std::array< A, N >   & pt0_,
+		const std::array< A, N >   & pt1_
 	) noexcept {
+		using F = std::common_type_t< A, double >;
 		constexpr const auto f = []( F a, F b ){
 			//			absdiff( a, b )		 / (	abs( a ) 			   + 	abs( b ) 			   ): 
-			return ( ( a > b ) ? a-b : b-a ) / ( ( ( a >= F{} ) ? a : -a ) + ( ( b >= F{} ) ? b : -b ) );
+			return ( ( a > b ) ? a-b : b-a ) / ( ( ( a >= A{} ) ? a : -a ) + ( ( b >= A{} ) ? b : -b ) );
 		};
 		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
-		return ( F{} + ... + f( t0 - t1 ) );
+		return ( A{} + ... + f( t0, t1 ) );
 	}
 
 
@@ -129,18 +114,14 @@ namespace pax {
 		const span< Int, N0 >	pt0_,
 		const span< Int, N1 >	pt1_
 	) {
-		constexpr auto min	  = []( Int a, const Int b, const Int c ) noexcept {
-			a	 = ( a < b ) ? a : b;
-			return ( a < c ) ? a : c;
-		};
-
 		if( pt1_.size() < pt0_.size() )	levenshtein( pt1_, pt0_ );
 
 		using Idx			  = std::size_t;
 		const Idx cols		  = pt0_.size() + 1u;
 		const Idx rows		  = pt1_.size() + 1u;
 
-		std::vector< Int >		t( 2*cols );
+		using Int2 = std::remove_cv_t< Int >;
+		std::vector< Int2 >		t( 2*cols );
 		auto prev			  = t.data() + cols;
 		auto now			  = t.data();
 		std::iota( now, prev, Int{} );
@@ -149,11 +130,11 @@ namespace pax {
 			std::swap( now, prev );
 			*now			  = r;
 			for( Idx c{ 1 }; c<cols; ++c ) {
-				now[ c ]	  = min(
+				now[ c ]	  = std::min({
 					prev[ c - 1u ] + ( pt0_[ c - 1u ] != pt1_[ r - 1u ] ),
 					prev[ c      ] + 1,
 					now [ c - 1u ] + 1
-				);
+				});
 			}
 		}
 		return *( now + cols - 1 );

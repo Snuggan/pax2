@@ -80,7 +80,7 @@ namespace pax {
 	};
 
 	template< typename T > 
-	constexpr auto root_detail( const T & v_, int n_ )		noexcept	{
+	constexpr T root_detail( const T & v_, int n_ )		noexcept	{
 		constexpr typename root_detail_t< T >::type			one = 1;
 		using std::pow;
 		switch( n_ ) {
