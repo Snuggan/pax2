@@ -26,9 +26,12 @@ namespace pax {
 			try{
 				const auto now					  = std::chrono::system_clock::now();
 				const auto seconds				  = std::chrono::time_point_cast< std::chrono::seconds >( now );
-				// const auto local_time			  = std::chrono::zoned_time{ std::chrono::current_zone(), seconds };
-				// std::cout << std::format( "%T ", local_time );
-				std::cout << std::vformat( "{:%T} (utc) ", std::make_format_args( seconds ) );
+#				if ( defined( __cpp_lib_chrono ) && ( __cpp_lib_chrono >= 201907L ) )
+					const auto local_time		  = std::chrono::zoned_time{ std::chrono::current_zone(), seconds };
+					std::cout << std::format( "%T ", local_time );
+#				else
+					std::cout << std::vformat( "{:%T} (utc) ", std::make_format_args( seconds ) );
+#				endif
 			} catch( ... ){}
 		}
 	};
@@ -103,8 +106,8 @@ namespace pax {
 	using Usr_sys_duration						=	Duration< Usr_sys_timer >;
 	
 	
+#if __has_boost_timer__
 	class Boost_timer {
-		static_assert( __has_boost_timer__, "Boost timer not available on this system" );
 		boost::timer::cpu_timer						m_timer;
 
 	public:
@@ -118,6 +121,7 @@ namespace pax {
 		static auto suffix()					{	return "cpu";									}
 	};
 	using Boost_duration						=	Duration< Boost_timer >;
+#endif
 
 
 	/// Cpu timer ased on clock_t and clock().
