@@ -4,7 +4,7 @@
 //	Comments are formatted for Doxygen (http://www.doxygen.nl) to read and create documentation.
 
 
-#include <pax/types/point-stuff/span-distance.hpp>
+#include <pax/types/point-stuff/distance.hpp>
 #include <pax/doctest.hpp>
 
 

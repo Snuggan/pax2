@@ -4,13 +4,13 @@
 //	Comments are formatted for Doxygen (http://www.doxygen.nl) to read and create documentation.
 
 
-#include <pax/types/point-stuff/span-base.hpp>
+#include <pax/types/point-stuff/contiguous.hpp>
 #include <pax/doctest.hpp>
 
 
 namespace pax {
 
-	DOCTEST_TEST_CASE( "span-base" ) {
+	DOCTEST_TEST_CASE( "contiguous" ) {
 		// DOCTEST_FAST_CHECK_EQ ( 42, 37 );
 	}
 	

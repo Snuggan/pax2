@@ -20,7 +20,7 @@
 #pragma once
 
 #include <pax/concepts.hpp>		// traits:: stuff.
-#include "point-stuff.hpp"
+#include "point-stuff/contiguous.hpp"
 
 #include <algorithm>			// std::ranges::equal, std::lexicographical_compare_three_way, etc.
 #include <iterator>				// std::reverse_iterator.

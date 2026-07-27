@@ -7,8 +7,8 @@
 #include "point-stuff/point.hpp"
 #include "point-stuff/box.hpp"
 #include "point-stuff/circle.hpp"
-#include "point-stuff/span-base.hpp"
-#include "point-stuff/span-distance.hpp"
+#include "point-stuff/contiguous.hpp"
+#include "point-stuff/distance.hpp"
 
 
 
