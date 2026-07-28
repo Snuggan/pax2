@@ -133,28 +133,32 @@ namespace pax {
 	/// Check if all elements in pt0_ are smaller than the counterpart in pt1_.
 	template< arithmetic A, std::size_t N >
 	constexpr bool all_lt( Point< A, N > pt0_, Point< A, N > pt1_ )				noexcept	{
-		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
+		auto [ ... t0 ] = pt0_;
+		auto [ ... t1 ] = pt1_;
 		return ( true && ... && ( t0 <  t1 ) );
 	}
 
 	/// Check if all elements in pt0_ are smaller or equal than the counterpart in pt1_.
 	template< arithmetic A, std::size_t N >
 	constexpr bool all_le( Point< A, N > pt0_, Point< A, N > pt1_ )				noexcept	{
-		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
+		auto [ ... t0 ] = pt0_;
+		auto [ ... t1 ] = pt1_;
 		return ( true && ... && ( t0 <= t1 ) );
 	}
 
 	/// Return a pairwise min() of the elements of the arguments.
 	template< arithmetic A, std::size_t N >
 	constexpr Point< A, N > min( Point< A, N > pt0_, Point< A, N > pt1_ )		noexcept	{
-		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
+		auto [ ... t0 ] = pt0_;
+		auto [ ... t1 ] = pt1_;
 		return Point< A, N >({ ( ( t0 <= t1 ) ? t0 : t1 ) ... });
 	}
 
 	/// Return a pairwise min() of the elements of the arguments.
 	template< arithmetic A, std::size_t N >
 	constexpr Point< A, N > max( Point< A, N > pt0_, Point< A, N > pt1_ )		noexcept	{
-		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
+		auto [ ... t0 ] = pt0_;
+		auto [ ... t1 ] = pt1_;
 		return Point< A, N >({ ( ( t0 >= t1 ) ? t0 : t1 ) ... });
 	}
 
@@ -162,14 +166,16 @@ namespace pax {
 	/// Add the elements pairwise.
 	template< arithmetic A, std::size_t N >
 	constexpr Point< A, N > operator+( Point< A, N > pt0_, Point< A, N > pt1_ )	noexcept	{
-		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
+		auto [ ... t0 ] = pt0_;
+		auto [ ... t1 ] = pt1_;
 		return Point< A, N >({ ( t0 + t1 ) ... });
 	}
 
 	/// Subtract the elements pairwise.
 	template< arithmetic A, std::size_t N >
 	constexpr Point< A, N > operator-( Point< A, N > pt0_, Point< A, N > pt1_ )	noexcept	{
-		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
+		auto [ ... t0 ] = pt0_;
+		auto [ ... t1 ] = pt1_;
 		return Point< A, N >({ ( t0 - t1 ) ... });
 	}
 
@@ -178,14 +184,16 @@ namespace pax {
 	template< arithmetic A, std::size_t N >
 	constexpr A distance2( Point< A, N > pt0_, Point< A, N > pt1_ )				noexcept	{
 		static constexpr auto square =			  []( A t ){ return t*t; };
-		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
+		auto [ ... t0 ] = pt0_;
+		auto [ ... t1 ] = pt1_;
 		return ( A{} + ... + square( t0 - t1 ));
 	}
 
 	/// Calculate the dot product of two points. 
 	template< arithmetic A, std::size_t N >
 	constexpr A dot_product( Point< A, N > pt0_, Point< A, N > pt1_ )			noexcept	{
-		auto [ ...t0 ] = pt0_;		auto [ ...t1 ] = pt1_;
+		auto [ ... t0 ] = pt0_;
+		auto [ ... t1 ] = pt1_;
 		return ( A{} + ... + ( t0*t1 ) );
 	}
 
