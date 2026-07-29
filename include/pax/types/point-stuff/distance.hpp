@@ -126,16 +126,16 @@ namespace pax {
 		Cont0		 && v0_,
 		Cont1		 && v1_
 	) {
-		using 		std::begin, std::size;
-		double		dot{}, nmA{}, nmB{};
-		auto		itrA = begin( v0_ );
-		auto		itrB = begin( v1_ );
-		const auto	endA = no_nullchar_end( v0_ );
+		using 			std::begin, std::size;
+		double			dot{}, nmA{}, nmB{};
+		auto			itrA = begin( v0_ );
+		auto			itrB = begin( v1_ );
+		const auto		endA = no_nullchar_end( v0_ );
 		assert( ( endA - itrA == no_nullchar_end( v1_ ) - itrB ) && "The containers must have the same number of elements." );
 		while( itrA < endA ) {
-			dot	 += *itrA * *itrB;
-			nmA	 += *itrA * *itrA;
-			nmB  += *itrB * *itrB;
+			dot		 += *itrA * *itrB;
+			nmA		 += *itrA * *itrA;
+			nmB 	 += *itrB * *itrB;
 			++itrA;	++itrB;
 		}
 		return 1 - dot / ( std::sqrt( nmA ) * std::sqrt( nmB ) );
@@ -250,7 +250,7 @@ namespace pax {
 	/// First sorts a copy of v_ and then remove doubles. Returns a std::vector.
 	template< contiguous Cont >
 	constexpr auto sorted_unique( Cont && v_ ) {
-		using std::begin, std::size;
+		using std::begin;
 		std::vector< traits::value_type_t< Cont > >		arr( no_nullchar_size( v_ ) );
 		std::copy( begin( v_ ), no_nullchar_end( v_ ), arr.begin() );
 		std::sort( arr.begin(), arr.end() );
