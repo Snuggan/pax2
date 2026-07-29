@@ -29,9 +29,7 @@ list( APPEND PAX_FLAGS
 	-Wno-unused-function				# What is unused in one target might be used in another...
 	-Wuninitialized						# Warns about uninitialized variables.
 	-ftrivial-auto-var-init=pattern		# Initiate all base type variables.
-#	-Wconversion						# Warns about implicit conversions that may change a value.
-#	-Wsign-conversion					# Warns about implicit conversions between signed and unsigned types.
-#	-Wshadow							# Warns if a variable declaration shadows one from an outer scope.
+#	-fhardened							# More checks activated through C++26. 
 )
 
 
