@@ -51,10 +51,10 @@ namespace pax::metrics {
 		}
 
 		/// Replace the Nilsson level marker {}, if any, with to_cm( nilsson_ ).
-		/// Not constexpr due to std20::format in older compilators.
+		/// Not constexpr due to std::format in older compilators.
 		static Filter parse( const std::string_view id_, const metrics_value_type nilsson_ ) {
 			if( const auto 		i = id_.find( '}' ); ( i < id_.size() ) && ( i > 0 ) && ( id_[ i-1 ] == '{' ) ) {
-				const auto 		temp = std20::format( "{}{}{}", id_.substr( 0, i-1 ), to_cm( nilsson_ ), id_.substr( i+1 ) );
+				const auto 		temp = std::format( "{}{}{}", id_.substr( 0, i-1 ), to_cm( nilsson_ ), id_.substr( i+1 ) );
 				return parse( temp, nilsson_ );
 			}
 			return parse( id_ );
@@ -104,7 +104,7 @@ namespace pax::metrics {
 		Filter( const std::string_view id_ ) 
 			: Filter{ parse( id_ ) } {
 				if( m_min >= m_max ) 
-					throw error_message( std20::format( "Could not parse filter string '{}'.", id_ ) );
+					throw error_message( std::format( "Could not parse filter string '{}'.", id_ ) );
 			}
 
 		/// Construct a filter as defined by a text string. There might be a "{}" to be replaced by the nilsson_ value.
@@ -112,7 +112,7 @@ namespace pax::metrics {
 		Filter( const std::string_view id_, const metrics_value_type nilsson_ )
 			: Filter{ parse( id_, nilsson_ ) } {
 				if( m_min >= m_max ) 
-					throw error_message( std20::format( "Could not parse filter string '{}'.", id_ ) );
+					throw error_message( std::format( "Could not parse filter string '{}'.", id_ ) );
 			}
 
 		static constexpr Filter all()						  noexcept	{	return Filter{ false, Min, Max };			}
@@ -146,10 +146,10 @@ namespace pax::metrics {
 	
 		/// The textual representation of the filter. 
 		friend std::string to_string( const Filter f_ ) {
-			return std20::format( "{}{}{}", 
+			return std::format( "{}{}{}", 
 				f_.m_first_only ? "1ret" : "all", 
-				( f_.m_min == Min ) ? std::string() : std20::format( "_ge{}cm", f_.m_min ), 
-				( f_.m_max == Max ) ? std::string() : std20::format( "_lt{}cm", f_.m_max ) 
+				( f_.m_min == Min ) ? std::string() : std::format( "_ge{}cm", f_.m_min ), 
+				( f_.m_max == Max ) ? std::string() : std::format( "_lt{}cm", f_.m_max ) 
 			);
 		}
 

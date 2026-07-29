@@ -281,7 +281,7 @@ namespace pax {
 		
 		// Check if it is ok as a table.
 		if(	count.minimum_cols() != count.maximum_cols() )		// We have rows with varying number of cols...
-			throw user_error_message( std20::format( 
+			throw user_error_message( std::format( 
 				"parse2table: Varying number of columns (smallest {}, largest {}).", 
 				count.minimum_cols(), 
 				count.maximum_cols()
@@ -323,7 +323,7 @@ namespace pax {
 			std::string						str;
 			str.reserve( col_types_.size()*64 );
 			for( const auto cell : header_splitter_ ) 	// Iterate cell by cell along the header row.
-				str						 += std20::format( td2, col_types_[ idx++ ].view(), cell );
+				str						 += std::format( td2, col_types_[ idx++ ].view(), cell );
 			return str;
 		}
 
@@ -339,8 +339,8 @@ namespace pax {
 			for( const auto cell : row_splitter_ ) {	// Iterate cell by cell along one row.
 				const auto tooltips		  = split_by( cell, '|' );	// "<first/cell-contents>|<second/cell-tooltip>"
 				str_					 += tooltips.second.empty()
-												? std20::format( td1, tooltips.first )
-												: std20::format( td2, tooltips.second, tooltips.first );
+												? std::format( td1, tooltips.first )
+												: std::format( td2, tooltips.second, tooltips.first );
 				if( ( idx < numeric_.size() ) && !numeric_[ idx ].is_nonnumeric() )
 					numeric_[ idx ]+= Strtype( tooltips.first );
 				++idx;
@@ -375,12 +375,12 @@ namespace pax {
 			std::string						css2;
 			for( std::size_t c{}; c<col_types.size(); ++c ) {
 				if( col_types[ c ].is_numeric() )
-					css2+= std20::format( "\ttd:nth-of-type({}) {{ text-align:right; }}\n", c+1 );
+					css2+= std::format( "\ttd:nth-of-type({}) {{ text-align:right; }}\n", c+1 );
 			}
 
 			// Output metadata for the table, if required.
 			if( metadata2cout_ ) {
-				std::cerr << std20::format( 
+				std::cerr << std::format( 
 					"\nTable: \"{}\"\n"
 					"  Column separator: {:?}\n"	// gcc reacts that {:?} (output escaped characters) " "...
 					"  Rows:             {}{}\n"
@@ -388,19 +388,19 @@ namespace pax {
 					title_, 
 					meta.col_delimiter(), 
 					meta.rows(), ( meta.rows() == meta.non_empty_rows() ) 
-						? std::string{} : std20::format( " ({} non-empty)", meta.non_empty_rows() ), 
+						? std::string{} : std::format( " ({} non-empty)", meta.non_empty_rows() ), 
 					( ( meta.minimum_cols() == meta.maximum_cols() )
-						? std20::format( "{}", meta.minimum_cols() )
-						: std20::format( "min {}, max {} ({} in header)", 
+						? std::format( "{}", meta.minimum_cols() )
+						: std::format( "min {}, max {} ({} in header)", 
 							meta.minimum_cols(), meta.maximum_cols(), meta.cols_in_first() ) )
 				);
 				std::size_t 	i{};
 				for( const auto col : String_view_splitter( header, meta.col_delimiter() ) ) 
-					std::cerr << std20::format( "    {:15?} {}\n", col, col_types[ i++ ].view() );
+					std::cerr << std::format( "    {:15?} {}\n", col, col_types[ i++ ].view() );
 			}
 
 			// Collect the result.
-			return std20::format( html_table_template,
+			return std::format( html_table_template,
 				title_, css2, process_header( String_view_splitter( header, meta.col_delimiter() ), col_types ), body 
 			);
 		}

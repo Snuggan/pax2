@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "../std/format.hpp"
+#include <format>
 #include <string_view>
 #include <iterator>		// std::input_iterator
 
@@ -16,14 +16,14 @@ namespace pax {
 	template< typename T >
 	struct To_string {
 		static constexpr std::string to_string( const T & t_ ) {
-			return std20::format( "{}", t_ );
+			return std::format( "{}", t_ );
 		}
 
 		static std::string to_string( 
 			const T				  & t_, 
 			const std::string_view	fmt_
 		) {
-			return std20::format( std20::runtime_format( fmt_ ), t_ );
+			return std::format( std::runtime_format( fmt_ ), t_ );
 		}
 	};
 
@@ -64,7 +64,7 @@ namespace pax {
 		using base				  = To_string< decltype( *Itr{} ) >;
 
 		static constexpr std::string to_string( const Itr itr_ ) {
-			return std20::format( "{}", static_cast< const void* >( itr_ ) );
+			return std::format( "{}", static_cast< const void* >( itr_ ) );
 		}
 
 		static constexpr std::string to_string(
@@ -121,7 +121,7 @@ namespace pax {
 		) {
 			static_assert( ( true && ... && ( I < rank ) ) );
 			using std::get;
-			return std20::format(
+			return std::format(
 				fmt + ( fmtSz - rank )*4, 
 				To_string< std::tuple_element_t< I, Tuple > >::to_string( get< I >( t_ ) )... 
 			);
@@ -131,8 +131,8 @@ namespace pax {
 		/// Convert to a string formed like "{ value1, value2, ... }". 
 		/// Format is "{}".
 		static constexpr std::string to_string( const Tuple & t_ ) {
-			// return std20::format( "({})", to_string( t_, Indices{} ) );
-			return std20::format( "{}", t_ );
+			// return std::format( "({})", to_string( t_, Indices{} ) );
+			return std::format( "{}", t_ );
 		}
 	};
 

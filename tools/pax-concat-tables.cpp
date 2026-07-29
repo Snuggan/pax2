@@ -64,7 +64,7 @@ namespace pax {
 			const auto args		  = parameters.parse( argc, argv );
 			source				  = args.cast< std::filesystem::path >( "source" );
 			dest				  = args.cast< std::filesystem::path >( "dest" );
-			trouble				  = std20::format( "Tool\t{}\nSource\t{}\nDestinatrion\t{}\n", 
+			trouble				  = std::format( "Tool\t{}\nSource\t{}\nDestinatrion\t{}\n", 
 										meta2.name(), to_string( source ), to_string( dest ) );
 
 			const auto meta_res	  = concat_tables( source, dest, args.flag( "verbose" ), args.cast< std::size_t >( "count" ) );
@@ -82,7 +82,7 @@ namespace pax {
 		catch( const std::exception & e_ )	{	std::cerr << ( error_message( e_.what() ) << trouble ).what();				} 
 		catch( ... ) 						{	std::cerr << ( error_message( "<Unknown_exception>" ) << trouble ).what();	}
 
-		const auto failure = std20::format( ANSI_BOLD"{} failed to concat {}\n" ANSI_RESET, meta2.name(), to_string( source ) );
+		const auto failure = std::format( ANSI_BOLD"{} failed to concat {}\n" ANSI_RESET, meta2.name(), to_string( source ) );
 		fprintf( stderr, "%s", failure.c_str() );
 		return EXIT_FAILURE;
 	}

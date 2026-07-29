@@ -77,7 +77,7 @@ namespace pax {
 		catch( const std::exception & e_ )	{	std::cerr << e_.what() << '\n';				}
 		catch( ... ) 						{	std::cerr << "<Unknown_exception>\n";		}
 
-		const auto failure = std20::format( ANSI_BOLD"{} failed.\n" ANSI_RESET, meta.name() );
+		const auto failure = std::format( ANSI_BOLD"{} failed.\n" ANSI_RESET, meta.name() );
 		fprintf( stderr, "%s", failure.c_str() );
 		return EXIT_FAILURE;
 	}

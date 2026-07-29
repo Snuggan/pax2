@@ -256,7 +256,7 @@ namespace pax {
 				writer->execute( points->table() );
 			}
 		} catch( const std::exception & error_ ) {
-			throw error_message( std20::format( "Plot_w_points: {}. (Saving point cloud of plot '{}' to file '{}'.)",
+			throw error_message( std::format( "Plot_w_points: {}. (Saving point cloud of plot '{}' to file '{}'.)",
 				error_.what(), Plot_w_id::id(), to_string( plot_points_dest )
 			) );
 		}
@@ -281,15 +281,15 @@ namespace pax {
 			if( !plots_.empty() && !plot_metrics_dest_.empty() && !metrics_.empty() ) {
 				const std::size_t 				id_col = plots_table_.header().index( id_col_name_ );
 				if( id_col == -1u )
-					throw error_message( std20::format( "In the plots table, there is no column \"{}\".", id_col_name_ ) );
+					throw error_message( std::format( "In the plots table, there is no column \"{}\".", id_col_name_ ) );
 
 				// Create an unordered map of all id -> index in plots_.
 				std::unordered_map< std::string, std::size_t >		plot_id_idx{};
 				for( std::size_t i{}; i<plots_.size(); ++i )		plot_id_idx.insert( { plots_[ i ].id(), i } );
 
 				if( plot_id_idx.size() != plots_.size() ) {
-					std::cerr << std20::format( "plot_id_idx: {}\n", plot_id_idx );
-					throw error_message( std20::format( 
+					std::cerr << std::format( "plot_id_idx: {}\n", plot_id_idx );
+					throw error_message( std::format( 
 						"plot_id_idx should have {} elements, but only has {}. "
 						"Are you sure that column \"{}\" has unique values on every row, no value ever repeated?", 
 						plots_.size(), plot_id_idx.size(), id_col_name_
@@ -308,7 +308,7 @@ namespace pax {
 							table_row_ok.insert( i );
 						}
 					if( table_row_ok.size() != plots_.size() )
-						throw error_message( std20::format( "table_row_ok should have {} elements, but has {}.", 
+						throw error_message( std::format( "table_row_ok should have {} elements, but has {}.", 
 							plots_.size(), table_row_ok.size() ) );
 
 					const auto predicate = [ &table_row_ok ]( std::size_t i ) { 
@@ -319,7 +319,7 @@ namespace pax {
 				}
 
 				if( reduced_table.rows() != plots_.size() )
-					throw error_message( std20::format( "Reduced table should have {} rows, but has {}.", 
+					throw error_message( std::format( "Reduced table should have {} rows, but has {}.", 
 						plots_.size(), reduced_table.rows() ) );
 
 				{	// Create a Text_table with the metrics and insert it into reduced_table.
@@ -329,9 +329,9 @@ namespace pax {
 					// Stream the header.
 					if( metric_names.size() ) {
 						auto					itr = metric_names.begin();
-						out << std20::format( "{}",   *itr );
+						out << std::format( "{}",   *itr );
 						while( ++itr < metric_names.end() )	
-							out << std20::format( merge_items, *itr );
+							out << std::format( merge_items, *itr );
 					}
 
 					// Stream those metric rows that have actual metric values.
@@ -343,8 +343,8 @@ namespace pax {
 
 						auto				  & metric_aggrs = plots_[ plot_idx ].metric_aggregator();
 						auto					itr   = begin;
-						out << std20::format( "\n{}", itr->calculate( metric_aggrs ) );
-						while( ++itr < end )	out << std20::format( merge_items, itr->calculate( metric_aggrs ) );
+						out << std::format( "\n{}", itr->calculate( metric_aggrs ) );
+						while( ++itr < end )	out << std::format( merge_items, itr->calculate( metric_aggrs ) );
 					}
 					
 					// Create a table and insert it into the original.
@@ -356,7 +356,7 @@ namespace pax {
 				reduced_table.save( plot_metrics_dest_ );
 			}
 		} catch( const std::exception & error_ ) {
-			throw error_message( std20::format( "{} (Metrics are {}, destination is '{}'.)", 
+			throw error_message( std::format( "{} (Metrics are {}, destination is '{}'.)", 
 				error_.what(), std::span( metric_names ), to_string( plot_metrics_dest_ )
 			) );
 		}

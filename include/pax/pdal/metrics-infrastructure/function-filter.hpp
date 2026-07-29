@@ -19,7 +19,7 @@ namespace pax::metrics {
 		static Function_filter metric_id_divide( const std::string_view id_, Nilsson && ...nilsson_ ) {
 			const auto			divide = id_.find( function_filter_divider );
 			if( divide >= id_.size() )
-				throw error_message( std20::format( "No divisor '{}' of function and filter parts found in '{}'.", function_filter_divider, id_ ) );
+				throw error_message( std::format( "No divisor '{}' of function and filter parts found in '{}'.", function_filter_divider, id_ ) );
 
 			return Function_filter(
 				Function( id_.substr( 0, divide ) ), 
@@ -82,7 +82,7 @@ namespace pax::metrics {
 		}
 		
 		friend std::string to_string( const Function_filter	ff_ ) {
-			return std20::format( "{}{}{}", to_string( ff_.m_function ), function_filter_divider, to_string( ff_.m_filter ) );
+			return std::format( "{}{}{}", to_string( ff_.m_function ), function_filter_divider, to_string( ff_.m_filter ) );
 		}
 		
 		template< typename Out >
@@ -191,7 +191,7 @@ namespace pax::metrics {
 		Out									  & out_, 
 		const std::span< Function_filter >	  & items_
 	) {
-		return std20::format_to( out_, "{}", items_ );
+		return std::format_to( out_, "{}", items_ );
 	}
 
 }	// namespace pax::metrics

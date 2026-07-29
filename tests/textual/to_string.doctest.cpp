@@ -45,7 +45,7 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( to_string( arr, "{:f}" ),			"[1.000000, 2.000000, 3.000000]" );
 
 		DOCTEST_FAST_CHECK_EQ( to_string( std::span( a0 ), "'{}'" ),		"['1', '2', '3']" );
-		DOCTEST_FAST_CHECK_EQ( std20::format( "'{}'", std::span( a0 ) ),	"'[1, 2, 3]'" );
+		DOCTEST_FAST_CHECK_EQ( std::format( "'{}'", std::span( a0 ) ),	"'[1, 2, 3]'" );
 	}
 	DOCTEST_TEST_CASE( "format tuple" ) {
 		DOCTEST_FAST_CHECK_EQ( to_string( std::make_tuple( 1 ) ),	"(1)" );

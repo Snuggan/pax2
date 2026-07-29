@@ -67,13 +67,6 @@ namespace pax {
 			static constexpr unsigned     version[]			=	{ @doctest_VERSION_ARRAY@ };
 		};
 
-		struct fmt {			//	https://github.com/fmtlib/fmt
-			static constexpr const char * name				=	"fmt";
-			static constexpr const char * named_version		=	"fmt @FMT_VERSION@";
-			static constexpr unsigned     version[]			=	{ @FMT_VERSION_ARRAY@ };
-			static constexpr const char * include_dir		=	"@FORMAT@";
-		};
-
 		struct fast_float {		//	https://github.com/fastfloat/fast_float
 			static constexpr const char * name				=	"fast_float";
 			static constexpr const char * named_version		=	"fast_float @FAST_FLOAT_VERSION@";

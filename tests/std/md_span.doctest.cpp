@@ -43,7 +43,7 @@ namespace pax {
 	) {
 		static constexpr Size	D = Rank - Dim - 1;
 		if constexpr( Dim == Rank ) {
-			// std::cout << std20::format( "Execute: {}: {} ({})\n", idx_, Dim, exts_ );
+			// std::cout << std::format( "Execute: {}: {} ({})\n", idx_, Dim, exts_ );
 			fn_( idx_ );
 		} else while( idx_[ D ] < exts_[ D ] ) {
 			loop_the_loop< Dim + 1 >( idx_, exts_, fn_ );
@@ -100,7 +100,7 @@ namespace pax {
 				std::span( idx ), 
 				std::span( exts ), 
 				[ &md_, &old_idx_ ]( const std::span< Size, Rank > idx_ ){
-					const auto index = std20::format( "{}", idx_ );
+					const auto index = std::format( "{}", idx_ );
 					DOCTEST_CAPTURE( index );
 						const auto	key = ( idx_ < old_idx_ ) ? chsum( idx_ ) : 0;
 						DOCTEST_FAST_CHECK_EQ( md_[ idx_ ], key );
@@ -125,7 +125,7 @@ namespace pax {
 				std::span( idx ), 
 				std::span( smaller_exts ), 
 				[ &srce_, &dest_ ]( const std::span< Size, Rank > idx_ ){
-					std::cout << std20::format( "{}: value {} and {} (index {} and {})\n", idx_,
+					std::cout << std::format( "{}: value {} and {} (index {} and {})\n", idx_,
 						srce_[ idx_ ],
 						dest_[ idx_ ],
 						&srce_[ idx_ ] - srce_.data_handle(),

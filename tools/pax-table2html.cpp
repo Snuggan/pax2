@@ -63,7 +63,7 @@ namespace pax {
 			source_path				  = args().front();
 			dest_path				  = args.cast< std::filesystem::path >( "dest" );
 			auto title				  = args.cast< std::string           >( "title" );
-			trouble					  = std20::format( "Tool\t{}\nSource\t{}\nDestinatrion\t{}\n", 
+			trouble					  = std::format( "Tool\t{}\nSource\t{}\nDestinatrion\t{}\n", 
 											meta2.name(), to_string( source_path ), to_string( dest_path ) );
 
 			const std::string html	  = table2html( 
@@ -81,7 +81,7 @@ namespace pax {
 		catch( const std::exception & e_ )	{	std::cerr << ( error_message( e_.what() ) << trouble ).what();				} 
 		catch( ... ) 						{	std::cerr << ( error_message( "<Unknown_exception>" ) << trouble ).what();	}
 
-		const auto failure = std20::format( ANSI_BOLD"{} failed to to produce a html table {}\n" ANSI_RESET, meta2.name(), to_string( source_path ) );
+		const auto failure = std::format( ANSI_BOLD"{} failed to to produce a html table {}\n" ANSI_RESET, meta2.name(), to_string( source_path ) );
 		fprintf( stderr, "%s", failure.c_str() );
 		return EXIT_FAILURE;
 	}

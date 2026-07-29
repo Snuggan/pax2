@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <pax/std/format.hpp>	// std20::formatter
+#include <format>	// std::formatter
 
 
 namespace pax {
@@ -87,7 +87,7 @@ namespace pax {
 
 }	// namespace pax
 
-namespace std20 {
+namespace std {
 	template< auto N, typename Tag >
 	struct formatter< pax::Statique< N, Tag > > : formatter< decltype( N ) > {
 	    constexpr auto format( const pax::Statique< N, Tag > & stat_, format_context & ctx_ )	const {

@@ -47,7 +47,7 @@ namespace pax {
 	struct From_string< Num > {
 	private:
 		static auto report( const std::string_view text_ ) {
-			return error_message( std20::format( "Could not convert '{}' to numerical.", text_ ) );
+			return error_message( std::format( "Could not convert '{}' to numerical.", text_ ) );
 		}
 
 	public:

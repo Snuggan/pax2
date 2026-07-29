@@ -2,13 +2,13 @@
 //	Contact: peder ( at ) axensten.se
 
 
-#include <pax/std/format.hpp>
 #include <pax/std/span.hpp>
 #include <pax/doctest.hpp>
 
 #include <sstream>
 #include <array>
 #include <vector>
+#include <format>
 
 
 namespace pax {
@@ -80,32 +80,32 @@ namespace pax {
 	DOCTEST_TEST_CASE( "std::format output" ) {
 		{
 			constexpr std::span< const int >		ints( ints0 );
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", first( ints, 0 ) ),			"[]" );
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", first( ints, 1 ) ),			"[0]" );
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", first( ints, 3 ) ),			"[0, 1, 2]" );
+			DOCTEST_FAST_CHECK_EQ( std::format( "{}", first( ints, 0 ) ),			"[]" );
+			DOCTEST_FAST_CHECK_EQ( std::format( "{}", first( ints, 1 ) ),			"[0]" );
+			DOCTEST_FAST_CHECK_EQ( std::format( "{}", first( ints, 3 ) ),			"[0, 1, 2]" );
 		}
 		{
 			constexpr std::span< const double >		doubles( doubles0 );
 
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", first( doubles, 0 ) ),		"[]" );
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", first( doubles, 1 ) ),		"[0]" );
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{}", first( doubles, 3 ) ),		"[0, 1, 2]" );
+			DOCTEST_FAST_CHECK_EQ( std::format( "{}", first( doubles, 0 ) ),		"[]" );
+			DOCTEST_FAST_CHECK_EQ( std::format( "{}", first( doubles, 1 ) ),		"[0]" );
+			DOCTEST_FAST_CHECK_EQ( std::format( "{}", first( doubles, 3 ) ),		"[0, 1, 2]" );
 
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{:.3f}", 3.14 ),	"3.140" );
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{::.3f}", first( doubles, 0 ) ),	"[]" );
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{::.3f}", first( doubles, 1 ) ),	"[0.000]" );
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{::.3f}", first( doubles, 3 ) ),	"[0.000, 1.000, 2.000]" );
+			DOCTEST_FAST_CHECK_EQ( std::format( "{:.3f}", 3.14 ),	"3.140" );
+			DOCTEST_FAST_CHECK_EQ( std::format( "{::.3f}", first( doubles, 0 ) ),	"[]" );
+			DOCTEST_FAST_CHECK_EQ( std::format( "{::.3f}", first( doubles, 1 ) ),	"[0.000]" );
+			DOCTEST_FAST_CHECK_EQ( std::format( "{::.3f}", first( doubles, 3 ) ),	"[0.000, 1.000, 2.000]" );
 		}
 		{
 			constexpr char const	  * strs[]	= { "abc", "def", "ghi", ">\t<" };
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{}",    first( strs, 4 ) ),		"[\"abc\", \"def\", \"ghi\", \">\\t<\"]" );
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{::?}", first( strs, 4 ) ),		"[\"abc\", \"def\", \"ghi\", \">\\t<\"]" );
+			DOCTEST_FAST_CHECK_EQ( std::format( "{}",    first( strs, 4 ) ),		"[\"abc\", \"def\", \"ghi\", \">\\t<\"]" );
+			DOCTEST_FAST_CHECK_EQ( std::format( "{::?}", first( strs, 4 ) ),		"[\"abc\", \"def\", \"ghi\", \">\\t<\"]" );
 
 			constexpr std::span			sp( "abc\t", 4u );
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{}",   sp ),						"['a', 'b', 'c', '\\t']" );
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{}",	  std::string_view( sp ) ),	 "abc\t\0" );
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{::?}", sp ),					"['a', 'b', 'c', '\\t']" );
-			DOCTEST_FAST_CHECK_EQ( std20::format( "{:?}", std::string_view( sp ) ),	 "\"abc\\t\"" );
+			DOCTEST_FAST_CHECK_EQ( std::format( "{}",   sp ),						"['a', 'b', 'c', '\\t']" );
+			DOCTEST_FAST_CHECK_EQ( std::format( "{}",	  std::string_view( sp ) ),	 "abc\t\0" );
+			DOCTEST_FAST_CHECK_EQ( std::format( "{::?}", sp ),					"['a', 'b', 'c', '\\t']" );
+			DOCTEST_FAST_CHECK_EQ( std::format( "{:?}", std::string_view( sp ) ),	 "\"abc\\t\"" );
 		}
 	}
 

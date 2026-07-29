@@ -78,7 +78,7 @@ namespace pax { namespace cmd_args {
 		/// Constant access to parameter param_'s arguments. If no argument is given, the anonymous arguments are returned. 
 		std::span< const value_type > operator()( const String_view param_ = id_anonymous ) const {
 			const auto itr							  = m_map.find( String( param_ ) );
-			if( itr == m_map.end() )					throw user_error_message( std20::format( "Unknown parameter '--{}'.", param_ ) );
+			if( itr == m_map.end() )					throw user_error_message( std::format( "Unknown parameter '--{}'.", param_ ) );
 			return { itr->second.data(), itr->second.size() };
 		}
 
@@ -87,9 +87,9 @@ namespace pax { namespace cmd_args {
 		T cast( const String_view param_ ) 				const			{
 			const auto v							  = operator()( param_ );
 			switch( v.size() ) {
-				case 0: 	throw  user_error_message( std20::format( "Parameter '--{}' has no value.", param_ ) );
+				case 0: 	throw  user_error_message( std::format( "Parameter '--{}' has no value.", param_ ) );
 				case 1: 	return Convert< T >::convert( v.front() );
-				default: 	throw  user_error_message( std20::format( "Parameter '--{}' has multiple values.", param_ ) );
+				default: 	throw  user_error_message( std::format( "Parameter '--{}' has multiple values.", param_ ) );
 			}
 		}
 		
@@ -98,7 +98,7 @@ namespace pax { namespace cmd_args {
 		value_type one_of( const String_view param_, const Container & one_of_ ) const {
 			const auto v							  = cast< String_view >( param_ );
 			for( const String_view one : one_of_ )		if( v == one )		return String( v );
-			throw user_error_message( std20::format( "'{}' (value of '--{}') is not one of the required values.", v, param_ ) );
+			throw user_error_message( std::format( "'{}' (value of '--{}') is not one of the required values.", v, param_ ) );
 		}
 		
 		/// Is the flag argument 'on'? (Throws for non-flag parameters.)
@@ -108,7 +108,7 @@ namespace pax { namespace cmd_args {
 				if( is_flag_on ( String_view( v.front() ) ) )	return true;
 				if( is_flag_off( String_view( v.front() ) ) )	return false;
 			}
-			throw user_error_message( std20::format( "Parameter '--{}' is not a flag.", param_ ) );
+			throw user_error_message( std::format( "Parameter '--{}' is not a flag.", param_ ) );
 		}
 		
 		/// const begin() iterator.
@@ -133,7 +133,7 @@ namespace pax { namespace cmd_args {
 		template< typename Param >
 		void insert( const Param & param_ ) {
 			const auto result = m_map.insert( std::pair( param_.id(), Container{} ) );
-			if( !result.second )	throw user_error_message( std20::format( "Multiple parameters with the same name: '--{}'.", param_.id() ) );
+			if( !result.second )	throw user_error_message( std::format( "Multiple parameters with the same name: '--{}'.", param_.id() ) );
 			if     ( param_.is_on_flag()  )	result.first->second.push_back( value_type( id_flag_on  ) );
 			else if( param_.is_off_flag() )	result.first->second.push_back( value_type( id_flag_off ) );
 		}
@@ -155,7 +155,7 @@ namespace pax { namespace cmd_args {
 				// The value following a flag will go to anonymous. 
 				if( !value_.empty() )					get( id_anonymous ).emplace_back( value_ );
 			} else if( arg_id_ != param_.id() ) {
-				throw user_error_message( std20::format( "Unknown parameter '--{}'.", arg_id_ ) );
+				throw user_error_message( std::format( "Unknown parameter '--{}'.", arg_id_ ) );
 			} else if( param_.is_multiple() ) {
 				// The parameter can handle multiple values -- check for value delimiter.
 				auto									next{ value_.begin() };
@@ -177,7 +177,7 @@ namespace pax { namespace cmd_args {
 		// Find the mapped value of parameter param_ (param_ might have prefix 'no-').
 		Container & get( const String_view param_ ) {
 			const auto itr							  = m_map.find( String( param_ ) );
-			if( itr == m_map.end() )					throw user_error_message( std20::format( "Unknown parameter '--{}'.", param_ ) );
+			if( itr == m_map.end() )					throw user_error_message( std::format( "Unknown parameter '--{}'.", param_ ) );
 			return itr->second;
 		}
 

@@ -82,7 +82,7 @@ namespace pax::metrics {
 		/// Throws if the string can't be parsed correctly, so every Function instance is valid. 
 		Function( const std::string_view id_ ) : Function{ parse( id_ ) } {
 			if( m_function == f_unidentified )
-				throw error_message( std20::format( "Metric function identification failed: could not properly parse '{}'", id_ ) );
+				throw error_message( std::format( "Metric function identification failed: could not properly parse '{}'", id_ ) );
 		}
 		
 		static constexpr Function count()							  noexcept	{	return Function( f_count );		}
@@ -141,7 +141,7 @@ namespace pax::metrics {
 		/// The textual representation of the filter. 
 		friend std::string to_string( const Function f_ )						{
 			switch( f_.m_function ) {
-				case f_pN: 			return std20::format( "p{}", f_.m_percentile );
+				case f_pN: 			return std::format( "p{}", f_.m_percentile );
 				default: 			return id_descr[ int( f_.m_function ) ].id;
 			}
 		}
@@ -149,7 +149,7 @@ namespace pax::metrics {
 		template< typename Out >
 		static void help( Out & out_, const std::string_view pre_ ) 			{
 			for( auto i : id_descr ) if( i.descr[ 0 ] != 0 )
-				out_ << std20::format( "{}    {:10}{}\n", pre_, i.id, i.descr );
+				out_ << std::format( "{}    {:10}{}\n", pre_, i.id, i.descr );
 		}
 
 		template< typename Out >

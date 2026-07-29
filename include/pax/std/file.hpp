@@ -32,7 +32,7 @@ namespace pax {
 		const std::source_location	  & sl_ = std::source_location::current()
 	) {
 		return error_message( message_, ec_, sl_ )
-			<< std20::format( "Path\t'{}'", to_string( path_ ) );
+			<< std::format( "Path\t'{}'", to_string( path_ ) );
 	}
 
 
@@ -222,7 +222,7 @@ namespace pax {
 		} catch( ... ) {
 			result.resize( 0 );		// Error report just below...
 		}		
-		if( result.size() != size ) throw error_message( std20::format( 
+		if( result.size() != size ) throw error_message( std::format( 
 			"Reading text file '{}', could not allocate a string of size {} ({}).", 
 			to_string( path_ ), 
 			size, 
@@ -306,7 +306,7 @@ namespace pax {
 		/// Same as done(), but throws if there is an error.
 		std::error_code done_with_assert()			const			{
 			const std::error_code					ec{ done() };
-			if( ec ) throw error_message( std20::format(
+			if( ec ) throw error_message( std::format(
 				"Safe file save: could not rename the temporary file '{}' to the destination path '{}', due to error code {} ({}).", 
 				to_string( temporary() ), 
 				to_string( destination() ), 
@@ -341,7 +341,7 @@ namespace pax {
 		explicit Safe_ofstream( Temppath && temp_, Extra_args && ...extras_ ) : stream_type{}, m_temp( std::move( temp_ ) ) {
 			errno = 0;
 			stream_type::open( m_temp.temporary(), std::forward< Extra_args >( extras_ )... );
-			if( !*this ) throw error_message( std20::format( 
+			if( !*this ) throw error_message( std::format( 
 				"Saving to temporary file '{}': could not open it{}. Final destination is '{}'.",
 				to_string( m_temp.temporary() ),
 				to_string( make_error_code( errno ) ),
@@ -354,7 +354,7 @@ namespace pax {
 			// Close the output stream before renaming.
 			errno = 0;
 			stream_type::close();
-			if( !*this ) throw error_message( std20::format( 
+			if( !*this ) throw error_message( std::format( 
 				"Saving to temporary file '{}': could not save all contents{}. Final destination is '{}'.",
 				to_string( m_temp.temporary() ),
 				to_string( make_error_code( errno ) ),

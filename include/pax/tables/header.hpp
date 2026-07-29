@@ -68,7 +68,7 @@ namespace pax {
 				if( i < size() )			idxs.push_back( i );
 				else						missing+= std::string( missing.empty() ? "\"" : "\", \"" ) + id;
 			}
-			if( missing.size() )			throw error_message( std20::format( "Missing column[s]: {}\".", missing ) );
+			if( missing.size() )			throw error_message( std::format( "Missing column[s]: {}\".", missing ) );
 			return idxs;
 		}
 

@@ -222,21 +222,6 @@ else()
 endif()
 
 
-### fmt metadata
-#set( FORMAT "${PAX_DIRECTORY}/external/fmt/core.h" )
-set( FORMAT "${PAX_DIRECTORY}/external/fmt/base.h" )
-file( READ ${FORMAT} fmt_version_h )
-if( fmt_version_h MATCHES "FMT_VERSION ([0-9]+)([0-9][0-9])([0-9][0-9])" )
-	math( EXPR FMT_VERSION_MAJOR ${CMAKE_MATCH_1} )	# Use math to skip leading zeros if any.
-	math( EXPR FMT_VERSION_MINOR ${CMAKE_MATCH_2} )
-	math( EXPR FMT_VERSION_PATCH ${CMAKE_MATCH_3} )
-	list( APPEND FMT_VERSION_ARRAY ${FMT_VERSION_MAJOR} ${FMT_VERSION_MINOR} ${FMT_VERSION_PATCH} )
-	list( JOIN FMT_VERSION_ARRAY "."  FMT_VERSION )
-	list( JOIN FMT_VERSION_ARRAY ", " FMT_VERSION_ARRAY )
-endif ()
-message( STATUS "fmt:            ${FMT_VERSION}" )
-
-
 ### fast_float metadata
 set( FAST_FLOAT "${PAX_DIRECTORY}/external/fast_float" )
 set( FAST_FLOAT_VERSION "${FAST_FLOAT}/float_common.h" )

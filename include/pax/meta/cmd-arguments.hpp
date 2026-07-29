@@ -274,9 +274,9 @@ namespace pax::cmd_args {
 			m_abbreviation{ abbreviation_ }
 		{
 			for( const auto c : id_ ) if( !std::isalnum( c ) && ( c != Char( '-' ) ) && ( c != Char( '_' ) ) )
-				throw user_error_message( std20::format( "Parameter '--{}' contains an illegal character '{}'.", id_, c ) );
+				throw user_error_message( std::format( "Parameter '--{}' contains an illegal character '{}'.", id_, c ) );
 			if( !std::isgraph( abbreviation_ ) && ( abbreviation_ != '-' ) && ( abbreviation_ != 0 ) )
-				throw user_error_message( std20::format( "Abbreviation '-{}' of parameter '--{}' is an illegal character.", abbreviation_, id_ ) );
+				throw user_error_message( std::format( "Abbreviation '-{}' of parameter '--{}' is an illegal character.", abbreviation_, id_ ) );
 			m_set( std::forward< Properts >( properties_ )... );
 		}
 	
@@ -306,16 +306,16 @@ namespace pax::cmd_args {
 		template< typename Out >
 		Out & description( Out & out_ ) 		const			{
 			if( visible() ) {
-				std::string						str = std20::format( "--{} ", id() );
-				if( abbreviation() != 0 )		str = std20::format( "-{} {}", abbreviation(), str );
-				Terminal{}.wrap( out_, 25, std20::format( 
+				std::string						str = std::format( "--{} ", id() );
+				if( abbreviation() != 0 )		str = std::format( "-{} {}", abbreviation(), str );
+				Terminal{}.wrap( out_, 25, std::format( 
 					"  {:23}{} [{}{}]\n", 
 						str, 
 						m_description, 
 						this->meta(),
 						m_default_value.empty() 
 							? ""
-							: std20::format( "='{}'", m_default_value.value() ) 
+							: std::format( "='{}'", m_default_value.value() ) 
 				) );
 			}
 			return out_;
@@ -327,19 +327,19 @@ namespace pax::cmd_args {
 			switch( this->type() ) {
 				case scalar().type():
 					if( values_.size() > 1 )
-						throw user_error_message( std20::format( "Parameter '--{}' is a scalar, but was given multiple values '{}' and '{}'.",
+						throw user_error_message( std::format( "Parameter '--{}' is a scalar, but was given multiple values '{}' and '{}'.",
 							id(), values_.front(), values_.back() ) );
 					[[fallthrough]];
 				case one_or_more_values().type():
 					if( values_.empty() && m_default_value.empty() )
-						throw user_error_message( std20::format( "Parameter '--{}' requires a value, but none was given.", id() ) );
+						throw user_error_message( std::format( "Parameter '--{}' requires a value, but none was given.", id() ) );
 					break;
 				case on_flag().type():
 				case off_flag().type():
 					if( values_.size() != 1 )
-						throw user_error_message( std20::format( "Parameter '--{}' is a flag and should not be given values.", id() ) );
+						throw user_error_message( std::format( "Parameter '--{}' is a flag and should not be given values.", id() ) );
 					if( !is_flag_on( String_view( values_.front() ) ) && !is_flag_off( String_view( values_.front() ) ) )
-						throw user_error_message( std20::format( "Parameter '--{}' is a flag but was given a value ('{}').", id(), values_.front() ) );
+						throw user_error_message( std::format( "Parameter '--{}' is a flag but was given a value ('{}').", id(), values_.front() ) );
 					break;
 				case zero_or_more_values().type():
 					break;
@@ -406,11 +406,11 @@ namespace pax::cmd_args {
 				for( const Group & group : groups_ ) for( const Parameter & param_ : group ) {
 					const auto in		  = m_longs.insert( std::pair( param_.id(),  param_ ) );
 					if( !in.second )
-						throw user_error_message( std20::format( "Multiple definitions of parameter '--{}'.", param_.id() ) );
+						throw user_error_message( std::format( "Multiple definitions of parameter '--{}'.", param_.id() ) );
 					if( param_.abbreviation() ) {
 						const auto in	  = m_abbrevs.insert( std::pair( param_.abbreviation(), param_.id() ) );
 						if( !in.second )
-							throw user_error_message( std20::format( "Multiple parameters ('--{}' and '--{}') have the same abbreviation '-{}'.", 
+							throw user_error_message( std::format( "Multiple parameters ('--{}' and '--{}') have the same abbreviation '-{}'.", 
 												in.first->second, param_.id(), param_.abbreviation() ) );
 					}
 				}
@@ -428,14 +428,14 @@ namespace pax::cmd_args {
 			// What is the long id of abbreviation_?
 			String_view long_id( const Char abbreviation_ )			const			{
 				const auto itr = m_abbrevs.find( abbreviation_ );
-				if( itr == m_abbrevs.end() )	throw user_error_message( std20::format( "Unknown parameter abbreviation '-{}'.", abbreviation_ ) );
+				if( itr == m_abbrevs.end() )	throw user_error_message( std::format( "Unknown parameter abbreviation '-{}'.", abbreviation_ ) );
 				return itr->second;
 			}
 
 			// Get the parameter.
 			const Parameter & parameter( const String_view long_ )	const			{
 				const auto itr = m_longs.find( String( Parameter::base_name( long_ ) ) );
-				if( itr == m_longs.end() )		throw user_error_message( std20::format( "Unknown parameter '--{}'.", long_ ) );
+				if( itr == m_longs.end() )		throw user_error_message( std::format( "Unknown parameter '--{}'.", long_ ) );
 				return itr->second;
 			}
 
@@ -476,7 +476,7 @@ namespace pax::cmd_args {
 				arguments.finalize( item.second );
 
 		} catch( const std::exception & error_ ) {
-			throw user_error_message( std20::format( "Error: {} Use argument --help for info.", no_control_suffix( error_.what() ) ) );
+			throw user_error_message( std::format( "Error: {} Use argument --help for info.", no_control_suffix( error_.what() ) ) );
 		}
 
 		return arguments;
@@ -525,7 +525,7 @@ namespace pax::cmd_args {
 				} else {																// One (or more) abbreviation(s).
 					for( std::size_t j=1; j<arg.size(); ++j ) {
 						if( arg[ j ] == '=' ) {											// Value for an abbreviation.
-							if( j == 1 )			throw user_error_message( std20::format( "Strangely placed '=' in '{}'.", arg ) );
+							if( j == 1 )			throw user_error_message( std::format( "Strangely placed '=' in '{}'.", arg ) );
 							arguments.set( all_id.parameter( arg_id ), arg_id, arg.substr( j+1 ) );
 							if( String_view( arg_id ) == m_args_file )
 								parse( moved_span( Parse_json::file( String( arg.substr( j+1 ) ), all_id ) ), arguments, all_id );

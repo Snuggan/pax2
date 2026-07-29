@@ -115,16 +115,16 @@ namespace pax {
 		std::string report()		const		{
 			const auto sp{ speed() };
 			std::string message =
-				( sp > 2 )		? std20::format( "{:.1f}/s",   sp ) :
-				( sp > 0.001 )	? std20::format( "{:.1f}/h",   sp*3600 ) :
-				( sp > 5.5e-6 )	? std20::format( "{:.1f}/24h", sp*3600*24 ) :
-								  std20::format( "<0.5/24h"  );
+				( sp > 2 )		? std::format( "{:.1f}/s",   sp ) :
+				( sp > 0.001 )	? std::format( "{:.1f}/h",   sp*3600 ) :
+				( sp > 5.5e-6 )	? std::format( "{:.1f}/24h", sp*3600*24 ) :
+								  std::format( "<0.5/24h"  );
 
   			return ( ( count() < target() )
-				?	std20::format( "{} of {} ({:.1f}%) processed doing {}, ETL: {}", 
+				?	std::format( "{} of {} ({:.1f}%) processed doing {}, ETL: {}", 
 						count(), target(), ( 1000*count()/target() )/10.0, message, 
 						seconds_to_string( seconds_to_double( std::chrono::duration< double, std::ratio< 1, 1 > >( etl() ) ) ) )
-				:	std20::format( "{} processed doing {}", count(), message )
+				:	std::format( "{} processed doing {}", count(), message )
 			);
 		}
 

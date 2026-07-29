@@ -11,7 +11,7 @@
 #	define PAX_SOURCE source_location
 #endif
 
-#include "../std/format.hpp"
+#include <format>
 #include <string_view>
 #include <exception>
 #include <iostream>
@@ -28,20 +28,20 @@ namespace pax {
 		if( !sl_.file_name() || !*sl_.file_name() ) 		return "<unspecified source location>";
 		std::error_code		ec;
 		const auto			p = std::filesystem::canonical( sl_.file_name(), ec );
-		return std20::format( "{}:{}", ec ? sl_.file_name() : p.native(), sl_.line() );
+		return std::format( "{}:{}", ec ? sl_.file_name() : p.native(), sl_.line() );
 	}
 
 	/// Helper: nice error report from a std::error_code.
 	inline std::string to_string( 
 		const std::error_code 			ec_, 
 		const char					  * prefix_	= "" 
-	) {	return ec_ ? std20::format( "{}error {} ({})", prefix_, ec_.value(), ec_.message() ) : std::string{};		}
+	) {	return ec_ ? std::format( "{}error {} ({})", prefix_, ec_.value(), ec_.message() ) : std::string{};		}
 
 	/// Helper: nice error report from a std::error_condition.
 	inline std::string to_string( 
 		const std::error_condition 		ec_, 
 		const char					  * prefix_	= "" 
-	) {	return ec_ ? std20::format( "{}error {} ({})", prefix_, ec_.value(), ec_.message() ) : std::string{};		}
+	) {	return ec_ ? std::format( "{}error {} ({})", prefix_, ec_.value(), ec_.message() ) : std::string{};		}
 
 
 	/// Helper: a std::error_code from an int errno value.
@@ -53,7 +53,7 @@ namespace pax {
 	inline auto user_error_message(
 		const std::string_view			message_,
 		const std::error_code			ec_ = std::error_code{}
-	) {	return Runtime_exception( std20::format( "{}{}\n", message_, to_string( ec_, "\nPossibly due to\t" ) ) );	}
+	) {	return Runtime_exception( std::format( "{}{}\n", message_, to_string( ec_, "\nPossibly due to\t" ) ) );	}
 
 	/* Error message with error code and source location. */
 	inline auto error_message( 
@@ -61,7 +61,7 @@ namespace pax {
 		const std::error_code			ec_ = std::error_code{},
 		const std::PAX_SOURCE		  & src_ = std::PAX_SOURCE::current()
 	) {
-		return user_error_message( std20::format( "{}: {}", to_string( src_ ), message_ ), ec_ );
+		return user_error_message( std::format( "{}: {}", to_string( src_ ), message_ ), ec_ );
 	}
 
 
@@ -82,8 +82,8 @@ namespace pax {
 			const auto lines		  = split( message_, '\n' );
 			const auto line1		  = split( lines.first, '\t' );
 			result = line1.second.empty()
-				? std20::format( "{}\t{}\n", result, line1.first )
-				: std20::format( "{}\t{: <20}{}\n", result, std20::format( "{}:", line1.first ), line1.second );
+				? std::format( "{}\t{}\n", result, line1.first )
+				: std::format( "{}\t{: <20}{}\n", result, std::format( "{}:", line1.first ), line1.second );
 			message_				  = lines.second;
 		}
 		return result;

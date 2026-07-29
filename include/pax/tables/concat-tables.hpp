@@ -4,11 +4,12 @@
 
 #pragma once
 
-#include "../std/format.hpp"
 #include "../std/string_view.hpp"
 #include "../std/file.hpp"
 #include "../reporting/progress.hpp"
 #include "../textual/json.hpp"
+
+#include <format>
 
 
 namespace pax {
@@ -55,7 +56,7 @@ namespace pax {
 				} else if( ( m_header_size != hdr.size() ) 
 						|| ( std::string_view( m_table.data(), m_header_size ) != hdr ) 
 				) {
-					throw error_message( std20::format(
+					throw error_message( std::format(
 						"Headers do not match when concatinating table files."
 						"\n\tNew file:    '{}'"
 						"\n\tNew header:  '{}'"
@@ -85,7 +86,7 @@ namespace pax {
 				for( const std::filesystem::path & file : std::filesystem::recursive_directory_iterator( directory_ ) ) 
 					if( is_file_path::is( file ) )		process( file_path( file ) );
 			} catch( const std::exception & e_ ) {
-				throw error_message( std20::format( "{}\n\tProcessing directory '{}'.", e_.what(), to_string( directory_ ) ) );
+				throw error_message( std::format( "{}\n\tProcessing directory '{}'.", e_.what(), to_string( directory_ ) ) );
 			}
 		}
 
@@ -107,7 +108,7 @@ namespace pax {
 				// Sort? Remove repeated rows?
 				stream( dest_, std::string_view( str() ) );
 			} catch( const std::exception & e_ ) {
-				throw error_message( std20::format( "{}\n\tTrying to save concatenated tables to '{}'.", e_.what(), to_string( dest_ ) ) );
+				throw error_message( std::format( "{}\n\tTrying to save concatenated tables to '{}'.", e_.what(), to_string( dest_ ) ) );
 			}
 		}
 	};
