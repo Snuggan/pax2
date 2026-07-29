@@ -74,5 +74,6 @@ namespace pax {
 		using std::begin; 
 		return no_nullchar_end( t_ ) - begin( t_ );
 	}
+	static_assert( no_nullchar_size( "abc" ) == 3 );
 
 }	// namespace pax
