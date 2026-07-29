@@ -67,17 +67,35 @@ namespace pax {
 
 	/// Create a std::span of elements.
 	template< contiguous Cont >
-	constexpr auto make_span( Cont && const_ )												noexcept	{
+	[[nodiscard]] constexpr auto make_span( Cont && const_ )								noexcept	{
 		using std::begin;
-		return Span< Cont, extent_v< Cont > >{ begin( const_ ), no_nullchar_end( const_ ) };
+		using Sp = std::span< element_type_t< Cont >, No_null_extent< Cont > >;
+		return Sp{ begin( const_ ), no_nullchar_end( const_ ) };
 	}
+	static_assert( make_span( "abc" ).size() == 3u );
+	static_assert( make_span( "abc" ).extent == 3u );
+
 
 	/// Create a std::span of const elements.
 	template< contiguous Cont >
-	constexpr auto make_const_span( Cont && cont_ )											noexcept	{
+	[[nodiscard]] constexpr auto make_const_span( Cont && cont_ )							noexcept	{
 		using std::begin;
-		return Span< Cont, extent_v< Cont > >{ begin( cont_ ), no_nullchar_end( cont_ ) };
+		using Sp = std::span< const element_type_t< Cont >, No_null_extent< Cont > >;
+		return Sp{ begin( cont_ ), no_nullchar_end( cont_ ) };
 	}
+	static_assert( make_const_span( "abc" ).size() == 3u );
+	static_assert( make_const_span( "abc" ).extent == 3u );
+
+
+	/// Returns a dynamically sized std::span.
+	template< traits::contiguous Cont >
+	[[nodiscard]] constexpr auto make_dynamic_span( Cont && v_ ) 							noexcept {
+		using std::begin;
+		using Sp = std::span< element_type_t< Cont > >;
+		return Sp{ begin( v_ ), no_nullchar_end( v_ ) };
+	}
+	static_assert( make_dynamic_span( "abc" ).size() == 3u );
+	static_assert( make_dynamic_span( "abc" ).extent == traits::dynamic_extent );
 
 
 	/// Return `true`, iff `ptr_` references an element in this..
@@ -237,8 +255,20 @@ namespace pax {
 		}
 		return { end - ( ( previous == '\n' ) || ( previous == '\r' ) ), end };
 	};
+
+
+	/// Return the beginning of v_ up to but not including the first until_this_.
+	/// - If no until_this_ is found, v_ is returned.
+	template< traits::contiguous V, typename U >
+	constexpr auto until(  
+		V					 && v_, 
+		U					 && until_this_ 
+	) noexcept {
+		return first( v_, find( v_, until_this_ ) );
+	}
 	
 	
+
 	template< typename T >
 	struct split_result {	std::span< T > first, rest;		};
 

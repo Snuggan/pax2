@@ -7,7 +7,8 @@
 #pragma once
 
 #include "../concepts.hpp"	// shave_zero_suffix, pax::traits::character, pax::traits::string, etc.
-#include "../types/point-stuff/contiguous.hpp"
+#include <algorithm>		// std::min, std::equal, std::lexicographical_compare_three_way
+#include <cassert>			// assert
 
 
 // From https://lemire.me/blog/2024/07/26/safer-code-in-c-with-lifetime-bounds/
@@ -119,18 +120,18 @@ namespace pax {
 		return shave_zero_suffix( str_, size( str_ ) ) && ( str_[ 0 ] == ch_ );
 	}
 
-	// /// Returns the size of `v_` if the beginning of `view_` is lexicographical equal to `v_` and 0 otherwise.
-	// template< traits::string V0, traits::string V1 >
-	// [[nodiscard]] constexpr std::size_t starts_with(
-	// 	const V0						  & v0_,
-	// 	V1								 && v1_
-	// ) noexcept {
-	// 	const auto		b0  = begin( v0_ );
-	// 	const auto		sz0 = shave_zero_suffix( v0_, size( v0_ ) );
-	// 	const auto		b1  = begin( v1_ );
-	// 	const auto		sz1 = shave_zero_suffix( v1_, size( v1_ ) );
-	// 	return ( sz1 > sz0 ) ? 0u : std::equal( b1, b1 + sz1, b0 ) ? sz1 : 0u;
-	// }
+	/// Returns the size of `v_` if the beginning of `view_` is lexicographical equal to `v_` and 0 otherwise.
+	template< traits::string V0, traits::string V1 >
+	[[nodiscard]] constexpr std::size_t starts_with(  
+		const V0						  & v0_, 
+		V1								 && v1_
+	) noexcept {
+		const auto		b0  = begin( v0_ );
+		const auto		sz0 = shave_zero_suffix( v0_, size( v0_ ) );
+		const auto		b1  = begin( v1_ );
+		const auto		sz1 = shave_zero_suffix( v1_, size( v1_ ) );
+		return ( sz1 > sz0 ) ? 0u : std::equal( b1, b1 + sz1, b0 ) ? sz1 : 0u;
+	}
 
 
 	/// Returns 1, if the end of `view_` is `t_` and 0 otherwise.
@@ -143,18 +144,18 @@ namespace pax {
 		return sz && ( str_[ sz - 1 ] == t_ );
 	}
 
-	// /// Returns the size of `v_`, if the end of `view_` is lexicographical equal to `v_` and 0 otherwise.
-	// template< traits::string V0, traits::string V1 >
-	// [[nodiscard]] constexpr std::size_t ends_with(
-	// 	const V0						  & v0_,
-	// 	V1								 && v1_
-	// ) noexcept {
-	// 	const auto		b0  = begin( v0_ );
-	// 	const auto		sz0 = shave_zero_suffix( v0_, size( v0_ ) );
-	// 	const auto		b1  = begin( v1_ );
-	// 	const auto		sz1 = shave_zero_suffix( v1_, size( v1_ ) );
-	// 	return ( sz1 > sz0 ) ? 0u : std::equal( b1, b1 + sz1, b0 + ( sz0 - sz1 ) ) ? sz1 : 0u;
-	// }
+	/// Returns the size of `v_`, if the end of `view_` is lexicographical equal to `v_` and 0 otherwise.
+	template< traits::string V0, traits::string V1 >
+	[[nodiscard]] constexpr std::size_t ends_with( 
+		const V0						  & v0_, 
+		V1								 && v1_
+	) noexcept {
+		const auto		b0  = begin( v0_ );
+		const auto		sz0 = shave_zero_suffix( v0_, size( v0_ ) );
+		const auto		b1  = begin( v1_ );
+		const auto		sz1 = shave_zero_suffix( v1_, size( v1_ ) );
+		return ( sz1 > sz0 ) ? 0u : std::equal( b1, b1 + sz1, b0 + ( sz0 - sz1 ) ) ? sz1 : 0u;
+	}
 
 
 

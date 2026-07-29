@@ -43,19 +43,31 @@ namespace pax {
 
 
 
-	template< typename T >
-	[[nodiscard]] constexpr auto no_nullchar_end( T && t_ )	{	using std::end; return end( t_ );		}
+	template< traits::contiguous Cont >
+	constexpr std::size_t No_null_extent = traits::extent_v< Cont >;
 
-	template< traits::character Char, std::size_t N >			requires( N > 0 )
+	template< traits::character Char, std::size_t N >
+	constexpr std::size_t No_null_extent< Char ( & )[ N ] > = N - 1;
+
+
+
+	/// The non-character case. It never has a \0 ending. 
+	template< traits::contiguous Cont >
+	[[nodiscard]] constexpr auto no_nullchar_end( Cont && v_ )	{	using std::end; return end( v_ );		}
+
+	/// A string of characters. It may have a \0 ending. 
+	template< traits::contiguous Cont >					requires( traits::character< traits::element_type_t< Cont > > )
+	[[nodiscard]] constexpr auto no_nullchar_end( Cont && v_ )	{
+		using std::end, std::size;
+		return end( v_ ) - !( !size( v_ ) || *( end( v_ ) - 1 ) );
+	}
+
+	/// A basic array of characters. It always has a \0 ending. 
+	template< traits::character Char, std::size_t N >	requires( N > 0 )
 	[[nodiscard]] constexpr Char const * no_nullchar_end( Char const ( & str_ )[ N ] )	{
 		return str_ + N - !str_[ N - 1 ];
 	}
 
-	template< std::ranges::contiguous_range Cont >				requires( traits::character< traits::element_type_t< Cont > > )
-	[[nodiscard]] constexpr auto no_nullchar_end( Cont && cont_ )	{
-		using std::end, std::empty;
-		return end( cont_ ) - !( empty( cont_ ) || *( end( cont_ ) - 1 ) );
-	}
 
 	template< typename T >
 	[[nodiscard]] constexpr std::size_t no_nullchar_size( T && t_ )	{

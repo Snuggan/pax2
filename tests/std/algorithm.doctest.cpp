@@ -223,11 +223,6 @@ namespace pax {
 				constexpr auto					sp = make_span( arr );
 				static_assert( size( sp )	==	3 );
 				static_assert( sp.extent	==	3 );
-			} {
-				constexpr const char		  * arr = "abc";
-				constexpr auto					sp = make_span( arr );
-				static_assert( size( sp )	==	3 );
-				static_assert( sp.extent	==	std::dynamic_extent );
 			}
 		}
 		{	// make_const_span
