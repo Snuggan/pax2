@@ -2,12 +2,11 @@
 //	Contact: peder ( at ) axensten.se
 
 
-#include <pax/std/string_view.hpp>
+#include <pax/std/ascii.hpp>
 #include <pax/doctest.hpp>
 #include <sstream>
 
 
-#if !defined( PAX_ASCII_TEST_UNUSABLE )
 namespace pax {
 	
 	constexpr std::size_t sz = 37;
@@ -68,5 +67,5 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( as_ascii( "abcd\t" ),		"abcd\\t" );
 		}
 	}
+
 }	// namespace pax
-#endif
