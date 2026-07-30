@@ -73,6 +73,12 @@ namespace pax {
 	template< contiguous V, std::size_t N = traits::dynamic_extent >
 	using Span = std::span< element_type_t< V >, N >;
 
+	struct linebreak {
+		static constexpr auto check = []( const traits::character auto c_ ) {
+			return ( c_ == '\n' ) || ( c_ == '\r' );
+		};
+	};
+
 
 	/// Create a std::span of elements.
 	template< contiguous V >
@@ -275,6 +281,97 @@ namespace pax {
 	TEST( mid<  3 >( "abcdefghi", -5 ) == "efg" );
 	TEST( mid<  3 >( "abcdefghi", -5 ).extent == 3 );
 
+
+
+	/// Returns `v_`, but excluding any leading elements `v` that satisfy `p_( v )`.
+	/// Returns a [non-owning] string view into v_.
+	template< contiguous V, typename Pred >
+		requires( std::predicate< Pred, traits::value_type_t< V > > )
+	[[nodiscard]] constexpr auto trim_first( 
+		V			 && v_, 
+		Pred		 && p_ 
+	) noexcept {
+		auto			itr = begin( v_ );
+		const auto		end = no_nullchar_end( v_ );
+		while( ( itr != end ) && p_( *itr ) )		++itr;
+		return std::span{ itr, end };
+	}
+
+	/// Returns `v_`, but excluding all leading `t_`, if any.
+	/// Returns a [non-owning] string view into v_.
+	template< contiguous V >
+	[[nodiscard]] constexpr auto trim_first( 
+		V								 && v_, 
+		const traits::value_type_t< V >   & t_ 
+	) noexcept {
+		return trim_first( v_, [ t_ ]( auto c ){ return c == t_; } );
+	}
+	TEST( trim_first( "", '+' ) 			==	"" );
+	TEST( trim_first( "++++abcdef++", '+' ) ==	"abcdef++" );
+
+	/// Returns `v_`, but excluding a leading `'\n'`, `'\r'`, `"\n\r"`, or `"\r\n"`. 
+	/// Returns a [non-owning] string view into v_.
+	template< contiguous V >
+	[[nodiscard]] constexpr auto trim_first( 
+		V			 && v_, 
+		linebreak 
+	) noexcept {
+		return trim_first( v_, linebreak::check );
+	}
+	TEST( trim_first( "abcdefgh",			linebreak{} )	==	"abcdefgh" );
+	TEST( trim_first( "\n\r",				linebreak{} )	==	"" );
+	TEST( trim_first( "\n\rabcdefgh\n\r",	linebreak{} )	==	"abcdefgh\n\r" );
+
+	/// Returns `v_`, but excluding any trailing elements `v` that satisfy `p_( v )`.
+	/// Returns a [non-owning] string view into v_.
+	template< contiguous V, typename Pred >
+		requires( std::predicate< Pred, traits::value_type_t< V > > )
+	[[nodiscard]] constexpr auto trim_last( 
+		V			 && v_, 
+		Pred		 && p_ 
+	) noexcept {
+		const auto		b   = begin( v_ );
+		auto			itr = no_nullchar_end( v_ );
+		if( itr != b )	while( ( --itr != b ) && p_( *itr ) );
+		return std::span{ b, itr + 1 - p_( *itr ) };
+	}
+
+	/// Returns `v_`, but excluding all trailing `t_`, if any.
+	/// Returns a [non-owning] string view into v_.
+	template< contiguous V >
+	[[nodiscard]] constexpr auto trim_last( 
+		V								 && v_, 
+		const traits::value_type_t< V >		t_ 
+	) noexcept {
+		return trim_last( v_, [ t_ ]( auto c ){ return c == t_; } );
+	}
+	TEST( trim_last( "", '+' ) 			   ==	"" );
+	TEST( trim_last( "++++abcdef++", '+' ) ==	"++++abcdef" );
+
+	/// Returns `v_`, but excluding a trailing `'\n'`, `'\r'`, `"\n\r"`, or `"\r\n"`. 
+	/// Returns a [non-owning] string view into v_.
+	template< contiguous V >
+	[[nodiscard]] constexpr auto trim_last( 
+		V			 && v_, 
+		linebreak 
+	) noexcept {
+		return trim_last( v_, linebreak::check );
+	}
+	TEST( trim_last( "abcdefgh",			linebreak{} )	==	"abcdefgh" );
+	TEST( trim_last( "\n\r",				linebreak{} )	==	"" );
+	TEST( trim_last( "\n\rabcdefgh\n\r",	linebreak{} )	==	"\n\rabcdefgh" );
+
+	/// Returns `v_`, but without any leading or trailing values `v` that satisfy `p_( v )`.
+	/// Returns a [non-owning] string view into v_.
+	template< contiguous V, typename T >
+	[[nodiscard]] constexpr auto trim( 
+		V			 && v_, 
+		T			 && p_ 
+	) noexcept {
+		return trim_last( trim_first( v_, p_ ), p_ );
+	}
+
+
 	/// Return true iff u_ equals the first elements of this.
 	template< contiguous V0, contiguous V1 >
 	[[nodiscard]] constexpr bool starts_with( V0 && v0_, V1 && v1_ )					noexcept	{
@@ -363,13 +460,6 @@ namespace pax {
 	TEST( find_span( "abcdefghi_", []( auto c ){ return c >= 'g'; } ) == "ghi" );
 	TEST( find_span( "abcdefghi_", []( auto c ){ return c == 'x'; } ) == "" );
 	
-	
-	struct linebreak {
-		static constexpr auto check = []( const traits::character auto c_ ) {
-			return ( c_ == '\n' ) || ( c_ == '\r' );
-		};
-	};
-
 	/// Find any of "\n\r", "\n", "\r\n", or "\r" and return a shadow reference to it.
 	/// If none is found, { end(), 0u } is returned.
 	template< contiguous V >
@@ -471,6 +561,46 @@ namespace pax {
 	TEST( split( "abc\nghi",  []( auto c_ ) { return c_ == '\n'; } ).rest  == "ghi" );
 	TEST( split( "abcdefghi", []( auto c_ ) { return c_ == '\n'; } ).first == "abcdefghi" );
 	TEST( split( "abcdefghi", []( auto c_ ) { return c_ == '\n'; } ).rest  == "" );
+
+
+
+
+	/// A class to simplify iterating using ´split_by´. It uses views, so the original string must remain static.
+	/// - Example usage: ´for( const auto item : String_view_splitter( "A\nNumber\nof\nRows", linebreak{} ) ) { ... }´. 
+	/// - The Divider type may be any that is accepted by ´split_by( ..., Divider )´. 
+	/// - String_view_splitter is constexpr [and never throws]. 
+	template< traits::character Char, typename Divider >
+	class String_view_splitter {
+		class End{};
+		using Span					  = std::span< Char >;
+
+		split_result< Char >			m_parts;
+		Divider							m_divider;
+		
+	public:
+		// constexpr String_view_splitter( const Value str_, const Divider div_ ) 					noexcept
+		// 	: m_parts{ split( str_, div_ ) }, m_divider{ div_ } {}
+
+		template< contiguous V >						requires( std::is_same_v< Char, element_type_t< V > > )
+		constexpr String_view_splitter( V && v_, const Divider div_ ) 	noexcept
+			: m_parts{ split( v_, div_ ) }, m_divider{ div_ } {}
+
+		constexpr String_view_splitter & operator++()	noexcept		{
+			m_parts = split( m_parts.rest, m_divider );
+			return *this;
+		}
+
+		constexpr Span operator*()						const noexcept	{	return m_parts.first;			}
+		constexpr bool operator==( End )				const noexcept	{	return m_parts.empty();			}
+		constexpr String_view_splitter begin()			const noexcept	{	return *this;					}
+		constexpr End end()								const noexcept	{	return {};						}
+	};
+
+	template< traits::string S, typename D >
+	String_view_splitter( S &&, D )	-> String_view_splitter< traits::element_type_t< S >, D >;
+
+	template< traits::character Ch, typename D >
+	String_view_splitter( Ch *, D )	-> String_view_splitter< std::remove_reference_t< Ch >, D >;
 
 }	// namespace pax
 #undef TEST

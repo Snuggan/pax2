@@ -213,7 +213,7 @@ namespace pax {
 			: m_glyphs{ str_.size() }
 		{
 			for( auto row : String_view_splitter( str_, linebreak{} ) ) {	// Iterate str_ row by row.
-				if( row.size() ) {										// Ignore empty rows.
+				if( row.size() ) {											// Ignore empty rows.
 					for( const unsigned c : row )			++m_count_by_row[ ( c < Asciis ) ? c : Non_ascii ];
 					for( auto & cnt : m_count_by_row )		cnt.row_end();
 					++m_non_empty_rows;
@@ -293,7 +293,7 @@ namespace pax {
 		for( const auto row : String_view_splitter( str_, linebreak{} ) )  					// Iterate row by row.
 			if( row.size() ) 				 												// Skip empty rows
 				for( const auto cell : String_view_splitter( row, count.col_delimiter() ) )	// Iterate row cell by cell.
-					result.push_back( cell );
+					result.push_back( make_view( cell ) );
 
 		return { 
 			result, 
@@ -396,7 +396,7 @@ namespace pax {
 				);
 				std::size_t 	i{};
 				for( const auto col : String_view_splitter( header, meta.col_delimiter() ) ) 
-					std::cerr << std::format( "    {:15?} {}\n", col, col_types[ i++ ].view() );
+					std::cerr << std::format( "    {:15?} {}\n", make_view( col ), col_types[ i++ ].view() );
 			}
 
 			// Collect the result.

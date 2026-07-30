@@ -39,7 +39,7 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( count.size(),			6 );
 			DOCTEST_FAST_CHECK_EQ( count.ascii(),			6 );
 			DOCTEST_FAST_CHECK_EQ( count.non_ascii(),		0 );
-			DOCTEST_FAST_CHECK_EQ( count.rows(),			3 );
+			DOCTEST_FAST_CHECK_EQ( count.rows(),			2 );
 			DOCTEST_FAST_CHECK_EQ( count.non_empty_rows(),	0 );
 			DOCTEST_FAST_CHECK_EQ( count.col_delimiter(),	';' );
 			DOCTEST_FAST_CHECK_EQ( count.cols_in_first(),	1 );
