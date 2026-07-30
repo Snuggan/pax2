@@ -6,12 +6,14 @@
 
 #include <pax/types/point-stuff/contiguous.hpp>
 #include <pax/doctest.hpp>
+#include <pax/std/ascii.hpp>
 
 
 namespace pax {
-
-	DOCTEST_TEST_CASE( "contiguous" ) {
-		// DOCTEST_FAST_CHECK_EQ ( 42, 37 );
-	}
 	
+	DOCTEST_TEST_CASE( "contiguous" ) {
+		DOCTEST_ASCII_CHECK_EQ( make_span( "" ), "" );
+		DOCTEST_ASCII_CHECK_EQ( trim_last( "", '+' ), "" );
+	}
+
 }	// namespace pax

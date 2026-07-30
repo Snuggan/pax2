@@ -113,9 +113,11 @@ namespace pax {
 	/// Returns false. 
 	[[nodiscard]] constexpr bool valid( std::nullptr_t ) 	noexcept	{	return false;				}
 
+
 	/// Returns ptr_ != nullptr. 
 	template< typename T >
 	[[nodiscard]] constexpr bool valid( T * ptr_ ) 			noexcept	{	return ptr_ != nullptr;		}
+
 
 	/// Returns sp_.data() != nullptr. 
 	template< contiguous V >
@@ -129,6 +131,7 @@ namespace pax {
 		return ( data( v_ ) <= ptr_ ) && ( ptr_ < data( v_ ) + no_nullchar_size( v_ ) );
 	}
 
+
 	/// Return true iff any element in v1_ by address is also an element in v2_.
 	/// Cheap: 1 addition, 2 comparisons, and 2 bolean &&.
 	template< contiguous V0, contiguous V1 >
@@ -139,6 +142,11 @@ namespace pax {
 												: ( data( v0_ ) + sz0 > data( v1_ ) )	)
 			&&	sz0 && sz1;			// An empty view cannot overlap.
 	}
+	
+	
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	//	Partial (specify what you want)
+	////////////////////////////////////////////////////////////////////////////////////////////////
 
 	/// Returns a reference to the first item. 
 	/// UB, if v_ has a dynamic size that is zero.
@@ -148,6 +156,7 @@ namespace pax {
 		return *data( v_ );
 	}
 	TEST( front( "abcdefghi" ) == 'a' );
+
 
 	/// Returns a reference to the first item. 
 	/// UB, if v_ has a dynamic size that is zero.
@@ -159,6 +168,7 @@ namespace pax {
 	}
 	TEST( back( "abcdefghi" ) == 'i' );
 
+
 	/// Return a dynamic shadow of the first min(n_, size()) elements.
 	template< contiguous V >
 	[[nodiscard]] constexpr auto first( V && v_, std::size_t n_ = 1 )					noexcept	{
@@ -166,6 +176,7 @@ namespace pax {
 	}
 	TEST( first( "abcdefghi",  3 ) == "abc" );
 	TEST( first( "abcdefghi", 12 ) == "abcdefghi" );
+
 
 	/// Return a static shadow of the first min(N, extent) elements.
 	/// Does assert( N <= size() && !is_static< I > ).
@@ -181,6 +192,7 @@ namespace pax {
 	TEST( first< 12 >( "abcdefghi" ) == "abcdefghi" );
 	TEST( first< 12 >( "abcdefghi" ).extent == 9 );
 
+
 	/// Return a dynamic shadow of the last size() - min(n_, size()) elements.
 	template< contiguous V >
 	[[nodiscard]] constexpr auto not_first( V && v_, std::size_t n_ = 1 )				noexcept	{
@@ -190,6 +202,7 @@ namespace pax {
 	}
 	TEST( not_first( "abcdefghi",  3 ) == "defghi" );
 	TEST( not_first( "abcdefghi", 12 ) == "" );
+
 
 	/// Return a static shadow of the last size() - min(N, extent) elements.
 	/// Does assert( N <= size() && !is_static ).
@@ -205,6 +218,7 @@ namespace pax {
 	TEST( not_first< 12 >( "abcdefghi" ) == "" );
 	TEST( not_first< 12 >( "abcdefghi" ).extent == 0 );
 
+
 	/// Return a dynamic shadow of the last min(n_, size()) elements.
 	template< contiguous V >
 	[[nodiscard]] constexpr auto last( V && v_, std::size_t n_ = 1 )					noexcept	{
@@ -214,6 +228,7 @@ namespace pax {
 	}
 	TEST( last( "abcdefghi",  3 ) == "ghi" );
 	TEST( last( "abcdefghi", 12 ) == "abcdefghi" );
+
 
 	/// Return a static shadow of the first min(N, extent) elements.
 	/// Does assert( N <= size() && !is_static ).
@@ -230,6 +245,7 @@ namespace pax {
 	TEST( last< 12 >( "abcdefghi" ) == "abcdefghi" );
 	TEST( last< 12 >( "abcdefghi" ).extent == 9 );
 
+
 	/// Return a dynamic shadow of the first size() - min(n_, size()) elements.
 	template< contiguous V >
 	[[nodiscard]] constexpr auto not_last( V && v_, std::size_t n_ = 1 )				noexcept	{
@@ -238,6 +254,7 @@ namespace pax {
 	}
 	TEST( not_last( "abcdefghi",  3 ) == "abcdef" );
 	TEST( not_last( "abcdefghi", 12 ) == "" );
+
 
 	/// Return a static shadow of the first size() - min(N, extent) elements.
 	/// Does assert( N <= size() && !is_static ).
@@ -250,6 +267,7 @@ namespace pax {
 	TEST( not_last<  3 >( "abcdefghi" ).extent == 6 );
 	TEST( not_last< 12 >( "abcdefghi" ) == "" );
 	TEST( not_last< 12 >( "abcdefghi" ).extent == 0 );
+
 
 	/// Return a dynamic shadow of the n_ elements starting with offs_, but restricted to the bounds of this.
 	/// A negative offs_ is counted from the end.
@@ -264,6 +282,7 @@ namespace pax {
 	TEST( mid( "abcdefghi", -5,  3 ) == "efg" );
 	TEST( mid( "abcdefghi",  2, 12 ) == "cdefghi" );
 	TEST( mid( "abcdefghi", -5, 12 ) == "efghi" );
+
 
 	/// Return a static shadow of the N elements starting with offs_, but restricted to the bounds of sp_.
 	/// A negative offs_ is counted from the back. Does assert( offs_ + N <= sp_.size() ).
@@ -280,8 +299,11 @@ namespace pax {
 	TEST( mid<  3 >( "abcdefghi",  2 ).extent == 3 );
 	TEST( mid<  3 >( "abcdefghi", -5 ) == "efg" );
 	TEST( mid<  3 >( "abcdefghi", -5 ).extent == 3 );
-
-
+	
+	
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	//	Trim (specify what you don't want)
+	////////////////////////////////////////////////////////////////////////////////////////////////
 
 	/// Returns `v_`, but excluding any leading elements `v` that satisfy `p_( v )`.
 	/// Returns a [non-owning] string view into v_.
@@ -297,6 +319,7 @@ namespace pax {
 		return std::span{ itr, end };
 	}
 
+
 	/// Returns `v_`, but excluding all leading `t_`, if any.
 	/// Returns a [non-owning] string view into v_.
 	template< contiguous V >
@@ -308,6 +331,7 @@ namespace pax {
 	}
 	TEST( trim_first( "", '+' ) 			==	"" );
 	TEST( trim_first( "++++abcdef++", '+' ) ==	"abcdef++" );
+
 
 	/// Returns `v_`, but excluding a leading `'\n'`, `'\r'`, `"\n\r"`, or `"\r\n"`. 
 	/// Returns a [non-owning] string view into v_.
@@ -321,6 +345,7 @@ namespace pax {
 	TEST( trim_first( "abcdefgh",			linebreak{} )	==	"abcdefgh" );
 	TEST( trim_first( "\n\r",				linebreak{} )	==	"" );
 	TEST( trim_first( "\n\rabcdefgh\n\r",	linebreak{} )	==	"abcdefgh\n\r" );
+
 
 	/// Returns `v_`, but excluding any trailing elements `v` that satisfy `p_( v )`.
 	/// Returns a [non-owning] string view into v_.
@@ -336,6 +361,7 @@ namespace pax {
 		return std::span{ b, itr + 1 - p_( *itr ) };
 	}
 
+
 	/// Returns `v_`, but excluding all trailing `t_`, if any.
 	/// Returns a [non-owning] string view into v_.
 	template< contiguous V >
@@ -347,6 +373,7 @@ namespace pax {
 	}
 	TEST( trim_last( "", '+' ) 			   ==	"" );
 	TEST( trim_last( "++++abcdef++", '+' ) ==	"++++abcdef" );
+
 
 	/// Returns `v_`, but excluding a trailing `'\n'`, `'\r'`, `"\n\r"`, or `"\r\n"`. 
 	/// Returns a [non-owning] string view into v_.
@@ -361,6 +388,7 @@ namespace pax {
 	TEST( trim_last( "\n\r",				linebreak{} )	==	"" );
 	TEST( trim_last( "\n\rabcdefgh\n\r",	linebreak{} )	==	"\n\rabcdefgh" );
 
+
 	/// Returns `v_`, but without any leading or trailing values `v` that satisfy `p_( v )`.
 	/// Returns a [non-owning] string view into v_.
 	template< contiguous V, typename T >
@@ -370,7 +398,11 @@ namespace pax {
 	) noexcept {
 		return trim_last( trim_first( v_, p_ ), p_ );
 	}
-
+	
+	
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	//	Finding stuff
+	////////////////////////////////////////////////////////////////////////////////////////////////
 
 	/// Return true iff u_ equals the first elements of this.
 	template< contiguous V0, contiguous V1 >
@@ -383,6 +415,7 @@ namespace pax {
 	TEST(  starts_with( "abcdefghi", "abcdefghi" ) );
 	TEST( !starts_with( "abcdefghi", "abcdefghij" ) );
 
+
 	/// Return true iff u_ equals the last elements of this.
 	template< contiguous V0, contiguous V1 >
 	[[nodiscard]] constexpr bool ends_with( V0 && v0_, V1 && v1_ )						noexcept	{
@@ -394,6 +427,7 @@ namespace pax {
 	TEST(  ends_with( "abcdefghi", "abcdefghi" ) );
 	TEST( !ends_with( "abcdefghi", "abcdefghij" ) );
 
+
 	/// Return the offset of where t_ is -- or size(), if not found.
 	template< contiguous V >
 	[[nodiscard]] constexpr std::size_t find( V && v_, element_type_t< V > t_ )			noexcept	{
@@ -404,6 +438,7 @@ namespace pax {
 	TEST( find( "abcdefghi", 'g' ) == 6 );
 	TEST( find( "abcdefghi", 'x' ) == 9 );
 
+
 	/// Return a std::span of where t_ is -- or a zereo-sized shadow located at end().
 	template< contiguous V >
 	[[nodiscard]] constexpr Span< V > find_span( V && v_, element_type_t< V > t_ )		noexcept	{
@@ -413,6 +448,7 @@ namespace pax {
 	}
 	TEST( find_span( "abcdefghi", 'g' ) == "g" );
 	TEST( find_span( "abcdefghi", 'x' ) == ""  );
+
 
 	/// Return the offset of where u_ is -- or size(), if not found.
 	template< contiguous V0, contiguous V1 >
@@ -425,6 +461,7 @@ namespace pax {
 	TEST( find( "abcdefghi", "ghi" ) == 6 );
 	TEST( find( "abcdefghi", "ghx" ) == 9 );
 
+
 	/// Return a shadow of where u_ is -- or a zereo-sized shadow located at end().
 	template< contiguous V0, contiguous V1 >
 	[[nodiscard]] constexpr Span< V0 > find_span( V0 && v0_, V1 && v1_ )				noexcept	{
@@ -436,6 +473,7 @@ namespace pax {
 	TEST( find_span( "abcdefghi", "ghi" ) == "ghi" );
 	TEST( find_span( "abcdefghi", "ghx" ) == ""  );
 
+
 	/// Return a shadow of the first contigous range where all Test( value ) are true.
 	/// If none is found, { end(), 0u } is returned.
 	template< contiguous V, typename Test >	requires std::is_invocable_r_v< bool, Test, element_type_t< V > >
@@ -446,6 +484,7 @@ namespace pax {
 	}
 	TEST( find( "abcdefghi", []( auto c ){ return c == 'g'; } ) == 6 );
 	TEST( find( "abcdefghi", []( auto c ){ return c == 'x'; } ) == 9 );
+
 
 	/// Return a shadow of the first contigous range where all Test( value ) are true.
 	/// If none is found, { end(), 0u } is returned.
@@ -459,7 +498,8 @@ namespace pax {
 	}
 	TEST( find_span( "abcdefghi_", []( auto c ){ return c >= 'g'; } ) == "ghi" );
 	TEST( find_span( "abcdefghi_", []( auto c ){ return c == 'x'; } ) == "" );
-	
+
+
 	/// Find any of "\n\r", "\n", "\r\n", or "\r" and return a shadow reference to it.
 	/// If none is found, { end(), 0u } is returned.
 	template< contiguous V >
@@ -506,7 +546,8 @@ namespace pax {
 	}
 	TEST( until( "abcdefghi", "ghi" ) == "abcdef" );
 	TEST( until( "abcdefghi", "ghx" ) == "abcdefghi" );
-	
+
+
 	/// Returns true iff find( v_, x_ ) < size( v_ ).
 	template< traits::contiguous V, typename X >
 	[[nodiscard]] constexpr bool contains( V && v_, X && x_ )							noexcept	{
@@ -527,6 +568,7 @@ namespace pax {
 		constexpr bool empty()	const	{	return first.empty() && rest.empty();	}
 	};
 
+
 	/// Split this in two at offset t_ so that first.end() == rest.begin() and first.size() == t_.
 	template< contiguous V >
 	[[nodiscard]] constexpr auto split_at( V && v_, std::size_t mid_ )					noexcept	{
@@ -539,6 +581,7 @@ namespace pax {
 	TEST( split_at( "abcdefghi",  6 ).rest  == "ghi" );
 	TEST( split_at( "abcdefghi", 12 ).first == "abcdefghi" );
 	TEST( split_at( "abcdefghi", 12 ).rest  == "" );
+
 
 	/// Split this in two: before and after gap_, but everything clamped to [begin(), end()].
 	template< contiguous V0, typename V1 >

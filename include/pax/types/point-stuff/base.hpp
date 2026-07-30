@@ -7,11 +7,6 @@
 #include <pax/concepts.hpp>
 
 
-#define PAX_SPANTOOLS_VERSION_MAJOR		1
-#define PAX_SPANTOOLS_VERSION_MINOR		0
-#define PAX_SPANTOOLS_VERSION_PATCH		0
-
-
 // From https://lemire.me/blog/2024/07/26/safer-code-in-c-with-lifetime-bounds/
 #ifndef __has_cpp_attribute
 	#define ada_lifetime_bound
@@ -66,22 +61,24 @@ namespace pax {
 
 
 	/// The non-character case. It never has a \0 ending. 
-	template< traits::contiguous Cont >
-	[[nodiscard]] constexpr auto no_nullchar_end( Cont && v_ )	{	using std::end; return end( v_ );		}
+	template< traits::contiguous Cont >	
+	[[nodiscard]] constexpr auto no_nullchar_end( Cont && v_ )	{
+		using std::end; 
+		return end( v_ );
+	}
 
-	/// A string of characters. It may have a \0 ending. 
-	template< traits::contiguous Cont >					requires( traits::character< traits::element_type_t< Cont > > )
+	/// A string of characters. It may have a \0 ending.
+	template< traits::string Cont >	
 	[[nodiscard]] constexpr auto no_nullchar_end( Cont && v_ )	{
 		using std::end, std::size;
-		return end( v_ ) - !( !size( v_ ) || *( end( v_ ) - 1 ) );
+		return end( v_ ) - ( size( v_ ) && !*( end( v_ ) - 1 ) );
 	}
 
 	/// A basic array of characters. It always has a \0 ending. 
-	template< traits::character Char, std::size_t N >	requires( N > 0 )
+	template< traits::character Char, std::size_t N >
 	[[nodiscard]] constexpr Char const * no_nullchar_end( Char const ( & str_ )[ N ] )	{
-		return str_ + N - !str_[ N - 1 ];
+		return str_ + N - ( N && !*( str_ + N - 1 ) );
 	}
-
 
 	template< typename T >
 	[[nodiscard]] constexpr std::size_t no_nullchar_size( T && t_ )	{
