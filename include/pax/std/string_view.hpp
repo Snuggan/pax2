@@ -8,10 +8,11 @@
 #include <string_view>
 
 
-#define DOCTEST_ASCII_CHECK_EQ( __1__, __2__ )	DOCTEST_FAST_CHECK_EQ( pax::as_ascii( __1__ ), pax::as_ascii( __2__ ) )
-#define DOCTEST_ASCII_CHECK_NE( __1__, __2__ )	DOCTEST_FAST_CHECK_NE( pax::as_ascii( __1__ ), pax::as_ascii( __2__ ) )
-#define DOCTEST_ASCII_WARN_EQ ( __1__, __2__ )	DOCTEST_FAST_WARN_EQ ( pax::as_ascii( __1__ ), pax::as_ascii( __2__ ) )
-#define DOCTEST_ASCII_WARN_NE ( __1__, __2__ )	DOCTEST_FAST_WARN_NE ( pax::as_ascii( __1__ ), pax::as_ascii( __2__ ) )
+#if defined( NDEBUG )
+#	define TEST( ... )		
+#else
+#	define TEST( ... )		static_assert( __VA_ARGS__ );
+#endif
 
 
 namespace std {
@@ -36,169 +37,87 @@ namespace std {
 
 }	// namespace std
 
-
-
 namespace pax {
-	using std::data, std::size, std::begin, std::end;
-	
-	
+	using std::data, std::begin;
+
 	template< traits::character Char, std::size_t N >
 	constexpr std::basic_string_view< std::remove_cv_t< Char > > make_view( const std::span< Char, N > sp_ ) {
 		return { sp_.data(), sp_.size() };
-	}
-
-	template< typename T >
-	[[nodiscard]] constexpr std::size_t shave_zero_suffix( const T &, const std::size_t sz_ )		{	return sz_;		}
-
-	template< traits::string Str >			  requires( traits::character_array< Str > )
-	[[nodiscard]] constexpr std::size_t shave_zero_suffix( const Str & str_, const std::size_t sz_ )
-	{	return sz_ - ( sz_ && !str_[ sz_ - 1 ] );																		}
-
-
-	/// Returns true iff c is any ao the linebreak characters LF or CR.
-	static constexpr auto is_newline  = []( const unsigned c )	noexcept {
-		// The first part of the test is redundant, but is thought to quicken up the test in most cases.
-		return ( c == '\n' ) || ( c == '\r' );
-	};
-	
-	/// Returns 2 if { LF, CR } or { CR, LF }, returns 1 if c is LF or CR, and returns 0 otherwise.
-	static constexpr auto newlines( const unsigned c, const unsigned c2 )			noexcept {
-		// ( c^c2 ) == 0x7 signifies either { LF, CR } or { CR, LF }:
-		return is_newline( c ) ? 1u + ( ( c^c2 ) == 0x7 ) : 0u;
-	}
-	
-
-	/// Returns 2 if `view_` starts with `"\n\r"` or `"\r\n"`; 1 if `'\n'` or `'\r'`; and 0 otherwise.
-	template< traits::string V >
-	[[nodiscard]] constexpr std::size_t starts_with(  
-		const V							& v_, 
-		linebreak 
-	) noexcept {
-		if constexpr( traits::extent_v< V > > 1 ) {
-			return	( size( v_ ) > 1 )	? newlines  ( v_[ 0 ], v_[ 1 ] )
-				:	  size( v_ )		? is_newline( v_[ 0 ] )
-				:						  0;
-		} else if constexpr( traits::extent_v< V > == 1 ) {
-			return is_newline( v_[ 0 ] );
-		} else {
-			return 0;
-		}
-	}
-
-	/// Returns 2 if `view_` ends with `"\n\r"` or `"\r\n"`; 1 if `'\n'` or `'\r'`; and 0 otherwise.
-	template< traits::string V >
-	[[nodiscard]] constexpr std::size_t ends_with(  
-		const V							& v_, 
-		linebreak 
-	) noexcept {
-		if constexpr( traits::extent_v< V > > 1 ) {
-			const auto		s = shave_zero_suffix( v_, size( v_ ) );
-			const auto last = data( v_ ) + s - ( s > 0 );
-			return	( s > 1 )	? newlines  ( *last, *( last - 1 ) )
-				:	bool( s )	? is_newline( v_[ 0 ] )
-				:	0u;
-		} else if constexpr( traits::extent_v< V > == 1 ) {
-			return is_newline( v_[ 0 ] );
-		} else {
-			return 0u;
-		}
-	}
-
-
-
-
-	template< traits::string V >
-	[[nodiscard]] constexpr std::size_t length( V && v_ )		noexcept	{
-		if constexpr( traits::character_array< V > )	return std::basic_string_view( v_ ).size();
-		else											return size( v_ );
-	}
-
-
-	/// Returns a reference to the last item. 
-	/// UB, if v_ has a dynamic size that is zero.
-	template< traits::string V >
-	[[nodiscard]] constexpr auto & back( const V & v_ )			noexcept	{
-		const auto			sz = length( v_ );
-		assert( sz && "back( strv ) requires size( strv ) > 0" );
-		return *( data( v_ ) + sz - 1 );
 	}
 
 
 	/// Returns a basic_string_view of the first i_ elements of v_.
 	///	- If i_ > size( v_ ), basic_string_view( v_ ) is returned.
 	template< traits::string V >
-	[[nodiscard]] constexpr auto first( 
-		V				 && v_, 
-		const std::size_t 	i_ = 1 
+	[[nodiscard]] constexpr auto view_first( 
+		V					 && v_, 
+		const std::size_t 		i_ = 1 
 	) noexcept {
-		const auto			sz = length( v_ );
+		const auto				sz = no_nullchar_size( v_ );
 		return std::basic_string_view( data( v_ ), std::min( i_, sz ) );
 	}
-
-	/// Returns a basic_string_view of the last i_ elements of v_.
-	///	- If i_ > size( v_ ), basic_string_view( v_ ) is returned.
-	template< traits::string V >
-	[[nodiscard]] constexpr auto last( 
-		V				 && v_, 
-		const std::size_t 	i_ = 1 
-	) noexcept {
-		const auto			sz = length( v_ );
-		return ( i_ < sz )	? std::basic_string_view( data( v_ ) + sz - i_, i_ )
-							: std::basic_string_view( v_ );
-	}
+	TEST( view_first( "abcdefghi",  3 ) == "abc" );
+	TEST( view_first( "abcdefghi", 12 ) == "abcdefghi" );
 
 	/// Returns a basic_string_view of v_ but the first i_.
 	///	- If i_ > size( v_ ), an empty basic_string_view( end( v_ ) ) is returned.
 	template< traits::string V >
-	[[nodiscard]] constexpr auto not_first( 
-		V				 && v_, 
-		const std::size_t 	i_ = 1 
+	[[nodiscard]] constexpr auto view_not_first( 
+		V					 && v_, 
+		const std::size_t 		i_ = 1 
 	) noexcept {
-		const auto			sz = length( v_ );
-		return ( i_ < sz )	? std::basic_string_view( data( v_ ) + i_, sz - i_ )
-							: std::basic_string_view( data( v_ ) + sz, 0 );
+		const auto				sz = no_nullchar_size( v_ );
+		return ( i_ < sz )	?	std::basic_string_view( data( v_ ) + i_, sz - i_ )
+							: 	std::basic_string_view( data( v_ ) + sz, 0 );
 	}
+	TEST( view_not_first( "abcdefghi",  3 ) == "defghi" );
+	TEST( view_not_first( "abcdefghi", 12 ) == "" );
+
+	/// Returns a basic_string_view of the last i_ elements of v_.
+	///	- If i_ > size( v_ ), basic_string_view( v_ ) is returned.
+	template< traits::string V >
+	[[nodiscard]] constexpr auto view_last( 
+		V					 && v_, 
+		const std::size_t 		i_ = 1 
+	) noexcept {
+		const auto				sz = no_nullchar_size( v_ );
+		return ( i_ < sz )	?	std::basic_string_view( data( v_ ) + sz - i_, i_ )
+							: 	std::basic_string_view( v_ );
+	}
+	TEST( view_last( "abcdefghi",  3 ) == "ghi" );
+	TEST( view_last( "abcdefghi", 12 ) == "abcdefghi" );
 
 	/// Returns a basic_string_view of all elements of v_ except the last i_.
 	///	- If i_ > size( v_ ), an empty basic_string_view( begin( v_ ) ) is returned.
 	template< traits::string V >
-	[[nodiscard]] constexpr auto not_last( 
-		V				 && v_, 
+	[[nodiscard]] constexpr auto view_not_last( 
+		V					 && v_, 
 		const std::size_t 	i_ = 1 
 	) noexcept {
-		const auto			sz = length( v_ );
+		const auto				sz = no_nullchar_size( v_ );
 		return std::basic_string_view( data( v_ ), ( i_ < sz ) ? sz - i_ : 0u );
 	}
+	TEST( view_not_last( "abcdefghi",  3 ) == "abcdef" );
+	TEST( view_not_last( "abcdefghi", 12 ) == "" );
 
 	/// Returns a basic_string_view of `size_` elements in `v_` starting with `offset_`.
 	///	- If `offset_ < 0`, `offset_ += size( v_ )` is used (the offset is seen from the back), 
 	///	- If `offset_ + size_ >= size( v_ )`: returns `not_first( v_, offset_ )`.
 	template< traits::string V >
-	[[nodiscard]] constexpr auto subview( 
+	[[nodiscard]] constexpr auto view_mid( 
 		V					 && v_, 
-		const std::ptrdiff_t 	offset_, 
-		const std::size_t 		size_ 
+		std::ptrdiff_t 			offs_, 
+		const std::size_t 		n_ 
 	) noexcept {
-		const auto				sz = size( v_ );
-		const std::size_t 		offset	=	( offset_ >= 0 )					? std::min( std::size_t( offset_ ), sz ) 
-										:	( std::size_t( -offset_ ) < sz )	? sz - std::size_t( -offset_ )
-										:										  std::size_t{};
-
-		return std::basic_string_view( data( v_ ) + offset, std::min( length( v_ ) - offset, size_ ) );
+		const auto sz = no_nullchar_size( v_ );
+		offs_ =	( offs_ >= 0 )	?		std::min( std::size_t(  offs_ ), sz )
+								: sz -	std::min( std::size_t( -offs_ ), sz );
+		return std::basic_string_view{ data( v_ ) + offs_, std::min( sz - offs_, n_ ) };
 	}
-
-
-
-	/// Return the beginning of v_ up to but not including the first until_this_.
-	/// - If no until_this_ is found, v_ is returned.
-	template< traits::string V, typename U >
-	constexpr auto until(  
-		V					 && v_, 
-		U					 && until_this_ 
-	) noexcept {
-		return first( v_, find( v_, until_this_ ) );
-	}
-
+	TEST( view_mid( "abcdefghi",  2,  3 ) == "cde" );
+	TEST( view_mid( "abcdefghi", -5,  3 ) == "efg" );
+	TEST( view_mid( "abcdefghi",  2, 12 ) == "cdefghi" );
+	TEST( view_mid( "abcdefghi", -5, 12 ) == "efghi" );
 
 
 	/// Returns `v_`, but excluding any leading elements `v` that satisfy `p_( v )`.
@@ -206,76 +125,84 @@ namespace pax {
 	template< typename Pred, traits::string V >
 		requires( std::predicate< Pred, traits::value_type_t< V > > )
 	[[nodiscard]] constexpr auto trim_first( 
-		const V		  & v_, 
+		V			 && v_, 
 		Pred		 && p_ 
 	) noexcept {
 		auto			itr = begin( v_ );
-		auto			e   = itr + shave_zero_suffix( v_, size( v_ ) );
-
-		while( ( itr != e ) && p_( *itr ) )				++itr;
-		return std::basic_string_view{ itr, e };
+		const auto		end = no_nullchar_end( v_ );
+		while( ( itr != end ) && p_( *itr ) )		++itr;
+		return std::basic_string_view{ itr, end };
 	}
 
 	/// Returns `v_`, but excluding all leading `t_`, if any.
 	/// Returns a [non-owning] string view into v_.
 	template< traits::string V >
 	[[nodiscard]] constexpr auto trim_first( 
-		const V							  & v_, 
+		V								 && v_, 
 		const traits::value_type_t< V >   & t_ 
 	) noexcept {
-		return trim_first( v_, [ & t_ ]( const traits::value_type_t< V > & t ){ return t == t_; } );
+		return trim_first( v_, [ t_ ]( auto c ){ return c == t_; } );
 	}
+	TEST( trim_first( "", '+' ) 			==	"" );
+	TEST( trim_first( "++++abcdef++", '+' ) ==	"abcdef++" );
 
 	/// Returns `v_`, but excluding a leading `'\n'`, `'\r'`, `"\n\r"`, or `"\r\n"`. 
 	/// Returns a [non-owning] string view into v_.
 	template< traits::string V >
 	[[nodiscard]] constexpr auto trim_first( 
-		const V		  & v_, 
+		V			 && v_, 
 		linebreak 
 	) noexcept {
-		return not_first( v_, starts_with( v_, linebreak{} ) );
+		return trim_first( v_, linebreak::check );
 	}
+	TEST( trim_first( "abcdefgh",			linebreak{} )	==	"abcdefgh" );
+	TEST( trim_first( "\n\r",				linebreak{} )	==	"" );
+	TEST( trim_first( "\n\rabcdefgh\n\r",	linebreak{} )	==	"abcdefgh\n\r" );
 
 	/// Returns `v_`, but excluding any trailing elements `v` that satisfy `p_( v )`.
 	/// Returns a [non-owning] string view into v_.
 	template< typename Pred, traits::string V >
 		requires( std::predicate< Pred, traits::value_type_t< V > > )
 	[[nodiscard]] constexpr auto trim_last( 
-		const V		  & v_, 
+		V			 && v_, 
 		Pred		 && p_ 
 	) noexcept {
 		const auto		b   = begin( v_ );
-		auto			itr = b + shave_zero_suffix( v_, size( v_ ) );
-
-		while( ( --itr != b ) && p_( *itr ) );
-		return std::basic_string_view{ b, itr + 1 };
+		auto			itr = no_nullchar_end( v_ );
+		if( itr != b )	while( ( --itr != b ) && p_( *itr ) );
+		return std::basic_string_view{ b, itr + 1 - p_( *itr ) };
 	}
 
 	/// Returns `v_`, but excluding all trailing `t_`, if any.
 	/// Returns a [non-owning] string view into v_.
 	template< traits::string V >
 	[[nodiscard]] constexpr auto trim_last( 
-		const V							  & v_, 
+		V								 && v_, 
 		const traits::value_type_t< V >		t_ 
 	) noexcept {
-		return trim_last( v_, [ & t_ ]( const traits::value_type_t< V > & t ){ return t == t_; } );
+		return trim_last( v_, [ t_ ]( auto c ){ return c == t_; } );
 	}
+	TEST( trim_last( "", '+' ) 			   ==	"" );
+	TEST( trim_last( "++++abcdef++", '+' ) ==	"++++abcdef" );
 
 	/// Returns `v_`, but excluding a trailing `'\n'`, `'\r'`, `"\n\r"`, or `"\r\n"`. 
 	/// Returns a [non-owning] string view into v_.
 	template< traits::string V >
 	[[nodiscard]] constexpr auto trim_last( 
-		const V		  & v_, 
+		V			 && v_, 
 		linebreak 
 	) noexcept {
-		return not_last( v_, ends_with( v_, linebreak{} ) );
+		return trim_last( v_, linebreak::check );
 	}
+	TEST( trim_last( "abcdefgh",			linebreak{} )	==	"abcdefgh" );
+	TEST( trim_last( "\n\r",				linebreak{} )	==	"" );
+	TEST( trim_last( "\n\rabcdefgh\n\r",	linebreak{} )	==	"\n\rabcdefgh" );
 
 	/// Returns `v_`, but without any leading or trailing values `v` that satisfy `p_( v )`.
 	/// Returns a [non-owning] string view into v_.
 	template< traits::string V, typename T >
 	[[nodiscard]] constexpr auto trim( 
-		const V		  & v_, 
+		V			 && v_, 
 		T			 && p_ 
 	) noexcept {
 		return trim_last( trim_first( v_, p_ ), p_ );
@@ -350,4 +277,5 @@ namespace pax {
 		return  here.empty()	? res.subview( 0, 1 ) 	// Default value, if no line break was found.
 								: res.subview( ( here.front() == '\r' ), here.size() );
 	}
-}
+}	// namespace pax
+#undef TEST

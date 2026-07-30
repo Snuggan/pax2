@@ -17,6 +17,7 @@
 #	define TEST( ... )		static_assert( __VA_ARGS__ );
 #endif
 
+
 namespace std {
 
 	template< std::size_t I, pax::traits::sized_contiguous V >				requires( I < extent_v< V > )
@@ -363,7 +364,11 @@ namespace pax {
 	TEST( find_span( "abcdefghi_", []( auto c ){ return c == 'x'; } ) == "" );
 	
 	
-	struct linebreak {};
+	struct linebreak {
+		static constexpr auto check = []( const traits::character auto c_ ) {
+			return ( c_ == '\n' ) || ( c_ == '\r' );
+		};
+	};
 
 	/// Find any of "\n\r", "\n", "\r\n", or "\r" and return a shadow reference to it.
 	/// If none is found, { end(), 0u } is returned.
@@ -372,7 +377,7 @@ namespace pax {
 		V		  && v_, 
 		linebreak
 	) noexcept {
-		return find( v_, []( auto c_ ) { return ( c_ == '\n' ) || ( c_ == '\r' ); } );
+		return find( v_, linebreak::check );
 	};
 	TEST( find( "abcdefghi",	linebreak{} ) == 9 );
 	TEST( find( "abcd\nefghi",	linebreak{} ) == 4 );
@@ -393,7 +398,7 @@ namespace pax {
 			[[unlikely]] if( previous == '\r' )	return { &c - 1, 1u + ( c == '\n' ) };
 			previous = c;
 		}
-		return { end - ( ( previous == '\n' ) || ( previous == '\r' ) ), end };
+		return { end - linebreak::check( previous ), end };
 	};
 	TEST( find_span( "abcdefghi",		linebreak{} ) == "" );
 	TEST( find_span( "abcd\nefghi",		linebreak{} ) == "\n" );

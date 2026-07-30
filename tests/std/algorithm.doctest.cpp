@@ -159,26 +159,6 @@ namespace pax {
 	}
 
 
-	DOCTEST_TEST_CASE( "textual" ) {
-		{	// is_newline
-			static_assert(  is_newline( '\n' ) );
-			static_assert(  is_newline( '\r' ) );
-			static_assert( !is_newline( '\a' ) );
-			static_assert( !is_newline( ' '  ) );
-		}
-		{	// newlines
-			static_assert( newlines( '\n', '\r' ) == 2 );
-			static_assert( newlines( '\r', '\n' ) == 2 );
-			static_assert( newlines( '\n', '\n' ) == 1 );
-			static_assert( newlines( '\r', '\r' ) == 1 );
-			static_assert( newlines( '\n', '\a' ) == 1 );
-			static_assert( newlines( '\r', '\a' ) == 1 );
-			static_assert( newlines( '\a', '\n' ) == 0 );
-			static_assert( newlines( '\a', '\r' ) == 0 );
-		}
-	}
-	DOCTEST_TEST_CASE( "view_type, make_span" ) {
-	}
 	DOCTEST_TEST_CASE( "specials" ) {
 		{	// valid
 			constexpr int		*ptr{};

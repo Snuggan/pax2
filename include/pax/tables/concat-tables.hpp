@@ -69,7 +69,7 @@ namespace pax {
 					m_table					 += make_view( rows );
 				}
 
-				if( !ends_with( std::string_view( m_table ), linebreak{} ) )
+				if( m_table.size() && !linebreak::check( m_table.back() ) )
 					m_table += "\n";
 				++m_used_files;
 				

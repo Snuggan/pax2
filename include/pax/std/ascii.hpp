@@ -108,7 +108,7 @@ namespace pax {
 	template< traits::string S >
 	constexpr auto as_ascii( const S & str_ )					noexcept	{
 		using std::begin;
-		using 				Ch	  = typename S::value_type;
+		using 				Ch	  = traits::value_type_t< S >;
 		using				Str	  = std::basic_string     < Ch >;
 		using				StrV  = std::basic_string_view< Ch >;
 
