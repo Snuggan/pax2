@@ -4,16 +4,8 @@
 
 #pragma once
 
-#include <pax/types/point-stuff/contiguous.hpp>
+#include <pax/concepts.hpp>
 #include <string_view>
-
-
-#if defined( NDEBUG )
-#	define TEST( ... )		
-#else
-#	define TEST( ... )		static_assert( __VA_ARGS__ );
-#endif
-
 
 namespace std {
 
@@ -38,27 +30,11 @@ namespace std {
 }	// namespace std
 
 namespace pax {
-	using std::data, std::begin;
 
-	template< traits::character Char, std::size_t N >
-	constexpr std::basic_string_view< std::remove_cv_t< Char > > make_view( const std::span< Char, N > sp_ ) {
-		return { sp_.data(), sp_.size() };
-	}
-
-
-
-	/// Return the first newline used in view_ (`"\n"`, `"\r"`, `"\n\r"`, or `"\r\n"`).
-	/// - If none is found, `"\n"` is returned.
-	template< traits::string V >
-	[[nodiscard]] constexpr auto identify_newline( V && str_ ) noexcept {
-		using my_view = std::basic_string_view< traits::value_type_t< V > >;
-		static constexpr const my_view			 	res = { "\n\r\n" };
-
-		// A bit roundabout, but we don't want to risk losing the view's reference.
-		const auto here = make_view( find_span( str_, linebreak{} ) );
-		return  here.empty()	? res.subview( 0, 1 ) 	// Default value, if no line break was found.
-								: res.subview( ( here.front() == '\r' ), here.size() );
+	template< traits::string Str >
+	constexpr auto make_view( Str && str_ ) {
+		using std::data, std::size;
+		return std::basic_string_view< traits::value_type_t< Str > >{ data( str_ ), size( str_ ) };
 	}
 
 }	// namespace pax
-#undef TEST

@@ -8,6 +8,7 @@
 #include "../std/file.hpp"
 #include "../reporting/progress.hpp"
 #include "../textual/json.hpp"
+#include <pax/types/point-stuff/contiguous.hpp>
 
 #include <format>
 

@@ -7,6 +7,7 @@
 #include "html-table-template.hpp"	// pax::html_table_template
 #include "../std/string_view.hpp"	// pax::split
 #include "../reporting/error_message.hpp"
+#include <pax/types/point-stuff/contiguous.hpp>
 
 #include <span>
 #include <vector>

@@ -921,28 +921,6 @@ namespace pax {
 			}
 		}
 	}
-	DOCTEST_TEST_CASE( "other..." ) {
-		{	// identify_linebreak
-			static_assert( identify_newline( "abcd\n\refgh"   )	==	"\n\r" );
-			static_assert( identify_newline( ""               )	==	"\n" );
-			static_assert( identify_newline( "abcdefgh"       )	==	"\n" );
-
-			static_assert( identify_newline( "\nabcdefgh"     )	==	"\n" );
-			static_assert( identify_newline( "\n\r\nabcdefgh" )	==	"\n\r" );
-			static_assert( identify_newline( "\rabcdefgh"     )	==	"\r" );
-			static_assert( identify_newline( "\r\nabcdefgh"   )	==	"\r\n" );
-
-			static_assert( identify_newline( "abcd\nefgh"     )	==	"\n" );
-			static_assert( identify_newline( "abcd\n\refgh"   )	==	"\n\r" );
-			static_assert( identify_newline( "abcd\refgh"     )	==	"\r" );
-			static_assert( identify_newline( "abcd\r\nefgh"   )	==	"\r\n" );
-
-			static_assert( identify_newline( "abcdefgh\n"     )	==	"\n" );
-			static_assert( identify_newline( "abcdefgh\n\r"   )	==	"\n\r" );
-			static_assert( identify_newline( "abcdefgh\r"     )	==	"\r" );
-			static_assert( identify_newline( "abcdefgh\r\n"   )	==	"\r\n" );
-		}
-	}
 	DOCTEST_TEST_CASE( "std::span in general" ) {
 		{	// comparisons
 			const auto					abc2{ "abcdffghijkl" };
