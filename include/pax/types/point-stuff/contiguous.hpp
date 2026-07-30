@@ -121,6 +121,17 @@ namespace pax {
 		return ( data( v_ ) <= ptr_ ) && ( ptr_ < data( v_ ) + no_nullchar_size( v_ ) );
 	}
 
+	/// Return true iff any element in v1_ by address is also an element in v2_.
+	/// Cheap: 1 addition, 2 comparisons, and 2 bolean &&.
+	template< contiguous V0, contiguous V1 >
+	[[nodiscard]] constexpr bool overlap( V0 && v0_, V1 && v1_ )						noexcept	{
+		const std::size_t sz0	  = no_nullchar_size( v0_ );
+		const std::size_t sz1	  = no_nullchar_size( v1_ );
+		return	( ( data( v0_ ) > data( v1_ ) )	? ( data( v1_ ) + sz1 > data( v0_ ) ) 
+												: ( data( v0_ ) + sz0 > data( v1_ ) )	)
+			&&	sz0 && sz1;			// An empty view cannot overlap.
+	}
+
 	/// Returns a reference to the first item. 
 	/// UB, if v_ has a dynamic size that is zero.
 	template< traits::contiguous V >						requires( extent_v< V > > 0 )
@@ -384,11 +395,11 @@ namespace pax {
 		return { end - ( ( previous == '\n' ) || ( previous == '\r' ) ), end };
 	};
 	TEST( find_span( "abcdefghi",		linebreak{} ) == "" );
-	TEST( find_span( "abcd\nefghi",	linebreak{} ) == "\n" );
+	TEST( find_span( "abcd\nefghi",		linebreak{} ) == "\n" );
 	TEST( find_span( "abcd\n\refghi",	linebreak{} ) == "\n\r" );
-	TEST( find_span( "abcd\refghi",	linebreak{} ) == "\r" );
+	TEST( find_span( "abcd\refghi",		linebreak{} ) == "\r" );
 	TEST( find_span( "abcd\r\nefghi",	linebreak{} ) == "\r\n" );
-	TEST( find_span( "abcd\n\n\refghi",linebreak{} ) == "\n" );
+	TEST( find_span( "abcd\n\n\refghi",	linebreak{} ) == "\n" );
 
 
 	/// Return the beginning of v_ up to but not including the first until_this_.
@@ -400,6 +411,18 @@ namespace pax {
 	TEST( until( "abcdefghi", "ghi" ) == "abcdef" );
 	TEST( until( "abcdefghi", "ghx" ) == "abcdefghi" );
 	
+	/// Returns true iff find( v_, x_ ) < size( v_ ).
+	template< traits::contiguous V, typename X >
+	[[nodiscard]] constexpr bool contains( V && v_, X && x_ )							noexcept	{
+		return find( v_, x_ ) < no_nullchar_size( v_ );
+	}
+	TEST(  contains( "abcdefghi", "def" ) );
+	TEST( !contains( "abcdefghi", "dex" ) );
+	TEST(  contains( "abc\nghi",  linebreak{} ) );
+	TEST( !contains( "abcdefghi", linebreak{} ) );
+	TEST(  contains( "abc\nghi",  []( auto c_ ) { return c_ == '\n'; } ) );
+	TEST( !contains( "abcdefghi", []( auto c_ ) { return c_ == '\n'; } ) );
+
 	
 
 	template< typename T >

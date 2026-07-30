@@ -12,10 +12,21 @@
 #include <algorithm>		// std::sort, std::unique
 #include <numeric>			// std::iota
 
+#if defined( NDEBUG ) || !defined( __IS_CLANG__ )
+#	define TEST( ... )		
+#else
+#	define TEST( ... )		static_assert( __VA_ARGS__ );
+	static constexpr const auto		v0 = pax::point< int >( 0, 1, 2, -5, -1 );
+	static constexpr const auto		v1 = pax::point< int >( 1, 1, 1,  1, -1 );
+	constexpr int inter( double v_ )	{	return ( v_ + 1e-8 )*1e6;	}
+#endif
+
 
 namespace pax {
 	
-	using traits::contiguous, traits::sized_contiguous;
+	using std::data, std::begin;
+	using traits::sized_contiguous, traits::contiguous, traits::element_type_t, traits::extent_v;
+
 
 
 	/// Minkowski P size/distance with no root.
@@ -69,6 +80,8 @@ namespace pax {
 	/// - Must have a static extent, the present implementation depends on it. 
 	template< sized_contiguous ... Cont >		requires( all_arithmetic< Cont ... > && all_static_extent< Cont ... > )
 	constexpr auto chebyshev ( Cont && ... v_ )	noexcept	{	return minkowski < 0 >( std::forward< Cont >( v_ ) ... );	}
+	TEST( chebyshev( v0 ) ==  5 );
+	TEST( chebyshev( v0, v1 ) == 6 );
 
 	/// Manhattan distance (minkowski distance, with P = 1).
 	/// The sum of the absolute differences between the coordinates of two points.
@@ -77,6 +90,8 @@ namespace pax {
 	/// - Must have a static extent, the present implementation depends on it. 
 	template< sized_contiguous ... Cont >		requires( all_arithmetic< Cont ... > && all_static_extent< Cont ... > )
 	constexpr auto manhattan ( Cont && ... v_ )	noexcept	{	return minkowski < 1 >( std::forward< Cont >( v_ ) ... );	}
+	TEST( manhattan( v0 ) ==  9 );
+	TEST( manhattan( v0, v1 ) == 8 );
 
 	/// Euclidean distance (minkowski distance, with P = 2).
 	/// The Euclidean distance is the straight-line distance between two points in a flat space.
@@ -93,6 +108,8 @@ namespace pax {
 	/// - Must have a static extent, the present implementation depends on it. 
 	template< sized_contiguous ... Cont >		requires( all_arithmetic< Cont ... > && all_static_extent< Cont ... > )
 	constexpr auto euclidean2( Cont && ... v_ )	noexcept	{	return minkowskiP< 2 >( std::forward< Cont >( v_ ) ... );	}
+	TEST( euclidean2( v0 ) == 31.0 );
+	TEST( euclidean2( v0, v1 ) == 38 );
 
 
 	/// Canberra distance.
@@ -114,6 +131,7 @@ namespace pax {
 		auto [ ...t1 ] = v1_;
 		return ( F{} + ... + f( t0, t1 ) );
 	}
+	TEST( inter( canberra( v0, v1 )*3 ) == inter( 7.0 ) );
 
 
 	/// Cosine distance.
@@ -126,7 +144,6 @@ namespace pax {
 		Cont0		 && v0_,
 		Cont1		 && v1_
 	) {
-		using 			std::begin, std::size;
 		double			dot{}, nmA{}, nmB{};
 		auto			itrA = begin( v0_ );
 		auto			itrB = begin( v1_ );
@@ -140,6 +157,7 @@ namespace pax {
 		}
 		return 1 - dot / ( std::sqrt( nmA ) * std::sqrt( nmB ) );
 	}
+//	TEST( inter( cosine( v0, v1 ) ), inter( 1.08032 ) );	// std::sqrt...
 
 
 	/// Kendall Tao distance.
@@ -152,7 +170,6 @@ namespace pax {
 		Cont0		 && v0_,
 		Cont1		 && v1_
 	) noexcept {
-		using std::begin, std::size;
 		std::size_t 		count{};
 		const std::size_t 	n = no_nullchar_size( v0_ );
 
@@ -164,6 +181,7 @@ namespace pax {
 						||	( v0_[ i ] > v0_[ j ] && v1_[ i ] < v1_[ j ] );
 		return count;
 	}
+	TEST( kendall_tau( v0, v1 ) ==  1 );
 
 
 	/// Normalized Kendall Tao distance.
@@ -175,9 +193,10 @@ namespace pax {
 		Cont0		 && v0_,
 		Cont1		 && v1_
 	) noexcept {
-		using std::size;
-		return kendall_tau( v0_, v1_ )*2.0 / ( size( v0_ )*( size( v0_ ) - 1.0 ) );
+		const std::size_t 	n = no_nullchar_size( v0_ );
+		return kendall_tau( v0_, v1_ )*2.0 / ( n*( n - 1.0 ) );
 	}
+	TEST( normalized_kendall_tau( v0, v1 ) == 0.1 );
 
 
 	/// Hamming distance.
@@ -195,6 +214,7 @@ namespace pax {
 		auto [ ...t1 ] = v1_;
 		return ( int{} + ... + ( t0 != t1 ) );
 	}
+	TEST( hamming( v0, v1 ) == 3 );
 	
 	
 	/// Sorensen-Dice distance. 
@@ -206,7 +226,6 @@ namespace pax {
 		Cont0		 && v0_,
 		Cont1		 && v1_
 	) noexcept {
-		using std::begin, std::size;
 		std::size_t 		matches{};
 		auto				itr0 = begin( v0_ );
 		auto				itr1 = begin( v1_ );
@@ -221,6 +240,7 @@ namespace pax {
 		}
 		return matches / double( len );
 	}
+	TEST( inter( sorensen_dice( "algorithms are fun", "logarithms are not" ) ) == inter( 0.58823529411764708 ) );
 
 
 	/// Shannon index.
@@ -228,7 +248,7 @@ namespace pax {
 	/// - The elements must be an unsigned integer type, as the index is defined that way.
 	template< contiguous Cont >
 		requires( uinteger< traits::value_type_t< Cont > > )
-	double shannon_index(
+	constexpr double shannon_index(
 		Cont		 && v_
 	) {
 		double			H{};
@@ -245,6 +265,7 @@ namespace pax {
 			}
 		return H;
 	}
+//	TEST( inter( shannon_index( point< unsigned >( 10, 20, 30, 20, 20 ) ) ) == inter( 1.55711 ) );	// std::log...
 	
 
 	/// First sorts a copy of v_ and then remove doubles. Returns a std::vector.
@@ -285,6 +306,7 @@ namespace pax {
 		}
 		return common / double( arr0.size() + arr1.size() - common );
 	}
+	TEST( jaccard( v0, v1 ) == 0.4 );
 
 
 	/// Jaro similarity. 
@@ -340,6 +362,7 @@ namespace pax {
 			+	static_cast< double >( matches - t ) / matches 
 			) / 3.0;
 	}
+//	TEST( inter( jaro_similarity( "DwAyNE", "DuANE" ) ) == inter( 0.822222 ) );		// std::floor...
 
 
 	/// Jaro-Winkler similarity. 
@@ -360,6 +383,7 @@ namespace pax {
 		const double			jaro_sim = jaro_similarity( v0_, v1_ );
 		return jaro_sim + ( 0.1 * prefix_length * ( 1.0 - jaro_sim ) );
 	}
+//	TEST( jaro_winkler_similarity( "DwAyNE", "DuANE" ) == 0.84 );		// std::floor...
 
 
 	/// Levenshtein distance.
@@ -372,12 +396,13 @@ namespace pax {
 		Cont0		 && v0_,
 		Cont1		 && v1_
 	) {
-		using std::data, std::size_t;
-		if( size( v1_ ) < size( v0_ ) )	levenshtein( v1_, v0_ );
+		const auto sz0		  = no_nullchar_size( v0_ );
+		const auto sz1		  = no_nullchar_size( v1_ );
+		if( sz1 < sz0 )			return levenshtein( v1_, v0_ );
 
 		using Idx			  = std::size_t;
-		const Idx cols		  = size( v0_ ) + 1u;
-		const Idx rows		  = size( v1_ ) + 1u;
+		const Idx cols		  = sz0 + 1u;
+		const Idx rows		  = sz1 + 1u;
 
 		using Int = std::common_type_t< traits::value_type_t< Cont0 >, traits::value_type_t< Cont1 > >;
 		std::vector< Int >		t( 2*cols );
@@ -398,5 +423,27 @@ namespace pax {
 		}
 		return *( now + cols - 1 );
 	}
+	TEST( levenshtein( "cykel", "Zyklus" ) == 4 );
+	TEST( levenshtein( "doubt", "doute"  ) == 2 );
+
+
+	/// Calculate the Luhn sum (a control sum).
+	/// – UB if any character is outside ['0', '9'].
+	/// - https://en.wikipedia.org/wiki/Luhn_algorithm
+	template< contiguous V >
+	[[nodiscard]] constexpr std::size_t luhn_sum( V && v_ ) noexcept {
+		auto				b = begin( v_ );
+		const auto			e = no_nullchar_end( v_ );
+
+		static constexpr char	twice[] = { 0, 2, 4, 6, 8, 1, 3, 5, 7, 9 };
+		std::size_t				sum{};
+		bool					one{ true };
+		while( b != e )			sum += ( one = !one ) ? ( *( b++ ) - '0' ) : twice[ *( b++ ) - '0' ];
+		return sum;
+	}
+	static_assert( luhn_sum( "6112161457" )	==	30 );
+	static_assert( luhn_sum( "6212161457" )	==	31 );
+	static_assert( luhn_sum( "7112161457" )	==	32 );
 
 }	// namespace pax
+#undef TEST

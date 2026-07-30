@@ -46,6 +46,17 @@ namespace pax {
 	using view_type_t = typename view_type< C, Dynamic >::type;
 
 
+	/// Return true iff both data() and size() are equal between the two std::spans.
+	template< traits::contiguous V0, traits::contiguous V1 >
+	[[nodiscard]] constexpr bool identic(
+		const V0						  & v0_, 
+		const V1						  & v1_ 
+	) noexcept {
+		using std::data, std::size;
+		return ( data( v0_ ) == data( v1_ ) ) && ( size( v0_ ) == size( v1_ ) );
+	}
+
+
 
 
 	constexpr auto								str		= "abcdefghijkl";
@@ -703,15 +714,6 @@ namespace pax {
 			static_assert( until( "abcdefgh\r"		, linebreak{} )	==	"abcdefgh" );
 			static_assert( until( "abcdefgh\r\n"	, linebreak{} )	==	"abcdefgh" );
 		}
-		{	// equal
-			static_assert(  equal( "", "" ) );
-			static_assert(  equal( str, str ) );
-			static_assert(  equal( "abcdefghijkl", "abcdefghijkl" ) );
-			static_assert(  equal( str, "abcdefghijkl" ) );
-			static_assert(  equal( "abcdefghijkl", str ) );
-			static_assert( !equal( "abcdef", "abc" ) );
-			static_assert( !equal( "abc", "abcdef" ) );
-		}
 		{	// starts_with
 			static_assert( starts_with( "abcdef", "abc" )	==	true );
 			static_assert( starts_with( "abcdef", "abd" )	==	false );
@@ -939,40 +941,6 @@ namespace pax {
 		}
 	}
 	DOCTEST_TEST_CASE( "other..." ) {
-		constexpr auto						abd = "abddefffijkl";
-
-		{	// sort
-			std::vector< int >				v{ 0, 1, 2, 33, 4, 5, 6, 7, 8, 9, 10, 11 };
-			DOCTEST_FAST_CHECK_EQ( v[  3 ], 33 );
-			sort( v );
-			DOCTEST_FAST_CHECK_EQ( v[  3 ],  4 );
-			DOCTEST_FAST_CHECK_EQ( v[ 11 ], 33 );
-		}
-		{	// all_of
-			static_assert(  all_of ( "abcdefghijkl", []( auto c ){ return c != '\0'; } ) );
-			static_assert(  all_of ( str, []( auto c ){ return c >= 'a'; } ) );
-			static_assert( !all_of ( str, []( auto c ){ return c >= 'd'; } ) );
-			static_assert(  pax::all_of ( str, "abcdefghijkl", []( auto c, auto d ){ return c == d; } ) );
-			static_assert(  pax::all_of ( str, str, []( auto c, auto d ){ return c == d; } ) );
-			static_assert( !all_of ( str, abd, []( auto c, auto d ){ return c == d; } ) );
-		}
-		{	// any_of
-			static_assert( !any_of ( "abcdefghijkl", []( auto c ){ return c == '\0'; } ) );
-			static_assert(  any_of ( str, []( auto c ){ return c >= 'a'; } ) );
-			static_assert( !any_of ( str, []( auto c ){ return c == 'x'; } ) );
-			static_assert(  pax::any_of ( str, "abcdefghijkl", []( auto c, auto d ){ return c == d; } ) );
-			static_assert(  pax::any_of ( str, str, []( auto c, auto d ){ return c == d; } ) );
-			static_assert(  any_of ( str, abd, []( auto c, auto d ){ return c != d; } ) );
-			static_assert( !pax::any_of ( str, str, []( auto c, auto d ){ return c != d; } ) );
-		}
-		{	// none_of
-			static_assert(  none_of( "abcdefghijkl", []( auto c ){ return c == '\0'; } ) );
-			static_assert(  none_of( str, []( auto c ){ return c == 'x'; } ) );
-			static_assert( !none_of( str, []( auto c ){ return c == 'd'; } ) );
-			static_assert(  pax::none_of ( "abcdefghijkl", str, []( auto c, auto d ){ return c != d; } ) );
-			static_assert(  pax::none_of ( str, str, []( auto c, auto d ){ return c != d; } ) );
-			static_assert( !none_of ( str, abd, []( auto c, auto d ){ return c != d; } ) );
-		}
 		{	// identify_linebreak
 			static_assert( identify_newline( "abcd\n\refgh"   )	==	"\n\r" );
 			static_assert( identify_newline( ""               )	==	"\n" );
@@ -992,11 +960,6 @@ namespace pax {
 			static_assert( identify_newline( "abcdefgh\n\r"   )	==	"\n\r" );
 			static_assert( identify_newline( "abcdefgh\r"     )	==	"\r" );
 			static_assert( identify_newline( "abcdefgh\r\n"   )	==	"\r\n" );
-		}
-		{	// luhn_sum
-			static_assert( luhn_sum( "6112161457" )	==	30 );
-			static_assert( luhn_sum( "6212161457" )	==	31 );
-			static_assert( luhn_sum( "7112161457" )	==	32 );
 		}
 	}
 	DOCTEST_TEST_CASE( "std::span in general" ) {

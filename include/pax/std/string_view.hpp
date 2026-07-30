@@ -5,6 +5,7 @@
 #pragma once
 
 #include <pax/types/point-stuff/contiguous.hpp>
+// #include <pax/types/point-stuff/distance.hpp>
 #include "algorithm.hpp"	// struct linebreak
 #include <string_view>
 
@@ -180,6 +181,14 @@ namespace pax {
 		return as_ascii( std::basic_string_view( c_ ) );
 	}
 
+
+
+	template< typename T >
+	[[nodiscard]] constexpr std::size_t shave_zero_suffix( const T &, const std::size_t sz_ )		{	return sz_;		}
+
+	template< traits::string Str >			  requires( traits::character_array< Str > )
+	[[nodiscard]] constexpr std::size_t shave_zero_suffix( const Str & str_, const std::size_t sz_ )
+	{	return sz_ - ( sz_ && !str_[ sz_ - 1 ] );																		}
 
 
 	/// Returns 2 if `view_` starts with `"\n\r"` or `"\r\n"`; 1 if `'\n'` or `'\r'`; and 0 otherwise.
@@ -455,29 +464,13 @@ namespace pax {
 	/// Return the first newline used in view_ (`"\n"`, `"\r"`, `"\n\r"`, or `"\r\n"`).
 	/// - If none is found, `"\n"` is returned.
 	template< traits::string V >
-	[[nodiscard]] constexpr auto identify_newline( const V & str_ ) noexcept {
+	[[nodiscard]] constexpr auto identify_newline( V && str_ ) noexcept {
 		using my_view = std::basic_string_view< traits::value_type_t< V > >;
 		static constexpr const my_view			 	res = { "\n\r\n" };
-		const auto 									temp = not_first( str_, find( str_, linebreak{} ) );
-		const std::size_t 							sz = starts_with( temp, linebreak{} );
-		return	sz ? subview( res, temp.front() == '\r', sz ) : first( res, 1 );
+
+		// A bit roundabout, but we don't want to risk losing the view's reference.
+		const auto here = make_view( find_span( str_, linebreak{} ) );
+		return  here.empty()	? res.subview( 0, 1 ) 	// Default value, if no line break was found.
+								: res.subview( ( here.front() == '\r' ), here.size() );
 	}
-
-
-
-	/// Calculate the Luhn sum (a control sum).
-	/// – UB if any character is outside ['0', '9'].
-	/// - https://en.wikipedia.org/wiki/Luhn_algorithm
-	template< traits::string V >
-	[[nodiscard]] constexpr std::size_t luhn_sum( const V & v_ ) noexcept {
-		auto				b = begin( v_ );
-		const auto			e = b + shave_zero_suffix( v_, size( v_ ) );
-
-		static constexpr char	twice[] = { 0, 2, 4, 6, 8, 1, 3, 5, 7, 9 };
-		std::size_t				sum{};
-		bool					one{ true };
-		while( b != e )			sum += ( one = !one ) ? ( *( b++ ) - '0' ) : twice[ *( b++ ) - '0' ];
-		return sum;
-	}
-
 }
