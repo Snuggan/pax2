@@ -10,6 +10,7 @@
 #include <algorithm>			// std::ranges::equal, std::lexicographical_compare_three_way, etc.
 #include <assert.h>				// The classic assert macro.
 
+
 #if defined( NDEBUG )
 #	define TEST( ... )		
 #else

@@ -5,8 +5,6 @@
 #pragma once
 
 #include <pax/types/point-stuff/contiguous.hpp>
-// #include <pax/types/point-stuff/distance.hpp>
-#include "algorithm.hpp"	// struct linebreak
 #include <string_view>
 
 

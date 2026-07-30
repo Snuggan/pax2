@@ -12,6 +12,20 @@
 #define PAX_SPANTOOLS_VERSION_PATCH		0
 
 
+// From https://lemire.me/blog/2024/07/26/safer-code-in-c-with-lifetime-bounds/
+#ifndef __has_cpp_attribute
+	#define ada_lifetime_bound
+#elif __has_cpp_attribute(msvc::lifetimebound)
+	#define ada_lifetime_bound [[msvc::lifetimebound]]
+#elif __has_cpp_attribute(clang::lifetimebound)
+	#define ada_lifetime_bound [[clang::lifetimebound]]
+#elif __has_cpp_attribute(lifetimebound)
+	#define ada_lifetime_bound [[lifetimebound]]
+#else
+	#define ada_lifetime_bound
+#endif
+
+
 namespace pax {
 
 	template< std::size_t N >
