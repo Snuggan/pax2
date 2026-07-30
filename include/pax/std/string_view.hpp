@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include "algorithm.hpp"	// struct Newline
+#include <pax/types/point-stuff/contiguous.hpp>
+#include "algorithm.hpp"	// struct linebreak
 #include <string_view>
 
 
@@ -40,6 +41,12 @@ namespace std {
 
 namespace pax {
 	using std::data, std::size, std::begin, std::end;
+	
+	
+	template< traits::character Char, std::size_t N >
+	constexpr std::basic_string_view< std::remove_cv_t< Char > > make_view( const std::span< Char, N > sp_ ) {
+		return { sp_.data(), sp_.size() };
+	}
 
 
 	/// Name some of the control characters.
@@ -179,7 +186,7 @@ namespace pax {
 	template< traits::string V >
 	[[nodiscard]] constexpr std::size_t starts_with(  
 		const V							& v_, 
-		Newline 
+		linebreak 
 	) noexcept {
 		if constexpr( traits::extent_v< V > > 1 ) {
 			return	( size( v_ ) > 1 )	? newlines  ( v_[ 0 ], v_[ 1 ] )
@@ -196,7 +203,7 @@ namespace pax {
 	template< traits::string V >
 	[[nodiscard]] constexpr std::size_t ends_with(  
 		const V							& v_, 
-		Newline 
+		linebreak 
 	) noexcept {
 		if constexpr( traits::extent_v< V > > 1 ) {
 			const auto		s = shave_zero_suffix( v_, size( v_ ) );
@@ -308,28 +315,6 @@ namespace pax {
 
 
 
-	/// Returns `v_`, possibly excluding a leading `t_`. 
-	/// Returns a [non-owning] string view into v_.
-	template< traits::string V >
-	[[nodiscard]] constexpr auto trim_front( 
-		const V							  & v_, 
-		const traits::value_type_t< V >		t_ 
-	) noexcept {
-		return not_first( v_, starts_with( v_, t_ ) );
-	}
-
-	/// Returns `v_` possibly excluding a trailing `t_`. 
-	/// Returns a [non-owning] string view into v_.
-	template< traits::string V >
-	[[nodiscard]] constexpr auto trim_back( 
-		const V							  & v_, 
-		const traits::value_type_t< V >		t_ 
-	) noexcept {
-		return not_last( v_, ends_with( v_, t_ ) );
-	}
-
-
-
 	/// Returns `v_`, but excluding any leading elements `v` that satisfy `p_( v )`.
 	/// Returns a [non-owning] string view into v_.
 	template< typename Pred, traits::string V >
@@ -360,9 +345,9 @@ namespace pax {
 	template< traits::string V >
 	[[nodiscard]] constexpr auto trim_first( 
 		const V		  & v_, 
-		Newline 
+		linebreak 
 	) noexcept {
-		return not_first( v_, starts_with( v_, Newline{} ) );
+		return not_first( v_, starts_with( v_, linebreak{} ) );
 	}
 
 	/// Returns `v_`, but excluding any trailing elements `v` that satisfy `p_( v )`.
@@ -395,9 +380,9 @@ namespace pax {
 	template< traits::string V >
 	[[nodiscard]] constexpr auto trim_last( 
 		const V		  & v_, 
-		Newline 
+		linebreak 
 	) noexcept {
-		return not_last( v_, ends_with( v_, Newline{} ) );
+		return not_last( v_, ends_with( v_, linebreak{} ) );
 	}
 
 	/// Returns `v_`, but without any leading or trailing values `v` that satisfy `p_( v )`.
@@ -412,91 +397,47 @@ namespace pax {
 
 
 
-	/// Split v_ into two parts: before `at_` and after (but not including) `at_ + n_`.
-	/// - If `at_ >= size( v_ )`, then `{ v_, last( v_, 0 ) }` is returned.
-	/// Returns a pair of [non-owning] string views into v_.
-	template< traits::string V >
-	[[nodiscard]] constexpr auto split_at( 
-		const V							  & v_, 
-		const std::size_t 					at_, 
-		const std::size_t 					n_ = 1 
-	) noexcept {
-		// first() and not_first() handle the case if at_ + n_ >= size( v_ ).
-		return std::pair{ first( v_, at_ ), not_first( v_, at_ + n_ ) };
-	}
-
-	/// Split `view_` into two parts: before and after the first `x_`, not including it.
-	/// Returns a pair of [non-owning] string views into v_.
-	template< traits::string V >
-	[[nodiscard]] constexpr auto split_by( 
-		const V							  & v_, 
-		const traits::value_type_t< V >		item_ 
-	) noexcept {
-		return split_at( v_, find( v_, item_ ) );
-	}
-
-	/// Split the v_ into two parts: before and after (but not including) `by_`.
-	/// - If `begin( by_ ) <= begin( v_ )`, the first string view returned is `first( v_, 0 )`.
-	///	- If `end( by_ )   >= end( v_ )`,   the second string view returned is `last( v_, 0 )`.
-	/// Returns a pair of [non-owning] string views into v_.
-	template< traits::string V, traits::string By >
-	[[nodiscard]] constexpr auto split_by(
-		const V							  & v_, 
-		By								 && by_
-	) noexcept {
-		const auto		s = shave_zero_suffix( by_, size( by_ ) );
-		return split_at( v_, find( v_, by_ ), s );
-	}
-
-	/// Split into two parts: before and after the first newline (`'\n'`, `'\r'`, `"\n\r"`, or `"\r\n"`), but not including it.
-	/// Returns a pair of [non-owning] string views into v_.
-	template< traits::string V >
-	[[nodiscard]] constexpr auto split_by(
-		const V							  & v_, 
-		Newline 
-	) noexcept {
-		const std::size_t 	i = find( v_, is_newline );
-		return split_at( v_, i, starts_with( not_first( v_, i ), Newline{} ) );
-	}
-
-
-
 	/// A class to simplify iterating using ´split_by´. It uses views, so the original string must remain static.
-	/// - Example usage: ´for( const auto item : String_view_splitter( "A\nNumber\nof\nRows", Newline{} ) ) { ... }´. 
+	/// - Example usage: ´for( const auto item : String_view_splitter( "A\nNumber\nof\nRows", linebreak{} ) ) { ... }´. 
 	/// - The Divider type may be any that is accepted by ´split_by( ..., Divider )´. 
 	/// - String_view_splitter is constexpr [and never throws]. 
 	template< traits::character Char, typename Divider, typename Traits = std::char_traits< std::remove_const_t< Char > > >
 	class String_view_splitter {
 		class End						{};
-		using Value					  = std::basic_string_view< std::remove_const_t< Char >, Traits >;
+		using Value					  = std::basic_string_view< std::remove_const_t< Char > >;
+		using Span					  = std::span< std::remove_const_t< Char > >;
 		Value							m_str;
 		Divider							m_divider;
 		
 
 		class iterator {
-			std::pair< Value, Value >	m_parts;
+			split_result< Char >		m_parts;
 			Divider						m_divider;
 
 		public:
 			constexpr iterator( const Value str_, const Divider divider_ )	noexcept :
-				m_parts{ split_by( str_, divider_ ) }, m_divider{ divider_ } {}
+				m_parts{ split( str_, divider_ ) }, m_divider{ divider_ } {}
 
 			/// Iterate to next item. 
 			constexpr iterator & operator++()	noexcept		{
-				m_parts = split_by( m_parts.second, m_divider );
+				m_parts = split( m_parts.rest, m_divider );
 				return *this;
 			}
 
 			/// Get the string_view of the present element. 
-			constexpr Value operator*()			const noexcept	{	return m_parts.first;									}
+			constexpr Value operator*()		const noexcept	{	return make_view( m_parts.first );	}
 
 			/// Does *not* check equality! Only checks if we are done iterating. 
-			constexpr bool operator==( End )	const noexcept	{	return m_parts.first.data() == m_parts.second.data();	}
+			constexpr bool operator==( End )	const noexcept	{	return m_parts.first.data() == m_parts.rest.data();	}
 		};
 		
 	public:
 		constexpr String_view_splitter( const Value str_, const Divider divider_ ) 	noexcept :
 			m_str{ str_ }, m_divider{ divider_ } {}
+
+			template< std::size_t N >
+		constexpr String_view_splitter( const std::span< Char, N > str_, const Divider divider_ ) 	noexcept :
+			m_str{ make_view( str_ ) }, m_divider{ divider_ } {}
 
 		constexpr iterator begin()				const noexcept	{	return { m_str, m_divider };							}
 		constexpr End end()						const noexcept	{	return {};												}
@@ -517,8 +458,8 @@ namespace pax {
 	[[nodiscard]] constexpr auto identify_newline( const V & str_ ) noexcept {
 		using my_view = std::basic_string_view< traits::value_type_t< V > >;
 		static constexpr const my_view			 	res = { "\n\r\n" };
-		const auto 									temp = not_first( str_, find( str_, Newline{} ) );
-		const std::size_t 							sz = starts_with( temp, Newline{} );
+		const auto 									temp = not_first( str_, find( str_, linebreak{} ) );
+		const std::size_t 							sz = starts_with( temp, linebreak{} );
 		return	sz ? subview( res, temp.front() == '\r', sz ) : first( res, 1 );
 	}
 

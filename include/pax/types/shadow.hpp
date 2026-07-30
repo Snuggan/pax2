@@ -284,14 +284,14 @@ namespace pax {
 
 		/// Return a shadow of where t_ is -- or a zereo-sized shadow located at end().
 		[[nodiscard]] constexpr shadow0 find( const value_type t_ )			const noexcept	{
-			const auto temp = pax::find( span(), t_ );
+			const auto temp = pax::find_span( span(), t_ );
 			return shadow0( temp.data(), temp.size() );
 		}
 
 		/// Return a shadow of where u_ is -- or a zereo-sized shadow located at end().
  		template< std::ranges::contiguous_range U >
 		[[nodiscard]] constexpr shadow0 find( U && u_ )						const noexcept	{
-			const auto temp = pax::find( span(), u_ );
+			const auto temp = pax::find_span( span(), u_ );
 			return shadow0( temp.data(), temp.size() );
 		}
 
@@ -299,14 +299,14 @@ namespace pax {
 		/// If none is found, { end(), 0u } is returned.
 		template< typename Test >	requires std::is_invocable_r_v< bool, Test, value_type >
 		[[nodiscard]] constexpr shadow0 find( Test && test_ )				const noexcept	{
-			const auto temp = pax::find( span(), test_ );
+			const auto temp = pax::find_span( span(), test_ );
 			return shadow0( temp.data(), temp.size() );
 		}
 
 		/// Find any of "\n\r", "\n", "\r\n", or "\r" and return a shadow reference to it.
 		/// If none is found, { end(), 0u } is returned.
 		[[nodiscard]] constexpr shadow0 find_linebreak()					const noexcept requires( is_string ) {
-			const auto temp = pax::find_linebreak( span() );
+			const auto temp = pax::find_span( span(), linebreak{} );
 			return shadow0( temp.data(), temp.size() );
 		};
 

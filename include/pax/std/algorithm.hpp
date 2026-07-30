@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <pax/types/point-stuff/contiguous.hpp>
 #include "../concepts.hpp"	// shave_zero_suffix, pax::traits::character, pax::traits::string, etc.
 #include <algorithm>		// std::min, std::equal, std::lexicographical_compare_three_way
 #include <cassert>			// assert
@@ -28,27 +29,12 @@
 namespace pax {
 	using std::data, std::size, std::begin, std::end;
 
-	/// Tag for use when doing stuff with newlines. 
-	struct Newline{};
-
 	template< typename T >
 	[[nodiscard]] constexpr std::size_t shave_zero_suffix( const T &, const std::size_t sz_ )		{	return sz_;		}
 
 	template< traits::string Str >			  requires( traits::character_array< Str > )
 	[[nodiscard]] constexpr std::size_t shave_zero_suffix( const Str & str_, const std::size_t sz_ )
 	{	return sz_ - ( sz_ && !str_[ sz_ - 1 ] );																		}
-
-
-	/// Returns false. 
-	[[nodiscard]] constexpr bool valid( std::nullptr_t ) 	noexcept	{	return false;				}
-
-	/// Returns ptr_ != nullptr. 
-	template< typename T >
-	[[nodiscard]] constexpr bool valid( T * ptr_ ) 			noexcept	{	return ptr_ != nullptr;		}
-
-	/// Returns sp_.data() != nullptr. 
-	template< traits::contiguous V >
-	[[nodiscard]] constexpr bool valid( const V & v_ ) 		noexcept	{	return valid( data( v_ ) );	}
 
 
 	/// Return true iff both data() and size() are equal between the two std::spans.
@@ -71,17 +57,6 @@ namespace pax {
 												: ( data( v0_ ) + size( v0_ ) > data( v1_ ) )	)
 			&&	size( v0_ ) && size( v1_ );		// An empty view cannot overlap.
 	}
-
-	/// Returns a reference to the first item. 
-	/// UB, if v_ has a dynamic size that is zero.
-	template< traits::contiguous V >
-	[[nodiscard]] constexpr auto & front( V && v_ ) noexcept {
-		static_assert( traits::extent_v< V > != 0, "front( v_ ) requires size( v_ ) > 0" );
-		if constexpr ( traits::extent_v< V > == traits::dynamic_extent )
-			assert( size( v_ ) && "front( v_ ) requires size( v_ ) > 0" );
-		return *data( v_ );
-	}
-
 
 
 	namespace detail {
@@ -110,105 +85,6 @@ namespace pax {
 	}	// namespace detail
 
 
-
-	/// Returns 1, if the beginning of `view_` is `t_` and 0 otherwise.
-	template< traits::string Str >
-	[[nodiscard]] constexpr bool starts_with(  
-		const Str						  & str_, 
-		const traits::value_type_t< Str >	ch_ 
-	) noexcept {
-		return shave_zero_suffix( str_, size( str_ ) ) && ( str_[ 0 ] == ch_ );
-	}
-
-	/// Returns the size of `v_` if the beginning of `view_` is lexicographical equal to `v_` and 0 otherwise.
-	template< traits::string V0, traits::string V1 >
-	[[nodiscard]] constexpr std::size_t starts_with(  
-		const V0						  & v0_, 
-		V1								 && v1_
-	) noexcept {
-		const auto		b0  = begin( v0_ );
-		const auto		sz0 = shave_zero_suffix( v0_, size( v0_ ) );
-		const auto		b1  = begin( v1_ );
-		const auto		sz1 = shave_zero_suffix( v1_, size( v1_ ) );
-		return ( sz1 > sz0 ) ? 0u : std::equal( b1, b1 + sz1, b0 ) ? sz1 : 0u;
-	}
-
-
-	/// Returns 1, if the end of `view_` is `t_` and 0 otherwise.
-	template< traits::string V >
-	[[nodiscard]] constexpr bool ends_with(  
-		const V							  & str_, 
-		const traits::value_type_t< V >		t_ 
-	) noexcept {
-		const auto	sz = shave_zero_suffix( str_, size( str_ ) );
-		return sz && ( str_[ sz - 1 ] == t_ );
-	}
-
-	/// Returns the size of `v_`, if the end of `view_` is lexicographical equal to `v_` and 0 otherwise.
-	template< traits::string V0, traits::string V1 >
-	[[nodiscard]] constexpr std::size_t ends_with( 
-		const V0						  & v0_, 
-		V1								 && v1_
-	) noexcept {
-		const auto		b0  = begin( v0_ );
-		const auto		sz0 = shave_zero_suffix( v0_, size( v0_ ) );
-		const auto		b1  = begin( v1_ );
-		const auto		sz1 = shave_zero_suffix( v1_, size( v1_ ) );
-		return ( sz1 > sz0 ) ? 0u : std::equal( b1, b1 + sz1, b0 + ( sz0 - sz1 ) ) ? sz1 : 0u;
-	}
-
-
-
-
-	/// Returns the offset to the first occurence of sp1_ in sp0_.
-	/// - Returns size( v_ ) if there is no such.
-	template< traits::contiguous V0, traits::contiguous V1 >
-	[[nodiscard]] constexpr std::size_t find(  
-		const V0						  & v0_, 
-		const V1						  & v1_
-	) noexcept {
-		const auto		b0  = begin( v0_ );
-		const auto		b1  = begin( v1_ );
-		return std::search( b0, b0 + shave_zero_suffix( v0_, size( v0_ ) ), 
-							b1, b1 + shave_zero_suffix( v1_, size( v1_ ) ) ) - b0;
-	}
-
-	/// Returns the offset to the first occurence of t_ in v_.
-	/// - Returns v_.size() if there is no such.
-	template< traits::contiguous V >
-	[[nodiscard]] constexpr std::size_t find(  
-		const V							  & v_, 
-		const traits::value_type_t< V >	  & t_ 
-	) noexcept {
-		const auto		b  = begin( v_ );
-		return std::find( b, b + shave_zero_suffix( v_, size( v_ ) ), t_ ) - b;
-	}
-
-	/// Returns the offset to v for the first true occurence of pred_( v ) in v_.
-	/// - Returns size( v_ ) if there is no such.
-	template< traits::contiguous V, typename Pred >
-		requires( std::predicate< Pred, traits::value_type_t< V > > )
-	[[nodiscard]] constexpr std::size_t find(  
-		const V							  & v_, 
-		Pred							 && pred_ 
-	) noexcept {
-		const auto		b  = begin( v_ );
-		return std::find_if( b, b + shave_zero_suffix( v_, size( v_ ) ), pred_ ) - b;
-	}
-
-	/// Returns the offset to the first occurence of either `'\n'` or `'\r'` in `view_`.
-	/// - Returns `view_.size()` if there is no such.
-	template< traits::string V >
-	[[nodiscard]] constexpr std::size_t find(  
-		const V							  & v_, 
-		Newline	
-	) noexcept {
-		return find( v_, []( const unsigned c )	noexcept {
-				// The first part of the test is redundant, but is thought to quicken up the test in most cases.
-				return ( c <= 0x0d ) && ( ( c == 0x0a ) || ( c == 0x0d ) );
-			}
-		);
-	}
 
 	/// Returns true iff find( v_, x_ ) < size( v_ ).
 	template< traits::contiguous V, typename X >

@@ -47,7 +47,7 @@ namespace pax {
 
 			if( std::filesystem::file_size( file_ ) ) {		// Ignore empty files.
 				const std::string table		  = read_string( file_ );
-				auto [ hdr, rows ]			  = split_by( std::string_view( table ), Newline{} );
+				auto [ hdr, rows ]			  = split( std::string_view( table ), linebreak{} );
 
 				if( !m_header_size ) {
 					m_table					  = table;
@@ -66,10 +66,10 @@ namespace pax {
 						to_string( m_main_file ), std::string_view( m_table.data(), m_header_size )
 					) );
 				} else {
-					m_table					 += rows;
+					m_table					 += make_view( rows );
 				}
 
-				if( !ends_with( std::string_view( m_table ), Newline{} ) )
+				if( !ends_with( std::string_view( m_table ), linebreak{} ) )
 					m_table += "\n";
 				++m_used_files;
 				

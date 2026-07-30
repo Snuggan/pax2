@@ -212,7 +212,7 @@ namespace pax {
 		constexpr String_meta( const std::basic_string_view< Ch, Traits > str_ ) noexcept
 			: m_glyphs{ str_.size() }
 		{
-			for( auto row : String_view_splitter( str_, Newline{} ) ) {	// Iterate str_ row by row.
+			for( auto row : String_view_splitter( str_, linebreak{} ) ) {	// Iterate str_ row by row.
 				if( row.size() ) {										// Ignore empty rows.
 					for( const unsigned c : row )			++m_count_by_row[ ( c < Asciis ) ? c : Non_ascii ];
 					for( auto & cnt : m_count_by_row )		cnt.row_end();
@@ -228,7 +228,7 @@ namespace pax {
 
 			// Count columns in first row. (There is at least one column.) 
 			++m_cols_in_first_row;
-			const auto row = until( str_, Newline{} );
+			const auto row = until( str_, linebreak{} );
 			for( const Ch c : row )
 				if( c == m_col_delimit )			++m_cols_in_first_row;
 		}
@@ -290,7 +290,7 @@ namespace pax {
 		// Read the columns, row by row.
 		std::vector< std::basic_string_view< Ch, Traits  > >	result;
 		result.reserve( count.non_empty_rows() * count.cols_in_first() );
-		for( const auto row : String_view_splitter( str_, Newline{} ) )  					// Iterate row by row.
+		for( const auto row : String_view_splitter( str_, linebreak{} ) )  					// Iterate row by row.
 			if( row.size() ) 				 												// Skip empty rows
 				for( const auto cell : String_view_splitter( row, count.col_delimiter() ) )	// Iterate row cell by cell.
 					result.push_back( cell );
@@ -337,12 +337,12 @@ namespace pax {
 			std::size_t						idx{};
 			str_ += tr;
 			for( const auto cell : row_splitter_ ) {	// Iterate cell by cell along one row.
-				const auto tooltips		  = split_by( cell, '|' );	// "<first/cell-contents>|<second/cell-tooltip>"
-				str_					 += tooltips.second.empty()
+				const auto tooltips		  = split( cell, '|' );	// "<first/cell-contents>|<second/cell-tooltip>"
+				str_					 += tooltips.rest.empty()
 												? std::format( td1, tooltips.first )
-												: std::format( td2, tooltips.second, tooltips.first );
+												: std::format( td2, tooltips.rest, tooltips.first );
 				if( ( idx < numeric_.size() ) && !numeric_[ idx ].is_nonnumeric() )
-					numeric_[ idx ]+= Strtype( tooltips.first );
+					numeric_[ idx ]+= Strtype( make_view( tooltips.first ) );
 				++idx;
 			}
 			while( ++idx <= num_col_ )		str_ += td0;
@@ -356,7 +356,7 @@ namespace pax {
 			const bool						metadata2cout_
 		) noexcept {
 			const auto 						meta = String_meta( table_ );
-			const auto 						[ header, rows ] = split_by( table_, Newline{} );
+			const auto 						[ header, rows ] = split( table_, linebreak{} );
 			
 			std::string						body{};
 			body.reserve( 
@@ -367,7 +367,7 @@ namespace pax {
 			std::vector< Strtype >			col_types( meta.cols_in_first() );
 
 			// Process the body. 
-			for( const auto row : String_view_splitter( rows, Newline{} ) ) // Iterate row by row.
+			for( const auto row : String_view_splitter( rows, linebreak{} ) ) // Iterate row by row.
 				if( row.size() ) 	// Skip empty rows
 					process_row( String_view_splitter( row, meta.col_delimiter() ), body, meta.cols_in_first(), col_types );
 

@@ -656,11 +656,11 @@ namespace pax {
 			static_assert( find( str, "cde" )	==	 2 );
 			static_assert( find( str, "cdf" )	==	 std::string_view( str ).size() );
 			static_assert( find( "abcdefghijkl", "cde" )		==	 2 );
-			DOCTEST_FAST_CHECK_EQ( find( str, first( str, 5 ) ),	 std::string_view( "abcde" ) );
-			DOCTEST_FAST_CHECK_EQ( find( str, last ( str, 7 ) ),	 std::string_view( "fghijkl" ) );
+			DOCTEST_FAST_CHECK_EQ( find_span( str, first( str, 5 ) ),	 std::string_view( "abcde" ) );
+			DOCTEST_FAST_CHECK_EQ( find_span( str, last ( str, 7 ) ),	 std::string_view( "fghijkl" ) );
 
-			static_assert( find( null_, Newline{} )				==	 0 );
-			static_assert( find( "abcd\r\nefgh", Newline{} )	==	 4 );
+			static_assert( find( null_, linebreak{} )				==	 0 );
+			static_assert( find( "abcd\r\nefgh", linebreak{} )	==	 4 );
 		}
 		{	// contains
 			static_assert(  contains( str, 'd' ) );
@@ -669,7 +669,6 @@ namespace pax {
 			static_assert(  contains( str, last ( str, 5 ) ) );
 			static_assert(  contains( "abcdefghijkl", first( str, 5 ) ) );
 			static_assert(  contains( "abcdefghijkl", "cdef" ) );
-			static_assert(  contains( "abcd\r\nefgh", Newline{} ) );
 		}
 		{	// until
 			using std::data, std::size;
@@ -684,25 +683,25 @@ namespace pax {
 			static_assert( until( "abcdefgh", 'g' )		==	"abcdef" );	// Last
 			static_assert( until( "abcdefgh", "fg" )	==	"abcde" );	// Last
 
-			// Newline 
-			static_assert( until( "abcd\r\nefgh"	, Newline{} ).size() == 4 );
-			static_assert( until( ""				, Newline{} )	==	"" );
-			static_assert( until( "abcdefgh"		, Newline{} )	==	"abcdefgh" );
+			// linebreak 
+			static_assert( until( "abcd\r\nefgh"	, linebreak{} ).size() == 4 );
+			static_assert( until( ""				, linebreak{} )	==	"" );
+			static_assert( until( "abcdefgh"		, linebreak{} )	==	"abcdefgh" );
 
-			static_assert( until( "\nabcdefgh"		, Newline{} )	==	"" );
-			static_assert( until( "\n\r\nabcdefgh"	, Newline{} )	==	"" );
-			static_assert( until( "\rabcdefgh"		, Newline{} )	==	"" );
-			static_assert( until( "\r\nabcdefgh"	, Newline{} )	==	"" );
+			static_assert( until( "\nabcdefgh"		, linebreak{} )	==	"" );
+			static_assert( until( "\n\r\nabcdefgh"	, linebreak{} )	==	"" );
+			static_assert( until( "\rabcdefgh"		, linebreak{} )	==	"" );
+			static_assert( until( "\r\nabcdefgh"	, linebreak{} )	==	"" );
 
-			static_assert( until( "abcd\nefgh"		, Newline{} )	==	"abcd" );
-			static_assert( until( "abcd\n\refgh"	, Newline{} )	==	"abcd" );
-			static_assert( until( "abcd\refgh"		, Newline{} )	==	"abcd" );
-			static_assert( until( "abcd\r\nefgh"	, Newline{} )	==	"abcd" );
+			static_assert( until( "abcd\nefgh"		, linebreak{} )	==	"abcd" );
+			static_assert( until( "abcd\n\refgh"	, linebreak{} )	==	"abcd" );
+			static_assert( until( "abcd\refgh"		, linebreak{} )	==	"abcd" );
+			static_assert( until( "abcd\r\nefgh"	, linebreak{} )	==	"abcd" );
 
-			static_assert( until( "abcdefgh\n"		, Newline{} )	==	"abcdefgh" );
-			static_assert( until( "abcdefgh\n\r"	, Newline{} )	==	"abcdefgh" );
-			static_assert( until( "abcdefgh\r"		, Newline{} )	==	"abcdefgh" );
-			static_assert( until( "abcdefgh\r\n"	, Newline{} )	==	"abcdefgh" );
+			static_assert( until( "abcdefgh\n"		, linebreak{} )	==	"abcdefgh" );
+			static_assert( until( "abcdefgh\n\r"	, linebreak{} )	==	"abcdefgh" );
+			static_assert( until( "abcdefgh\r"		, linebreak{} )	==	"abcdefgh" );
+			static_assert( until( "abcdefgh\r\n"	, linebreak{} )	==	"abcdefgh" );
 		}
 		{	// equal
 			static_assert(  equal( "", "" ) );
@@ -714,198 +713,178 @@ namespace pax {
 			static_assert( !equal( "abc", "abcdef" ) );
 		}
 		{	// starts_with
-			static_assert( starts_with( "abcdef", "abc" )	==	3 );
-			static_assert( starts_with( "abcdef", "abd" )	==	0 );
-			static_assert( starts_with( str, ""    )		==	0 );
-			static_assert( starts_with( null_, "123" )		==	0 );
-			static_assert( starts_with( str, "abc" )		==	3 );
-			static_assert( starts_with( str, "def" )		==	0 );
-			static_assert( starts_with( null_, ' ' )		==	0 );
-			static_assert( starts_with( str, 'a' )			==	1 );
-			static_assert( starts_with( str, 'b' )			==	0 );
-
-			static_assert( starts_with( ""            ,	Newline{} )	==	0 );
-			static_assert( starts_with( "abcd\r\nefgh",	Newline{} )	==	0 );
-			static_assert( starts_with( "\nabcdefgh"  ,	Newline{} )	==	1 );
-			static_assert( starts_with( "\n\rabcdefgh",	Newline{} )	==	2 );
-			static_assert( starts_with( "\rabcdefgh"  ,	Newline{} )	==	1 );
-			static_assert( starts_with( "\r\nabcdefgh",	Newline{} )	==	2 );
+			static_assert( starts_with( "abcdef", "abc" )	==	true );
+			static_assert( starts_with( "abcdef", "abd" )	==	false );
+			static_assert( starts_with( str, ""    )		==	true );
+			static_assert( starts_with( null_, "123" )		==	false );
+			static_assert( starts_with( str, "abc" )		==	true );
+			static_assert( starts_with( str, "def" )		==	false );
 		}
 		{	// ends_with
-			static_assert( ends_with( "abcdef", "def" )					==	3 );
-			static_assert( ends_with( "abcdef", "deg" )					==	0 );
-			static_assert( ends_with( str, ""    )						==	0 );
-			static_assert( ends_with( null_, "jkl" )					==	0 );
-			static_assert( ends_with( "abcdefghijkl", last( str, 3 ) )	==	3 );
-			static_assert( ends_with( str, "jkl" )						==	3 );
-			static_assert( ends_with( str, "ijk" )						==	0 );
-			static_assert( ends_with( null_, ' ' )						==	0 );
-			static_assert( ends_with( str, 'l' )						==	1 );
-			static_assert( ends_with( str, 'k' )						==	0 );
-
-			static_assert( ends_with( ""            ,	Newline{} )		==	0 );
-			static_assert( ends_with( "abcd\r\nefgh",	Newline{} )		==	0 );
-			static_assert( ends_with( "abcdefgh\n"  ,	Newline{} )		==	1 );
-			static_assert( ends_with( "abcdefgh\n\r",	Newline{} )		==	2 );
-			static_assert( ends_with( "abcdefgh\r"  ,	Newline{} )		==	1 );
-			static_assert( ends_with( "abcdefgh\r\n",	Newline{} )		==	2 );
+			static_assert( ends_with( "abcdef", "def" )					==	true );
+			static_assert( ends_with( "abcdef", "deg" )					==	false );
+			static_assert( ends_with( str, ""    )						==	true );
+			static_assert( ends_with( null_, "jkl" )					==	false );
+			static_assert( ends_with( "abcdefghijkl", last( str, 3 ) )	==	true );
+			static_assert( ends_with( str, "jkl" )						==	true );
+			static_assert( ends_with( str, "ijk" )						==	false );
 		}
 		{	// split_at, spolit_by
 			{	// at index
 				{
 					constexpr auto div = split_at( "abcdefghijkl", 24 );
 					static_assert( div.first	==	"abcdefghijkl" );
-					static_assert( div.second	==	"" );
+					static_assert( div.rest		==	"" );
 				} {
 					constexpr auto div = split_at( "abcdefghijkl", 12 );
 					static_assert( div.first 	==	"abcdefghijkl" );
-					static_assert( div.second	==	"" );
+					static_assert( div.rest		==	"" );
 				} {
 					constexpr auto div = split_at( "abcdefghijkl", 4 );
 					static_assert( div.first 	==	"abcd" );
-					static_assert( div.second	==	"fghijkl" );
+					static_assert( div.rest		==	"efghijkl" );
 				} {
 					constexpr auto div = split_at( abc, 0 );
 					static_assert( div.first	==	first( abc, 0 ) );
-					static_assert( div.second	==	not_first( abc, 1 ) );
+					static_assert( div.rest		==	not_first( abc, 0 ) );
 				} {
 					constexpr auto div = split_at( abc, 2 );
 					static_assert( div.first	==	first( abc, 2 ) );
-					static_assert( div.second	==	not_first( abc, 3 ) );
+					static_assert( div.rest		==	not_first( abc, 2 ) );
 				} {
 					constexpr auto div = split_at( abc, abc.size() - 1 );
 					static_assert( div.first	==	first( abc, abc.size() - 1 ) );
-					static_assert( div.second	==	last( abc, 0 ) );
+					static_assert( div.rest		==	last( abc, 1 ) );
 				} {
 					constexpr auto div = split_at( abc, abc.size() );
 					static_assert( div.first	==	abc );
-					static_assert( div.second	==	last( abc, 0 ) );
+					static_assert( div.rest		==	last( abc, 0 ) );
 				} {
 					constexpr auto div = split_at( abc, abc.size() + 1 );
 					static_assert( div.first	==	abc );
-					static_assert( div.second	==	last( abc, 0 ) );
+					static_assert( div.rest		==	last( abc, 0 ) );
 				}
 			}
 			{	// by value
 				constexpr auto base = mid( abc, 3, 4 );
 				DOCTEST_FAST_CHECK_EQ( base,	std::string_view( "defg" ) );
 				{
-					constexpr auto div = split_by( "abcdefghijkl", 'e' );
+					constexpr auto div = split( "abcdefghijkl", 'e' );
 					static_assert( div.first 	==	"abcd" );
-					static_assert( div.second	==	"fghijkl" );
+					static_assert( div.rest		==	"fghijkl" );
 				} {
-					constexpr auto div = split_by( base, 'a' );					// None
+					constexpr auto div = split( base, 'a' );					// None
 					static_assert( div.first	==	base );
-					static_assert( div.second	==	last( base, 0 ) );
+					static_assert( div.rest		==	last( base, 0 ) );
 				} {
-					constexpr auto div = split_by( base, 'd' );					// First
+					constexpr auto div = split( base, 'd' );					// First
 					static_assert( div.first	==	first( base, 0 ) );
-					static_assert( div.second	==	not_first( base, 1 ) );
+					static_assert( div.rest		==	not_first( base, 1 ) );
 				} {
-					constexpr auto div = split_by( base, 'f' );					// Middle
+					constexpr auto div = split( base, 'f' );					// Middle
 					static_assert( div.first	==	first( base, 2 ) );
-					static_assert( div.second	==	not_first( base, 3 ) );
+					static_assert( div.rest		==	not_first( base, 3 ) );
 				} {
-					constexpr auto div = split_by( base, 'g' );					// Last
+					constexpr auto div = split( base, 'g' );					// Last
 					static_assert( div.first	==	first( base, 3 ) );
-					static_assert( div.second	==	not_first( base, 4 ) );
+					static_assert( div.rest		==	not_first( base, 4 ) );
 				}
 			}
 			{	// by string_view
 				constexpr auto base = mid( abc, 3, 4 );
 				DOCTEST_FAST_CHECK_EQ( base,	std::string_view( "defg" ) );
 				{
-					constexpr auto div = split_by( "defg", "ef" );
+					constexpr auto div = split( "defg", "ef" );
 					static_assert( div.first 	==	"d" );
-					static_assert( div.second	==	"g" );
+					static_assert( div.rest		==	"g" );
 				} {
-					constexpr auto div = split_by( str, first( str, 2 ) );		// First
-					DOCTEST_FAST_CHECK_EQ( find( str, first( str, 2 ) ),	std::string_view( "ab" ) );
+					constexpr auto div = split( str, first( str, 2 ) );		// First
+					DOCTEST_FAST_CHECK_EQ( find_span( str, first( str, 2 ) ),	std::string_view( "ab" ) );
 					static_assert( div.first			==	first( str,  0 ) );
-					static_assert( div.second			==	last ( str, 10 ) );
+					static_assert( div.rest				==	last ( str, 10 ) );
 					static_assert( div.first.data() 	==	std::string_view( str ).data() );
 				} {
-					constexpr auto div = split_by( str, mid( str, 4, 2 ) );	// Middle
+					constexpr auto div = split( str, mid( str, 4, 2 ) );	// Middle
 					static_assert( div.first			==	first( str,  4 ) );
-					static_assert( div.second			==	last ( str,  6 ) );
+					static_assert( div.rest				==	last ( str,  6 ) );
 				} {
-					constexpr auto div = split_by( str, last( str, 2 ) );		// End
+					constexpr auto div = split( str, last( str, 2 ) );		// End
 					static_assert( div.first			==	first( str, 10 ) );
-					static_assert( div.second			==	last ( str,  0 ) );
-					static_assert ( div.second.data()	==	std::string_view( str ).data() + std::string_view( str ).size() );
+					static_assert( div.rest				==	last ( str,  0 ) );
+					static_assert ( div.rest.data()		==	std::string_view( str ).data() + std::string_view( str ).size() );
 				} {
-					constexpr auto div = split_by( str, "aaa" );				// None
+					constexpr auto div = split( str, "aaa" );				// None
 					static_assert( div.first			==	str );
-					static_assert( div.second			==	last( str, 0 ) );
+					static_assert( div.rest				==	last( str, 0 ) );
 				}
 			}
-			{	// by Newline
+			{	// by linebreak
 				// None
 				{
-					constexpr auto div = split_by( std::string_view( "bcdefgh" ), Newline{} );
+					constexpr auto div = split( std::string_view( "bcdefgh" ), linebreak{} );
 					static_assert( div.first 		==	"bcdefgh" );
-					static_assert( div.second		==	"" );
+					static_assert( div.rest			==	"" );
 				} {
-					constexpr auto div = split_by( std::string_view( "" ), Newline{} );
+					constexpr auto div = split( std::string_view( "" ), linebreak{} );
 					static_assert( div.first		==	"" );
-					static_assert( div.second		==	"" );
+					static_assert( div.rest			==	"" );
 				}
 
 				{	// Beginning
 					{
-						constexpr auto div = split_by( "\nbcdefgh", Newline{} );
+						constexpr auto div = split( "\nbcdefgh", linebreak{} );
 						static_assert( div.first 	==	"" );
-						static_assert( div.second	==	"bcdefgh" );
+						static_assert( div.rest		==	"bcdefgh" );
 					} {
-						constexpr auto div = split_by( "\n\rbcdefgh", Newline{} );
+						constexpr auto div = split( "\n\rbcdefgh", linebreak{} );
 						static_assert( div.first	==	"" );
-						static_assert( div.second	==	"bcdefgh" );
+						static_assert( div.rest		==	"bcdefgh" );
 					} {
-						constexpr auto div = split_by( "\rbcdefgh", Newline{} );
+						constexpr auto div = split( "\rbcdefgh", linebreak{} );
 						static_assert( div.first	==	"" );
-						static_assert( div.second	==	"bcdefgh" );
+						static_assert( div.rest		==	"bcdefgh" );
 					} {
-						constexpr auto div = split_by( "\r\nbcdefgh", Newline{} );
+						constexpr auto div = split( "\r\nbcdefgh", linebreak{} );
 						static_assert( div.first	==	"" );
-						static_assert( div.second	==	"bcdefgh" );
+						static_assert( div.rest		==	"bcdefgh" );
 					}
 				}
 				{	// Middle
 					{
-						constexpr auto div = split_by( "bcd\nefgh", Newline{} );
+						constexpr auto div = split( "bcd\nefgh", linebreak{} );
 						static_assert( div.first 	==	"bcd" );
-						static_assert( div.second	==	"efgh" );
+						static_assert( div.rest		==	"efgh" );
 					} {
-						constexpr auto div = split_by( "bcd\n\refgh", Newline{} );
+						constexpr auto div = split( "bcd\n\refgh", linebreak{} );
 						static_assert( div.first	==	"bcd" );
-						static_assert( div.second	==	"efgh" );
+						static_assert( div.rest		==	"efgh" );
 					} {
-						constexpr auto div = split_by( "bcd\refgh", Newline{} );
+						constexpr auto div = split( "bcd\refgh", linebreak{} );
 						static_assert( div.first	==	"bcd" );
-						static_assert( div.second	==	"efgh" );
+						static_assert( div.rest		==	"efgh" );
 					} {
-						constexpr auto div = split_by( "bcd\r\nefgh", Newline{} );
+						constexpr auto div = split( "bcd\r\nefgh", linebreak{} );
 						static_assert( div.first	==	"bcd" );
-						static_assert( div.second	==	"efgh" );
+						static_assert( div.rest		==	"efgh" );
 					}
 				}
 				{	// Ending
 					{
-						constexpr auto div = split_by( "bcdefgh\n", Newline{} );
+						constexpr auto div = split( "bcdefgh\n", linebreak{} );
 						static_assert( div.first 	==	"bcdefgh" );
-						static_assert( div.second	==	"" );
+						static_assert( div.rest		==	"" );
 					} {
-						constexpr auto div = split_by( "bcdefgh\n\r", Newline{} );
+						constexpr auto div = split( "bcdefgh\n\r", linebreak{} );
 						static_assert( div.first	==	"bcdefgh" );
-						static_assert( div.second	==	"" );
+						static_assert( div.rest		==	"" );
 					} {
-						constexpr auto div = split_by( "bcdefgh\r", Newline{} );
+						constexpr auto div = split( "bcdefgh\r", linebreak{} );
 						static_assert( div.first	==	"bcdefgh" );
-						static_assert( div.second	==	"" );
+						static_assert( div.rest		==	"" );
 					} {
-						constexpr auto div = split_by( "bcdefgh\r\n", Newline{} );
+						constexpr auto div = split( "bcdefgh\r\n", linebreak{} );
 						static_assert( div.first	==	"bcdefgh" );
-						static_assert( div.second	==	"" );
+						static_assert( div.rest		==	"" );
 					}
 				}
 			}
@@ -915,16 +894,6 @@ namespace pax {
 			constexpr auto					pred = []( char c ) { return c <= 'b'; };
 			constexpr auto 					is_plus = []( auto x_ ){	return x_ == '+'; };
 
-			{	// trim_front
-				static_assert( trim_front( "++++abcdef++", '+' )==	"+++abcdef++" );
-				static_assert( trim_front( text, '+' )			==	not_first( text, 1 ) );
-				static_assert( trim_front( text, '-' )			==	text );
-			}
-			{	// trim_back
-				static_assert( trim_back( "++++abcdef++", '+' )	==	"++++abcdef+" );
-				static_assert( trim_back( text, '+' )			==	not_last( text, 1 ) );
-				static_assert( trim_back( text, '-' )			==	text );
-			}
 			{	// trim_first
 				{	// traits::character
 					static_assert( trim_first( "abc", '+' )		==	"abc" );
@@ -934,14 +903,14 @@ namespace pax {
 					static_assert( trim_first( text, is_plus )	==	not_first( text, 4 ) );
 					static_assert( trim_first( text, pred )		==	not_first( text, 6 ) );
 				}
-				{	// Newline
-					static_assert( trim_first( "",					Newline{} )	==	"" );
-					static_assert( trim_first( "\n\r",				Newline{} )	==	"" );
-					static_assert( trim_first( "abcdefgh\n\r",		Newline{} )	==	"abcdefgh\n\r" );
-					static_assert( trim_first( "\nabcdefgh\n\r",	Newline{} )	==	"abcdefgh\n\r" );
-					static_assert( trim_first( "\n\rabcdefgh\n\r",	Newline{} )	==	"abcdefgh\n\r" );
-					static_assert( trim_first( "\rabcdefgh\n\r",	Newline{} )	==	"abcdefgh\n\r" );
-					static_assert( trim_first( "\r\nabcdefgh\n\r",	Newline{} )	==	"abcdefgh\n\r" );
+				{	// linebreak
+					static_assert( trim_first( "",					linebreak{} )	==	"" );
+					static_assert( trim_first( "\n\r",				linebreak{} )	==	"" );
+					static_assert( trim_first( "abcdefgh\n\r",		linebreak{} )	==	"abcdefgh\n\r" );
+					static_assert( trim_first( "\nabcdefgh\n\r",	linebreak{} )	==	"abcdefgh\n\r" );
+					static_assert( trim_first( "\n\rabcdefgh\n\r",	linebreak{} )	==	"abcdefgh\n\r" );
+					static_assert( trim_first( "\rabcdefgh\n\r",	linebreak{} )	==	"abcdefgh\n\r" );
+					static_assert( trim_first( "\r\nabcdefgh\n\r",	linebreak{} )	==	"abcdefgh\n\r" );
 				}
 			}
 			{	// trim_last
@@ -953,14 +922,14 @@ namespace pax {
 					static_assert( trim_last( text, is_plus )	==	not_last( text, 2 ) );
 					static_assert( trim_last( text, pred )		==	not_last( text, 2 ) );
 				}
-				{	// Newline
-					static_assert( trim_last( "",					Newline{} )	==	"" );
-					static_assert( trim_last( "\n\r",				Newline{} )	==	"" );
-					static_assert( trim_last( "\n\rabcdefgh",		Newline{} )	==	"\n\rabcdefgh" );
-					static_assert( trim_last( "\n\rabcdefgh\n",		Newline{} )	==	"\n\rabcdefgh" );
-					static_assert( trim_last( "\n\rabcdefgh\n\r",	Newline{} )	==	"\n\rabcdefgh" );
-					static_assert( trim_last( "\n\rabcdefgh\r",		Newline{} )	==	"\n\rabcdefgh" );
-					static_assert( trim_last( "\n\rabcdefgh\r\n",	Newline{} )	==	"\n\rabcdefgh" );
+				{	// linebreak
+					static_assert( trim_last( "",					linebreak{} )	==	"" );
+					static_assert( trim_last( "\n\r",				linebreak{} )	==	"" );
+					static_assert( trim_last( "\n\rabcdefgh",		linebreak{} )	==	"\n\rabcdefgh" );
+					static_assert( trim_last( "\n\rabcdefgh\n",		linebreak{} )	==	"\n\rabcdefgh" );
+					static_assert( trim_last( "\n\rabcdefgh\n\r",	linebreak{} )	==	"\n\rabcdefgh" );
+					static_assert( trim_last( "\n\rabcdefgh\r",		linebreak{} )	==	"\n\rabcdefgh" );
+					static_assert( trim_last( "\n\rabcdefgh\r\n",	linebreak{} )	==	"\n\rabcdefgh" );
 				}
 			}
 			{	// trim
@@ -1004,7 +973,7 @@ namespace pax {
 			static_assert(  pax::none_of ( str, str, []( auto c, auto d ){ return c != d; } ) );
 			static_assert( !none_of ( str, abd, []( auto c, auto d ){ return c != d; } ) );
 		}
-		{	// identify_newline
+		{	// identify_linebreak
 			static_assert( identify_newline( "abcd\n\refgh"   )	==	"\n\r" );
 			static_assert( identify_newline( ""               )	==	"\n" );
 			static_assert( identify_newline( "abcdefgh"       )	==	"\n" );

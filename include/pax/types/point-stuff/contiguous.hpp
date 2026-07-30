@@ -1,5 +1,5 @@
 //	Copyright (c) 2014-2016, Peder Axensten, all rights reserved.
-//	Contact: peder ( at ) axensten.se
+//	Vact: peder ( at ) axensten.se
 
 
 #pragma once
@@ -7,38 +7,39 @@
 #include "base.hpp"
 
 #include <span>
-#include <string_view>
 #include <algorithm>			// std::ranges::equal, std::lexicographical_compare_three_way, etc.
 #include <assert.h>				// The classic assert macro.
 
+#if defined( NDEBUG )
+#	define TEST( ... )		
+#else
+#	define TEST( ... )		static_assert( __VA_ARGS__ );
+#endif
 
 namespace std {
 
-	template< std::size_t I, pax::traits::sized_contiguous Cont >				requires( I < extent_v< Cont > )
-	[[nodiscard]] auto & get( Cont && cont_  )												noexcept	{
+	template< std::size_t I, pax::traits::sized_contiguous V >				requires( I < extent_v< V > )
+	[[nodiscard]] auto & get( V && v_  )												noexcept	{
 		using std::begin;
-		return *( begin( cont_ ) + I );
+		return *( begin( v_ ) + I );
 	}
 
 	/// In strings a terminating \0 is ignored.
 	/// If a string ends with a '\0', it is ignored.
-	template< pax::traits::contiguous Cont0, pax::traits::contiguous Cont1 >
-	[[nodiscard]] constexpr bool operator==( Cont0 && cont0_ , Cont1 && cont1_ )			noexcept	{
+	template< pax::traits::contiguous V0, pax::traits::contiguous V1 >
+	[[nodiscard]] constexpr bool operator==( V0 && v0_ , V1 && v1_ )					noexcept	{
 		using std::begin;
-		return std::equal(	begin( cont0_ ), pax::no_nullchar_end( cont0_ ), 
-							begin( cont1_ ), pax::no_nullchar_end( cont1_ ) );
+		return std::equal(	begin( v0_ ), pax::no_nullchar_end( v0_ ), 
+							begin( v1_ ), pax::no_nullchar_end( v1_ ) );
 	}
-	static_assert( std::string_view( "abc" ).size() == 3 );
-	static_assert( "abc" == std::string_view( "abc" ) );
-	static_assert( std::string_view( "abc" ) == "abc" );
 
 	/// In strings a terminating \0 is ignored.
 	/// If a string ends with a '\0', it is ignored.
-	template< pax::traits::contiguous Cont0, pax::traits::contiguous Cont1 >
-	[[nodiscard]] constexpr auto operator<=>( Cont0 && cont0_, Cont1 && cont1_ )			noexcept	{
+	template< pax::traits::contiguous V0, pax::traits::contiguous V1 >
+	[[nodiscard]] constexpr auto operator<=>( V0 && v0_, V1 && v1_ )					noexcept	{
 		using std::begin;
-		return std::lexicographical_compare_three_way(	begin( cont0_ ), pax::no_nullchar_end( cont0_ ), 
-														begin( cont1_ ), pax::no_nullchar_end( cont1_ ) );
+		return std::lexicographical_compare_three_way(	begin( v0_ ), pax::no_nullchar_end( v0_ ), 
+														begin( v1_ ), pax::no_nullchar_end( v1_ ) );
 	}
 
 	/// Stream the elements to out_.
@@ -64,267 +65,383 @@ namespace std {
 
 namespace pax {
 	
-	using	traits::contiguous, traits::element_type_t, traits::extent_v;
+	using std::data, std::begin;
+	using traits::contiguous, traits::element_type_t, traits::extent_v;
 
-	template< contiguous Cont, std::size_t N = traits::dynamic_extent >
-	using Span = std::span< element_type_t< Cont >, N >;
+	template< contiguous V, std::size_t N = traits::dynamic_extent >
+	using Span = std::span< element_type_t< V >, N >;
 
 
 	/// Create a std::span of elements.
-	template< contiguous Cont >
-	[[nodiscard]] constexpr auto make_span( Cont && const_ )								noexcept	{
-		using std::begin;
-		using Sp = std::span< element_type_t< Cont >, No_null_extent< Cont > >;
+	template< contiguous V >
+	[[nodiscard]] constexpr auto make_span( V && const_ )								noexcept	{
+		using Sp = std::span< element_type_t< V >, No_null_extent< V > >;
 		return Sp{ begin( const_ ), no_nullchar_end( const_ ) };
 	}
-	static_assert( make_span( "abc" ).size() == 3u );
-	static_assert( make_span( "abc" ).extent == 3u );
+	TEST( make_span( "abc" ).size() == 3u );
+	TEST( make_span( "abc" ).extent == 3u );
 
 
 	/// Create a std::span of const elements.
-	template< contiguous Cont >
-	[[nodiscard]] constexpr auto make_const_span( Cont && cont_ )							noexcept	{
-		using std::begin;
-		using Sp = std::span< const element_type_t< Cont >, No_null_extent< Cont > >;
-		return Sp{ begin( cont_ ), no_nullchar_end( cont_ ) };
+	template< contiguous V >
+	[[nodiscard]] constexpr auto make_const_span( V && v_ )								noexcept	{
+		using Sp = std::span< const element_type_t< V >, No_null_extent< V > >;
+		return Sp{ begin( v_ ), no_nullchar_end( v_ ) };
 	}
-	static_assert( make_const_span( "abc" ).size() == 3u );
-	static_assert( make_const_span( "abc" ).extent == 3u );
+	TEST( make_const_span( "abc" ).size() == 3u );
+	TEST( make_const_span( "abc" ).extent == 3u );
 
 
 	/// Returns a dynamically sized std::span.
-	template< traits::contiguous Cont >
-	[[nodiscard]] constexpr auto make_dynamic_span( Cont && v_ ) 							noexcept {
-		using std::begin;
-		using Sp = std::span< element_type_t< Cont > >;
+	template< traits::contiguous V >
+	[[nodiscard]] constexpr auto make_dynamic_span( V && v_ ) 							noexcept {
+		using Sp = std::span< element_type_t< V > >;
 		return Sp{ begin( v_ ), no_nullchar_end( v_ ) };
 	}
-	static_assert( make_dynamic_span( "abc" ).size() == 3u );
-	static_assert( make_dynamic_span( "abc" ).extent == traits::dynamic_extent );
+	TEST( make_dynamic_span( "abc" ).size() == 3u );
+	TEST( make_dynamic_span( "abc" ).extent == traits::dynamic_extent );
+
+
+	/// Returns false. 
+	[[nodiscard]] constexpr bool valid( std::nullptr_t ) 	noexcept	{	return false;				}
+
+	/// Returns ptr_ != nullptr. 
+	template< typename T >
+	[[nodiscard]] constexpr bool valid( T * ptr_ ) 			noexcept	{	return ptr_ != nullptr;		}
+
+	/// Returns sp_.data() != nullptr. 
+	template< contiguous V >
+	[[nodiscard]] constexpr bool valid( const V & v_ ) 		noexcept	{	return valid( data( v_ ) );	}
+	TEST( !valid( std::span< int >{} ) );
 
 
 	/// Return `true`, iff `ptr_` references an element in this..
-	template< contiguous Cont >
-	[[nodiscard]] constexpr bool within( Cont && cont_, element_type_t< Cont > * ptr_ )		noexcept	{
-		using std::data, std::size;
-		return ( data( cont_ ) <= ptr_ ) && ( ptr_ < data( cont_ ) + size( cont_ ) );
+	template< contiguous V >
+	[[nodiscard]] constexpr bool within( V && v_, element_type_t< V > * ptr_ )			noexcept	{
+		return ( data( v_ ) <= ptr_ ) && ( ptr_ < data( v_ ) + no_nullchar_size( v_ ) );
 	}
 
-	/// Return a dynamic shadow of the first min(n_, size()) elements.
-	template< contiguous Cont >
-	[[nodiscard]] constexpr auto first( Cont && cont_, std::size_t n_ = 1 )					noexcept	{
-		using std::data;
-		return std::span{ data( cont_ ), std::min( n_, no_nullchar_size( cont_ ) ) };
+	/// Returns a reference to the first item. 
+	/// UB, if v_ has a dynamic size that is zero.
+	template< traits::contiguous V >						requires( extent_v< V > > 0 )
+	[[nodiscard]] constexpr auto & front( V && v_ ) 									noexcept	{
+		if constexpr ( !is_static< extent_v< V > > )	assert( no_nullchar_size( v_ ) && "requires size( v_ ) > 0" );
+		return *data( v_ );
 	}
-	static_assert( first( "abcdefghi", 3 ) == "abc" );
+	TEST( front( "abcdefghi" ) == 'a' );
+
+	/// Returns a reference to the first item. 
+	/// UB, if v_ has a dynamic size that is zero.
+	template< traits::contiguous V >						requires( extent_v< V > > 0 )
+	[[nodiscard]] constexpr auto & back( V && v_ ) 										noexcept	{
+		const auto sz = no_nullchar_size( v_ );
+		if constexpr ( !is_static< extent_v< V > > )	assert( sz && "requires size( v_ ) > 0" );
+		return *( data( v_ ) + sz - 1u );
+	}
+	TEST( back( "abcdefghi" ) == 'i' );
+
+	/// Return a dynamic shadow of the first min(n_, size()) elements.
+	template< contiguous V >
+	[[nodiscard]] constexpr auto first( V && v_, std::size_t n_ = 1 )					noexcept	{
+		return std::span{ data( v_ ), std::min( n_, no_nullchar_size( v_ ) ) };
+	}
+	TEST( first( "abcdefghi",  3 ) == "abc" );
+	TEST( first( "abcdefghi", 12 ) == "abcdefghi" );
 
 	/// Return a static shadow of the first min(N, extent) elements.
 	/// Does assert( N <= size() && !is_static< I > ).
-	template< std::size_t I, contiguous Cont >									requires( is_static< I > )
-	[[nodiscard]] constexpr auto first( Cont && cont_ ) 									noexcept	{
-		using std::data;
-		static constexpr std::size_t 	N = No_null_extent< Cont >;
-		if constexpr( !is_static< N > )	assert( I <= no_nullchar_size( cont_ ) 
-			&& "first< I >( cont_ ) requires I <= size( cont_ )." );
-		return Span< Cont, std::min( I, N ) >( data( cont_ ), std::min( I, N ) );
+	template< std::size_t I, contiguous V >									requires( is_static< I > )
+	[[nodiscard]] constexpr auto first( V && v_ ) 										noexcept	{
+		static constexpr std::size_t 	N = No_null_extent< V >;
+		if constexpr( !is_static< N > )	assert( I <= no_nullchar_size( v_ ) 
+			&& "first< I >( v_ ) requires I <= size( v_ )." );
+		return Span< V, std::min( I, N ) >( data( v_ ), std::min( I, N ) );
 	}
-	static_assert( first< 3 >( "abcdefghi" ) == "abc" );
-	static_assert( first< 3 >( "abcdefghi" ).extent == 3 );
+	TEST( first<  3 >( "abcdefghi" ) == "abc" );
+	TEST( first<  3 >( "abcdefghi" ).extent == 3 );
+	TEST( first< 12 >( "abcdefghi" ) == "abcdefghi" );
+	TEST( first< 12 >( "abcdefghi" ).extent == 9 );
 
 	/// Return a dynamic shadow of the last size() - min(n_, size()) elements.
-	template< contiguous Cont >
-	[[nodiscard]] constexpr auto not_first( Cont && cont_, std::size_t n_ = 1 )				noexcept	{
-		using std::data;
-		const auto sz = no_nullchar_size( cont_ );
+	template< contiguous V >
+	[[nodiscard]] constexpr auto not_first( V && v_, std::size_t n_ = 1 )				noexcept	{
+		const auto sz = no_nullchar_size( v_ );
 		n_ = std::min( n_, sz );
-		return std::span{ data( cont_ ) + n_, sz - n_ };
+		return std::span{ data( v_ ) + n_, sz - n_ };
 	}
-	static_assert( not_first( "abcdefghi", 3 ) == "defghi" );
+	TEST( not_first( "abcdefghi",  3 ) == "defghi" );
+	TEST( not_first( "abcdefghi", 12 ) == "" );
 
 	/// Return a static shadow of the last size() - min(N, extent) elements.
 	/// Does assert( N <= size() && !is_static ).
-	template< std::size_t I, contiguous Cont >									requires( is_static< I > )
-	[[nodiscard]] constexpr auto not_first( Cont && cont_ ) 								noexcept	{
-		using std::data;
-		static constexpr std::size_t 	N = No_null_extent< Cont >;
-		if constexpr( !is_static< N > )	assert( I <= no_nullchar_size( cont_ ) 
-			&& "not_first< I >( cont_ ) requires I <= size( cont_ )." );
-		return Span< Cont, N - std::min( I, N ) >{ data( cont_ ) + std::min( I, N ), N - std::min( I, N ) };
+	template< std::size_t I, contiguous V >									requires( is_static< I > )
+	[[nodiscard]] constexpr auto not_first( V && v_ ) 									noexcept	{
+		static constexpr std::size_t 	N = No_null_extent< V >;
+		if constexpr( !is_static< N > )	assert( I <= no_nullchar_size( v_ ) 
+			&& "not_first< I >( v_ ) requires I <= size( v_ )." );
+		return Span< V, N - std::min( I, N ) >{ data( v_ ) + std::min( I, N ), N - std::min( I, N ) };
 	}
-	static_assert( not_first< 3 >( "abcdefghi" ) == "defghi" );
-	static_assert( not_first< 3 >( "abcdefghi" ).extent == 6 );
+	TEST( not_first<  3 >( "abcdefghi" ) == "defghi" );
+	TEST( not_first<  3 >( "abcdefghi" ).extent == 6 );
+	TEST( not_first< 12 >( "abcdefghi" ) == "" );
+	TEST( not_first< 12 >( "abcdefghi" ).extent == 0 );
 
 	/// Return a dynamic shadow of the last min(n_, size()) elements.
-	template< contiguous Cont >
-	[[nodiscard]] constexpr auto last( Cont && cont_, std::size_t n_ = 1 )					noexcept	{
-		using std::data;
-		const auto sz = no_nullchar_size( cont_ );
+	template< contiguous V >
+	[[nodiscard]] constexpr auto last( V && v_, std::size_t n_ = 1 )					noexcept	{
+		const auto sz = no_nullchar_size( v_ );
 		n_ = std::min( n_, sz );
-		return std::span{ data( cont_ ) + sz - n_, n_ };
+		return std::span{ data( v_ ) + sz - n_, n_ };
 	}
-	static_assert( last( "abcdefghi", 3 ) == "ghi" );
+	TEST( last( "abcdefghi",  3 ) == "ghi" );
+	TEST( last( "abcdefghi", 12 ) == "abcdefghi" );
 
 	/// Return a static shadow of the first min(N, extent) elements.
 	/// Does assert( N <= size() && !is_static ).
-	template< std::size_t I, contiguous Cont >									requires( is_static< I > )
-	[[nodiscard]] constexpr auto last( Cont && cont_ ) 										noexcept	{
-		using std::data;
-		const auto sz = no_nullchar_size( cont_ );
-		static constexpr std::size_t 	N = No_null_extent< Cont >;
+	template< std::size_t I, contiguous V >									requires( is_static< I > )
+	[[nodiscard]] constexpr auto last( V && v_ ) 										noexcept	{
+		const auto sz = no_nullchar_size( v_ );
+		static constexpr std::size_t 	N = No_null_extent< V >;
 		if constexpr( !is_static< N > )	assert( I <= sz 
-			&& "last< I >( cont_ ) requires I <= size( cont_ )." );
-		return Span< Cont, std::min( I, N ) >{ data( cont_ ) + sz - std::min( I, N ), std::min( I, N ) };
+			&& "last< I >( v_ ) requires I <= size( v_ )." );
+		return Span< V, std::min( I, N ) >{ data( v_ ) + sz - std::min( I, N ), std::min( I, N ) };
 	}
-	static_assert( last< 3 >( "abcdefghi" ) == "ghi" );
-	static_assert( last< 3 >( "abcdefghi" ).extent == 3 );
+	TEST( last<  3 >( "abcdefghi" ) == "ghi" );
+	TEST( last<  3 >( "abcdefghi" ).extent == 3 );
+	TEST( last< 12 >( "abcdefghi" ) == "abcdefghi" );
+	TEST( last< 12 >( "abcdefghi" ).extent == 9 );
 
 	/// Return a dynamic shadow of the first size() - min(n_, size()) elements.
-	template< contiguous Cont >
-	[[nodiscard]] constexpr auto not_last( Cont && cont_, std::size_t n_ = 1 )				noexcept	{
-		using std::data;
-		const auto sz = no_nullchar_size( cont_ );
-		return std::span{ data( cont_ ), sz - std::min( n_, sz ) };
+	template< contiguous V >
+	[[nodiscard]] constexpr auto not_last( V && v_, std::size_t n_ = 1 )				noexcept	{
+		const auto sz = no_nullchar_size( v_ );
+		return std::span{ data( v_ ), sz - std::min( n_, sz ) };
 	}
-	static_assert( not_last( "abcdefghi", 3 ) == "abcdef" );
+	TEST( not_last( "abcdefghi",  3 ) == "abcdef" );
+	TEST( not_last( "abcdefghi", 12 ) == "" );
 
 	/// Return a static shadow of the first size() - min(N, extent) elements.
 	/// Does assert( N <= size() && !is_static ).
-	template< std::size_t I, contiguous Cont >									requires( is_static< I > )
-	[[nodiscard]] constexpr auto not_last( Cont && cont_ ) 									noexcept	{
-		static constexpr std::size_t 	N = No_null_extent< Cont >;
-		return first< N - std::min( I, N ) >( cont_ );
+	template< std::size_t I, contiguous V >									requires( is_static< I > )
+	[[nodiscard]] constexpr auto not_last( V && v_ ) 									noexcept	{
+		static constexpr std::size_t 	N = No_null_extent< V >;
+		return first< N - std::min( I, N ) >( v_ );
 	}
-	static_assert( not_last< 3 >( "abcdefghi" ) == "abcdef" );
-	static_assert( not_last< 3 >( "abcdefghi" ).extent == 6 );
+	TEST( not_last<  3 >( "abcdefghi" ) == "abcdef" );
+	TEST( not_last<  3 >( "abcdefghi" ).extent == 6 );
+	TEST( not_last< 12 >( "abcdefghi" ) == "" );
+	TEST( not_last< 12 >( "abcdefghi" ).extent == 0 );
 
 	/// Return a dynamic shadow of the n_ elements starting with offs_, but restricted to the bounds of this.
 	/// A negative offs_ is counted from the end.
-	template< contiguous Cont >
-	[[nodiscard]] constexpr auto mid( Cont && cont_, std::ptrdiff_t offs_, std::size_t n_ ) noexcept	{
-		using std::data;
-		const auto sz = no_nullchar_size( cont_ );
+	template< contiguous V >
+	[[nodiscard]] constexpr auto mid( V && v_, std::ptrdiff_t offs_, std::size_t n_ )	noexcept	{
+		const auto sz = no_nullchar_size( v_ );
 		offs_ =	( offs_ >= 0 )	?		std::min( std::size_t(  offs_ ), sz )
 								: sz -	std::min( std::size_t( -offs_ ), sz );
-		return std::span{ data( cont_ ) + offs_, std::min( sz - offs_, n_ ) };
+		return std::span{ data( v_ ) + offs_, std::min( sz - offs_, n_ ) };
 	}
-	static_assert( mid( "abcdefghi",  2, 3 ) == "cde" );
-	static_assert( mid( "abcdefghi", -5, 3 ) == "efg" );
+	TEST( mid( "abcdefghi",  2,  3 ) == "cde" );
+	TEST( mid( "abcdefghi", -5,  3 ) == "efg" );
+	TEST( mid( "abcdefghi",  2, 12 ) == "cdefghi" );
+	TEST( mid( "abcdefghi", -5, 12 ) == "efghi" );
 
 	/// Return a static shadow of the N elements starting with offs_, but restricted to the bounds of sp_.
 	/// A negative offs_ is counted from the back. Does assert( offs_ + N <= sp_.size() ).
-	template< std::size_t I, contiguous Cont >						requires( is_static< I > )
-	[[nodiscard]] constexpr auto mid( Cont && cont_, std::ptrdiff_t offs_ )					noexcept	{
-		using std::data;
-		const auto sz = no_nullchar_size( cont_ );
+	template< std::size_t I, contiguous V >						requires( is_static< I > )
+	[[nodiscard]] constexpr auto mid( V && v_, std::ptrdiff_t offs_ )					noexcept	{
+		const auto 			sz = no_nullchar_size( v_ );
 		offs_ =	( offs_ >= 0 )	?		std::min( std::size_t(  offs_ ), sz )
 								: sz -	std::min( std::size_t( -offs_ ), sz );
 		assert( offs_ + I <= sz 
-			&& "mid< I >( cont_ ) requires offs_ + I <= size( cont_ )." );
-		return Span< Cont, I >{ data( cont_ ) + offs_, I };
+			&& "mid< I >( v_ ) requires offs_ + I <= size( v_ )." );
+		return Span< V, I >{ data( v_ ) + offs_, I };
 	}
-	static_assert( mid< 3 >( "abcdefghi",  2 ) == "cde" );
-	static_assert( mid< 3 >( "abcdefghi",  2 ).extent == 3 );
-	static_assert( mid< 3 >( "abcdefghi", -5 ) == "efg" );
-	static_assert( mid< 3 >( "abcdefghi", -5 ).extent == 3 );
+	TEST( mid<  3 >( "abcdefghi",  2 ) == "cde" );
+	TEST( mid<  3 >( "abcdefghi",  2 ).extent == 3 );
+	TEST( mid<  3 >( "abcdefghi", -5 ) == "efg" );
+	TEST( mid<  3 >( "abcdefghi", -5 ).extent == 3 );
 
 	/// Return true iff u_ equals the first elements of this.
-	template< contiguous Cont0, contiguous Cont1 >
-	[[nodiscard]] constexpr bool starts_with( Cont0 && cont0_, Cont1 && cont1_ )			noexcept	{
-		using std::begin;
-		const std::size_t sz0	  = no_nullchar_size( cont0_ );
-		const std::size_t sz1	  = no_nullchar_size( cont1_ );
-		return ( sz1 <= sz0 ) && ( first( cont0_, sz1 ) == first( cont1_, sz1 ) );
+	template< contiguous V0, contiguous V1 >
+	[[nodiscard]] constexpr bool starts_with( V0 && v0_, V1 && v1_ )					noexcept	{
+		const std::size_t sz0	  = no_nullchar_size( v0_ );
+		const std::size_t sz1	  = no_nullchar_size( v1_ );
+		return ( sz1 <= sz0 ) && ( first( v0_, sz1 ) == first( v1_, sz1 ) );
 	}
-	static_assert( starts_with( "abcdefghi", "abc" ) );
+	TEST(  starts_with( "abcdefghi", "abc" ) );
+	TEST(  starts_with( "abcdefghi", "abcdefghi" ) );
+	TEST( !starts_with( "abcdefghi", "abcdefghij" ) );
 
 	/// Return true iff u_ equals the last elements of this.
-	template< contiguous Cont0, contiguous Cont1 >
-	[[nodiscard]] constexpr bool ends_with( Cont0 && cont0_, Cont1 && cont1_ )				noexcept	{
-		using std::begin;
-		const std::size_t sz0	  = no_nullchar_size( cont0_ );
-		const std::size_t sz1	  = no_nullchar_size( cont1_ );
-		return ( sz1 <= sz0 ) && ( last( cont0_, sz1 ) == first( cont1_, sz1 ) );
+	template< contiguous V0, contiguous V1 >
+	[[nodiscard]] constexpr bool ends_with( V0 && v0_, V1 && v1_ )						noexcept	{
+		const std::size_t sz0	  = no_nullchar_size( v0_ );
+		const std::size_t sz1	  = no_nullchar_size( v1_ );
+		return ( sz1 <= sz0 ) && ( last( v0_, sz1 ) == first( v1_, sz1 ) );
 	}
-	static_assert( ends_with( "abcdefghi", "ghi" ) );
+	TEST(  ends_with( "abcdefghi", "ghi" ) );
+	TEST(  ends_with( "abcdefghi", "abcdefghi" ) );
+	TEST( !ends_with( "abcdefghi", "abcdefghij" ) );
 
-	/// Return a shadow of where t_ is -- or a zereo-sized shadow located at end().
-	template< contiguous Cont >
-	[[nodiscard]] constexpr Span< Cont > find( Cont && cont_, element_type_t< Cont > t_ )	noexcept	{
-		using std::begin;
-		const auto end			  = no_nullchar_end( cont_ );
-		auto result				  = std::find( begin( cont_ ), end, t_ );
+	/// Return the offset of where t_ is -- or size(), if not found.
+	template< contiguous V >
+	[[nodiscard]] constexpr std::size_t find( V && v_, element_type_t< V > t_ )			noexcept	{
+		const auto end			  = no_nullchar_end( v_ );
+		const auto result		  = std::find( begin( v_ ), end, t_ );
+		return result - begin( v_ );
+	}
+	TEST( find( "abcdefghi", 'g' ) == 6 );
+	TEST( find( "abcdefghi", 'x' ) == 9 );
+
+	/// Return a std::span of where t_ is -- or a zereo-sized shadow located at end().
+	template< contiguous V >
+	[[nodiscard]] constexpr Span< V > find_span( V && v_, element_type_t< V > t_ )		noexcept	{
+		const auto end			  = no_nullchar_end( v_ );
+		const auto result		  = std::find( begin( v_ ), end, t_ );
 		return { result, result != end };
 	}
+	TEST( find_span( "abcdefghi", 'g' ) == "g" );
+	TEST( find_span( "abcdefghi", 'x' ) == ""  );
+
+	/// Return the offset of where u_ is -- or size(), if not found.
+	template< contiguous V0, contiguous V1 >
+	[[nodiscard]] constexpr std::size_t find( V0 && v0_, V1 && v1_ )					noexcept	{
+		const auto end0			  = no_nullchar_end( v0_ );
+		const auto end1			  = no_nullchar_end( v1_ );
+		const auto result		  = std::search( begin( v0_ ), end0, begin( v1_ ), end1 );
+		return result - begin( v0_ );
+	}
+	TEST( find( "abcdefghi", "ghi" ) == 6 );
+	TEST( find( "abcdefghi", "ghx" ) == 9 );
 
 	/// Return a shadow of where u_ is -- or a zereo-sized shadow located at end().
-	template< contiguous Cont0, contiguous Cont1 >
-	[[nodiscard]] constexpr Span< Cont0 > find( Cont0 && cont0_, Cont1 && cont1_ )			noexcept	{
-		using std::begin;
-		const auto end0			  = no_nullchar_end( cont0_ );
-		const auto end1			  = no_nullchar_end( cont1_ );
-		auto result = std::search( begin( cont0_ ), end0, begin( cont1_ ), end1 );
-		return { result, ( result == end0 ) ? 0u : std::size_t( end1 - begin( cont1_ ) ) };
+	template< contiguous V0, contiguous V1 >
+	[[nodiscard]] constexpr Span< V0 > find_span( V0 && v0_, V1 && v1_ )				noexcept	{
+		const auto end0			  = no_nullchar_end( v0_ );
+		const auto end1			  = no_nullchar_end( v1_ );
+		const auto result		  = std::search( begin( v0_ ), end0, begin( v1_ ), end1 );
+		return { result, ( result == end0 ) ? 0u : std::size_t( end1 - begin( v1_ ) ) };
 	}
+	TEST( find_span( "abcdefghi", "ghi" ) == "ghi" );
+	TEST( find_span( "abcdefghi", "ghx" ) == ""  );
 
 	/// Return a shadow of the first contigous range where all Test( value ) are true.
 	/// If none is found, { end(), 0u } is returned.
-	template< contiguous Cont, typename Test >	requires std::is_invocable_r_v< bool, Test, element_type_t< Cont > >
-	[[nodiscard]] constexpr Span< Cont > find( Cont && cont_, Test && test_ )				noexcept	{
-		using std::begin;
-		const auto end			  = no_nullchar_end( cont_ );
-		auto b					  = std::find_if( begin( cont_ ), end, test_ );
+	template< contiguous V, typename Test >	requires std::is_invocable_r_v< bool, Test, element_type_t< V > >
+	[[nodiscard]] constexpr std::size_t find( V && v_, Test && test_ )					noexcept	{
+		const auto end			  = no_nullchar_end( v_ );
+		const auto result		  = std::find_if( begin( v_ ), end, test_ );
+		return result - begin( v_ );
+	}
+	TEST( find( "abcdefghi", []( auto c ){ return c == 'g'; } ) == 6 );
+	TEST( find( "abcdefghi", []( auto c ){ return c == 'x'; } ) == 9 );
+
+	/// Return a shadow of the first contigous range where all Test( value ) are true.
+	/// If none is found, { end(), 0u } is returned.
+	template< contiguous V, typename Test >	requires std::is_invocable_r_v< bool, Test, element_type_t< V > >
+	[[nodiscard]] constexpr Span< V > find_span( V && v_, Test && test_ )				noexcept	{
+		const auto end			  = no_nullchar_end( v_ );
+		auto b					  = std::find_if( begin( v_ ), end, test_ );
 		auto e					  = b;
 		while( ( e != end ) && test_( *e ) ) 	++e;
 		return { b, e };
 	}
+	TEST( find_span( "abcdefghi_", []( auto c ){ return c >= 'g'; } ) == "ghi" );
+	TEST( find_span( "abcdefghi_", []( auto c ){ return c == 'x'; } ) == "" );
+	
+	
+	struct linebreak {};
 
 	/// Find any of "\n\r", "\n", "\r\n", or "\r" and return a shadow reference to it.
 	/// If none is found, { end(), 0u } is returned.
-	template< contiguous Cont >
-	[[nodiscard]] constexpr Span< Cont > find_linebreak( Cont && cont_ )					noexcept	{
-		const auto end			  = no_nullchar_end( cont_ );
-		std::remove_cv_t< element_type_t< Cont > >	previous{ ' ' };
-		for( auto & c : cont_ )	{
+	template< contiguous V >
+	[[nodiscard]] constexpr std::size_t find(
+		V		  && v_, 
+		linebreak
+	) noexcept {
+		return find( v_, []( auto c_ ) { return ( c_ == '\n' ) || ( c_ == '\r' ); } );
+	};
+	TEST( find( "abcdefghi",	linebreak{} ) == 9 );
+	TEST( find( "abcd\nefghi",	linebreak{} ) == 4 );
+	TEST( find( "abcd\refghi",	linebreak{} ) == 4 );
+
+
+	/// Find any of "\n\r", "\n", "\r\n", or "\r" and return a shadow reference to it.
+	/// If none is found, { end(), 0u } is returned.
+	template< contiguous V >
+	[[nodiscard]] constexpr Span< V > find_span(
+		V			 && v_, 
+		linebreak
+	) noexcept {
+		const auto end	  = no_nullchar_end( v_ );
+		std::remove_cv_t< element_type_t< V > >	previous{ ' ' };
+		for( auto & c : v_ )	{
 			[[unlikely]] if( previous == '\n' )	return { &c - 1, 1u + ( c == '\r' ) };
 			[[unlikely]] if( previous == '\r' )	return { &c - 1, 1u + ( c == '\n' ) };
 			previous = c;
 		}
 		return { end - ( ( previous == '\n' ) || ( previous == '\r' ) ), end };
 	};
+	TEST( find_span( "abcdefghi",		linebreak{} ) == "" );
+	TEST( find_span( "abcd\nefghi",	linebreak{} ) == "\n" );
+	TEST( find_span( "abcd\n\refghi",	linebreak{} ) == "\n\r" );
+	TEST( find_span( "abcd\refghi",	linebreak{} ) == "\r" );
+	TEST( find_span( "abcd\r\nefghi",	linebreak{} ) == "\r\n" );
+	TEST( find_span( "abcd\n\n\refghi",linebreak{} ) == "\n" );
 
 
 	/// Return the beginning of v_ up to but not including the first until_this_.
 	/// - If no until_this_ is found, v_ is returned.
 	template< traits::contiguous V, typename U >
-	constexpr auto until(  
-		V					 && v_, 
-		U					 && until_this_ 
-	) noexcept {
+	constexpr auto until( V && v_, U && until_this_ ) noexcept {
 		return first( v_, find( v_, until_this_ ) );
 	}
+	TEST( until( "abcdefghi", "ghi" ) == "abcdef" );
+	TEST( until( "abcdefghi", "ghx" ) == "abcdefghi" );
 	
 	
 
 	template< typename T >
-	struct split_result {	std::span< T > first, rest;		};
+	struct split_result {
+		std::span< T > first{}, rest{};
+		constexpr bool empty()	const	{	return first.empty() && rest.empty();	}
+	};
 
 	/// Split this in two at offset t_ so that first.end() == rest.begin() and first.size() == t_.
-	template< contiguous Cont >
-	[[nodiscard]] constexpr split_result< element_type_t< Cont > > 
-										split( Cont && cont_, std::size_t mid_ )			noexcept	{
-		using std::begin, std::size;
-		mid_					  = std::min( mid_, size( cont_ ) );
-		return { { begin( cont_ ), mid_ }, { begin( cont_ ) + mid_, no_nullchar_end( cont_ ) } };
+	template< contiguous V >
+	[[nodiscard]] constexpr auto split_at( V && v_, std::size_t mid_ )					noexcept	{
+		using Result			  = split_result< element_type_t< V > >;
+		const auto sz			  = no_nullchar_size( v_ );
+		mid_					  = std::min( mid_, sz );
+		return Result{ { begin( v_ ), mid_ }, { begin( v_ ) + mid_, sz - mid_ } };
 	}
+	TEST( split_at( "abcdefghi",  6 ).first == "abcdef" );
+	TEST( split_at( "abcdefghi",  6 ).rest  == "ghi" );
+	TEST( split_at( "abcdefghi", 12 ).first == "abcdefghi" );
+	TEST( split_at( "abcdefghi", 12 ).rest  == "" );
 
 	/// Split this in two: before and after gap_, but everything clamped to [begin(), end()].
-	template< contiguous Cont0, contiguous Cont1 >
-	[[nodiscard]] constexpr split_result< element_type_t< Cont0 > > 
-										split( Cont0 && cont_, Cont1 && gap_ )				noexcept	{
-		using std::begin;
-		const auto end			  = no_nullchar_end( cont_ );
-		return { { begin( cont_ ), std::clamp( begin( gap_ ),  begin( cont_ ), end ) },
-				 { std::clamp( no_nullchar_end( gap_ ), begin( cont_ ), end ), end } };
+	template< contiguous V0, typename V1 >
+	[[nodiscard]] constexpr auto split( V0 && v_, V1 && gap_ )							noexcept	{
+		using Result			  = split_result< element_type_t< V0 > >;
+		const auto gap			  = find_span( v_, gap_ );
+		const auto end			  = data( v_ ) + no_nullchar_size( v_ );
+		return Result{	{ data( v_ ), std::clamp( data( gap ),  data( v_ ), end ) },
+						{ std::clamp( data( gap ) + no_nullchar_size( gap ), data( v_ ), end ), end } };
 	}
+	TEST( split( "abcdefghi", "def" ).first == "abc" );
+	TEST( split( "abcdefghi", "def" ).rest  == "ghi" );
+	TEST( split( "abcdefghi", "dex" ).first == "abcdefghi" );
+	TEST( split( "abcdefghi", "dex" ).rest  == "" );
+	TEST( split( "abc\nghi",  linebreak{} ).first == "abc" );
+	TEST( split( "abc\nghi",  linebreak{} ).rest  == "ghi" );
+	TEST( split( "abcdefghi", linebreak{} ).first == "abcdefghi" );
+	TEST( split( "abcdefghi", linebreak{} ).rest  == "" );
+	TEST( split( "abc\nghi",  []( auto c_ ) { return c_ == '\n'; } ).first == "abc" );
+	TEST( split( "abc\nghi",  []( auto c_ ) { return c_ == '\n'; } ).rest  == "ghi" );
+	TEST( split( "abcdefghi", []( auto c_ ) { return c_ == '\n'; } ).first == "abcdefghi" );
+	TEST( split( "abcdefghi", []( auto c_ ) { return c_ == '\n'; } ).rest  == "" );
 
 }	// namespace pax
+#undef TEST
