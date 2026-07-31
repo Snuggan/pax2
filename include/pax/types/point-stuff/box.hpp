@@ -126,7 +126,7 @@ namespace pax {
 		using 							index_type			  = Idx::value_type;
 
 	private:
-		Idx								m_size{}, m_offsets{};
+		Idx								m_extents{}, m_offsets{};
 		static constexpr Idx			noll{};
 		
 		static constexpr Idx do_offs( const Idx & idx_ )		noexcept	{
@@ -140,14 +140,15 @@ namespace pax {
 		constexpr Indexer( const Indexer & )				  = default;
 		constexpr Indexer & operator=( const Indexer & )	  = default;
 
-		constexpr Indexer( const Idx & size_ )  				noexcept : m_size( size_ ), m_offsets{ do_offs( size_ ) } {}
+		constexpr Indexer( const Idx & extents_ )  				noexcept 
+			: m_extents( extents_ ), m_offsets{ do_offs( extents_ ) } {}
 
-		constexpr const Idx & size()							const noexcept	{	return m_size;							}
+		constexpr const Idx & extents()							const noexcept	{	return m_extents;						}
 		constexpr const Idx & offsets()							const noexcept	{	return m_offsets;						}
-		constexpr index_type elements()							const noexcept	{	return offsets().back()*size().back();	}
-		constexpr bool valid_index( const Idx & idx_ )			const noexcept	{	return all_lt( idx_, size() );			}
-		friend constexpr index_type cols( const Indexer & i_ )		  noexcept	{	return col( i_.size() );				}
-		friend constexpr index_type rows( const Indexer & i_ )		  noexcept	{	return row( i_.size() );				}
+		constexpr index_type elements()							const noexcept	{	return offsets().back()*extents().back();	}
+		constexpr bool valid_index( const Idx & idx_ )			const noexcept	{	return all_lt( idx_, extents() );		}
+		friend constexpr index_type cols( const Indexer & i_ )		  noexcept	{	return col( i_.extents() );				}
+		friend constexpr index_type rows( const Indexer & i_ )		  noexcept	{	return row( i_.extents() );				}
 		
 		/// Calculate an index into a vector for the index represented by pt_.
 		template< uinteger ...U >								requires( sizeof...( U ) == N )
@@ -168,13 +169,13 @@ namespace pax {
 		
 		/// Calculate an index into a vector for the index represented by pt_.
 		constexpr index_type at( const Idx & idx_ )				const noexcept	{
-			assert( all_lt( idx_, size() ) );
+			assert( all_lt( idx_, extents() ) );
 			return dot_product( idx_, offsets() );
 		}
 
-		/// Box contents to std::string.
-		explicit constexpr operator std::string() 					const			{
-			return std::format( "[{}]", size() );
+		/// Indexer contents to std::string.
+		explicit constexpr operator std::string() 				const			{
+			return std::format( "{}", extents() );
 		}
 
 		/// Stream a box contents.
@@ -250,13 +251,13 @@ namespace pax {
 			if( BBox::inside_or_on( pt_ ) ) {
 				if constexpr( rank == 2 ) {	// The exception of the raster case, mentioned above.
 					return Idx::operator[](
-						smallest( ( x( pt_ ) -  x( BBox::min() ))/resolution(), col( Idx::size() ) - 1u ),
-						smallest( ( y( BBox::max() ) - y( pt_ ) )/resolution(), row( Idx::size() ) - 1u )
+						smallest( ( x( pt_ ) -  x( BBox::min() ))/resolution(), col( Idx::extents() ) - 1u ),
+						smallest( ( y( BBox::max() ) - y( pt_ ) )/resolution(), row( Idx::extents() ) - 1u )
 					);
 				} else {					// The general case, with mathematical origo. 
 					auto [ ... diff ]	  = pt_ - BBox::min();
-					auto [ ... sz   ]	  = Idx ::size();
-					return Idx::operator[]( { smallest( diff/resolution(), sz - 1 ) ... } );
+					auto [ ... exts ]	  = Idx::extents();
+					return Idx::operator[]( { smallest( diff/resolution(), exts - 1 ) ... } );
 				}
 			} else throw std::runtime_error( 
 				std::format( "The point {} is outside the bbox [{}, {}].", pt_, min( *this ), max( *this ) ) );
