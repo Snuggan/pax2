@@ -11,6 +11,7 @@
 
 #include <string>
 #include <source_location>
+#include <format>
 #include <iostream>			// std::cerr
 #include <sstream>
 #include <exception>		// std::terminate
@@ -57,9 +58,15 @@ namespace pax {
 
         ~Debug() {	try {	m_out << std::endl;		} catch( ... ) {}	}	// '\n' and flush.
 
+        template< traits::contiguous V >
+		std::ostream & operator<<( V && v_ ) const {
+			( m_out << std::format( "{}", v_ ) ).flush();
+			return m_out;
+		}
+
         template< typename T >
 		std::ostream & operator<<( const T & t_ ) const {
-			( m_out << std::format( "{}", t_ ) ).flush();
+			( m_out << t_ ).flush();
 			return m_out;
 		}
 	};

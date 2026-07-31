@@ -22,6 +22,8 @@
 #include <print>		// std::print
 #include <iostream>		// std*::cout
 
+#include <pax/debug.hpp>
+
 
 namespace std {
 
@@ -375,7 +377,7 @@ namespace pax {
 		const std::mdspan< T, Extents, Layout, Accessor >		md_
 	) {
 		constexpr std::size_t 	R		  = md_.rank();
-		std::print  ( out_, "rank {}, size {}, {}, extents [ {}", md_.rank(), md_.size(), 
+		Debug{ out_ } << std::format( "rank {}, size {}, {}, extents [ {}", md_.rank(), md_.size(), 
 			( is_layout_right_v< Layout > ? "layout_right" : "layout_left" ), md_.extent( 0 ) );
 		for( std::size_t i=1; i<R; ++i )	std::print( out_, ", {}", md_.extent( i ) );
 		std::print  ( out_, " ], strides [ {}", md_.stride( 0 ) );
