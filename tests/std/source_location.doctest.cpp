@@ -5,7 +5,7 @@
 
 
 #include <pax/reporting/error_message.hpp>
-#include <pax/std/ascii.hpp>
+#include <pax/debug.hpp>
 #include <pax/doctest.hpp>
 
 namespace pax {

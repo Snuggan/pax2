@@ -39,7 +39,7 @@ namespace pax {
 		constexpr auto 		indexer = Indexer{ idx };
 		DOCTEST_FAST_CHECK_EQ( idx,  						idx );
 		DOCTEST_FAST_CHECK_EQ( indexer.elements(),  		105u );
-		DOCTEST_FAST_CHECK_EQ( indexer.size(),  			idx );
+		DOCTEST_FAST_CHECK_EQ( indexer.extents(),  			idx );
 		DOCTEST_FAST_CHECK_EQ( indexer.offsets(),  			index( 1u, 3u, 15u ) );
 		DOCTEST_FAST_CHECK_UNARY(  indexer.valid_index( idx2 ) );
 		DOCTEST_FAST_CHECK_UNARY( !indexer.valid_index( idx  ) );
@@ -55,7 +55,7 @@ namespace pax {
 			const Box_indexer								boxi{ Box2d{ { 1., 2.5 }, { 7., 5. } }, 2 };
 			DOCTEST_FAST_CHECK_EQ( boxi,					Box2d { { 0., 2.0 }, { 8., 6. } } );
 			DOCTEST_FAST_CHECK_EQ( boxi.resolution(), 		2 );
-			DOCTEST_FAST_CHECK_EQ( boxi.size(), 			Index2d{ 4u, 2u } );
+			DOCTEST_FAST_CHECK_EQ( boxi.extents(), 			Index2d{ 4u, 2u } );
 			DOCTEST_FAST_CHECK_EQ( boxi.offsets(), 			Index2d{ 1u, 4u } );
 			DOCTEST_FAST_CHECK_EQ( boxi.elements(), 		8 );
 			DOCTEST_FAST_CHECK_EQ( boxi.index( Point{ 0., 6. } ), 	0u );
@@ -68,7 +68,7 @@ namespace pax {
 			const Box_indexer								boxi{ Box3d{ { 1., 2.5, 0. }, { 7., 5., 3. } }, 2 };
 			DOCTEST_FAST_CHECK_EQ( boxi,						  Box3d{ { 0., 2.0, 0. }, { 8., 6., 4. } } );
 			DOCTEST_FAST_CHECK_EQ( boxi.resolution(), 		2 );
-			DOCTEST_FAST_CHECK_EQ( boxi.size(), 			Index3d{ 4u, 2u, 2u } );
+			DOCTEST_FAST_CHECK_EQ( boxi.extents(), 			Index3d{ 4u, 2u, 2u } );
 			DOCTEST_FAST_CHECK_EQ( boxi.offsets(), 			Index3d{ 1u, 4u, 8u } );
 			DOCTEST_FAST_CHECK_EQ( boxi.elements(), 		16 );
 			DOCTEST_FAST_CHECK_EQ( boxi.index( Point{ 0., 2.0, 0. } ), 	0u );

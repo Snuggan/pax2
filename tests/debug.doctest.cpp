@@ -2,7 +2,7 @@
 //	Contact: peder ( at ) axensten.se
 
 
-#include <pax/std/ascii.hpp>
+#include <pax/debug.hpp>
 #include <pax/doctest.hpp>
 #include <sstream>
 

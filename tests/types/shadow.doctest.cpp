@@ -2,10 +2,10 @@
 //	Contact: peder ( at ) axensten.se
 
 
-#include <pax/types/shadow.hpp>
+#include <pax/debug.hpp>
 #include <pax/types/arrector.hpp>
-#include <pax/std/ascii.hpp>
 #include <pax/doctest.hpp>
+#include <pax/debug.hpp>
 
 #include <string>
 #include <array>

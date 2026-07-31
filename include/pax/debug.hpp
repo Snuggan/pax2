@@ -5,6 +5,7 @@
 #pragma once
 
 #include <pax/types/point-stuff/base.hpp>
+#include <pax/reporting/debug.hpp>
 #include <string_view>
 
 

@@ -6,7 +6,7 @@
 
 #include <pax/types/point-stuff/contiguous.hpp>
 #include <pax/doctest.hpp>
-#include <pax/std/ascii.hpp>
+#include <pax/debug.hpp>
 
 
 namespace pax {
