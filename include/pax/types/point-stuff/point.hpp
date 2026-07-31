@@ -69,59 +69,59 @@ namespace pax {
 	/// Using them makes the code clearer and guarantees a consistent mapping name -> index.
 	/// col, east, x -> 0, row, north, y -> 1, z -> 2.
 	/// @{
-	template< uinteger U, std::size_t N >				requires( N > 0 )
-	constexpr U   col  ( const Point< U, N > & pt_ )	noexcept	{	return std::get< 0 >( pt_ );	}
+	static constexpr std::size_t 	col_idx = 0u;
+	template< uinteger U, std::size_t N >				requires( N > col_idx )
+	constexpr U   col  ( const Point< U, N > & pt_ )	noexcept	{	return std::get< col_idx >( pt_ );	}
+	template< uinteger U, std::size_t N >				requires( N > col_idx )
+	constexpr U & col  (       Point< U, N > & pt_ )	noexcept	{	return std::get< col_idx >( pt_ );	}
 
-	template< uinteger U, std::size_t N >				requires( N > 0 )
-	constexpr U & col  (       Point< U, N > & pt_ )	noexcept	{	return std::get< 0 >( pt_ );	}
+	static constexpr std::size_t 	row_idx = col_idx + 1u;
+	template< uinteger U, std::size_t N >				requires( N > row_idx )
+	constexpr U   row  ( const Point< U, N > & pt_ )	noexcept	{	return std::get< row_idx >( pt_ );	}
+	template< uinteger U, std::size_t N >				requires( N > row_idx )
+	constexpr U & row  (       Point< U, N > & pt_ )	noexcept	{	return std::get< row_idx >( pt_ );	}
 
-	template< uinteger U, std::size_t N >				requires( N > 1 )
-	constexpr U   row  ( const Point< U, N > & pt_ )	noexcept	{	return std::get< 1 >( pt_ );	}
+	static constexpr std::size_t 	x_idx = 0u;
+	template< floating F, std::size_t N >				requires( N > x_idx )
+	constexpr F   x    ( const Point< F, N > & pt_ )	noexcept	{	return std::get< x_idx >( pt_ );	}
+	template< floating F, std::size_t N >				requires( N > x_idx )
+	constexpr F & x    (       Point< F, N > & pt_ )	noexcept	{	return std::get< x_idx >( pt_ );	}
 
-	template< uinteger U, std::size_t N >				requires( N > 1 )
-	constexpr U & row  (       Point< U, N > & pt_ )	noexcept	{	return std::get< 1 >( pt_ );	}
+	static constexpr std::size_t 	y_idx = x_idx + 1u;
+	template< floating F, std::size_t N >				requires( N > y_idx )
+	constexpr F   y    ( const Point< F, N > & pt_ )	noexcept	{	return std::get< y_idx >( pt_ );	}
+	template< floating F, std::size_t N >				requires( N > y_idx )
+	constexpr F & y    (       Point< F, N > & pt_ )	noexcept	{	return std::get< y_idx >( pt_ );	}
 
-	template< floating F, std::size_t N >				requires( N > 0 )
-	constexpr F   x    ( const Point< F, N > & pt_ )	noexcept	{	return std::get< 0 >( pt_ );	}
+	static constexpr std::size_t 	z_idx = y_idx + 1u;
+	template< floating F, std::size_t N >				requires( N > z_idx )
+	constexpr F   z    ( const Point< F, N > & pt_ )	noexcept	{	return std::get< z_idx >( pt_ );	}
+	template< floating F, std::size_t N >				requires( N > z_idx )
+	constexpr F & z    (       Point< F, N > & pt_ )	noexcept	{	return std::get< z_idx >( pt_ );	}
 
-	template< floating F, std::size_t N >				requires( N > 0 )
-	constexpr F & x    (       Point< F, N > & pt_ )	noexcept	{	return std::get< 0 >( pt_ );	}
+	static constexpr std::size_t 	east_idx = x_idx;
+	template< floating F, std::size_t N >				requires( N > east_idx )
+	constexpr F   east ( const Point< F, N > & pt_ )	noexcept	{	return std::get< east_idx >( pt_ );	}
+	template< floating F, std::size_t N >				requires( N > east_idx )
+	constexpr F & east (       Point< F, N > & pt_ )	noexcept	{	return std::get< east_idx >( pt_ );	}
 
-	template< floating F, std::size_t N >				requires( N > 1 )
-	constexpr F   y    ( const Point< F, N > & pt_ )	noexcept	{	return std::get< 1 >( pt_ );	}
+	static constexpr std::size_t 	north_idx = y_idx;
+	template< floating F, std::size_t N >				requires( N > north_idx )
+	constexpr F   north( const Point< F, N > & pt_ )	noexcept	{	return std::get< north_idx >( pt_ );	}
+	template< floating F, std::size_t N >				requires( N > north_idx )
+	constexpr F & north(       Point< F, N > & pt_ )	noexcept	{	return std::get< north_idx >( pt_ );	}
 
-	template< floating F, std::size_t N >				requires( N > 1 )
-	constexpr F & y    (       Point< F, N > & pt_ )	noexcept	{	return std::get< 1 >( pt_ );	}
+	static constexpr std::size_t 	lon_idx = x_idx;
+	template< floating F, std::size_t N >				requires( N > lon_idx )
+	constexpr F   lon  ( const Point< F, N > & pt_ )	noexcept	{	return std::get< lon_idx >( pt_ );	}
+	template< floating F, std::size_t N >				requires( N > lon_idx )
+	constexpr F & lon  (       Point< F, N > & pt_ )	noexcept	{	return std::get< lon_idx >( pt_ );	}
 
-	template< floating F, std::size_t N >				requires( N > 2 )
-	constexpr F   z    ( const Point< F, N > & pt_ )	noexcept	{	return std::get< 2 >( pt_ );	}
-
-	template< floating F, std::size_t N >				requires( N > 2 )
-	constexpr F & z    (       Point< F, N > & pt_ )	noexcept	{	return std::get< 2 >( pt_ );	}
-
-	template< floating F, std::size_t N >				requires( N > 0 )
-	constexpr F   east ( const Point< F, N > & pt_ )	noexcept	{	return x( pt_ );				}
-
-	template< floating F, std::size_t N >				requires( N > 0 )
-	constexpr F & east (       Point< F, N > & pt_ )	noexcept	{	return x( pt_ );				}
-
-	template< floating F, std::size_t N >				requires( N > 1 )
-	constexpr F   north( const Point< F, N > & pt_ )	noexcept	{	return y( pt_ );				}
-
-	template< floating F, std::size_t N >				requires( N > 1 )
-	constexpr F & north(       Point< F, N > & pt_ )	noexcept	{	return y( pt_ );				}
-
-	template< floating F, std::size_t N >				requires( N > 0 )
-	constexpr F   lon  ( const Point< F, N > & pt_ )	noexcept	{	return x( pt_ );				}
-
-	template< floating F, std::size_t N >				requires( N > 0 )
-	constexpr F & lon  (       Point< F, N > & pt_ )	noexcept	{	return x( pt_ );				}
-
-	template< floating F, std::size_t N >				requires( N > 1 )
-	constexpr F   lat  ( const Point< F, N > & pt_ )	noexcept	{	return y( pt_ );				}
-
-	template< floating F, std::size_t N >				requires( N > 1 )
-	constexpr F & lat  (       Point< F, N > & pt_ )	noexcept	{	return y( pt_ );				}
+	static constexpr std::size_t 	lat_idx = y_idx;
+	template< floating F, std::size_t N >				requires( N > lat_idx )
+	constexpr F   lat  ( const Point< F, N > & pt_ )	noexcept	{	return std::get< lat_idx >( pt_ );	}
+	template< floating F, std::size_t N >				requires( N > lat_idx )
+	constexpr F & lat  (       Point< F, N > & pt_ )	noexcept	{	return std::get< lat_idx >( pt_ );	}
 	/// @}
 
 
