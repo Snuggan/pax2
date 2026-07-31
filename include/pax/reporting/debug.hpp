@@ -59,7 +59,7 @@ namespace pax {
 
         template< typename T >
 		std::ostream & operator<<( const T & t_ ) const {
-			( m_out << t_ ).flush();
+			( m_out << std::format( "{}", t_ ) ).flush();
 			return m_out;
 		}
 	};
