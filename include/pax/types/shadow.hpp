@@ -29,7 +29,7 @@
 
 
 namespace pax {
-	constexpr std::size_t dynamic_extent = traits::dynamic_extent;
+	using traits::dynamic_extent;
 
 	// template< typename T >
 	// [[nodiscard]] constexpr auto no_nullchar_end( T && t_ )				{	using std::end; return end( t_ );		}

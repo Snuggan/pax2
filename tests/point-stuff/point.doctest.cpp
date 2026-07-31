@@ -10,8 +10,8 @@
 
 namespace pax {
 	
-	constexpr Point< double,   5 > pt  = point< double   >( 0.0, 1, 2u, 3.0f, char( 4 ) );
-	constexpr Point< unsigned, 5 > idx = point< unsigned >( 0.0, 1, 2u, 3.0f, char( 4 ) );
+	constexpr Point< double,   5 > pt  = point_t< double   >( 0.0, 1, 2u, 3.0f, char( 4 ) );
+	constexpr Point< unsigned, 5 > idx = point_t< unsigned >( 0.0, 1, 2u, 3.0f, char( 4 ) );
 
 	DOCTEST_TEST_CASE( "Point accessors" ) {
 		DOCTEST_FAST_CHECK_EQ( x    ( pt ),  0 );

@@ -13,8 +13,8 @@
 namespace pax {
 	
 	using std::get;
-	template< typename T, typename ... P >	struct Table_meta;
-	template< typename F >					struct Object_meta;
+	template< typename T, typename ... U >	struct Table_meta;
+	template< typename T >					struct Object_meta;
 
 
 
@@ -25,15 +25,15 @@ namespace pax {
 	using Point2d		  = Point< double, 2 >;
 	using Point3d		  = Point< double, 3 >;
 	
-	template< typename Out, arithmetic A, std::size_t N >
-	constexpr Out & operator<<( Out & out_, const Point< A, N > & pt_ ) {
-		return out_ << std::format( "{}", pt_ );
-	}
-
 	/// Create a Point out of a bunch of elements.
 	template< arithmetic A, arithmetic ... As >	
-	constexpr Point< A, sizeof...( As ) > point( As && ... as_ )				noexcept	{
+	constexpr Point< A, sizeof...( As ) > point_t( As && ... as_ )				noexcept	{
 		return { static_cast< A >( std::forward< As >( as_ ) ) ... };
+	}
+	template< arithmetic ... As >	
+	constexpr auto point( As && ... as_ )	noexcept	{
+		using A  = std::common_type_t< As ... >;
+		return Point< A, sizeof...( As ) >{ static_cast< A >( std::forward< As >( as_ ) ) ... };
 	}
 
 	/// This is used to read Point values from a csv file using Text_table.
@@ -57,11 +57,6 @@ namespace pax {
 	using Index2d		  = Index< 2 >;
 	using Index3d		  = Index< 3 >;
 	
-	template< typename Out, std::size_t N >
-	constexpr Out & operator<<( Out & out_, const Index< N > & idx_ ) {
-		return out_ << std::format( "{}", idx_ );
-	}
-
 	/// Create a Point out of a bunch of elements.
 	template< uinteger ... Uis >	
 	constexpr Index< sizeof...( Uis ) > index( Uis && ... uis_ )				noexcept	{

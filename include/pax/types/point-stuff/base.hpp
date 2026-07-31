@@ -22,61 +22,57 @@
 
 
 namespace pax {
+	using traits::contiguous, traits::value_type_t, traits::extent_v, traits::character;
+
+	template< typename ... I >	concept integer		= ( std::integral< I > && ... );
+	template< typename ... U >	concept uinteger	= ( std::unsigned_integral< U > && ... );
+	template< typename ... F >	concept floating	= ( std::floating_point< F > && ... );
+	template< typename ... A >	concept arithmetic	= ( ( floating< A > || integer< A > ) && ... );
 
 	template< std::size_t N >
-	constexpr bool is_static  = ( N != traits::dynamic_extent );
+	constexpr bool is_static		= ( N != traits::dynamic_extent );
 
-	template< typename I >	concept integer		  = std::integral< I >;
-	template< typename U >	concept uinteger	  = std::unsigned_integral< U >;
-	template< typename F >	concept floating	  = std::floating_point< F >;
-	template< typename A >	concept arithmetic	  = floating< A > || integer< A >;
-
-	template< typename ... Cont >
-	concept all_contiguous		  = ( traits::contiguous< Cont > && ... );
+	template< typename ... V >
+	concept all_arithmetic			= contiguous< V ... > && arithmetic< value_type_t< V > ... >;
 	
-	template< typename ... Cont >
-	concept all_arithmetic		  =	all_contiguous< Cont ... >
-		&&	( arithmetic< traits::value_type_t< Cont > > && ... );
+	template< typename ... V >
+	concept static_extent			= contiguous< V ... > && ( is_static< extent_v< V > > && ... );
 	
-	template< typename Cont0, typename Cont1 >
-	concept pairwise_comparable	  =	all_contiguous< Cont0, Cont1 >
-		&&	std::equality_comparable_with< traits::value_type_t< Cont0 >, traits::value_type_t< Cont1 > >;
+	template< typename V0, typename V1 >
+	concept same_static_extent		= contiguous< V0, V1 > 
+		&& static_extent< V0, V1 > && ( extent_v< V0 > == extent_v< V1 > );
 	
-	template< typename ... Cont >
-	concept all_static_extent	  = all_contiguous< Cont ... >
-		&&	( is_static< traits::extent_v< Cont > > && ... );
-	
-	template< typename Cont0, typename Cont1 >
-	concept all_same_static_extent	  =	all_contiguous< Cont0, Cont1 > && all_static_extent< Cont0, Cont1 >
-		&&	( traits::extent_v< Cont0 > == traits::extent_v< Cont1 > );
+	template< typename V0, typename V1 >
+	concept pairwise_comparable		= contiguous< V0, V1 >
+		&& std::equality_comparable_with< value_type_t< V0 >, value_type_t< V1 > >;
 
 
 
-	template< traits::contiguous Cont >
-	constexpr std::size_t No_null_extent = traits::extent_v< Cont >;
+	template< contiguous V >
+	constexpr std::size_t No_null_extent = extent_v< V >;
 
-	template< traits::character Char, std::size_t N >
+	template< character Char, std::size_t N >
 	constexpr std::size_t No_null_extent< Char ( & )[ N ] > = N - 1;
 
 
 
 	/// The non-character case. It never has a \0 ending. 
-	template< traits::contiguous Cont >	
-	[[nodiscard]] constexpr auto no_nullchar_end( Cont && v_ )	{
+	template< contiguous V >	
+	[[nodiscard]] constexpr auto no_nullchar_end( V && v_ )	{
 		using std::end; 
 		return end( v_ );
 	}
 
 	/// A string of characters. It may have a \0 ending.
-	template< traits::string Cont >	
-	[[nodiscard]] constexpr auto no_nullchar_end( Cont && v_ )	{
+	template< traits::string V >	
+	[[nodiscard]] constexpr auto no_nullchar_end( V && str_ ) {
 		using std::end, std::size;
-		return end( v_ ) - ( size( v_ ) && !*( end( v_ ) - 1 ) );
+		return end( str_ ) - ( size( str_ ) && !*( end( str_ ) - 1 ) );
 	}
 
 	/// A basic array of characters. It always has a \0 ending. 
-	template< traits::character Char, std::size_t N >
-	[[nodiscard]] constexpr Char const * no_nullchar_end( Char const ( & str_ )[ N ] )	{
+	template< character Char, std::size_t N >
+	[[nodiscard]] constexpr Char * no_nullchar_end( Char ( & str_ )[ N ] )	{
 		return str_ + N - ( N && !*( str_ + N - 1 ) );
 	}
 

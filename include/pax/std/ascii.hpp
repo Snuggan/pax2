@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <pax/types/point-stuff/contiguous.hpp>
+#include <pax/types/point-stuff/base.hpp>
 #include <string_view>
 
 
@@ -107,7 +107,7 @@ namespace pax {
 
 	template< traits::string S >
 	constexpr auto as_ascii( const S & str_ )					noexcept	{
-		using std::begin;
+		using std::begin, std::end;
 		using 				Ch	  = traits::value_type_t< S >;
 		using				Str	  = std::basic_string     < Ch >;
 		using				StrV  = std::basic_string_view< Ch >;

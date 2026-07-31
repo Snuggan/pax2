@@ -16,8 +16,8 @@
 #	define TEST( ... )		
 #else
 #	define TEST( ... )		static_assert( __VA_ARGS__ );
-	static constexpr const auto		v0 = pax::point< int >( 0, 1, 2, -5, -1 );
-	static constexpr const auto		v1 = pax::point< int >( 1, 1, 1,  1, -1 );
+	static constexpr const auto		v0 = pax::point( 0, 1, 2, -5, -1 );
+	static constexpr const auto		v1 = pax::point( 1, 1, 1,  1, -1 );
 	constexpr int inter( double v_ )	{	return ( v_ + 1e-8 )*1e6;	}
 #endif
 
@@ -33,7 +33,7 @@ namespace pax {
 	/// - The elements must be an arithmetic type, as the distance is defined that way.
 	/// - Must have a static extent, the present implementation depends on it. 
 	template< std::size_t P, sized_contiguous Cont > 
-		requires( all_arithmetic< Cont > && all_static_extent< Cont > )
+		requires( all_arithmetic< Cont > && static_extent< Cont > )
 	constexpr auto minkowskiP( 
 		Cont		 && v_
 	) noexcept {
@@ -47,7 +47,7 @@ namespace pax {
 	/// - The containers must have the same number of elements, as the distance is defined that way.. 
 	/// - Must have a static extent, the present implementation depends on it. 
 	template< std::size_t P, sized_contiguous Cont0, sized_contiguous Cont1 >
-		requires( all_arithmetic< Cont0, Cont1 > && all_same_static_extent< Cont0, Cont1 > )
+		requires( all_arithmetic< Cont0, Cont1 > && same_static_extent< Cont0, Cont1 > )
 	constexpr auto minkowskiP(
 		Cont0		 && v0_,
 		Cont1		 && v1_
@@ -64,7 +64,7 @@ namespace pax {
 	/// - (The containers must have the same number of elements, as the distance is defined that way.) 
 	/// - Must have a static extent, the present implementation depends on it. 
 	template< std::size_t P, sized_contiguous ... Cont >
-		requires( all_arithmetic< Cont ... > && all_static_extent< Cont ... > )
+		requires( all_arithmetic< Cont ... > && static_extent< Cont ... > )
 	constexpr auto minkowski(
 		Cont		 && ... v_
 	) noexcept {
@@ -78,7 +78,7 @@ namespace pax {
 	/// - The elements must be an arithmetic type, as the distance is defined that way.
 	/// - (The containers must have the same number of elements, as the distance is defined that way.) 
 	/// - Must have a static extent, the present implementation depends on it. 
-	template< sized_contiguous ... Cont >		requires( all_arithmetic< Cont ... > && all_static_extent< Cont ... > )
+	template< sized_contiguous ... Cont >		requires( all_arithmetic< Cont ... > && static_extent< Cont ... > )
 	constexpr auto chebyshev ( Cont && ... v_ )	noexcept	{	return minkowski < 0 >( std::forward< Cont >( v_ ) ... );	}
 	TEST( chebyshev( v0 ) ==  5 );
 	TEST( chebyshev( v0, v1 ) == 6 );
@@ -88,7 +88,7 @@ namespace pax {
 	/// - The elements must be an arithmetic type, as the distance is defined that way.
 	/// - (The containers must have the same number of elements, as the distance is defined that way.) 
 	/// - Must have a static extent, the present implementation depends on it. 
-	template< sized_contiguous ... Cont >		requires( all_arithmetic< Cont ... > && all_static_extent< Cont ... > )
+	template< sized_contiguous ... Cont >		requires( all_arithmetic< Cont ... > && static_extent< Cont ... > )
 	constexpr auto manhattan ( Cont && ... v_ )	noexcept	{	return minkowski < 1 >( std::forward< Cont >( v_ ) ... );	}
 	TEST( manhattan( v0 ) ==  9 );
 	TEST( manhattan( v0, v1 ) == 8 );
@@ -98,7 +98,7 @@ namespace pax {
 	/// - The elements must be an arithmetic type, as the distance is defined that way.
 	/// - (The containers must have the same number of elements, as the distance is defined that way.) 
 	/// - Must have a static extent, the present implementation depends on it. 
-	template< sized_contiguous ... Cont >		requires( all_arithmetic< Cont ... > && all_static_extent< Cont ... > )
+	template< sized_contiguous ... Cont >		requires( all_arithmetic< Cont ... > && static_extent< Cont ... > )
 	constexpr auto euclidean ( Cont && ... v_ )	noexcept	{	return minkowski < 2 >( std::forward< Cont >( v_ ) ... );	}
 
 	/// Squared euclidean distance (squared minkowski distance, with P = 2).
@@ -106,7 +106,7 @@ namespace pax {
 	/// - The elements must be an arithmetic type, as the distance is defined that way.
 	/// - (The containers must have the same number of elements, as the distance is defined that way.) 
 	/// - Must have a static extent, the present implementation depends on it. 
-	template< sized_contiguous ... Cont >		requires( all_arithmetic< Cont ... > && all_static_extent< Cont ... > )
+	template< sized_contiguous ... Cont >		requires( all_arithmetic< Cont ... > && static_extent< Cont ... > )
 	constexpr auto euclidean2( Cont && ... v_ )	noexcept	{	return minkowskiP< 2 >( std::forward< Cont >( v_ ) ... );	}
 	TEST( euclidean2( v0 ) == 31.0 );
 	TEST( euclidean2( v0, v1 ) == 38 );
@@ -118,7 +118,7 @@ namespace pax {
 	/// - The containers must have the same number of elements, as the distance is defined that way.
 	/// - Must have a static extent, the present implementation depends on it. 
 	template< sized_contiguous Cont0, sized_contiguous Cont1 >
-	requires( all_arithmetic< Cont0, Cont1 > && all_same_static_extent< Cont0, Cont1 > )
+	requires( all_arithmetic< Cont0, Cont1 > && same_static_extent< Cont0, Cont1 > )
 	constexpr auto canberra(
 		Cont0		 && v0_,
 		Cont1		 && v1_
@@ -205,7 +205,7 @@ namespace pax {
 	/// - The containers must have the same number of elements, as the distance is defined that way.. 
 	/// - Must have a static extent, the present implementation depends on it. 
 	template< sized_contiguous Cont0, sized_contiguous Cont1 >
-		requires( pairwise_comparable< Cont0, Cont1 > && all_same_static_extent< Cont0, Cont1 > )
+		requires( pairwise_comparable< Cont0, Cont1 > && same_static_extent< Cont0, Cont1 > )
 	constexpr std::size_t hamming(
 		Cont0		 && v0_,
 		Cont1		 && v1_

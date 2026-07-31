@@ -28,33 +28,33 @@ namespace pax::traits {
 	static_assert( newN< 5, 6, 7, dynamic_extent > == dynamic_extent );
 
 	/// A concept to match T*, T[], T( & )[], T[ N ], or T( & )[ N ].
-	template< typename T >
-	concept array_like						= std::is_pointer_v< clean_t< T > > || std::rank_v< clean_t< T > > == 1;
+	template< typename ... T >
+	concept array_like						= ( ( std::is_pointer_v< clean_t< T > > || std::rank_v< clean_t< T > > == 1 ) && ... );
 
 	/// Do T store or reference contiguous elements, i.e. std::array, std::string, std::span etc.
-	template< typename T >
-	concept sized_contiguous
-		 = std::ranges::contiguous_range	< clean_t< T > >
-		|| std::is_bounded_array_v			< clean_t< T > >;	// int[ N ] and int ( & )[ N ]
+	template< typename ... T >
+	concept sized_contiguous				= ( (
+		   std::ranges::contiguous_range	< clean_t< T > >
+		|| std::is_bounded_array_v			< clean_t< T > > ) && ... );	// int[ N ] and int ( & )[ N ]
 
 	/// Either sized_contiguous or pointer..
-	template< typename T >
-	concept contiguous						= sized_contiguous< T > || array_like< T >;
+	template< typename ... T >
+	concept contiguous						= ( ( sized_contiguous< T > || array_like< T > ) && ... );
 
 	/// Does an instance have a size?
-	template< typename T >
-	concept has_size						= std::ranges::sized_range< clean_t< T > >;
+	template< typename ... T >
+	concept has_size						= ( std::ranges::sized_range< clean_t< T > > && ... );
 
 	/// Does the type T have a [static] size?
 	template< typename T >
-	concept has_extent
-		 =	0u <= std::tuple_size			< clean_t< T > >::value
+	concept has_extent						= 
+		 	0u <= std::tuple_size			< clean_t< T > >::value
 		||	std::is_bounded_array_v			< clean_t< T > >	// T[ N ], T( & )[ N ]
 		||	clean_t< T >::extent != dynamic_extent;				// std::span< T, N > doesn't have tuple_size...
 
 	/// Does an instance have only a dynamic size?
-	template< typename T >
-	concept has_dynamic_size				= has_size< T > && !has_extent< T >;
+	template< typename ... T >
+	concept has_dynamic_size				= ( ( has_size< T > && !has_extent< T > ) && ... );
 
 	/// Does T have an element_type, [probably] in addition to the value_type?
 	template< typename T >
@@ -113,9 +113,9 @@ namespace pax::traits {
 	constexpr std::size_t 		extent_v	= detail::extent< std::remove_cvref_t< T > >::value;
 
 	/// Is T a character type. 
-	template< typename T >
-	concept character						= any_of_v< clean_t< T >, char, signed char, unsigned char, 
-																	wchar_t, char8_t, char16_t, char32_t >;
+	template< typename ... T >
+	concept character						= ( any_of_v< clean_t< T >, char, signed char, unsigned char, 
+																	wchar_t, char8_t, char16_t, char32_t > && ... );
 
 	/// A concept to match character arrays.
 	template< typename T >
