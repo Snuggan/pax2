@@ -36,7 +36,7 @@ namespace pax {
 			std::ostream					  & out_		  = std::cerr, 
 			const std::source_location			location_	  = std::source_location::current()
 		) : m_out{ out_ } {
-			( m_out << location_.file_name() << ':' << location_.line() << ": " ).flush();
+			( m_out << location_.file_name() << ':' << location_.line() << ":debug: " ).flush();
 		}
 		
 		template< typename T >
