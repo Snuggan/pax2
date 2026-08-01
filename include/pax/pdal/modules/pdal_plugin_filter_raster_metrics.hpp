@@ -3,7 +3,7 @@
 #pragma once
 
 #include <pax/pdal/metrics-infrastructure/function-filter.hpp>	// Point_aggregator, Function_filter
-#include <pax/types/point-stuff/box.hpp>						// Box_indexer< double, 2 >
+#include <pax/types/point-stuff/box.hpp>						// Raster_indexer
 #include <pdal/Filter.hpp>
 // #include <pdal/Streamable.hpp>
 #include <string>
@@ -79,7 +79,7 @@ namespace pax {
 		std::vector< metrics::Function_filter >		pr_metrics_set{};
 		pdal::Dimension::Id 			pr_height_dimension{};
 		bool 							pr_has_return_number{};
-		Box_indexer< double, 2 >		pr_bbox{};
+		Raster_indexer					pr_bbox{};
 		
 		struct metadata {
 			std::size_t 	points_processed{};
@@ -92,7 +92,7 @@ namespace pax {
 			const std::string_view				suffix_
 		) noexcept {	
 			return { 
-				  ( dest_.parent_path() / dest_.stem() ).native() 
+				( dest_.parent_path() / dest_.stem() ).native() 
 				+ std::string{ "." }
 				+ std::string{ suffix_ }
 				+ dest_.extension().native()

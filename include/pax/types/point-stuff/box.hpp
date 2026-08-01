@@ -5,8 +5,7 @@
 #pragma once
 
 #include "point.hpp"
-#include <cmath>		// std::fmod
-#include <cassert>
+#include <cmath>		// std::fma, std::floor
 
 
 namespace pax {
@@ -17,13 +16,13 @@ namespace pax {
 	/// It is a superclass for Box_indexer, below, a tool to convert coordinates to a pixel in a raster.
 	template< arithmetic A, std::size_t N >			requires( is_static< N > )
 	struct Box {
-		static constexpr std::size_t 				rank		  = N;
-		using 										Pt			  = Point< A, N >;
-		using 										Base		  = std::array< Pt, 2 >;
-		using 										value_type	  = Pt::value_type;
+		static constexpr std::size_t 		rank				  = N;
+		using 								Pt					  = Point< A, N >;
+		using 								Base				  = std::array< Pt, 2 >;
+		using 								value_type			  = Pt::value_type;
 
 	private:
-		std::array< Point< A, N >, 2 >				m_box{};
+		std::array< Point< A, N >, 2 >		m_box{};
 
 		static constexpr A align_( const A value_, const A factor_ ) noexcept {
 			return factor_ ? ( factor_ * std::floor( value_ / factor_ ) ) : value_;
@@ -38,7 +37,7 @@ namespace pax {
 		/// Returns the closest number greater than or equal to value_ that is evenly divisible by factor_.
 		static constexpr A align_ge( const A value_, const A factor_ ) noexcept {
 			const A temp = align_( value_, factor_ );
-			return temp + ( ( temp < value_) ? factor_ : A{} );
+			return  temp + ( ( temp < value_) ? factor_ : A{} );
 		}
 		
 	public:
@@ -51,24 +50,32 @@ namespace pax {
 			const Point< A, N > & pt1_ 
 		) noexcept : m_box({ pax::min( pt0_, pt1_ ), pax::max( pt0_, pt1_ ) }) {}
 
-		constexpr const Pt & min()									const noexcept	{	return m_box.front();			}
-		constexpr const Pt & max()									const noexcept	{	return m_box.back();			}
-		constexpr bool empty() 										const noexcept	{	return !all_lt( min(), max() );	}
-		constexpr       Pt   sides()								const noexcept	{	return max() - min();			}
+		constexpr const Base & box()								const noexcept	{	return m_box;					}
+		constexpr const Pt   & min()								const noexcept	{	return box().front();			}
+		constexpr const Pt   & max()								const noexcept	{	return box().back();			}
+		constexpr       bool   empty() 								const noexcept	{	return !all_lt( min(), max() );	}
+		constexpr       Pt     sides()								const noexcept	{	return max() - min();			}
+
 		friend constexpr const Pt & min( const Box & b_ )			noexcept		{	return b_.min();				}
 		friend constexpr const Pt & max( const Box & b_ )			noexcept		{	return b_.max();				}
-		friend constexpr bool empty( const Box & b_ )				noexcept		{	return b_.empty();				}
+		friend constexpr bool  empty( const Box & b_ )				noexcept		{	return b_.empty();				}
 
 		friend constexpr bool operator==( const Box & b0_, const Box & b1_ ) noexcept {
 			return ( b0_.min() == b1_.min() ) && ( b0_.max() == b1_.max() );
 		}
 
 		/// Returns the minimal Box that contains both the original Box and pt_.
-		constexpr Box aligned( value_type resolution_ )				const noexcept	{
-			resolution_			  = std::abs( resolution_ );
-			auto [ ... small ]	  = min();
-			auto [ ... large ]	  = max();
-			return { Pt{ align_le( small, resolution_ ) ... }, Pt{ align_ge( large, resolution_ ) ... } };
+		constexpr Box aligned( Pt resolution_ )						const noexcept	{
+			const auto [ ...   res ]	  = resolution_;
+			const auto [ ... small ]	  = min();
+			const auto [ ... large ]	  = max();
+			return { { align_le( small, std::abs( res ) ) ... }, 
+					 { align_ge( large, std::abs( res ) ) ... } };
+		}
+
+		/// Returns the minimal Box that contains both the original Box and pt_.
+		constexpr Box aligned( const value_type resolution_ )		const noexcept	{
+			return aligned( pax::point< rank >( resolution_ ) );
 		}
 
 		/// Returns the minimal Box that contains both the original Box and pt_.
@@ -91,23 +98,14 @@ namespace pax {
 			return all_lt( pt_, max() ) && all_le( min(), pt_ );
 		}
 
-		/// Box contents to std::string.
-		explicit constexpr operator std::string() 					const			{
+		/// Box contents as a std::string.
+		constexpr std::string string() 								const			{
 			return std::format( "[{}, {}]", min(), max() );
-		}
-
-		/// Stream a box contents.
-		template< typename Out >
-		friend constexpr Out & operator<<(
-			Out				  & out_,
-			const Box		  & box_
-		) {
-			return out_ << std::string( box_ );
 		}
 	};
 	
-	using Box2d				  = Box< double, 2 >;
-	using Box3d				  = Box< double, 3 >;
+	using Box2d							  = Box< double, 2 >;
+	using Box3d							  = Box< double, 3 >;
 
 	template< arithmetic A, std::size_t N >
 	Box( const Point< A, N > &, const Point< A, N > & ) -> Box< A, N >;
@@ -119,77 +117,71 @@ namespace pax {
 	/// It can have any rank you please, but two (and sometimes three) is probably the usual.
 	/// It may be used to handle multiple indeces, such as for rasters and multi-dimensional arrays.
 	/// It is a superclass for Box_indexer, below, together with Box.
-	template< std::size_t N >									requires( is_static< N > )
+	template< std::size_t N >										requires( is_static< N > )
 	struct Indexer {
-		static constexpr std::size_t	rank				  = N;
-		using 							Idx					  = Index< rank >;
-		using 							index_type			  = Idx::value_type;
+		static constexpr std::size_t		rank				  = N;
+		using 								Idx					  = Index< rank >;
+		using 								index_type			  = Idx::value_type;
 
 	private:
-		Idx								m_extents{}, m_offsets{};
-		static constexpr Idx			noll{};
+		Idx									m_extents{}, m_offsets{};
+		static constexpr Idx				noll{};
 		
-		static constexpr Idx do_offs( const Idx & idx_ )		noexcept	{
-			index_type					product{ 1u };
-			auto [ ... t, tn ]		  = idx_;
+		static constexpr Idx do_offs( const Idx & idx_ )			noexcept		{
+			index_type						product{ 1u };
+			auto [ ... t, tn ]			  = idx_;
 			return { product, ( product *= t ) ... };
 		}
 		
 	public:
-		constexpr Indexer()									  = default;
-		constexpr Indexer( const Indexer & )				  = default;
-		constexpr Indexer & operator=( const Indexer & )	  = default;
+		constexpr Indexer()										  = default;
+		constexpr Indexer( const Indexer & )					  = default;
+		constexpr Indexer & operator=( const Indexer & )		  = default;
 
-		constexpr Indexer( const Idx & extents_ )  				noexcept 
+		constexpr Indexer( const Idx & extents_ )  					noexcept 
 			: m_extents( extents_ ), m_offsets{ do_offs( extents_ ) } {}
 
-		constexpr const Idx & extents()							const noexcept	{	return m_extents;						}
-		constexpr const Idx & offsets()							const noexcept	{	return m_offsets;						}
-		constexpr index_type elements()							const noexcept	{	return offsets().back()*extents().back();	}
-		constexpr bool valid_index( const Idx & idx_ )			const noexcept	{	return all_lt( idx_, extents() );		}
-		friend constexpr index_type cols( const Indexer & i_ )		  noexcept	{	return col( i_.extents() );				}
-		friend constexpr index_type rows( const Indexer & i_ )		  noexcept	{	return row( i_.extents() );				}
+		/// Number of elementa in each dimension.
+		constexpr const Idx & extents()								const noexcept	{	return m_extents;			}
+
+		/// The stride between elements in each dimension. 
+		constexpr const Idx & offsets()								const noexcept	{	return m_offsets;			}
+
+		/// The total number of elements (product of all sizes).
+		constexpr index_type elements()								const noexcept	{
+			return offsets().back()*extents().back();
+		}
+		
+		/// Returns true, iff all indeces in i_ are smaller the the eqivalent size. 
+		constexpr bool valid_index( const Idx & idx_ )				const noexcept	{
+			return all_lt( idx_, extents() );
+		}
+		
+		/// The number of "columns", same as size()[ col_idx ].
+		friend constexpr index_type cols( const Indexer & i_ )		noexcept		{	return col( i_.extents() );	}
+		
+		/// The number of "rows", same as size()[ row_idx ].
+		friend constexpr index_type rows( const Indexer & i_ )		noexcept		{	return row( i_.extents() );	}
 		
 		/// Calculate an index into a vector for the index represented by pt_.
-		template< uinteger ...U >								requires( sizeof...( U ) == N )
-		constexpr index_type operator[]( U && ... u_ )			const noexcept	{
+		template< uinteger ...U >									requires( sizeof...( U ) == N )
+		constexpr index_type operator[]( U && ... u_ )				const noexcept	{
 			return operator[]( Idx{ std::forward< U >( u_ ) ... } );
 		}
 		
 		/// Calculate an index into a vector for the index represented by pt_.
-		constexpr index_type operator[]( const Idx & idx_ )		const noexcept	{
-			return dot_product( idx_, offsets() );
-		}
-		
-		/// Calculate an index into a vector for the index represented by pt_.
-		template< uinteger ...U >								requires( sizeof...( U ) == N )
-		constexpr index_type at( U && ...u_ )					const noexcept	{
-			return at( Idx{ std::forward< U >( u_ ) ... } );
-		}
-		
-		/// Calculate an index into a vector for the index represented by pt_.
-		constexpr index_type at( const Idx & idx_ )				const noexcept	{
-			assert( all_lt( idx_, extents() ) );
+		constexpr index_type operator[]( const Idx & idx_ )			const noexcept	{
 			return dot_product( idx_, offsets() );
 		}
 
-		/// Indexer contents to std::string.
-		explicit constexpr operator std::string() 				const			{
+		/// Indexer contents as a std::string.
+		constexpr std::string string() 								const			{
 			return std::format( "{}", extents() );
-		}
-
-		/// Stream a box contents.
-		template< typename Out >
-		friend constexpr Out & operator<<(
-			Out				  & out_,
-			const Indexer	  & idxer_
-		) {
-			return out_ << std::string( idxer_ );
 		}
 	};
 	
-	using Indexer2d			  = Indexer< 2 >;
-	using Indexer3d			  = Indexer< 3 >;
+	using Indexer2d						  = Indexer< 2 >;
+	using Indexer3d						  = Indexer< 3 >;
 
 	template< std::size_t N >
 	Indexer( const Index< N > & ) -> Indexer< N >;
@@ -198,8 +190,8 @@ namespace pax {
 
 
 	/// A bounding box that also handles coordinattes to scalar index transformation.
-	/// - It can have any rank you please, but two (a raster) is probably the usual.
-	/// - Rank two is handled differently, see comment on ::index( Pt ), below. 
+	/// - If you intend to use it with a [gdal] raster or pictures, you should most 
+	///	  probably use Raster_indexer instead. 
 	template< arithmetic A, std::size_t N >						requires( is_static< N > )
 	struct Box_indexer : public Box< A, N >, public Indexer< N > {
 		static constexpr std::size_t 		rank			  = N;
@@ -209,87 +201,134 @@ namespace pax {
 		using 								Idx				  = Indexer< rank >;
 		using 								index_type		  = Idx::index_type;
 
-	private:
-		value_type									m_resolution{};
+	protected:
+		Pt									m_resolution{};		// The element size (all positive).
+		Pt									m_factor{};			// Multiply a point with this...
+		Pt									m_offset{};			// ...and add this to get the index. 
 
 		static constexpr Point< std::size_t, N > do_idx(
-			const Point< A, N >			  & sides_,
-			const A							resolution_
+			const Pt					  & sides_,
+			const Pt					  & resolution_
 		) noexcept {
 			// We want no zero-length dimension.
 			static constexpr auto mini	  = []( index_type i_ ) { return ( i_ > 1u ) ? i_ : 1u; };
-			auto [ ... s ]				  = sides_;
-			return { mini( s/resolution_ ) ... };
+			const auto [ ... side ]		  = sides_;
+			const auto [ ...  res ]		  = resolution_;
+			return { mini( side/res ) ... };
 		}
+		
+		static constexpr auto smallest = []( value_type c, index_type i ){
+			const auto ci = static_cast< index_type >( c );
+			return ( ci < i ) ? ci : i;
+		};
+
 
 	public:
+		using coord_type										  = value_type;
+
 		constexpr Box_indexer()									  = default;
 		constexpr Box_indexer( const Box_indexer & )			  = default;
 		constexpr Box_indexer & operator=( const Box_indexer & )  = default;
 
+		/// The main constructor that calculates the transformation attributes.
+		constexpr Box_indexer(
+			const BBox					  & box_, 
+			const Pt					  & resolution_
+		) : 
+			BBox{ box_.aligned( resolution_ ) }, 
+			Idx { do_idx( BBox::sides(), resolution_ ) }, 
+			m_resolution( resolution_ )
+		{
+			if( !all_lt( Pt{}, resolution_ ) )	throw std::runtime_error( 
+				std::format( "All resolutions must be positive, they are not: {}.", resolution_ ) );
+
+			// Calculate the actual transformation attributes. 
+			const auto [ ... min ]		  = BBox::min();
+			const auto [ ... res ]		  = resolution();
+			m_factor					  = {    1/res ... };
+			m_offset					  = { -min/res ... };
+		}
+
+		/// Simplified constructor, when elements have the same length in all dimensions.
 		constexpr Box_indexer(
 			const BBox					  & box_, 
 			const value_type				resolution_
-		) noexcept : 
-			BBox{ box_.aligned( resolution_ ) }, 
-			Idx { do_idx( BBox::sides(), resolution_ ) }, 
-			m_resolution{ resolution_ } 
-		{}
+		) : Box_indexer( box_, pax::point< rank >( resolution_ ) ) {}
 
 		/// The size of the grid elements.
-		constexpr value_type resolution()	const noexcept	{	return m_resolution;	}
+		constexpr Pt resolution()			const noexcept	{	return m_resolution;	}
+
+		/// Easy access to the superclass.
+		constexpr const BBox & box()		const noexcept	{	return *this;			}
 
 		/// Given a point, what offset does it have into the vector of data?
-		///	- If pt_ is outside the bounding box, an exception is thrown.
-		/// - When dealing with rasters (rank is two), origo is at the upper left corner, which differs 
-		///   from the mathematical origo (lower left corner). So if rank is two, this is taken care of. 
+		///	If pt_ is outside the bounding box the result is undefined. So unless you are sure it is not 
+		/// outside, you shoud check this with either [Box_indexer::]in_range, strictly_inside, or inside_or_on.
 		index_type index( const Pt & pt_ )	const			{
-			static constexpr auto smallest = []( value_type c, index_type i ){
-				const auto ci = static_cast< index_type >( c );
-				return ( ci < i ) ? ci : i;
-			};
-			if( BBox::inside_or_on( pt_ ) ) {
-				if constexpr( rank == 2 ) {	// The exception of the raster case, mentioned above.
-					return Idx::operator[](
-						smallest( ( x( pt_ ) -  x( BBox::min() ))/resolution(), col( Idx::extents() ) - 1u ),
-						smallest( ( y( BBox::max() ) - y( pt_ ) )/resolution(), row( Idx::extents() ) - 1u )
-					);
-				} else {					// The general case, with mathematical origo. 
-					auto [ ... diff ]	  = pt_ - BBox::min();
-					auto [ ... exts ]	  = Idx::extents();
-					return Idx::operator[]( { smallest( diff/resolution(), exts - 1 ) ... } );
-				}
-			} else throw std::runtime_error( 
-				std::format( "The point {} is outside the bbox [{}, {}].", pt_, min( *this ), max( *this ) ) );
+			const auto [ ...     pt ]	  = pt_;
+			const auto [ ... factor ]	  = m_factor;
+			const auto [ ... offset ]	  = m_offset;
+			const auto [ ...   exts ]	  = Idx::extents();
+			// The exts are necessary to include points with any coordinate value on the max edge:
+			return Idx::operator[]( { smallest( std::fma( pt, factor, offset ), exts - 1 ) ... } );
+		}
+		
+		/// Given an index, calculates a coordinate of its element. Used for debugging. 
+		///	If idx_ is >= elements(), the result is undefined. 
+		/// So unless you are sure it is ok, you better check it with all_lt( idx_, Box_indexer::extents() ). 
+		constexpr Pt point( const Idx & idx_ )	const noexcept	{
+			const auto [ ...    idx ]	  = idx_;
+			const auto [ ... factor ]	  = m_factor;
+			const auto [ ... offset ]	  = m_offset;
+			return { ( idx - offset )/factor ... };
 		}
 
-		/// The affine transformation of the raster, as defined by gdal.
-		constexpr auto affine_vector()		const noexcept		requires( rank == 2 )	{
-			return std::array< double, 6 >{
-	    		double( x( min( *this ) ) ),	double( resolution() ),	   double{},
-				double( y( max( *this ) ) ),	double{},				( -resolution() )
-			};
-		}
-
-		/// Box contents to std::string.
-		explicit constexpr operator std::string() const {
-			return std::format( "{{{}, {}}}", std::string( BBox( *this ) ), resolution() );
-		}
-
-		/// Stream a box contents.
-		template< typename Out >
-		friend constexpr Out & operator<<(
-			Out					  & out_,
-			const Box_indexer	  & boxi_
-		) {
-			return out_ << std::string( boxi_ );
+		/// Box contents as a std::string.
+		constexpr std::string string() 								const			{
+			return std::format( "{{{}, {}}}", box().string(), resolution() );
 		}
 	};
 	
-	using Box_indexer2d		  = Box_indexer< double, 2 >;
-	using Box_indexer3d		  = Box_indexer< double, 3 >;
+	using Box_indexer2d					  = Box_indexer< double, 2 >;
+	using Box_indexer3d					  = Box_indexer< double, 3 >;
 
 	template< arithmetic A, std::size_t N, arithmetic A2 >
 	Box_indexer( const Box< A, N > &, A2 ) -> Box_indexer< A, N >;
 
+	template< arithmetic A, std::size_t N >
+	Box_indexer( const Box< A, N > &, Point< A, N > ) -> Box_indexer< A, N >;
+
+
+
+	///	A special case of Box_indexer to use with [gdal] rasters.
+	/// - "Pictures!" do not normally use the mathematical origin, but instead the upper left corner and go down. 
+	/// - This class do not handle full affine transformations – no rotations or obliqueness. 
+	struct Raster_indexer : public Box_indexer< double, 2 > {
+		using Boxer = Box_indexer< double, 2 >;
+		constexpr Raster_indexer()										  = default;
+		constexpr Raster_indexer( const Raster_indexer & )				  = default;
+		constexpr Raster_indexer & operator=( const Raster_indexer & )	  = default;
+
+		/// The main constructor that calculates the transformation attributes.
+		constexpr Raster_indexer(
+			const BBox					  & box_, 
+			const Pt					  & resolution_
+		) : Boxer{ box_, resolution_ } {
+			// Give values that will used a "downwards" system with origo at the upper left corner:
+			Boxer::m_factor = {             1.0  /x( resolution() ),           -1.0  /y( resolution() ) };
+			Boxer::m_offset = { -x( BBox::min() )/x( resolution() ), y( BBox::max() )/y( resolution() ) };
+		}
+
+		/// Simplified constructor, when elements have the same length in all dimensions.
+		constexpr Raster_indexer( const BBox & box_, const value_type resolution_ ) 
+			: Raster_indexer( box_, pax::point< 2 >( resolution_ ) ) {}
+
+		/// Return the affine values, in order specified by gdal.
+		constexpr Point< double, 6 > affine_values()				const noexcept	{
+			return {
+				x( this->min() ),	 x( Boxer::resolution() ),		double{},
+				y( this->max() ),		double{},				-y( Boxer::resolution() )
+			};
+		}
+	};
 }	// namespace pax

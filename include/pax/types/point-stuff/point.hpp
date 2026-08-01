@@ -35,6 +35,12 @@ namespace pax {
 		using A  = std::common_type_t< As ... >;
 		return Point< A, sizeof...( As ) >{ static_cast< A >( std::forward< As >( as_ ) ) ... };
 	}
+	template< std::size_t N, arithmetic A >	
+	constexpr auto point( const A a_ )		noexcept	{
+		Point< A, N >		temp;
+		temp.fill( a_ );
+		return temp;
+	}
 
 	/// This is used to read Point values from a csv file using Text_table.
 	template< floating F >

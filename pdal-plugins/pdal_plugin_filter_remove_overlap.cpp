@@ -89,15 +89,19 @@ pdal::PointViewPtr pax::Remove_overlap::overlap_filter( pdal::PointViewPtr view_
 
 	if(	active ) {
 		// Get the bbox, aligned as specified. 
-		const Box_indexer			bbox{ pax::box( *view_ ), m_overlap_resolution };
+		const Raster_indexer		bbox{ pax::box( *view_ ), m_overlap_resolution };
 		std::vector< Angle_source >	min_angle{ bbox.elements(), Angle_source{} };
 		
 		// Create a raster of minimal angle/point-id pairs.
-		for( const auto & pt : *view_ ) {
-			min_angle[ bbox.index( point( pt ) ) ].update(
-				pt.getFieldAs< angle_type     >( ID::ScanAngleRank ), 
-				pt.getFieldAs< source_id_type >( ID::PointSourceId )
-			);
+		for( const auto & pt_ : *view_ ) {
+			const auto	pt	  = point( pt_ );
+			if( bbox.inside_or_on( pt ) ) {
+				min_angle[ bbox.index( pt ) ].update(
+					pt_.getFieldAs< angle_type     >( ID::ScanAngleRank ), 
+					pt_.getFieldAs< source_id_type >( ID::PointSourceId )
+				);
+			} else throw std::runtime_error( 
+				std::format( "The point {} is outside the bbox {}.", pt, bbox.box().string() ) );
 		}
 		
 		// Remove all but the minimum points in each raster cell.

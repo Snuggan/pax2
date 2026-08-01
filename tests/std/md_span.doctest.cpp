@@ -279,7 +279,6 @@ namespace pax {
 				std::stringstream				temp{};
 				pax::print( temp, mdsp, ';' );
 				DOCTEST_FAST_CHECK_EQ( temp.str(), result );
-				pax::print_meta( std::cout, mdsp );
 			}
 			{	// Rank 4 left
 				constexpr std::string_view		result{ "\n[r, c, 0, 0]:\n0;1\n2;3\n\n[r, c, 1, 0]:\n4;5\n6;7\n\n[r, c, 2, 0]:\n8;9\n10;11\n\n[r, c, 0, 1]:\n12;13\n14;15\n\n[r, c, 1, 1]:\n16;17\n18;19\n\n[r, c, 2, 1]:\n20;21\n22;23\n\n[r, c, 0, 2]:\n24;25\n26;27\n\n[r, c, 1, 2]:\n28;29\n30;31\n\n[r, c, 2, 2]:\n32;33\n34;35\n\n[r, c, 0, 3]:\n36;37\n38;39\n\n[r, c, 1, 3]:\n40;41\n42;43\n\n[r, c, 2, 3]:\n44;45\n46;47\n\n[r, c, 0, 4]:\n48;49\n50;51\n\n[r, c, 1, 4]:\n52;53\n54;55\n\n[r, c, 2, 4]:\n56;57\n58;59\n" };
@@ -287,7 +286,6 @@ namespace pax {
 				std::stringstream				temp{};
 				pax::print( temp, mdsp, ';' );
 				DOCTEST_FAST_CHECK_EQ( temp.str(), result );
-				pax::print_meta( std::cout, mdsp );
 			}
 		}
 	}

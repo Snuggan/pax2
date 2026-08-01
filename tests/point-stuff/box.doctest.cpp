@@ -6,6 +6,7 @@
 
 #include <pax/types/point-stuff/box.hpp>
 #include <pax/doctest.hpp>
+#include <pax/debug.hpp>
 
 
 namespace pax {
@@ -47,14 +48,12 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( rows( indexer ),  			row( idx ) );
 		DOCTEST_FAST_CHECK_EQ( indexer[ idx2 ],  			104u );
 		DOCTEST_FAST_CHECK_EQ( indexer[ 2u, 4u, 6u ],  		104u );
-		DOCTEST_FAST_CHECK_EQ( indexer.at( idx2 ),  		104u );
-		DOCTEST_FAST_CHECK_EQ( indexer.at( 2u, 4u, 6u ),  	104u );
 	}
 	DOCTEST_TEST_CASE( "Box_indexer object" ) {
-		{	// 2d
-			const Box_indexer								boxi{ Box2d{ { 1., 2.5 }, { 7., 5. } }, 2 };
+		{	// 2d Raster_indexer
+			const Raster_indexer							boxi{ Box2d{ { 1., 2.5 }, { 7., 5. } }, { 2., 2. } };
 			DOCTEST_FAST_CHECK_EQ( boxi,					Box2d { { 0., 2.0 }, { 8., 6. } } );
-			DOCTEST_FAST_CHECK_EQ( boxi.resolution(), 		2 );
+			DOCTEST_FAST_CHECK_EQ( boxi.resolution(), 		Point{ 2., 2. } );
 			DOCTEST_FAST_CHECK_EQ( boxi.extents(), 			Index2d{ 4u, 2u } );
 			DOCTEST_FAST_CHECK_EQ( boxi.offsets(), 			Index2d{ 1u, 4u } );
 			DOCTEST_FAST_CHECK_EQ( boxi.elements(), 		8 );
@@ -62,12 +61,24 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( boxi.index( Point{ 8., 6. } ), 	3u );
 			DOCTEST_FAST_CHECK_EQ( boxi.index( Point{ 0., 2. } ), 	4u );
 			DOCTEST_FAST_CHECK_EQ( boxi.index( Point{ 8., 2. } ), 	7u );
-			DOCTEST_FAST_CHECK_EQ( boxi.affine_vector(), 	std::array< double, 6 >{ 0., 2., 0., 6., 0., -2. } );
+			DOCTEST_FAST_CHECK_EQ( boxi.affine_values(), 	std::array< double, 6 >{ 0., 2., 0., 6., 0., -2. } );
 		}
-		{	// 3d
-			const Box_indexer								boxi{ Box3d{ { 1., 2.5, 0. }, { 7., 5., 3. } }, 2 };
+		{	// 2d Box_indexer
+			const Box_indexer								boxi{ Box2d{ { 1., 2.5 }, { 7., 5. } }, { 2., 2. } };
+			DOCTEST_FAST_CHECK_EQ( boxi,					Box2d { { 0., 2.0 }, { 8., 6. } } );
+			DOCTEST_FAST_CHECK_EQ( boxi.resolution(), 		Point{ 2., 2. } );
+			DOCTEST_FAST_CHECK_EQ( boxi.extents(), 			Index2d{ 4u, 2u } );
+			DOCTEST_FAST_CHECK_EQ( boxi.offsets(), 			Index2d{ 1u, 4u } );
+			DOCTEST_FAST_CHECK_EQ( boxi.elements(), 		8 );
+			DOCTEST_FAST_CHECK_EQ( boxi.index( Point{ 0., 6. } ), 	0u );
+			DOCTEST_FAST_CHECK_EQ( boxi.index( Point{ 8., 6. } ), 	3u );
+			DOCTEST_FAST_CHECK_EQ( boxi.index( Point{ 0., 2. } ), 	4u );
+			DOCTEST_FAST_CHECK_EQ( boxi.index( Point{ 8., 2. } ), 	7u );
+		}
+		{	// 3d Box_indexer
+			const Box_indexer								boxi{ Box3d{ { 1., 2.5, 0. }, { 7., 5., 3. } }, { 2., 2., 2. } };
 			DOCTEST_FAST_CHECK_EQ( boxi,						  Box3d{ { 0., 2.0, 0. }, { 8., 6., 4. } } );
-			DOCTEST_FAST_CHECK_EQ( boxi.resolution(), 		2 );
+			DOCTEST_FAST_CHECK_EQ( boxi.resolution(), 		Point{ 2., 2., 2. } );
 			DOCTEST_FAST_CHECK_EQ( boxi.extents(), 			Index3d{ 4u, 2u, 2u } );
 			DOCTEST_FAST_CHECK_EQ( boxi.offsets(), 			Index3d{ 1u, 4u, 8u } );
 			DOCTEST_FAST_CHECK_EQ( boxi.elements(), 		16 );

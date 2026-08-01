@@ -49,7 +49,7 @@ namespace pax {
 	void raster_metrics::setting_needs_PointView( pdal::PointViewPtr view_ptr_ ) {
 		DEBUG << "raster_metrics::setting_needs_PointView start";
 
-		pr_bbox	  = Box_indexer{ box( *view_ptr_ ), m_alignment };
+		pr_bbox	  = Raster_indexer{ box( *view_ptr_ ), m_alignment };
 		pr_z_accumulators.resize( pr_bbox.elements() );
 
 		DEBUG << "raster_metrics::setting_needs_PointView end";		
@@ -123,12 +123,16 @@ namespace pax {
 
 	bool raster_metrics::processOne( pdal::PointRef & pt_ ) {
 		// Process a point (accumulate the z-values of all pixels). 
-		pr_z_accumulators[ pr_bbox.index( point( pt_ ) ) ].push_back( 
-			pt_.getFieldAs< value_type >( pr_height_dimension ), 
-			pr_has_return_number
-				? pt_.getFieldAs< std::uint8_t >( pdal::Dimension::Id::ReturnNumber ) == 1 
-				: false
-		);
+		const auto	pt	  = point( pt_ );
+		if( pr_bbox.inside_or_on( pt ) ) {
+			pr_z_accumulators[ pr_bbox.index( pt ) ].push_back( 
+				pt_.getFieldAs< value_type >( pr_height_dimension ), 
+				pr_has_return_number
+					? pt_.getFieldAs< std::uint8_t >( pdal::Dimension::Id::ReturnNumber ) == 1 
+					: false
+			);
+		} else throw std::runtime_error( 
+			std::format( "The point {} is outside the bbox {}.", pt, pr_bbox.box().string() ) );
 		++m_metadata.points_processed;
 		return true;
 	}
@@ -184,7 +188,7 @@ namespace pax {
 				}
 
 				// save_metric( acc, m_dest_rasters, m_accumulators );
-			    pdal::gdal::Raster	raster( dest, m_drivername, m_srs, pr_bbox.affine_vector() );
+			    pdal::gdal::Raster	raster( dest, m_drivername, m_srs, pr_bbox.affine_values() );
 				err					  = raster.open( cols( pr_bbox ), rows( pr_bbox ), 1, m_dataType, m_noData, m_options );
 				if( err == pdal::gdal::GDALError::None )
 					err				  = raster.writeBand( pixels.data(), m_noData, 1, to_string( metric ) );
