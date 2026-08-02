@@ -165,12 +165,12 @@ namespace pax {
 		
 		/// Calculate an index into a vector for the index represented by pt_.
 		template< uinteger ...U >									requires( sizeof...( U ) == N )
-		constexpr index_type operator[]( U && ... u_ )				const noexcept	{
-			return operator[]( Idx{ std::forward< U >( u_ ) ... } );
+		constexpr index_type scalar_index( U && ... u_ )			const noexcept	{
+			return scalar_index( Idx{ std::forward< U >( u_ ) ... } );
 		}
 		
 		/// Calculate an index into a vector for the index represented by pt_.
-		constexpr index_type operator[]( const Idx & idx_ )			const noexcept	{
+		constexpr index_type scalar_index( const Idx & idx_ )		const noexcept	{
 			return dot_product( idx_, offsets() );
 		}
 
@@ -190,8 +190,10 @@ namespace pax {
 
 
 	/// A bounding box that also handles coordinattes to scalar index transformation.
-	/// - If you intend to use it with a [gdal] raster or pictures, you should most 
-	///	  probably use Raster_indexer instead. 
+	/// - It will reverse the direction of those axis with negative resolution. 
+	/// - If you intend to use it with a [gdal] raster or pictures, you should probably give a
+	///   positove x-resolution and a negative y-resolution as they usually have upper left as 
+	///   origo and go "down".
 	template< floating F, std::size_t N >						requires( is_static< N > )
 	struct Box_indexer : public Box< F, N >, public Indexer< N > {
 		static constexpr std::size_t 		rank			  = N;
@@ -200,13 +202,14 @@ namespace pax {
 		using 								value_type		  = Pt::value_type;
 		using 								Idx				  = Indexer< rank >;
 		using 								index_type		  = Idx::index_type;
+		using 								BBox::min, BBox::max;
 
 	protected:
 		Pt									m_resolution{};		// The element size (all positive).
 		Pt									m_factor{};			// Multiply a point with this...
 		Pt									m_offset{};			// ...and add this to get the index. 
 
-		static constexpr Point< std::size_t, N > do_idx(
+		static constexpr Point< std::size_t, N > calculate_extents(
 			const Pt					  & sides_,
 			const Pt					  & resolution_
 		) noexcept {
@@ -214,7 +217,7 @@ namespace pax {
 			static constexpr auto mini	  = []( index_type i_ ) { return ( i_ > 1u ) ? i_ : 1u; };
 			const auto [ ... side ]		  = sides_;
 			const auto [ ...  res ]		  = resolution_;
-			return { mini( side/res ) ... };
+			return { mini( side/std::abs( res ) ) ... };
 		}
 		
 		static constexpr auto smallest = []( value_type c, index_type i ){
@@ -236,17 +239,18 @@ namespace pax {
 			const Pt					  & resolution_
 		) : 
 			BBox{ box_.aligned( resolution_ ) }, 
-			Idx { do_idx( BBox::sides(), resolution_ ) }, 
+			Idx { calculate_extents( BBox::sides(), resolution_ ) }, 
 			m_resolution( resolution_ )
 		{
-			if( !all_lt( Pt{}, resolution_ ) )	throw std::runtime_error( 
-				std::format( "All resolutions must be positive, they are not: {}.", resolution_ ) );
-
 			// Calculate the actual transformation attributes. 
 			const auto [ ... min ]		  = BBox::min();
-			const auto [ ... res ]		  = resolution();
-			m_factor					  = {    1/res ... };
-			m_offset					  = { -min/res ... };
+			const auto [ ... max ]		  = BBox::max();
+			const auto [ ... res ]		  = resolution_;
+			if( ( ( res == 0 ) || ... ) ) throw std::runtime_error( 
+				std::format( "No resolution may be zero, they are: {}.", resolution_ ) );
+
+			m_factor					  = { 1/res ... };
+			m_offset					  = { ( ( res > 0 ) ? min : max )/-res ... };
 		}
 
 		/// Simplified constructor, when elements have the same length in all dimensions.
@@ -264,14 +268,15 @@ namespace pax {
 		/// Given a point, what offset does it have into the vector of data?
 		///	If pt_ is outside the bounding box the result is undefined. So unless you are sure it is not 
 		/// outside, you shoud check this with either [Box_indexer::]in_range, strictly_inside, or inside_or_on.
-		index_type index( const Pt & pt_ )							const			{
+		index_type scalar_index( const Pt & pt_ )					const noexcept	{
 			const auto [ ...     pt ]	  = pt_;
 			const auto [ ... factor ]	  = m_factor;
 			const auto [ ... offset ]	  = m_offset;
 			const auto [ ...   exts ]	  = Idx::extents();
 			// The exts are necessary to include points with any coordinate value on the max edge:
-			return Idx::operator[]( { smallest( std::fma( pt, factor, offset ), exts - 1 ) ... } );
+			return Idx::scalar_index( { smallest( std::fma( pt, factor, offset ), exts - 1 ) ... } );
 		}
+		using Idx::scalar_index;
 		
 		/// Given an index, returns the coordinates of the element's lower left corner. 
 		/// - Mainly used for debugging. 
@@ -283,6 +288,14 @@ namespace pax {
 			const auto [ ... factor ]	  = m_factor;
 			const auto [ ... offset ]	  = m_offset;
 			return { ( idx - offset )/factor ... };
+		}
+
+		/// Return the affine values, in order specified by gdal.
+		constexpr Point< double, 6 > gdal_affines()	const noexcept requires( rank == 2 )	{
+			return {	// Negative resolution means reversed axis mean max instead of min.
+				( x( resolution() ) > 0 ) ? x( min() ) : x( max() ),	x( resolution() ),		double{},
+				( y( resolution() ) > 0 ) ? y( min() ) : y( max() ),	double{},				y( resolution() )
+			};
 		}
 
 		/// Box contents as a std::string.
@@ -299,39 +312,5 @@ namespace pax {
 
 	template< floating F, std::size_t N >
 	Box_indexer( const Box< F, N > &, Point< F, N > ) -> Box_indexer< F, N >;
-
-
-
-	///	A special case of Box_indexer to use with [gdal] rasters.
-	/// - "Pictures!" do not normally use the mathematical origin, but instead the upper left corner and go down. 
-	/// - This class do not handle full affine transformations – no rotations or obliqueness. 
-	struct Raster_indexer : public Box_indexer< double, 2 > {
-		using Boxer = Box_indexer< double, 2 >;
-		constexpr Raster_indexer()										  = default;
-		constexpr Raster_indexer( const Raster_indexer & )				  = default;
-		constexpr Raster_indexer & operator=( const Raster_indexer & )	  = default;
-
-		/// The main constructor that calculates the transformation attributes.
-		constexpr Raster_indexer(
-			const BBox					  & box_, 
-			const Pt					  & resolution_
-		) : Boxer{ box_, resolution_ } {
-			// Give values that will used a "downwards" system with origo at the upper left corner:
-			Boxer::m_factor = {             1.0  /x( resolution() ),           -1.0  /y( resolution() ) };
-			Boxer::m_offset = { -x( BBox::min() )/x( resolution() ), y( BBox::max() )/y( resolution() ) };
-		}
-
-		/// Simplified constructor, when elements have the same length in all dimensions.
-		constexpr Raster_indexer( const BBox & box_, const value_type resolution_ ) 
-			: Raster_indexer( box_, pax::point< 2 >( resolution_ ) ) {}
-
-		/// Return the affine values, in order specified by gdal.
-		constexpr Point< double, 6 > affine_values()				const noexcept	{
-			return {
-				x( this->min() ),	 x( Boxer::resolution() ),		double{},
-				y( this->max() ),		double{},				-y( Boxer::resolution() )
-			};
-		}
-	};
 
 }	// namespace pax

@@ -49,7 +49,9 @@ namespace pax {
 	void raster_metrics::setting_needs_PointView( pdal::PointViewPtr view_ptr_ ) {
 		DEBUG << "raster_metrics::setting_needs_PointView start";
 
-		pr_bbox	  = Raster_indexer{ box( *view_ptr_ ), m_alignment };
+		// Raster normally have a reversed y-axis, so we give a negative y resolution.
+		const Point2d				resolution{ m_alignment, -m_alignment };
+		pr_bbox					  = Box_indexer{ box( *view_ptr_ ), resolution };
 		pr_z_accumulators.resize( pr_bbox.elements() );
 
 		DEBUG << "raster_metrics::setting_needs_PointView end";		
@@ -125,7 +127,7 @@ namespace pax {
 		// Process a point (accumulate the z-values of all pixels). 
 		const auto	pt	  = point( pt_ );
 		if( pr_bbox.inside_or_on( pt ) ) {
-			pr_z_accumulators[ pr_bbox.index( pt ) ].push_back( 
+			pr_z_accumulators[ pr_bbox.scalar_index( pt ) ].push_back( 
 				pt_.getFieldAs< value_type >( pr_height_dimension ), 
 				pr_has_return_number
 					? pt_.getFieldAs< std::uint8_t >( pdal::Dimension::Id::ReturnNumber ) == 1 
@@ -188,7 +190,7 @@ namespace pax {
 				}
 
 				// save_metric( acc, m_dest_rasters, m_accumulators );
-			    pdal::gdal::Raster	raster( dest, m_drivername, m_srs, pr_bbox.affine_values() );
+			    pdal::gdal::Raster	raster( dest, m_drivername, m_srs, pr_bbox.gdal_affines() );
 				err					  = raster.open( cols( pr_bbox ), rows( pr_bbox ), 1, m_dataType, m_noData, m_options );
 				if( err == pdal::gdal::GDALError::None )
 					err				  = raster.writeBand( pixels.data(), m_noData, 1, to_string( metric ) );

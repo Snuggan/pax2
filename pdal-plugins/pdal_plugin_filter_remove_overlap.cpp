@@ -89,14 +89,16 @@ pdal::PointViewPtr pax::Remove_overlap::overlap_filter( pdal::PointViewPtr view_
 
 	if(	active ) {
 		// Get the bbox, aligned as specified. 
-		const Raster_indexer		bbox{ pax::box( *view_ ), m_overlap_resolution };
+		// Raster normally have a reversed y-axis, so we give a negative y resolution.
+		const Point2d				resolution{ m_overlap_resolution, -m_overlap_resolution };
+		const Box_indexer			bbox{ pax::box( *view_ ), resolution };
 		std::vector< Angle_source >	min_angle{ bbox.elements(), Angle_source{} };
 		
 		// Create a raster of minimal angle/point-id pairs.
 		for( const auto & pt_ : *view_ ) {
 			const auto	pt	  = point( pt_ );
 			if( bbox.inside_or_on( pt ) ) {
-				min_angle[ bbox.index( pt ) ].update(
+				min_angle[ bbox.scalar_index( pt ) ].update(
 					pt_.getFieldAs< angle_type     >( ID::ScanAngleRank ), 
 					pt_.getFieldAs< source_id_type >( ID::PointSourceId )
 				);
@@ -109,7 +111,7 @@ pdal::PointViewPtr pax::Remove_overlap::overlap_filter( pdal::PointViewPtr view_
 		for( pdal::PointId idx = 0; idx < size0; ++idx ) {
 			const source_id_type	source_id{ view_->getFieldAs< source_id_type >( ID::PointSourceId, idx ) };
 			const auto pt		  = point( view_, idx );
-			if( min_angle[ bbox.index( pt ) ].source_id() == source_id ) 
+			if( min_angle[ bbox.scalar_index( pt ) ].source_id() == source_id ) 
 				points->appendPoint( *view_, idx );
 		}
 
