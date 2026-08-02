@@ -5,7 +5,7 @@
 #pragma once
 
 #include "point.hpp"
-#include <cmath>		// std::fma, std::floor
+#include <cmath>		// std::fma, std::floor, std::abs
 
 
 namespace pax {
@@ -14,30 +14,30 @@ namespace pax {
 	/// It can have any rank you please, but two (and sometimes three) is probably the usual.
 	/// It may be used as a simple bounding box, to check if points or circles/plots are inside. 
 	/// It is a superclass for Box_indexer, below, a tool to convert coordinates to a pixel in a raster.
-	template< arithmetic A, std::size_t N >			requires( is_static< N > )
+	template< floating F, std::size_t N >							requires( is_static< N > )
 	struct Box {
 		static constexpr std::size_t 		rank				  = N;
-		using 								Pt					  = Point< A, N >;
+		using 								Pt					  = Point< F, N >;
 		using 								Base				  = std::array< Pt, 2 >;
 		using 								value_type			  = Pt::value_type;
 
 	private:
-		std::array< Point< A, N >, 2 >		m_box{};
+		std::array< Point< F, N >, 2 >		m_box{};
 
-		static constexpr A align_( const A value_, const A factor_ ) noexcept {
+		static constexpr F align_( const F value_, const F factor_ ) noexcept {
 			return factor_ ? ( factor_ * std::floor( value_ / factor_ ) ) : value_;
 		}
 
 		/// Returns the closest number less than or equal to value_ that is evenly divisible by actor_.
-		static constexpr A align_le( const A value_, const A factor_ ) noexcept {
-			const A temp = align_( value_, factor_ );
-			return  temp - ( ( temp > value_ ) ? factor_ : A{} );
+		static constexpr F align_le( const F value_, const F factor_ ) noexcept {
+			const F temp = align_( value_, factor_ );
+			return  temp - ( ( temp > value_ ) ? factor_ : F{} );
 		}
 
 		/// Returns the closest number greater than or equal to value_ that is evenly divisible by factor_.
-		static constexpr A align_ge( const A value_, const A factor_ ) noexcept {
-			const A temp = align_( value_, factor_ );
-			return  temp + ( ( temp < value_) ? factor_ : A{} );
+		static constexpr F align_ge( const F value_, const F factor_ ) noexcept {
+			const F temp = align_( value_, factor_ );
+			return  temp + ( ( temp < value_) ? factor_ : F{} );
 		}
 		
 	public:
@@ -46,8 +46,8 @@ namespace pax {
 		constexpr Box & operator=( const Box & )				  = default;
 
 		constexpr Box( 
-			const Point< A, N > & pt0_, 
-			const Point< A, N > & pt1_ 
+			const Point< F, N > & pt0_, 
+			const Point< F, N > & pt1_ 
 		) noexcept : m_box({ pax::min( pt0_, pt1_ ), pax::max( pt0_, pt1_ ) }) {}
 
 		constexpr const Base & box()								const noexcept	{	return m_box;					}
@@ -79,22 +79,22 @@ namespace pax {
 		}
 
 		/// Returns the minimal Box that contains both the original Box and pt_.
-		constexpr Box grow( const Point< A, N > & pt_ )				const noexcept	{
+		constexpr Box grow( const Point< F, N > & pt_ )				const noexcept	{
 			return { pax::min( min(), pt_ ), pax::max( max(), pt_ ) };
 		}
 
 		/// Is the point inside the Box, but not on its borders?
-		constexpr bool strictly_inside( const Point< A, N > & pt_ )	const noexcept	{
+		constexpr bool strictly_inside( const Point< F, N > & pt_ )	const noexcept	{
 			return all_lt( pt_, max() ) && all_lt( min(), pt_ );
 		}
 
 		/// Is the point inside the Box or touching its borders?
-		constexpr bool inside_or_on( const Point< A, N > & pt_ )	const noexcept	{
+		constexpr bool inside_or_on( const Point< F, N > & pt_ )	const noexcept	{
 			return all_le( pt_, max() ) && all_le( min(), pt_ );
 		}
 
 		/// Is the point inside the Box or touching its minimal (but not maximal) borders?
-		constexpr bool in_range( const Point< A, N > & pt_ )		const noexcept	{
+		constexpr bool in_range( const Point< F, N > & pt_ )		const noexcept	{
 			return all_lt( pt_, max() ) && all_le( min(), pt_ );
 		}
 
@@ -107,8 +107,8 @@ namespace pax {
 	using Box2d							  = Box< double, 2 >;
 	using Box3d							  = Box< double, 3 >;
 
-	template< arithmetic A, std::size_t N >
-	Box( const Point< A, N > &, const Point< A, N > & ) -> Box< A, N >;
+	template< floating F, std::size_t N >
+	Box( const Point< F, N > &, const Point< F, N > & ) -> Box< F, N >;
 
 
 
@@ -192,10 +192,10 @@ namespace pax {
 	/// A bounding box that also handles coordinattes to scalar index transformation.
 	/// - If you intend to use it with a [gdal] raster or pictures, you should most 
 	///	  probably use Raster_indexer instead. 
-	template< arithmetic A, std::size_t N >						requires( is_static< N > )
-	struct Box_indexer : public Box< A, N >, public Indexer< N > {
+	template< floating F, std::size_t N >						requires( is_static< N > )
+	struct Box_indexer : public Box< F, N >, public Indexer< N > {
 		static constexpr std::size_t 		rank			  = N;
-		using 								BBox			  = Box< A, rank >;
+		using 								BBox			  = Box< F, rank >;
 		using 								Pt				  = BBox::Pt;
 		using 								value_type		  = Pt::value_type;
 		using 								Idx				  = Indexer< rank >;
@@ -256,15 +256,15 @@ namespace pax {
 		) : Box_indexer( box_, pax::point< rank >( resolution_ ) ) {}
 
 		/// The size of the grid elements.
-		constexpr Pt resolution()			const noexcept	{	return m_resolution;	}
+		constexpr Pt resolution()									const noexcept	{	return m_resolution;	}
 
 		/// Easy access to the superclass.
-		constexpr const BBox & box()		const noexcept	{	return *this;			}
+		constexpr const BBox & box()								const noexcept	{	return *this;			}
 
 		/// Given a point, what offset does it have into the vector of data?
 		///	If pt_ is outside the bounding box the result is undefined. So unless you are sure it is not 
 		/// outside, you shoud check this with either [Box_indexer::]in_range, strictly_inside, or inside_or_on.
-		index_type index( const Pt & pt_ )	const			{
+		index_type index( const Pt & pt_ )							const			{
 			const auto [ ...     pt ]	  = pt_;
 			const auto [ ... factor ]	  = m_factor;
 			const auto [ ... offset ]	  = m_offset;
@@ -273,10 +273,12 @@ namespace pax {
 			return Idx::operator[]( { smallest( std::fma( pt, factor, offset ), exts - 1 ) ... } );
 		}
 		
-		/// Given an index, calculates a coordinate of its element. Used for debugging. 
-		///	If idx_ is >= elements(), the result is undefined. 
-		/// So unless you are sure it is ok, you better check it with all_lt( idx_, Box_indexer::extents() ). 
-		constexpr Pt point( const Idx & idx_ )	const noexcept	{
+		/// Given an index, returns the coordinates of the element's lower left corner. 
+		/// - Mainly used for debugging. 
+		/// - Raster_indexer returns the coordinates for the element's upper left corner. 
+		///	- If idx_ is >= elements(), the result is undefined. 
+		///   So unless you are sure it is ok, you better check it with all_lt( idx_, extents() ). 
+		constexpr Pt point( const Index< rank > & idx_ )			const noexcept	{
 			const auto [ ...    idx ]	  = idx_;
 			const auto [ ... factor ]	  = m_factor;
 			const auto [ ... offset ]	  = m_offset;
@@ -292,11 +294,11 @@ namespace pax {
 	using Box_indexer2d					  = Box_indexer< double, 2 >;
 	using Box_indexer3d					  = Box_indexer< double, 3 >;
 
-	template< arithmetic A, std::size_t N, arithmetic A2 >
-	Box_indexer( const Box< A, N > &, A2 ) -> Box_indexer< A, N >;
+	template< floating F, std::size_t N, arithmetic F2 >
+	Box_indexer( const Box< F, N > &, F2 ) -> Box_indexer< F, N >;
 
-	template< arithmetic A, std::size_t N >
-	Box_indexer( const Box< A, N > &, Point< A, N > ) -> Box_indexer< A, N >;
+	template< floating F, std::size_t N >
+	Box_indexer( const Box< F, N > &, Point< F, N > ) -> Box_indexer< F, N >;
 
 
 
@@ -331,4 +333,5 @@ namespace pax {
 			};
 		}
 	};
+
 }	// namespace pax
