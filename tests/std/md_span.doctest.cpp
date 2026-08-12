@@ -2,13 +2,14 @@
 //	Contact: peder ( at ) axensten.se
 
 
-#include <pax/tables/table.hpp>
+#include <pax/std/mdspan.hpp>
 
 #include <pax/doctest.hpp>
 #include <pax/reporting/error_message.hpp>
 #include <pax/std/string_view.hpp>
 #include <pax/std/span.hpp>		// Needed for more flexible comparison. 
 
+#include <vector>
 #include <sstream>
 
 

@@ -191,7 +191,7 @@ namespace pax {
 
 				// save_metric( acc, m_dest_rasters, m_accumulators );
 			    pdal::gdal::Raster	raster( dest, m_drivername, m_srs, pr_bbox.gdal_affines() );
-				err					  = raster.open( cols( pr_bbox ), rows( pr_bbox ), 1, m_dataType, m_noData, m_options );
+				err					  = raster.open( pr_bbox.cols(), pr_bbox.rows(), 1, m_dataType, m_noData, m_options );
 				if( err == pdal::gdal::GDALError::None )
 					err				  = raster.writeBand( pixels.data(), m_noData, 1, to_string( metric ) );
 

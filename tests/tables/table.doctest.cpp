@@ -21,9 +21,6 @@ namespace pax {
 		48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63
 	};
 	constexpr std::span			sp{ std::span{ arr }.first( sz ) };
-
-	template< typename Layout, std::size_t Rank = 4 >
-	using mdspan = std::mdspan< int, std::dextents< std::size_t, Rank >, Layout >;
 	
 	
 	template< typename T, std::size_t N >
@@ -44,14 +41,14 @@ namespace pax {
 	template< typename T >
 	void resize_check(
 		Table< T >			  & table,
-		const std::size_t 		rows_, 
-		const std::size_t 		cols_
+		const std::size_t 		cols_, 
+		const std::size_t 		rows_
 	) {
-		table.resize( rows_, cols_ );
+		table.resize( cols_, rows_ );
 		DOCTEST_FAST_CHECK_EQ( table.rows(),	rows_ );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 	cols_ );
-		DOCTEST_FAST_CHECK_EQ( table[ 3, 1 ],	13 );
-		DOCTEST_FAST_CHECK_EQ( table[ 7, 3 ],	31 );
+		DOCTEST_FAST_CHECK_EQ( table[ 1, 3 ],	13 );
+		DOCTEST_FAST_CHECK_EQ( table[ 3, 7 ],	31 );
 	}
 
 
@@ -59,21 +56,17 @@ namespace pax {
 		Table< int >			table{ 10, 12 };
 		{	// Preliminaries.
 			table[ 2, 3 ] = 23;
-			DOCTEST_FAST_CHECK_EQ( table.data(),	table.data_handle() );
 			DOCTEST_FAST_CHECK_EQ( table[ 2, 3 ],	23 );
 		}
 		{	// Resize.
 			table.resize( 8, 9 );
-			DOCTEST_FAST_CHECK_EQ( table.data(),	table.data_handle() );
 			DOCTEST_FAST_CHECK_EQ( table[ 2, 3 ],	23 );
 		}
 		{	// Copy constructor.
 			Table< int >		table2{ table };
 			table2[ 2, 3 ]	  = -3;
 			
-			DOCTEST_FAST_CHECK_EQ( table .data(),	table .data_handle() );
 			DOCTEST_FAST_CHECK_EQ( table [ 2, 3 ],	23 );
-			DOCTEST_FAST_CHECK_EQ( table2.data(),	table2.data_handle() );
 			DOCTEST_FAST_CHECK_EQ( table2[ 2, 3 ],	-3 );
 			table[ 2, 3 ]	  = 23;
 		}
@@ -82,45 +75,15 @@ namespace pax {
 			table2			  = table;
 			table2[ 2, 3 ]	  = -3;
 			
-			DOCTEST_FAST_CHECK_EQ( table .data(),	table .data_handle() );
 			DOCTEST_FAST_CHECK_EQ( table [ 2, 3 ],	23 );
-			DOCTEST_FAST_CHECK_EQ( table2.data(),	table2.data_handle() );
 			DOCTEST_FAST_CHECK_EQ( table2[ 2, 3 ],	-3 );
 			table[ 2, 3 ]	  = 23;
-		}
-		{	// Copy mdspan constructor.
-			mdspan< std::layout_right, 2 >	md( arr, 5, 6 );
-			DOCTEST_FAST_CHECK_EQ( md[ 3, 4 ],		22 );
-			DOCTEST_FAST_CHECK_EQ( md.size(),		30 );
-
-			Table< int >		table2{ md };
-			table2[ 2, 3 ]	  = -3;
-			
-			DOCTEST_FAST_CHECK_EQ( table2.size(),	md.size() );
-			DOCTEST_FAST_CHECK_EQ( table2.data(),	table2.data_handle() );
-			DOCTEST_FAST_CHECK_EQ( table2[ 2, 3 ],	-3 );
-			DOCTEST_FAST_CHECK_EQ( table2[ 3, 4 ],	md[ 3, 4 ] );
-		}
-		{	// Copy mdspan operator.
-			mdspan< std::layout_right, 2 >	md( arr, 5, 6 );
-			DOCTEST_FAST_CHECK_EQ( md[ 3, 4 ],		22 );
-			DOCTEST_FAST_CHECK_EQ( md.size(),		30 );
-
-			Table< int >		table2{};
-			table2			  = md;
-			table2[ 2, 3 ]	  = -3;
-			
-			DOCTEST_FAST_CHECK_EQ( table2.size(),	md.size() );
-			DOCTEST_FAST_CHECK_EQ( table2.data(),	table2.data_handle() );
-			DOCTEST_FAST_CHECK_EQ( table2[ 2, 3 ],	-3 );
-			DOCTEST_FAST_CHECK_EQ( table2[ 3, 4 ],	md[ 3, 4 ] );
 		}
 		{	// Move operator.
 			Table< int >		table2{ table };
 			table2[ 2, 3 ]	  = -3;
 			table			  = std::move( table2 );
 			
-			DOCTEST_FAST_CHECK_EQ( table .data(),	table .data_handle() );
 			DOCTEST_FAST_CHECK_EQ( table [ 2, 3 ],	-3 );
 			table[ 2, 3 ]	  = 23;
 		}
@@ -128,7 +91,6 @@ namespace pax {
 			Table< int >		table2{ std::move( table ) };
 			table2[ 2, 3 ]	  = -3;
 			
-			DOCTEST_FAST_CHECK_EQ( table2.data(),	table2.data_handle() );
 			DOCTEST_FAST_CHECK_EQ( table2[ 2, 3 ],	-3 );
 			table			  = table2;
 		}
@@ -136,15 +98,15 @@ namespace pax {
 	DOCTEST_TEST_CASE( "Table basics, constructed with rows and cols" ) { 
 		{
 			Table< int >		   table{ 0, 0 };
-			DOCTEST_FAST_CHECK_EQ( table.rows(),			0 );
 			DOCTEST_FAST_CHECK_EQ( table.cols(),			0 );
+			DOCTEST_FAST_CHECK_EQ( table.rows(),			0 );
 			DOCTEST_FAST_CHECK_EQ( table.size(),			0 );
 			DOCTEST_FAST_CHECK_EQ( sum( table.span() ),		0 );
 		}
 		{
 			Table< int >		   table{ 10, 12 };
-			DOCTEST_FAST_CHECK_EQ( table.rows(),			 10 );
-			DOCTEST_FAST_CHECK_EQ( table.cols(),			 12 );
+			DOCTEST_FAST_CHECK_EQ( table.cols(),			 10 );
+			DOCTEST_FAST_CHECK_EQ( table.rows(),			 12 );
 			DOCTEST_FAST_CHECK_EQ( table.size(),			120 );
 			DOCTEST_FAST_CHECK_EQ( sum( table.span() ),		  0 );
 		}
@@ -171,7 +133,7 @@ namespace pax {
 				*itr = -*itr;
 				++itr;
 			}
-			DOCTEST_FAST_CHECK_EQ( table[ 3, 1 ],			-13 );
+			DOCTEST_FAST_CHECK_EQ( table[ 1, 3 ],			-13 );
 			DOCTEST_FAST_CHECK_EQ( sum( table.span() ),		31*16 - 2*54 );
 		}
 		{	// Change a column.
@@ -181,7 +143,7 @@ namespace pax {
 				*itr = -*itr;
 				++itr;
 			}
-			DOCTEST_FAST_CHECK_EQ( table[ 3, 1 ],			+13 );
+			DOCTEST_FAST_CHECK_EQ( table[ 1, 3 ],			+13 );
 			DOCTEST_FAST_CHECK_EQ( sum( table.span() ),		31*16 - 2*54 - 2*( 107 - 13 ) );
 		}
 	}
@@ -194,11 +156,11 @@ namespace pax {
 				DOCTEST_FAST_CHECK_EQ( table.rows(), 1 );
 				DOCTEST_FAST_CHECK_EQ( table.cols(), 5 );
 				DOCTEST_FAST_CHECK_EQ( table.span(), std::span( data0 ) );
-				table.resize( 5, 1 );
+				table.resize( 1, 5 );
 				DOCTEST_FAST_CHECK_EQ( table.rows(), 5 );
 				DOCTEST_FAST_CHECK_EQ( table.cols(), 1 );
 				DOCTEST_FAST_CHECK_EQ( table.span(), std::span( data1 ) );
-				table.resize( 0, 2 );
+				table.resize( 2, 0 );
 				DOCTEST_FAST_CHECK_EQ( table.rows(), 0 );
 				DOCTEST_FAST_CHECK_EQ( table.cols(), 0 );
 				DOCTEST_FAST_CHECK_EQ( table.span(), std::span< int >{} );
@@ -208,18 +170,18 @@ namespace pax {
 				DOCTEST_FAST_CHECK_EQ( table.rows(), 5 );
 				DOCTEST_FAST_CHECK_EQ( table.cols(), 1 );
 				DOCTEST_FAST_CHECK_EQ( table.span(), std::span( data0 ) );
-				table.resize( 1, 5 );
+				table.resize( 5, 1 );
 				DOCTEST_FAST_CHECK_EQ( table.rows(), 1 );
 				DOCTEST_FAST_CHECK_EQ( table.cols(), 5 );
 				DOCTEST_FAST_CHECK_EQ( table.span(), std::span( data1 ) );
-				table.resize( 1, 0 );
+				table.resize( 0, 1 );
 				DOCTEST_FAST_CHECK_EQ( table.rows(), 0 );
 				DOCTEST_FAST_CHECK_EQ( table.cols(), 0 );
 				DOCTEST_FAST_CHECK_EQ( table.span(), std::span< int >{} );
 			}
 			{	// 0x0 -> 4x5
 				Table< int > table;
-				table.resize( 4, 5 );
+				table.resize( 5, 4 );
 				DOCTEST_FAST_CHECK_EQ( table.rows(), 4 );
 				DOCTEST_FAST_CHECK_EQ( table.cols(), 5 );
 			}
@@ -228,18 +190,18 @@ namespace pax {
 			Table table( sp, 4 );
 			DOCTEST_FAST_CHECK_EQ( table.rows(),		 8 );
 			DOCTEST_FAST_CHECK_EQ( table.cols(), 		 4 );
-			DOCTEST_FAST_CHECK_EQ( table[ 3, 1 ],		13 );
-			DOCTEST_FAST_CHECK_EQ( table[ 7, 3 ],		31 );
+			DOCTEST_FAST_CHECK_EQ( table[ 1, 3 ],		13 );
+			DOCTEST_FAST_CHECK_EQ( table[ 3, 7 ],		31 );
 
-			resize_check( table, 10, 9 );		// Add rows and columns, 8x4 -> 10*9
-			resize_check( table, 11, 6 );		// Add rows, remove columns, 10x9 -> 11x6
-			resize_check( table, 9, 8 );		// Remove rows, add columns, 11x6 -> 9x8
-			resize_check( table, 8, 4 );		// Remove rows and columns, 9x8 -> 8x4
-			resize_check( table, 10, 4 );		// Add rows, 8x4 -> 10x4
-			resize_check( table, 8, 4 );		// Remove rows, 10x4 -> 8x4
-			resize_check( table, 8, 6 );		// Add columns, 8x4 -> 8x6
-			resize_check( table, 8, 4 );		// Remove columns, 8x6 -> 8x4
-			resize_check( table, 8, 6 );		// No change, 8x4 -> 8x4
+			resize_check( table, 9, 10 );		// Add rows and columns, 8x4 -> 10*9
+			resize_check( table, 6, 11 );		// Add rows, remove columns, 10x9 -> 11x6
+			resize_check( table, 8,  9 );		// Remove rows, add columns, 11x6 -> 9x8
+			resize_check( table, 4,  8 );		// Remove rows and columns, 9x8 -> 8x4
+			resize_check( table, 4, 10 );		// Add rows, 8x4 -> 10x4
+			resize_check( table, 4,  8 );		// Remove rows, 10x4 -> 8x4
+			resize_check( table, 6,  8 );		// Add columns, 8x4 -> 8x6
+			resize_check( table, 4,  8 );		// Remove columns, 8x6 -> 8x4
+			resize_check( table, 6,  8 );		// No change, 8x4 -> 8x4
 
 			// Really small, 8x4 -> 1x1
 			table[ 0, 0 ] = 42;
@@ -255,16 +217,16 @@ namespace pax {
 		Table table( sp, 8 );
 		DOCTEST_FAST_CHECK_EQ( table.rows(),		 4 );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 8 );
-		DOCTEST_FAST_CHECK_EQ( table[ 1, 7 ],		15 );
-		DOCTEST_FAST_CHECK_EQ( table[ 2, 7 ],		23 );
+		DOCTEST_FAST_CHECK_EQ( table[ 7, 1 ],		15 );
+		DOCTEST_FAST_CHECK_EQ( table[ 7, 2 ],		23 );
 		
-		// table.print( std::cout, []( int ){ return true; } );
+		// table.print( std::cout );
 		// table.remove_rows( 2 );
+		// table.print( std::cout );
 		// DOCTEST_FAST_CHECK_EQ( table.rows(),		 3 );
 		// DOCTEST_FAST_CHECK_EQ( table.cols(), 		 8 );
 		// DOCTEST_FAST_CHECK_EQ( table[ 1, 7 ],		15 );
 		// DOCTEST_FAST_CHECK_EQ( table[ 2, 7 ],		31 );
-		// table.print( std::cout, []( int ){ return true; } );
 		//
 		// table.remove_rows( 2 );
 		// DOCTEST_FAST_CHECK_EQ( table.rows(),		 2 );
@@ -281,27 +243,36 @@ namespace pax {
 		// DOCTEST_FAST_CHECK_EQ( table.cols(), 		 0 );
 	}
 	DOCTEST_TEST_CASE( "Table remove_cols" ) { 
+		{
+			Table table( sp, 4 );
+			table.remove_cols( 1, 2 );
+			DOCTEST_FAST_CHECK_EQ( table.rows(),	 8 );
+			DOCTEST_FAST_CHECK_EQ( table.cols(), 	 2 );
+			DOCTEST_FAST_CHECK_EQ( table[ 0, 7 ],	28 );
+			DOCTEST_FAST_CHECK_EQ( table[ 1, 7 ],	31 );
+		}
+
 		Table table( sp, 4 );
 		DOCTEST_FAST_CHECK_EQ( table.rows(),		 8 );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 4 );
-		DOCTEST_FAST_CHECK_EQ( table[ 7, 1 ],		29 );
-		DOCTEST_FAST_CHECK_EQ( table[ 7, 2 ],		30 );
+		DOCTEST_FAST_CHECK_EQ( table[ 1, 7 ],		29 );
+		DOCTEST_FAST_CHECK_EQ( table[ 2, 7 ],		30 );
 		
 		table.remove_cols( 2 );
 		DOCTEST_FAST_CHECK_EQ( table.rows(),		 8 );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 3 );
-		DOCTEST_FAST_CHECK_EQ( table[ 7, 1 ],		29 );
-		DOCTEST_FAST_CHECK_EQ( table[ 7, 2 ],		31 );
+		DOCTEST_FAST_CHECK_EQ( table[ 1, 7 ],		29 );
+		DOCTEST_FAST_CHECK_EQ( table[ 2, 7 ],		31 );
 		
 		table.remove_cols( 2 );
 		DOCTEST_FAST_CHECK_EQ( table.rows(),		 8 );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 2 );
-		DOCTEST_FAST_CHECK_EQ( table[ 7, 0 ],		28 );
+		DOCTEST_FAST_CHECK_EQ( table[ 0, 7 ],		28 );
 		
 		table.remove_cols( 1 );
 		DOCTEST_FAST_CHECK_EQ( table.rows(),		 8 );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 1 );
-		DOCTEST_FAST_CHECK_EQ( table[ 7, 0 ],		28 );
+		DOCTEST_FAST_CHECK_EQ( table[ 0, 7 ],		28 );
 		
 		table.remove_cols( 0 );
 		DOCTEST_FAST_CHECK_EQ( table.rows(),		 0 );
@@ -320,11 +291,11 @@ namespace pax {
 		static_assert(!std::is_trivially_default_constructible< T >{} );
 
 		static_assert( std::is_copy_constructible< T >{} );
-		static_assert(!std::is_nothrow_copy_constructible< T >{} );
+		static_assert( std::is_nothrow_copy_constructible< T >{} );
 		static_assert(!std::is_trivially_copy_constructible< T >{} );
 
 		static_assert( std::is_copy_assignable< T >{} );
-		static_assert(!std::is_nothrow_copy_assignable< T >{} );
+		static_assert( std::is_nothrow_copy_assignable< T >{} );
 		static_assert(!std::is_trivially_copy_assignable< T >{} );
 
 		static_assert( std::is_move_constructible< T >{} );

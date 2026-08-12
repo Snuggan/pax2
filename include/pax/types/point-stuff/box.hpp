@@ -152,16 +152,21 @@ namespace pax {
 			return offsets().back()*extents().back();
 		}
 		
+		/// The total number of elements (product of all sizes).
+		constexpr bool empty()										const noexcept	{
+			return !offsets().back() || !extents().back();
+		}
+		
 		/// Returns true, iff all indeces in i_ are smaller the the eqivalent size. 
 		constexpr bool valid_index( const Idx & idx_ )				const noexcept	{
 			return all_lt( idx_, extents() );
 		}
 		
 		/// The number of "columns", same as size()[ col_idx ].
-		friend constexpr index_type cols( const Indexer & i_ )		noexcept		{	return col( i_.extents() );	}
+		constexpr index_type cols()									const noexcept	{	return col( extents() );	}
 		
 		/// The number of "rows", same as size()[ row_idx ].
-		friend constexpr index_type rows( const Indexer & i_ )		noexcept		{	return row( i_.extents() );	}
+		constexpr index_type rows()									const noexcept	{	return row( extents() );	}
 		
 		/// Calculate an index into a vector for the index represented by pt_.
 		template< uinteger ...U >									requires( sizeof...( U ) == N )

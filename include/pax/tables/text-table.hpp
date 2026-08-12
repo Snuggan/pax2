@@ -149,7 +149,7 @@ namespace pax {
 			
 			// Add the columns with new header. 
 			Size		 					c{ m_table.cols() };
-			m_table.resize( m_table.rows(), c + cols_to_add.size() );
+			m_table.resize( c + cols_to_add.size(), m_table.rows() );	// Fixed!
 			for( const Size j : cols_to_add ) {
 				std::copy_n( other_.m_table.begin_col( j ), m_table.rows(), m_table.begin_col( c ) );
 				++c;

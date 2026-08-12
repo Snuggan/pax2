@@ -24,8 +24,8 @@
 namespace pax {
 	using traits::contiguous, traits::value_type_t, traits::extent_v, traits::character;
 
-	template< typename ... I >	concept integer		= ( std::integral< I > && ... );
-	template< typename ... U >	concept uinteger	= ( std::unsigned_integral< U > && ... );
+	template< typename ... I >	concept integer		= ( std::integral< std::remove_cvref_t< I > > && ... );
+	template< typename ... U >	concept uinteger	= ( std::unsigned_integral< std::remove_cvref_t< U > > && ... );
 	template< typename ... F >	concept floating	= ( std::floating_point< F > && ... );
 	template< typename ... A >	concept arithmetic	= ( ( floating< A > || integer< A > ) && ... );
 

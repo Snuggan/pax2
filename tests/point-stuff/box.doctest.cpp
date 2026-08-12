@@ -44,8 +44,8 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( indexer.offsets(),  			index( 1u, 3u, 15u ) );
 		DOCTEST_FAST_CHECK_UNARY(  indexer.valid_index( idx2 ) );
 		DOCTEST_FAST_CHECK_UNARY( !indexer.valid_index( idx  ) );
-		DOCTEST_FAST_CHECK_EQ( cols( indexer ),  			col( idx ) );
-		DOCTEST_FAST_CHECK_EQ( rows( indexer ),  			row( idx ) );
+		DOCTEST_FAST_CHECK_EQ( indexer.cols(),  			col( idx ) );
+		DOCTEST_FAST_CHECK_EQ( indexer.rows(),  			row( idx ) );
 		DOCTEST_FAST_CHECK_EQ( indexer.scalar_index( idx2 ),		104u );
 		DOCTEST_FAST_CHECK_EQ( indexer.scalar_index( 2u, 4u, 6u ),	104u );
 	}

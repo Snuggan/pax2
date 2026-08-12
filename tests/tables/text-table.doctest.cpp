@@ -28,7 +28,7 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( table.rows(),				3 );
 			DOCTEST_FAST_CHECK_EQ( table.cols(),				5 );
 			DOCTEST_FAST_CHECK_EQ( table.size(),				15 );
-			DOCTEST_FAST_CHECK_EQ( table[ 1, 3 ],				"B4" );
+			DOCTEST_FAST_CHECK_EQ( table[ 3, 1 ],				"B4" );
 			DOCTEST_FAST_CHECK_EQ( table.row( 1 )[ 3 ],			"B4" );
 			DOCTEST_FAST_CHECK_EQ( table.row( 1 ).size(),		table.cols() );
 			DOCTEST_FAST_CHECK_EQ( table.begin()[ 8 ],			"B4" );
