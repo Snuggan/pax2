@@ -32,6 +32,7 @@ namespace pax {
 		typename T, 
 		typename Indexer_			  = Indexer< 2 >
 	>
+		requires( Indexer_::rank == 2u )
 	class Table : Indexer_ {
 		using Indexer				  = Indexer_;
 		using Idx					  = Indexer::Idx;
