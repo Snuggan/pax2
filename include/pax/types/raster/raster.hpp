@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "raster-meta.hpp"
 #include "../point-stuff/box.hpp"
 #include <pax/tables/table.hpp>
 
@@ -13,16 +14,14 @@
 namespace pax {
 	
 	template< arithmetic A >
-	class Raster : public Table< A, Indexer< 2 > > {
+	class Raster : public Table< A, Box_indexer2d > {
 		using value_type				  = std::remove_cv_t< A >;
-		using Base						  = Table< value_type, Indexer< 2 > >;
-
-		Box_indexer2d						m_bindexer{};
+		using Base						  = Table< value_type, Box_indexer2d >;
 		
 		Raster(
 			std::vector< A >			 && data_,
 			const Box_indexer2d			  & bindexer_
-		) : Base{ data_, bindexer_.extents() }, m_bindexer{ bindexer_ } {}
+		) : Base{ data_, bindexer_.extents() } {}
 		
 	public:
 		Raster()											  = default;
@@ -31,22 +30,13 @@ namespace pax {
 		Raster & operator=( const Raster & )				  = default;
 		Raster & operator=( Raster && )						  = default;
 		
-		friend Raster read_raster( const std::filesystem::path & file_ );
-		friend Raster read_raster( const std::filesystem::path & file_, const Box2d & area_ );
+		Raster( const std::filesystem::path & file_, const unsigned band_ = 1u );
+		Raster( const std::filesystem::path & file_, const Box2d & area_, const unsigned band_ = 1u );
+
 		void save( const std::filesystem::path & file_ )		const;
 
-		/// Get an element value via a point.
-		A   operator[]( const Point2d pt_ )						const noexcept	{
-			return Base::operator[]( m_bindexer.scalar_index( pt_ ) );
-		}
-		
 		/// Get an element reference via a point.
-		A & operator[]( const Point2d pt_ )						noexcept		{
-			return Base::operator[]( m_bindexer.scalar_index( pt_ ) );
-		}
-		
-		/// Get an element reference via a point.
-		const Box2d & bbox()									const noexcept	{	return m_bindexer.box();	}
+		const Box2d & bbox()									const noexcept	{	return Base::box();	}
 	};
 	
 }	// namespace pax

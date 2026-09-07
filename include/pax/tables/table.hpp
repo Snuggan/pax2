@@ -30,7 +30,7 @@ namespace pax {
 	/// With time, use mdarray?
 	template< 
 		typename T, 
-		typename Indexer_			  = Indexer< 2 >
+		typename Indexer_			  = Indexer2d
 	>
 		requires( Indexer_::rank == 2u )
 	class Table : Indexer_ {
@@ -83,27 +83,24 @@ namespace pax {
 		constexpr value_type operator[]( const index_type c_, const index_type r_ )		const noexcept	{
 			return m_data[ Indexer::scalar_index( c_, r_ ) ];
 		}
-
 		constexpr element_type & operator[]( const index_type c_, const index_type r_ )		  noexcept	{
 			return m_data[ Indexer::scalar_index( c_, r_ ) ];
 		}
-
 		constexpr value_type operator[]( const Idx i_ ) 								const noexcept	{
 			return m_data[ Indexer::scalar_index( i_ ) ];
 		}
-
 		constexpr element_type & operator[]( const Idx i_ )									  noexcept	{
 			return m_data[ Indexer::scalar_index( i_ ) ];
 		}
 
 		using Indexer::rows;
 		using Indexer::cols;
-		constexpr index_type size()						const noexcept	{	return Indexer::elements();					}
+		using Indexer::elements;
 		constexpr const value_type * data()				const noexcept	{	return m_data.data();						}
 		constexpr value_type * data()						  noexcept	{	return m_data.data();						}
 
-		constexpr auto span()							const noexcept	{	return cspan_type( data(), size() );		}
-		constexpr auto span()								  noexcept	{	return  span_type( data(), size() );		}
+		constexpr auto span()							const noexcept	{	return cspan_type( data(), elements() );	}
+		constexpr auto span()								  noexcept	{	return  span_type( data(), elements() );	}
 
 		/// Iterators for all elements. Row first.
 		constexpr auto begin()							const noexcept	{	return m_data.begin();						}
@@ -154,7 +151,7 @@ namespace pax {
 			auto	dest		  = m_data.data() + col_;
 			auto	new_row		  = cols() - qtity_;
 			auto	srce		  = dest + qtity_;
-			auto	end			  = m_data.data() + size() - cols();
+			auto	end			  = m_data.data() + elements() - cols();
 			while( srce <= end ) {
 				std::copy_n( srce, new_row, dest );
 				dest			 += new_row;

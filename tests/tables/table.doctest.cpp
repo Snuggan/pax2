@@ -100,14 +100,14 @@ namespace pax {
 			Table< int >		   table{ 0, 0 };
 			DOCTEST_FAST_CHECK_EQ( table.cols(),			0 );
 			DOCTEST_FAST_CHECK_EQ( table.rows(),			0 );
-			DOCTEST_FAST_CHECK_EQ( table.size(),			0 );
+			DOCTEST_FAST_CHECK_EQ( table.elements(),		0 );
 			DOCTEST_FAST_CHECK_EQ( sum( table.span() ),		0 );
 		}
 		{
 			Table< int >		   table{ 10, 12 };
 			DOCTEST_FAST_CHECK_EQ( table.cols(),			 10 );
 			DOCTEST_FAST_CHECK_EQ( table.rows(),			 12 );
-			DOCTEST_FAST_CHECK_EQ( table.size(),			120 );
+			DOCTEST_FAST_CHECK_EQ( table.elements(),		120 );
 			DOCTEST_FAST_CHECK_EQ( sum( table.span() ),		  0 );
 		}
 	}
@@ -116,7 +116,7 @@ namespace pax {
 		{	// Construction.
 			DOCTEST_FAST_CHECK_EQ( table.rows(),			rows );
 			DOCTEST_FAST_CHECK_EQ( table.cols(),			cols );
-			DOCTEST_FAST_CHECK_EQ( table.size(),			32 );
+			DOCTEST_FAST_CHECK_EQ( table.elements(),		32 );
 			DOCTEST_FAST_CHECK_EQ( table.span(),			sp );
 			DOCTEST_FAST_CHECK_EQ( sum( table.span() ),		31*16 );
 		}

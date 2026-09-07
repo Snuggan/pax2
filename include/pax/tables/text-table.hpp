@@ -107,7 +107,7 @@ namespace pax {
 		/// Dimensions.
 		constexpr auto rows()							const noexcept	{	return m_table.rows();			}
 		constexpr auto cols()							const noexcept	{	return m_table.cols();			}
-		constexpr auto size()							const noexcept	{	return m_table.size();			}
+		constexpr auto size()							const noexcept	{	return m_table.elements();		}
 		
 		/// Access the cell at row r_, column c_.
 		constexpr auto operator[]( Size r_, Size c_ )	const			{	return m_table[ r_, c_ ];		}
