@@ -78,4 +78,9 @@ namespace pax {
 #define DOCTEST_CONFIG_COLORS_NONE
 
 
+#include <climits>		// doctest suddenly lost the definition of DBL_EPSILON...?
+#if !defined( DBL_EPSILON )
+#	include <limits>
+#	define DBL_EPSILON std::numeric_limits< double >::epsilon()
+#endif
 #include <doctest/doctest.h>
