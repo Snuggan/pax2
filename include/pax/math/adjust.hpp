@@ -9,23 +9,25 @@
 
 namespace pax { 
 
-	/// Returns the closest number less than or equal to value_ that is evenly divisible by abs( factor_ ).
-	/// If factor_ == 0, value_ is returned.
+	/// Returns the closest number less than or equal to v_ that is evenly divisible by abs( res_ ).
+	/// If res_ == 0, v_ is returned.
 	template< typename T >
-	constexpr T align_le( const T value_, T factor_ ) noexcept {
-		factor_ = std::abs( factor_ );
-		const T temp = factor_ ? ( factor_ * std::floor( value_ / factor_ ) ) : value_;
-		return  temp - ( ( temp > value_ ) ? factor_ : T{} );
+	constexpr T align_le( const T v_, T res_ ) noexcept {
+		res_		  = std::abs( res_ );
+		const T temp  = res_ ? res_ * std::floor( v_ / res_ ) : v_;
+		if constexpr( std::is_floating_point_v< T > )	return temp;
+		else											return temp - ( ( temp > v_ ) ? res_ : T{} );
 	}
 
 
-	/// Returns the closest number greater than or equal to value_ that is evenly divisible by abs( factor_ ).
-	/// If factor_ == 0, value_ is returned.
+	/// Returns the closest number greater than or equal to v_ that is evenly divisible by abs( res_ ).
+	/// If res_ == 0, v_ is returned.
 	template< typename T >
-	constexpr T align_ge( const T value_, T factor_ ) noexcept {
-		factor_ = std::abs( factor_ );
-		const T temp = factor_ ? ( factor_ * std::floor( value_ / factor_ ) ) : value_;
-		return temp + ( ( temp < value_) ? factor_ : T{} );
+	constexpr T align_ge( const T v_, T res_ ) noexcept {
+		res_ = std::abs( res_ );
+		const T temp = res_ ? ( res_ * std::ceil( v_ / res_ ) ) : v_;
+		if constexpr( std::is_floating_point_v< T > )	return temp;
+		else											return temp + ( ( temp < v_) ? res_ : T{} );
 	}
 	
 	
