@@ -35,21 +35,21 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( align_le(  10,  10 ),  10 );
 		DOCTEST_FAST_CHECK_EQ( align_le( -10,  10 ), -10 );
 		DOCTEST_FAST_CHECK_EQ( align_le(  17,  10 ),  10 );
-		DOCTEST_FAST_CHECK_EQ( align_le( -17,  10 ), -20 );
+		DOCTEST_FAST_CHECK_EQ( align_le( -17,  10 ), -20 );	//
 		DOCTEST_FAST_CHECK_EQ( align_le(  10, -10 ),  10 );
 		DOCTEST_FAST_CHECK_EQ( align_le( -10, -10 ), -10 );
 		DOCTEST_FAST_CHECK_EQ( align_le(  17, -10 ),  10 );
-		DOCTEST_FAST_CHECK_EQ( align_le( -17, -10 ), -20 );
+		DOCTEST_FAST_CHECK_EQ( align_le( -17, -10 ), -20 );	//
 	}
 	DOCTEST_TEST_CASE( "math align_ge" ) {
 		DOCTEST_FAST_CHECK_EQ( align_ge(  10,   0 ),  10 );
 		DOCTEST_FAST_CHECK_EQ( align_ge(  10,  10 ),  10 );
 		DOCTEST_FAST_CHECK_EQ( align_ge( -10,  10 ), -10 );
-		DOCTEST_FAST_CHECK_EQ( align_ge(  17,  10 ),  20 );
+		DOCTEST_FAST_CHECK_EQ( align_ge(  17,  10 ),  20 );	//
 		DOCTEST_FAST_CHECK_EQ( align_ge( -17,  10 ), -10 );
 		DOCTEST_FAST_CHECK_EQ( align_ge(  10, -10 ),  10 );
 		DOCTEST_FAST_CHECK_EQ( align_ge( -10, -10 ), -10 );
-		DOCTEST_FAST_CHECK_EQ( align_ge(  17, -10 ),  20 );
+		DOCTEST_FAST_CHECK_EQ( align_ge(  17, -10 ),  20 );	//
 		DOCTEST_FAST_CHECK_EQ( align_ge( -17, -10 ), -10 );
 	}
 	DOCTEST_TEST_CASE( "math align_ge from life" ) {
