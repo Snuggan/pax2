@@ -103,7 +103,7 @@ pdal::PointViewPtr pax::Remove_overlap::overlap_filter( pdal::PointViewPtr view_
 					pt_.getFieldAs< source_id_type >( ID::PointSourceId )
 				);
 			} else throw std::runtime_error( 
-				std::format( "The point {} is outside the bbox {}.", pt, bbox.box().string() ) );
+				std::format( "The point {} is outside the bbox {}.", pt, std::string( bbox ) ) );
 		}
 		
 		// Remove all but the minimum points in each raster cell.

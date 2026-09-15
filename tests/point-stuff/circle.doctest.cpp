@@ -38,6 +38,9 @@ namespace pax {
 			DOCTEST_FAST_CHECK_UNARY(  overlap ( bx, Circle( Point{ 3., 4., 5. }, 1. ) ) );
 			DOCTEST_FAST_CHECK_UNARY(  contains( bx, Circle( Point{ 2., 3., 4. }, 1. ) ) );
 			DOCTEST_FAST_CHECK_UNARY(  overlap ( bx, Circle( Point{ 2., 3., 4. }, 1. ) ) );
+
+			DOCTEST_FAST_CHECK_UNARY(  overlap ( bx, Circle( Point{ 0., 0., 6. }, 1.001 ) ) );
+			DOCTEST_FAST_CHECK_UNARY( !overlap ( bx, Circle( Point{ 0., 0., 6. }, 1. ) ) );	// Touch but no overlap. 
 		}
 	}
 	DOCTEST_TEST_CASE( "Circle_w_id object" ) {

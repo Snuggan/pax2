@@ -15,20 +15,20 @@ namespace pax {
 	template< typename F >					struct Object_meta;
 
 
-	
+
 	/// Implements an object with coordinates and a scalar value.
 	/// It can have any rank you please, but two is probably usual.
 	template< floating F, std::size_t N >							requires( is_static< N > )
 	class Circle {
 		Point< F, N >												m_center{};
 		F															m_radius{};
-		
+
 	public:
 		static constexpr std::size_t 				rank		  = N;
 		using 										Pt			  = Point< F, N >;
 		using coord_type = Pt::value_type;
 
-		constexpr Circle()									 	 = default;
+		constexpr Circle()									 	  = default;
 		constexpr Circle( const Circle & )						  = default;
 		constexpr Circle( Circle && )							  = default;
 		constexpr Circle & operator=( const Circle & )			  = default;
@@ -46,7 +46,7 @@ namespace pax {
 
 		constexpr coord_type radius()								const noexcept	{	return m_radius;	}
 
-		/// The center coordinates.
+		/// Check if center coordinates and radius are equal.
 		constexpr bool operator==( const Circle & c_ ) 				const noexcept	{
 			return ( center() == c_.center() ) && ( radius() == c_.radius() );
 		}
@@ -129,7 +129,7 @@ namespace pax {
 	}
 
 
-	/// Does the Box contain the Circle_? (They may touch.)
+	/// Does the Box contain the any part of circle_?
 	template< floating F, std::size_t N >							requires( is_static< N > )
 	constexpr bool overlap( 
 		const Box< F, N >		  & box_, 

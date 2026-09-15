@@ -11,32 +11,34 @@
 
 namespace pax {
 
-	constexpr auto bx			  = Box3d{ { 1., 2.5, 3. }, { 3., 2., 1. } };
-	constexpr auto aligned_bx	  = Box3d{ { 0., 2.0, 0. }, { 4., 4., 4. } };
-	constexpr auto idx			  = index( 3u, 5u, 7u );
-	constexpr auto idx2			  = index( 2u, 4u, 6u );
-
 	DOCTEST_TEST_CASE( "Box object" ) {
+		constexpr auto bx		  = Box3d{ { 1., -2.5, 3. }, { 3., -1.5, 1. } };
+		constexpr auto aligned_bx = Box3d{ { 0., -4.0, 0. }, { 4.,  0.0, 4. } };
+
 		DOCTEST_FAST_CHECK_EQ( bx,  				bx );
 		DOCTEST_FAST_CHECK_NE( bx,  				aligned_bx );
-		DOCTEST_FAST_CHECK_EQ( min( bx ),  			Point{ 1., 2.0, 1. } );
-		DOCTEST_FAST_CHECK_EQ( max( bx ),  			Point{ 3., 2.5, 3. } );
-		DOCTEST_FAST_CHECK_EQ( bx.sides(), 			Point{ 2., 0.5, 2. } );
+		DOCTEST_FAST_CHECK_EQ( min( bx ),  			Point{ 1., -2.5, 1. } );
+		DOCTEST_FAST_CHECK_EQ( max( bx ),  			Point{ 3., -1.5, 3. } );
+		DOCTEST_FAST_CHECK_EQ( bx.sides(), 			Point{ 2.,  1.0, 2. } );
 		DOCTEST_FAST_CHECK_EQ( bx.aligned( 2 ), 	aligned_bx );
+		DOCTEST_FAST_CHECK_EQ( aligned_bx.aligned( 2 ),	aligned_bx );
 		
 		DOCTEST_FAST_CHECK_EQ( 	bx.grow( Point{ 5., 2., 0. } ),
-			 					Box3d{ { 1., 2., 0. }, { 5., 2.5, 3. } } );
+			 					Box3d{ { 1., -2.5, 0. }, { 5., 2., 3. } } );
 
 		DOCTEST_FAST_CHECK_UNARY( !bx.strictly_inside( bx.min() ) );
 		DOCTEST_FAST_CHECK_UNARY( !bx.strictly_inside( bx.max() ) );
-		DOCTEST_FAST_CHECK_UNARY( !bx.strictly_inside( Point{ 2., 2.0, 2.  } ) );
-		DOCTEST_FAST_CHECK_UNARY(  bx.strictly_inside( Point{ 2., 2.2, 2.  } ) );
+		DOCTEST_FAST_CHECK_UNARY( !bx.strictly_inside( Point{ 2., -2.5, 2.  } ) );
+		DOCTEST_FAST_CHECK_UNARY(  bx.strictly_inside( Point{ 2., -2.2, 2.  } ) );
 		DOCTEST_FAST_CHECK_UNARY(  bx.inside_or_on   ( bx.min() ) );
 		DOCTEST_FAST_CHECK_UNARY(  bx.inside_or_on   ( bx.max() ) );
 		DOCTEST_FAST_CHECK_UNARY(  bx.in_range       ( bx.min() ) );
 		DOCTEST_FAST_CHECK_UNARY( !bx.in_range       ( bx.max() ) );
 	}
 	DOCTEST_TEST_CASE( "Indexer object" ) {
+		constexpr auto idx		  = index( 3u, 5u, 7u );
+		constexpr auto idx2		  = index( 2u, 4u, 6u );
+
 		constexpr auto 		indexer = Indexer{ idx };
 		DOCTEST_FAST_CHECK_EQ( idx,  						idx );
 		DOCTEST_FAST_CHECK_EQ( indexer.elements(),  		105u );

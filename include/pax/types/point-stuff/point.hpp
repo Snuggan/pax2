@@ -25,16 +25,20 @@ namespace pax {
 	using Point2d		  = Point< double, 2 >;
 	using Point3d		  = Point< double, 3 >;
 	
-	/// Create a Point out of a bunch of elements.
+	/// Create a Point with element type A out of a bunch of elements.
 	template< arithmetic A, arithmetic ... As >	
 	constexpr Point< A, sizeof...( As ) > point_t( As && ... as_ )				noexcept	{
 		return { static_cast< A >( std::forward< As >( as_ ) ) ... };
 	}
+
+	/// Create a Point out of a bunch of elements.
 	template< arithmetic ... As >	
 	constexpr auto point( As && ... as_ )	noexcept	{
 		using A  = std::common_type_t< As ... >;
 		return Point< A, sizeof...( As ) >{ static_cast< A >( std::forward< As >( as_ ) ) ... };
 	}
+
+	/// Create a Point with specified size N and all elements set to a_.
 	template< std::size_t N, arithmetic A >	
 	constexpr auto point( const A a_ )		noexcept	{
 		Point< A, N >		temp;
@@ -63,7 +67,7 @@ namespace pax {
 	using Index2d		  = Index< 2 >;
 	using Index3d		  = Index< 3 >;
 	
-	/// Create a Point out of a bunch of elements.
+	/// Create an Index out of a bunch of elements.
 	template< uinteger ... Uis >	
 	constexpr Index< sizeof...( Uis ) > index( Uis && ... uis_ )				noexcept	{
 		return { static_cast< std::size_t >( std::forward< Uis >( uis_ ) ) ... };
@@ -180,11 +184,32 @@ namespace pax {
 		return Point< A, N >({ ( t0 - t1 ) ... });
 	}
 
+	/// Multiply the elements by a scalar.
+	template< arithmetic A, std::size_t N >
+	constexpr Point< A, N > operator*( Point< A, N > pt_, A a_ )				noexcept	{
+		auto [ ... t ] = pt_;
+		return Point< A, N >({ ( t * a_ ) ... });
+	}
+
+	/// Multiply the elements by a scalar.
+	template< arithmetic A, std::size_t N >
+	constexpr Point< A, N > operator*( A a_, Point< A, N > pt_ )				noexcept	{
+		return pt_ * a_;
+	}
+
+	/// Calculate the euclidean vector length squared.
+	/// Take the std::sqrt on the result to get the actual euclidian length.
+	template< arithmetic A, std::size_t N >
+	constexpr A length2( Point< A, N > pt_ )									noexcept	{
+		auto [ ... t ] = pt_;
+		return ( A{} + ... + ( t*t ) );
+	}
+
 	/// Calculate the euclidian distance squared between two points.
-	/// Aake the std::sqrt on the result to get the actual euclidian distance.
+	/// Take the std::sqrt on the result to get the actual euclidian distance.
 	template< arithmetic A, std::size_t N >
 	constexpr A distance2( Point< A, N > pt0_, Point< A, N > pt1_ )				noexcept	{
-		static constexpr auto square =			  []( A t ){ return t*t; };
+		static constexpr auto square = []( A t ){ return t*t; };
 		auto [ ... t0 ] = pt0_;
 		auto [ ... t1 ] = pt1_;
 		return ( A{} + ... + square( t0 - t1 ));
@@ -198,16 +223,33 @@ namespace pax {
 		return ( A{} + ... + ( t0*t1 ) );
 	}
 
-	/// The vector cross product.
+	/// The vector cross product. Zero for all N other than 3 and 7.
+	template< arithmetic A, std::size_t N >
+	constexpr Point< A, N > cross_product( Point< A, N >, Point< A, N > )		noexcept	{
+		return Point< A, N >{};
+	}
+
+	/// The vector cross product in R^3.
 	template< arithmetic A >
-	constexpr Point< A, 3 > cross_product(
-		Point< A, 3 > pt0_, 
-		Point< A, 3 > pt1_ 
-	) noexcept {
+	constexpr Point< A, 3 > cross_product( Point< A, 3 > x_, Point< A, 3 > y_ )	noexcept	{
 		return Point{ 
-			pt0_[ 1 ]*pt1_[ 2 ] - pt0_[ 2 ]*pt1_[ 1 ],
-			pt0_[ 2 ]*pt1_[ 0 ] - pt0_[ 0 ]*pt1_[ 2 ],
-			pt0_[ 0 ]*pt1_[ 1 ] - pt0_[ 1 ]*pt1_[ 0 ]
+			x_[ 1 ]*y_[ 2 ] - x_[ 2 ]*y_[ 1 ],
+			x_[ 2 ]*y_[ 0 ] - x_[ 0 ]*y_[ 2 ],
+			x_[ 0 ]*y_[ 1 ] - x_[ 1 ]*y_[ 0 ]
+		};
+	}
+
+	/// The vector cross product in R^7.
+	template< arithmetic A >
+	constexpr Point< A, 7 > cross_product( Point< A, 7 > x_, Point< A, 7 > y_ )	noexcept	{
+		return Point{ 
+			x_[ 1 ]*y_[ 3 ] - x_[ 3 ]*y_[ 1 ] + x_[ 2 ]*y_[ 6 ] - x_[ 6 ]*y_[ 2 ] + x_[ 4 ]*y_[ 5 ] - x_[ 5 ]*y_[ 4 ], 
+			x_[ 2 ]*y_[ 4 ] - x_[ 4 ]*y_[ 2 ] + x_[ 3 ]*y_[ 0 ] - x_[ 0 ]*y_[ 3 ] + x_[ 5 ]*y_[ 6 ] - x_[ 6 ]*y_[ 5 ], 
+			x_[ 3 ]*y_[ 5 ] - x_[ 5 ]*y_[ 3 ] + x_[ 4 ]*y_[ 1 ] - x_[ 1 ]*y_[ 4 ] + x_[ 6 ]*y_[ 0 ] - x_[ 0 ]*y_[ 6 ], 
+			x_[ 4 ]*y_[ 6 ] - x_[ 6 ]*y_[ 4 ] + x_[ 5 ]*y_[ 2 ] - x_[ 2 ]*y_[ 5 ] + x_[ 0 ]*y_[ 1 ] - x_[ 1 ]*y_[ 0 ], 
+			x_[ 5 ]*y_[ 0 ] - x_[ 0 ]*y_[ 5 ] + x_[ 6 ]*y_[ 3 ] - x_[ 3 ]*y_[ 6 ] + x_[ 1 ]*y_[ 2 ] - x_[ 2 ]*y_[ 1 ], 
+			x_[ 6 ]*y_[ 1 ] - x_[ 1 ]*y_[ 6 ] + x_[ 0 ]*y_[ 4 ] - x_[ 4 ]*y_[ 0 ] + x_[ 2 ]*y_[ 3 ] - x_[ 3 ]*y_[ 2 ], 
+			x_[ 0 ]*y_[ 2 ] - x_[ 2 ]*y_[ 0 ] + x_[ 1 ]*y_[ 5 ] - x_[ 5 ]*y_[ 1 ] + x_[ 3 ]*y_[ 4 ] - x_[ 4 ]*y_[ 3 ]
 		};
 	}
 

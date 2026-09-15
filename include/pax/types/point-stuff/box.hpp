@@ -22,33 +22,15 @@ namespace pax {
 		using 								value_type			  = Pt::value_type;
 
 	private:
-		std::array< Point< F, N >, 2 >		m_box{};
-
-		static constexpr F align_( const F value_, const F factor_ ) noexcept {
-			return factor_ ? ( factor_ * std::floor( value_ / factor_ ) ) : value_;
-		}
-
-		/// Returns the closest number less than or equal to value_ that is evenly divisible by actor_.
-		static constexpr F align_le( const F value_, const F factor_ ) noexcept {
-			const F temp = align_( value_, factor_ );
-			return  temp - ( ( temp > value_ ) ? factor_ : F{} );
-		}
-
-		/// Returns the closest number greater than or equal to value_ that is evenly divisible by factor_.
-		static constexpr F align_ge( const F value_, const F factor_ ) noexcept {
-			const F temp = align_( value_, factor_ );
-			return  temp + ( ( temp < value_) ? factor_ : F{} );
-		}
+		std::array< Pt, 2 >					m_box{};
 		
 	public:
 		constexpr Box()											  = default;
 		constexpr Box( const Box & )							  = default;
 		constexpr Box & operator=( const Box & )				  = default;
 
-		constexpr Box( 
-			const Point< F, N > & pt0_, 
-			const Point< F, N > & pt1_ 
-		) noexcept : m_box({ pax::min( pt0_, pt1_ ), pax::max( pt0_, pt1_ ) }) {}
+		constexpr Box( const Pt & pt0_, const Pt & pt1_ )			noexcept 
+			: m_box({ pax::min( pt0_, pt1_ ), pax::max( pt0_, pt1_ ) }) {}
 
 		constexpr const Base & box()								const noexcept	{	return m_box;					}
 		constexpr const Pt   & min()								const noexcept	{	return box().front();			}
@@ -58,49 +40,56 @@ namespace pax {
 
 		friend constexpr const Pt & min( const Box & b_ )			noexcept		{	return b_.min();				}
 		friend constexpr const Pt & max( const Box & b_ )			noexcept		{	return b_.max();				}
-		friend constexpr bool  empty( const Box & b_ )				noexcept		{	return b_.empty();				}
+		friend constexpr bool     empty( const Box & b_ )			noexcept		{	return b_.empty();				}
 
 		friend constexpr bool operator==( const Box & b0_, const Box & b1_ ) noexcept {
 			return ( b0_.min() == b1_.min() ) && ( b0_.max() == b1_.max() );
 		}
 
-		/// Returns the minimal Box that contains both the original Box and pt_.
-		constexpr Box aligned( Pt resolution_ )						const noexcept	{
+		/// Returns a Box that contains *this and is evenly divisable by corresponding elements in resolution_.
+		constexpr Box aligned( const Pt resolution_ )				const noexcept	{
+			static constexpr auto align_le = []( const F v_, const F res_ ) {
+				return res_ ? res_ * std::floor( v_ / res_ ) : v_;
+			};
+			static constexpr auto align_ge = []( const F v_, const F res_ ) {
+				return res_ ? res_ * std::ceil( v_ / res_ ) : v_;
+			};
+
 			const auto [ ...   res ]	  = resolution_;
 			const auto [ ... small ]	  = min();
 			const auto [ ... large ]	  = max();
-			return { { align_le( small, std::abs( res ) ) ... }, 
-					 { align_ge( large, std::abs( res ) ) ... } };
+			return { { align_le( small, std::abs( res ) ) ... }, 	// The value <= v_ evenly divisible by res_.
+					 { align_ge( large, std::abs( res ) ) ... } };	// The value >= v_ evenly divisible by res_.
 		}
 
-		/// Returns the minimal Box that contains both the original Box and pt_.
+		/// Returns a Box that contains *this and is evenly divisable by [scalar] resolution_.
 		constexpr Box aligned( const value_type resolution_ )		const noexcept	{
 			return aligned( pax::point< rank >( resolution_ ) );
 		}
 
 		/// Returns the minimal Box that contains both the original Box and pt_.
-		constexpr Box grow( const Point< F, N > & pt_ )				const noexcept	{
+		constexpr Box grow( const Pt & pt_ )						const noexcept	{
 			return { pax::min( min(), pt_ ), pax::max( max(), pt_ ) };
 		}
 
-		/// Is the point inside the Box, but not on its borders?
-		constexpr bool strictly_inside( const Point< F, N > & pt_ )	const noexcept	{
+		/// Is the point inside the Box but not on its borders?
+		constexpr bool strictly_inside( const Pt & pt_ )			const noexcept	{
 			return all_lt( pt_, max() ) && all_lt( min(), pt_ );
 		}
 
-		/// Is the point inside the Box or touching its borders?
-		constexpr bool inside_or_on( const Point< F, N > & pt_ )	const noexcept	{
+		/// Is the point inside the Box or on its borders?
+		constexpr bool inside_or_on( const Pt & pt_ )				const noexcept	{
 			return all_le( pt_, max() ) && all_le( min(), pt_ );
 		}
 
-		/// Is the point inside the Box or touching its minimal (but not maximal) borders?
-		constexpr bool in_range( const Point< F, N > & pt_ )		const noexcept	{
+		/// Is the point inside the Box or on its minimal (but not maximal) borders?
+		constexpr bool in_range( const Pt & pt_ )					const noexcept	{
 			return all_lt( pt_, max() ) && all_le( min(), pt_ );
 		}
 
 		/// Box contents as a std::string.
-		constexpr std::string string() 								const			{
-			return std::format( "[{}, {}]", min(), max() );
+		explicit constexpr operator std::string() 					const			{
+			return std::format( "{}", m_box );
 		}
 	};
 	
@@ -127,7 +116,7 @@ namespace pax {
 		Idx									m_extents{}, m_offsets{};
 		static constexpr Idx				noll{};
 		
-		static constexpr Idx do_offs( const Idx & idx_ )			noexcept		{
+		static constexpr Idx calculate_offsets( const Idx & idx_ )	noexcept		{
 			index_type						product{ 1u };
 			auto [ ... t, tn ]			  = idx_;
 			return { product, ( product *= t ) ... };
@@ -139,13 +128,19 @@ namespace pax {
 		constexpr Indexer & operator=( const Indexer & )		  = default;
 
 		constexpr Indexer( const Idx & extents_ )  					noexcept 
-			: m_extents( extents_ ), m_offsets{ do_offs( extents_ ) } {}
+			: m_extents( extents_ ), m_offsets{ calculate_offsets( extents_ ) } {}
 
 		/// Number of elementa in each dimension.
 		constexpr const Idx & extents()								const noexcept	{	return m_extents;			}
 
 		/// The stride between elements in each dimension. 
 		constexpr const Idx & offsets()								const noexcept	{	return m_offsets;			}
+		
+		/// The number of "columns", same as size()[ col_idx ].
+		constexpr index_type cols()									const noexcept	{	return col( extents() );	}
+		
+		/// The number of "rows", same as size()[ row_idx ].
+		constexpr index_type rows()									const noexcept	{	return row( extents() );	}
 
 		/// The total number of elements (product of all sizes).
 		constexpr index_type elements()								const noexcept	{
@@ -162,25 +157,19 @@ namespace pax {
 			return all_lt( idx_, extents() );
 		}
 		
-		/// The number of "columns", same as size()[ col_idx ].
-		constexpr index_type cols()									const noexcept	{	return col( extents() );	}
-		
-		/// The number of "rows", same as size()[ row_idx ].
-		constexpr index_type rows()									const noexcept	{	return row( extents() );	}
-		
-		/// Calculate an index into a vector for the index represented by pt_.
+		/// Calculate the index into a vector for the index represented by u_.
 		template< uinteger ...U >									requires( sizeof...( U ) == N )
 		constexpr index_type scalar_index( U && ... u_ )			const noexcept	{
 			return scalar_index( Idx{ std::forward< U >( u_ ) ... } );
 		}
 		
-		/// Calculate an index into a vector for the index represented by pt_.
+		/// Calculate the index into a vector for the index represented by idx_.
 		constexpr index_type scalar_index( const Idx & idx_ )		const noexcept	{
 			return dot_product( idx_, offsets() );
 		}
 
 		/// Indexer contents as a std::string.
-		constexpr std::string string() 								const			{
+		explicit constexpr operator std::string() 					const			{
 			return std::format( "{}", extents() );
 		}
 	};
@@ -304,8 +293,8 @@ namespace pax {
 		}
 
 		/// Box contents as a std::string.
-		constexpr std::string string() 								const			{
-			return std::format( "{{{}, {}}}", box().string(), resolution() );
+		explicit constexpr operator std::string() 					const			{
+			return std::format( "{{{}, {}}}", std::string( box() ), resolution() );
 		}
 	};
 	

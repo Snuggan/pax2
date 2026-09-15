@@ -134,7 +134,7 @@ namespace pax {
 					: false
 			);
 		} else throw std::runtime_error( 
-			std::format( "The point {} is outside the bbox {}.", pt, pr_bbox.box().string() ) );
+			std::format( "The point {} is outside the bbox {}.", pt, std::string( pr_bbox ) ) );
 		++m_metadata.points_processed;
 		return true;
 	}
