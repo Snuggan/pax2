@@ -48,6 +48,7 @@ namespace pax {
 
 		/// Returns a Box that contains *this and is evenly divisable by corresponding elements in resolution_.
 		constexpr Box aligned( const Pt resolution_ )				const noexcept	{
+			static_assert( floating< F >, "The algorithms below don't work with integers, see math/adjust.hpp." );
 			static constexpr auto align_le = []( const F v_, const F res_ ) {
 				return res_ ? res_ * std::floor( v_ / res_ ) : v_;
 			};

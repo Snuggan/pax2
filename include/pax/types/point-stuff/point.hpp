@@ -156,7 +156,7 @@ namespace pax {
 	constexpr Point< A, N > min( Point< A, N > pt0_, Point< A, N > pt1_ )		noexcept	{
 		auto [ ... t0 ] = pt0_;
 		auto [ ... t1 ] = pt1_;
-		return Point< A, N >({ ( ( t0 <= t1 ) ? t0 : t1 ) ... });
+		return { ( ( t0 <= t1 ) ? t0 : t1 ) ... };
 	}
 
 	/// Return a pairwise min() of the elements of the arguments.
@@ -164,7 +164,7 @@ namespace pax {
 	constexpr Point< A, N > max( Point< A, N > pt0_, Point< A, N > pt1_ )		noexcept	{
 		auto [ ... t0 ] = pt0_;
 		auto [ ... t1 ] = pt1_;
-		return Point< A, N >({ ( ( t0 >= t1 ) ? t0 : t1 ) ... });
+		return { ( ( t0 >= t1 ) ? t0 : t1 ) ... };
 	}
 
 
@@ -173,7 +173,7 @@ namespace pax {
 	constexpr Point< A, N > operator+( Point< A, N > pt0_, Point< A, N > pt1_ )	noexcept	{
 		auto [ ... t0 ] = pt0_;
 		auto [ ... t1 ] = pt1_;
-		return Point< A, N >({ ( t0 + t1 ) ... });
+		return { ( t0 + t1 ) ... };
 	}
 
 	/// Subtract the elements pairwise.
@@ -181,20 +181,32 @@ namespace pax {
 	constexpr Point< A, N > operator-( Point< A, N > pt0_, Point< A, N > pt1_ )	noexcept	{
 		auto [ ... t0 ] = pt0_;
 		auto [ ... t1 ] = pt1_;
-		return Point< A, N >({ ( t0 - t1 ) ... });
+		return { ( t0 - t1 ) ... };
 	}
 
 	/// Multiply the elements by a scalar.
 	template< arithmetic A, std::size_t N >
 	constexpr Point< A, N > operator*( Point< A, N > pt_, A a_ )				noexcept	{
 		auto [ ... t ] = pt_;
-		return Point< A, N >({ ( t * a_ ) ... });
+		return { ( t * a_ ) ... };
 	}
 
 	/// Multiply the elements by a scalar.
 	template< arithmetic A, std::size_t N >
 	constexpr Point< A, N > operator*( A a_, Point< A, N > pt_ )				noexcept	{
 		return pt_ * a_;
+	}
+
+	/// Apply std::fma: result = direction_*t_ + orig_ using calls to std::fma. 
+	template< floating F, std::size_t N >
+	constexpr Point< F, N > fma( 
+		const Point< F, N > direction_, 
+		const F				t_, 
+		const Point< F, N > orig_
+	) noexcept {
+		auto [ ... orig ] = orig_;
+		auto [ ...  dir ] = direction_;
+		return { ( std::fma( dir, t_, orig ) ) ... };
 	}
 
 	/// Calculate the euclidean vector length squared.
@@ -232,7 +244,7 @@ namespace pax {
 	/// The vector cross product in R^3.
 	template< arithmetic A >
 	constexpr Point< A, 3 > cross_product( Point< A, 3 > x_, Point< A, 3 > y_ )	noexcept	{
-		return Point{ 
+		return { 
 			x_[ 1 ]*y_[ 2 ] - x_[ 2 ]*y_[ 1 ],
 			x_[ 2 ]*y_[ 0 ] - x_[ 0 ]*y_[ 2 ],
 			x_[ 0 ]*y_[ 1 ] - x_[ 1 ]*y_[ 0 ]
@@ -242,14 +254,17 @@ namespace pax {
 	/// The vector cross product in R^7.
 	template< arithmetic A >
 	constexpr Point< A, 7 > cross_product( Point< A, 7 > x_, Point< A, 7 > y_ )	noexcept	{
-		return Point{ 
-			x_[ 1 ]*y_[ 3 ] - x_[ 3 ]*y_[ 1 ] + x_[ 2 ]*y_[ 6 ] - x_[ 6 ]*y_[ 2 ] + x_[ 4 ]*y_[ 5 ] - x_[ 5 ]*y_[ 4 ], 
-			x_[ 2 ]*y_[ 4 ] - x_[ 4 ]*y_[ 2 ] + x_[ 3 ]*y_[ 0 ] - x_[ 0 ]*y_[ 3 ] + x_[ 5 ]*y_[ 6 ] - x_[ 6 ]*y_[ 5 ], 
-			x_[ 3 ]*y_[ 5 ] - x_[ 5 ]*y_[ 3 ] + x_[ 4 ]*y_[ 1 ] - x_[ 1 ]*y_[ 4 ] + x_[ 6 ]*y_[ 0 ] - x_[ 0 ]*y_[ 6 ], 
-			x_[ 4 ]*y_[ 6 ] - x_[ 6 ]*y_[ 4 ] + x_[ 5 ]*y_[ 2 ] - x_[ 2 ]*y_[ 5 ] + x_[ 0 ]*y_[ 1 ] - x_[ 1 ]*y_[ 0 ], 
-			x_[ 5 ]*y_[ 0 ] - x_[ 0 ]*y_[ 5 ] + x_[ 6 ]*y_[ 3 ] - x_[ 3 ]*y_[ 6 ] + x_[ 1 ]*y_[ 2 ] - x_[ 2 ]*y_[ 1 ], 
-			x_[ 6 ]*y_[ 1 ] - x_[ 1 ]*y_[ 6 ] + x_[ 0 ]*y_[ 4 ] - x_[ 4 ]*y_[ 0 ] + x_[ 2 ]*y_[ 3 ] - x_[ 3 ]*y_[ 2 ], 
-			x_[ 0 ]*y_[ 2 ] - x_[ 2 ]*y_[ 0 ] + x_[ 1 ]*y_[ 5 ] - x_[ 5 ]*y_[ 1 ] + x_[ 3 ]*y_[ 4 ] - x_[ 4 ]*y_[ 3 ]
+		const auto xy = [ &x_, &y_ ]( std::size_t i, std::size_t j ) {
+			return x_[ i ]*y_[ j ] - x_[ j ]*y_[ i ];
+		};
+		return { 
+			xy( 1, 3 ) + xy( 2, 6 ) + xy( 4, 5), 
+			xy( 2, 4 ) + xy( 3, 0 ) + xy( 5, 6), 
+			xy( 3, 5 ) + xy( 4, 1 ) + xy( 6, 0), 
+			xy( 4, 6 ) + xy( 5, 2 ) + xy( 0, 1), 
+			xy( 5, 0 ) + xy( 6, 3 ) + xy( 1, 2), 
+			xy( 6, 1 ) + xy( 0, 4 ) + xy( 2, 3), 
+			xy( 0, 2 ) + xy( 1, 5 ) + xy( 3, 4)
 		};
 	}
 
