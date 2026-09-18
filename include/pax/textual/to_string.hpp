@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <pax/std/format.hpp>		// When dynamic_format is called runtime_format.
 #include <format>
 #include <string_view>
 #include <iterator>		// std::input_iterator
@@ -23,7 +24,7 @@ namespace pax {
 			const T				  & t_, 
 			const std::string_view	fmt_
 		) {
-			return std::format( std::runtime_format( fmt_ ), t_ );
+			return std::format( std::dynamic_format( fmt_ ), t_ );
 		}
 	};
 

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <pax/std/format.hpp>		// When dynamic_format is called runtime_format.
 #include <format>
 #include <chrono>
 #include <string_view>
@@ -35,8 +36,8 @@ namespace pax {
 			else if( duration != duration   ) 	{	/* Handles the NaN case. */	 				}
 			else if( std::isinf( duration ) )	{	unit = "  time";							}
 			else 								{	unit = " years";	duration/= year;		}
-
-			result = std::format( std::runtime_format( "{:.{}g}" ), duration, ( ( digits_ < 0 ) ? -digits_ : digits_ ) );
+				result = std::format( std::dynamic_format( "{:.{}g}" ), duration, ( ( digits_ < 0 ) ? -digits_ : digits_ ) );
+				
 			result+= ( ( result.back() >= '0' ) && ( result.back() <= '9' ) ) ? unit : unit.substr( 1 );
 		}
 
