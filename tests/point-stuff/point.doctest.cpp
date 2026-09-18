@@ -61,7 +61,7 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( pt - pt2, Point{ 0.0, 0.0, -2.0, 2.0, 0.0 } );
 		DOCTEST_FAST_CHECK_EQ( pt*2., point( 0., 2, 4, 6, 8 ) );
 		DOCTEST_FAST_CHECK_EQ( 2.*pt, pt*2. );
-		DOCTEST_FAST_CHECK_EQ( fma( pt, 2., pt2 ), ( pt*2. ) + pt2 );
+		DOCTEST_FAST_CHECK_EQ( movement( pt2, pt, 2. ), ( pt*2. ) + pt2 );
 		DOCTEST_FAST_CHECK_EQ( cross_product( point( 1., 2, 3 ), point( 4., 5, 6 ) ), point( -3.,  6, -3 ) );
 		DOCTEST_FAST_CHECK_EQ( cross_product( point( 4., 5, 6 ), point( 1., 2, 3 ) ), point(  3., -6,  3 ) );
 
@@ -71,6 +71,9 @@ namespace pax {
 												point(   7., 6,  5, 4,  3, 2,   1 ) ), 
 												point( -56., 0, 56, 0, 56, 0, -56 ) 
 		);
+
+		DOCTEST_FAST_CHECK_EQ( projection_scalar( point( 3., 4. ), point( 46., 0. ) ), 3. );
+		DOCTEST_FAST_CHECK_EQ( projection_vector( point( 3., 4. ), point( 46., 0. ) ), point( 3., 0. ) );
 	}
 	
 }	// namespace pax

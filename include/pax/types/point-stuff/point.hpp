@@ -6,6 +6,7 @@
 
 #include "base.hpp"
 #include <array>
+#include <cmath>
 #include <utility>		// std::forward
 #include <format>
 
@@ -81,39 +82,39 @@ namespace pax {
 	/// @{
 	static constexpr std::size_t 	col_idx = 0u;
 	template< uinteger U, std::size_t N >				requires( N > col_idx )
-	constexpr U   col  ( const Point< U, N > & pt_ )	noexcept	{	return std::get< col_idx >( pt_ );	}
+	constexpr U   col  ( const Point< U, N > & pt_ )	noexcept	{	return std::get< col_idx >( pt_ );		}
 	template< uinteger U, std::size_t N >				requires( N > col_idx )
-	constexpr U & col  (       Point< U, N > & pt_ )	noexcept	{	return std::get< col_idx >( pt_ );	}
+	constexpr U & col  (       Point< U, N > & pt_ )	noexcept	{	return std::get< col_idx >( pt_ );		}
 
 	static constexpr std::size_t 	row_idx = col_idx + 1u;
 	template< uinteger U, std::size_t N >				requires( N > row_idx )
-	constexpr U   row  ( const Point< U, N > & pt_ )	noexcept	{	return std::get< row_idx >( pt_ );	}
+	constexpr U   row  ( const Point< U, N > & pt_ )	noexcept	{	return std::get< row_idx >( pt_ );		}
 	template< uinteger U, std::size_t N >				requires( N > row_idx )
-	constexpr U & row  (       Point< U, N > & pt_ )	noexcept	{	return std::get< row_idx >( pt_ );	}
+	constexpr U & row  (       Point< U, N > & pt_ )	noexcept	{	return std::get< row_idx >( pt_ );		}
 
 	static constexpr std::size_t 	x_idx = 0u;
 	template< floating F, std::size_t N >				requires( N > x_idx )
-	constexpr F   x    ( const Point< F, N > & pt_ )	noexcept	{	return std::get< x_idx >( pt_ );	}
+	constexpr F   x    ( const Point< F, N > & pt_ )	noexcept	{	return std::get< x_idx >( pt_ );		}
 	template< floating F, std::size_t N >				requires( N > x_idx )
-	constexpr F & x    (       Point< F, N > & pt_ )	noexcept	{	return std::get< x_idx >( pt_ );	}
+	constexpr F & x    (       Point< F, N > & pt_ )	noexcept	{	return std::get< x_idx >( pt_ );		}
 
 	static constexpr std::size_t 	y_idx = x_idx + 1u;
 	template< floating F, std::size_t N >				requires( N > y_idx )
-	constexpr F   y    ( const Point< F, N > & pt_ )	noexcept	{	return std::get< y_idx >( pt_ );	}
+	constexpr F   y    ( const Point< F, N > & pt_ )	noexcept	{	return std::get< y_idx >( pt_ );		}
 	template< floating F, std::size_t N >				requires( N > y_idx )
-	constexpr F & y    (       Point< F, N > & pt_ )	noexcept	{	return std::get< y_idx >( pt_ );	}
+	constexpr F & y    (       Point< F, N > & pt_ )	noexcept	{	return std::get< y_idx >( pt_ );		}
 
 	static constexpr std::size_t 	z_idx = y_idx + 1u;
 	template< floating F, std::size_t N >				requires( N > z_idx )
-	constexpr F   z    ( const Point< F, N > & pt_ )	noexcept	{	return std::get< z_idx >( pt_ );	}
+	constexpr F   z    ( const Point< F, N > & pt_ )	noexcept	{	return std::get< z_idx >( pt_ );		}
 	template< floating F, std::size_t N >				requires( N > z_idx )
-	constexpr F & z    (       Point< F, N > & pt_ )	noexcept	{	return std::get< z_idx >( pt_ );	}
+	constexpr F & z    (       Point< F, N > & pt_ )	noexcept	{	return std::get< z_idx >( pt_ );		}
 
 	static constexpr std::size_t 	east_idx = x_idx;
 	template< floating F, std::size_t N >				requires( N > east_idx )
-	constexpr F   east ( const Point< F, N > & pt_ )	noexcept	{	return std::get< east_idx >( pt_ );	}
+	constexpr F   east ( const Point< F, N > & pt_ )	noexcept	{	return std::get< east_idx >( pt_ );		}
 	template< floating F, std::size_t N >				requires( N > east_idx )
-	constexpr F & east (       Point< F, N > & pt_ )	noexcept	{	return std::get< east_idx >( pt_ );	}
+	constexpr F & east (       Point< F, N > & pt_ )	noexcept	{	return std::get< east_idx >( pt_ );		}
 
 	static constexpr std::size_t 	north_idx = y_idx;
 	template< floating F, std::size_t N >				requires( N > north_idx )
@@ -123,15 +124,15 @@ namespace pax {
 
 	static constexpr std::size_t 	lon_idx = x_idx;
 	template< floating F, std::size_t N >				requires( N > lon_idx )
-	constexpr F   lon  ( const Point< F, N > & pt_ )	noexcept	{	return std::get< lon_idx >( pt_ );	}
+	constexpr F   lon  ( const Point< F, N > & pt_ )	noexcept	{	return std::get< lon_idx >( pt_ );		}
 	template< floating F, std::size_t N >				requires( N > lon_idx )
-	constexpr F & lon  (       Point< F, N > & pt_ )	noexcept	{	return std::get< lon_idx >( pt_ );	}
+	constexpr F & lon  (       Point< F, N > & pt_ )	noexcept	{	return std::get< lon_idx >( pt_ );		}
 
 	static constexpr std::size_t 	lat_idx = y_idx;
 	template< floating F, std::size_t N >				requires( N > lat_idx )
-	constexpr F   lat  ( const Point< F, N > & pt_ )	noexcept	{	return std::get< lat_idx >( pt_ );	}
+	constexpr F   lat  ( const Point< F, N > & pt_ )	noexcept	{	return std::get< lat_idx >( pt_ );		}
 	template< floating F, std::size_t N >				requires( N > lat_idx )
-	constexpr F & lat  (       Point< F, N > & pt_ )	noexcept	{	return std::get< lat_idx >( pt_ );	}
+	constexpr F & lat  (       Point< F, N > & pt_ )	noexcept	{	return std::get< lat_idx >( pt_ );		}
 	/// @}
 
 
@@ -193,16 +194,14 @@ namespace pax {
 
 	/// Multiply the elements by a scalar.
 	template< arithmetic A, std::size_t N >
-	constexpr Point< A, N > operator*( A a_, Point< A, N > pt_ )				noexcept	{
-		return pt_ * a_;
-	}
+	constexpr Point< A, N > operator*( A a_, Point< A, N > pt_ )				noexcept	{	return pt_ * a_;	}
 
-	/// Apply std::fma: result = direction_*t_ + orig_ using calls to std::fma. 
+	/// Apply result = orig_ + direction_*t_ , using calls to std::fma. 
 	template< floating F, std::size_t N >
-	constexpr Point< F, N > fma( 
+	constexpr Point< F, N > movement( 
+		const Point< F, N > orig_, 
 		const Point< F, N > direction_, 
-		const F				t_, 
-		const Point< F, N > orig_
+		const F				t_
 	) noexcept {
 		auto [ ... orig ] = orig_;
 		auto [ ...  dir ] = direction_;
@@ -237,9 +236,7 @@ namespace pax {
 
 	/// The vector cross product. Zero for all N other than 3 and 7.
 	template< arithmetic A, std::size_t N >
-	constexpr Point< A, N > cross_product( Point< A, N >, Point< A, N > )		noexcept	{
-		return Point< A, N >{};
-	}
+	constexpr Point< A, N > cross_product( Point< A, N >, Point< A, N > )		noexcept	{	return {};			}
 
 	/// The vector cross product in R^3.
 	template< arithmetic A >
@@ -258,14 +255,26 @@ namespace pax {
 			return x_[ i ]*y_[ j ] - x_[ j ]*y_[ i ];
 		};
 		return { 
-			xy( 1, 3 ) + xy( 2, 6 ) + xy( 4, 5), 
-			xy( 2, 4 ) + xy( 3, 0 ) + xy( 5, 6), 
-			xy( 3, 5 ) + xy( 4, 1 ) + xy( 6, 0), 
-			xy( 4, 6 ) + xy( 5, 2 ) + xy( 0, 1), 
-			xy( 5, 0 ) + xy( 6, 3 ) + xy( 1, 2), 
-			xy( 6, 1 ) + xy( 0, 4 ) + xy( 2, 3), 
-			xy( 0, 2 ) + xy( 1, 5 ) + xy( 3, 4)
+			xy( 1, 3 ) + xy( 2, 6 ) + xy( 4, 5 ), 
+			xy( 2, 4 ) + xy( 3, 0 ) + xy( 5, 6 ), 
+			xy( 3, 5 ) + xy( 4, 1 ) + xy( 6, 0 ), 
+			xy( 4, 6 ) + xy( 5, 2 ) + xy( 0, 1 ), 
+			xy( 5, 0 ) + xy( 6, 3 ) + xy( 1, 2 ), 
+			xy( 6, 1 ) + xy( 0, 4 ) + xy( 2, 3 ), 
+			xy( 0, 2 ) + xy( 1, 5 ) + xy( 3, 4 )
 		};
+	}
+
+	/// This gives a number representing the length of the projection of pt0_ in the direction of pt1_.
+	template< arithmetic A, std::size_t N >
+	constexpr A projection_scalar( Point< A, N > pt0_, Point< A, N > pt1_ )		noexcept	{
+		return dot_product( pt0_, pt1_ )/std::sqrt( length2( pt1_ ) );
+	}
+
+	/// This gives a vector in the direction of pt1_ that represents the component of pt0_ along pt1_
+	template< arithmetic A, std::size_t N >
+	constexpr Point< A, N > projection_vector( Point< A, N > pt0_, Point< A, N > pt1_ )	noexcept	{
+		return ( dot_product( pt0_, pt1_ )/length2( pt1_ ) )*pt1_;
 	}
 
 }	// namespace pax

@@ -53,7 +53,7 @@ namespace pax {
 				return res_ ? res_ * std::floor( v_ / res_ ) : v_;
 			};
 			static constexpr auto align_ge = []( const F v_, const F res_ ) {
-				return res_ ? res_ * std::ceil( v_ / res_ ) : v_;
+				return res_ ? res_ * std::ceil ( v_ / res_ ) : v_;
 			};
 
 			const auto [ ...   res ]	  = resolution_;
