@@ -5,7 +5,6 @@
 #pragma once
 
 #include "point.hpp"
-#include <cmath>		// std::fma, std::floor, std::abs
 
 
 namespace pax {
@@ -48,7 +47,7 @@ namespace pax {
 
 		/// Returns a Box that contains *this and is evenly divisable by corresponding elements in resolution_.
 		constexpr Box aligned( const Pt resolution_ )				const noexcept	{
-			static_assert( floating< F >, "The algorithms below don't work with integers, see math/adjust.hpp." );
+			static_assert( floating< F >, "The algorithms below doesn't work with integers." );
 			static constexpr auto align_le = []( const F v_, const F res_ ) {
 				return res_ ? res_ * std::floor( v_ / res_ ) : v_;
 			};
@@ -99,6 +98,12 @@ namespace pax {
 
 	template< floating F, std::size_t N >
 	Box( const Point< F, N > &, const Point< F, N > & ) -> Box< F, N >;
+	
+	template< typename Out, floating F, std::size_t N >
+	Out & operator<<(
+		Out								  & out_, 
+		const Box< F, N >				  & box_
+	) {	return out_ << std::string( box_ );					}
 
 
 
@@ -180,11 +185,18 @@ namespace pax {
 
 	template< std::size_t N >
 	Indexer( const Index< N > & ) -> Indexer< N >;
+	
+	template< typename Out, std::size_t N >
+	Out & operator<<(
+		Out								  & out_, 
+		const Indexer< N >				  & idxer_
+	) {	return out_ << std::string( idxer_ );			}
 
 
 
 
 	/// A bounding box that also handles coordinattes to scalar index transformation.
+	/// - The bounding box always has corners aligned with the resolution. 
 	/// - It will reverse the direction of those axis with negative resolution. 
 	/// - If you intend to use it with a [gdal] raster or pictures, you should probably give a
 	///   positove x-resolution and a negative y-resolution as they usually have upper left as 
@@ -229,6 +241,8 @@ namespace pax {
 		constexpr Box_indexer & operator=( const Box_indexer & )  = default;
 
 		/// The main constructor that calculates the transformation attributes.
+		/// Note: The bbox cormers will be aligned with the resolution, so might slightly differ from box_.
+		///       The aligned bbow will be equal to or larger than that defined by box_.
 		constexpr Box_indexer(
 			const BBox					  & box_, 
 			const Pt					  & resolution_
@@ -242,17 +256,41 @@ namespace pax {
 			const auto [ ... max ]		  = BBox::max();
 			const auto [ ... res ]		  = resolution_;
 			if( ( ( res == 0 ) || ... ) ) throw std::runtime_error( 
-				std::format( "No resolution may be zero, they are: {}.", resolution_ ) );
+				std::format( "No resolution element may be zero, but they are: {}.", resolution_ ) );
 
 			m_factor					  = { 1/res ... };
 			m_offset					  = { ( ( res > 0 ) ? min : max )/-res ... };
 		}
 
 		/// Simplified constructor, when elements have the same length in all dimensions.
+		/// Note: The bbox cormers will be aligned with the resolution, so might slightly differ from box_.
+		///       The aligned bbow will be equal to or larger than that defined by box_.
 		constexpr Box_indexer(
 			const BBox					  & box_, 
 			const value_type				resolution_
 		) : Box_indexer( box_, pax::point< rank >( resolution_ ) ) {}
+
+		/// Simplified constructor, when elements have the same length in all dimensions.
+		/// - Note: The bbox cormers will be aligned with the resolution, so might slightly differ from values in aff_.
+		///         The aligned bbow will be equal to or larger than that defined by aff_.
+		/// east  = aff_[0] + col*aff_[1] + row*aff_[2];
+		/// north = aff_[3] + col*aff_[4] + row*aff_[5];
+		constexpr Box_indexer( 
+			const Point< double, 6 >		aff_,
+			const Index< rank >				cols_rows_
+		) requires( rank == 2 ) :
+		    Box_indexer{ 
+				BBox(	Pt{	F( aff_[0] ), F( aff_[3] ) }, 
+						Pt{	F( aff_[0] + ( col( cols_rows_ ) - 1 )*std::abs( aff_[1] ) ),
+							F( aff_[3] + ( row( cols_rows_ ) - 1 )*std::abs( aff_[5] ) ) }
+				), 
+				Pt{ F( aff_[1] ), F( aff_[5] ) }
+			}
+		{
+			if( ( aff_[2] != 0 ) || ( aff_[4] != 0 ) ) throw std::runtime_error( 
+				std::format(	"Support for oblique affine transformations are not implemented, "
+								"so aff_[2] and aff_[4] must both be zero in {}.", aff_ ) );
+		}
 
 		/// The size of the grid elements.
 		constexpr Pt resolution()									const noexcept	{	return m_resolution;	}
@@ -285,7 +323,10 @@ namespace pax {
 			return { ( idx - offset )/factor ... };
 		}
 
-		/// Return the affine values, in order specified by gdal.
+		/// Return the affine values, in the order specified by gdal.
+		/// cons auto aff = box.gdal_affines();
+		/// east  = aff[0] + col*aff[1] + row*aff[2];
+		/// north = aff[3] + col*aff[4] + row*aff[5];
 		constexpr Point< double, 6 > gdal_affines()	const noexcept requires( rank == 2 )	{
 			return {	// Negative resolution means reversed axis mean max instead of min.
 				( x( resolution() ) > 0 ) ? x( min() ) : x( max() ),	x( resolution() ),		double{},
@@ -300,12 +341,17 @@ namespace pax {
 	};
 	
 	using Box_indexer2d					  = Box_indexer< double, 2 >;
-	using Box_indexer3d					  = Box_indexer< double, 3 >;
 
 	template< floating F, std::size_t N, arithmetic F2 >
 	Box_indexer( const Box< F, N > &, F2 ) -> Box_indexer< F, N >;
 
 	template< floating F, std::size_t N >
 	Box_indexer( const Box< F, N > &, Point< F, N > ) -> Box_indexer< F, N >;
+	
+	template< typename Out, floating F, std::size_t N >
+	Out & operator<<(
+		Out								  & out_, 
+		const Box_indexer< F, N >		  & box_
+	) {	return out_ << std::string( box_ );				}
 
 }	// namespace pax

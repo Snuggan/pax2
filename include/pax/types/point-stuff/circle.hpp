@@ -5,16 +5,9 @@
 #pragma once
 
 #include "box.hpp"
-#include <string>
-#include <span>
 
 
 namespace pax {
-
-	template< typename T, typename ... P >	struct Table_meta;
-	template< typename F >					struct Object_meta;
-
-
 
 	/// Implements an object with coordinates and a scalar value.
 	/// It can have any rank you please, but two is probably usual.
@@ -71,12 +64,12 @@ namespace pax {
 
 		/// The point is inside, but not on, the circle.
 		constexpr bool strictly_inside( const Point< F, N > & pt_ )	const noexcept	{
-			return distance2( center(), pt_ ) <  radius()*radius();
+			return euclidean2( center(), pt_ ) <  radius()*radius();
 		}
 
 		/// The point is either inside or on the circle.
 		constexpr bool inside_or_on( const Point< F, N > & pt_ )	const noexcept	{
-			return distance2( center(), pt_ ) <= radius()*radius();
+			return euclidean2( center(), pt_ ) <= radius()*radius();
 		}
 
 		/// Box contents to std::string.

@@ -52,26 +52,9 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( indexer.scalar_index( 2u, 4u, 6u ),	104u );
 	}
 	DOCTEST_TEST_CASE( "Box_indexer object" ) {
-		{	// 2d reversed y-axis
-			const Box_indexer								boxi{ Box2d{ { 1., 2.5 }, { 7., 5. } }, { 2., -2. } };
-			DOCTEST_FAST_CHECK_EQ( boxi,						  Box2d{ { 0., 2.0 }, { 8., 6. } } );
-			DOCTEST_FAST_CHECK_EQ( boxi.resolution(), 		Point{ 2., -2. } );
-			DOCTEST_FAST_CHECK_EQ( boxi.extents(), 			Index2d{ 4u, 2u } );
-			DOCTEST_FAST_CHECK_EQ( boxi.offsets(), 			Index2d{ 1u, 4u } );
-			DOCTEST_FAST_CHECK_EQ( boxi.elements(), 		8 );
-			DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 0., 6. } ), 	0u );
-			DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 8., 6. } ), 	3u );
-			DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 0., 2. } ), 	4u );
-			DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 8., 2. } ), 	7u );
-			DOCTEST_FAST_CHECK_EQ( boxi.point( index( 0u, 0u ) ), 	Point{ 0., 6. } );
-			DOCTEST_FAST_CHECK_EQ( boxi.point( index( 3u, 0u ) ), 	Point{ 6., 6. } );
-			DOCTEST_FAST_CHECK_EQ( boxi.point( index( 0u, 1u ) ), 	Point{ 0., 4. } );
-			DOCTEST_FAST_CHECK_EQ( boxi.point( index( 3u, 1u ) ), 	Point{ 6., 4. } );
-			DOCTEST_FAST_CHECK_EQ( boxi.gdal_affines(), 	std::array< double, 6 >{ 0., 2., 0., 6., 0., -2. } );
-		}
 		{	// 2d Box_indexer
 			const Box_indexer								boxi{ Box2d{ { 1., 2.5 }, { 7., 5. } }, { 2., 2. } };
-			DOCTEST_FAST_CHECK_EQ( boxi,						  Box2d{ { 0., 2.0 }, { 8., 6. } } );
+			DOCTEST_FAST_CHECK_EQ( boxi,					Box2d{ { 0., 2.0 }, { 8., 6. } } );
 			DOCTEST_FAST_CHECK_EQ( boxi.resolution(), 		Point{ 2., 2. } );
 			DOCTEST_FAST_CHECK_EQ( boxi.extents(), 			Index2d{ 4u, 2u } );
 			DOCTEST_FAST_CHECK_EQ( boxi.offsets(), 			Index2d{ 1u, 4u } );
@@ -85,6 +68,60 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( boxi.point( index( 0u, 1u ) ), 	Point{ 0., 4. } );
 			DOCTEST_FAST_CHECK_EQ( boxi.point( index( 3u, 1u ) ), 	Point{ 6., 4. } );
 			DOCTEST_FAST_CHECK_EQ( boxi.gdal_affines(), 	std::array< double, 6 >{ 0., 2., 0., 2., 0., 2. } );
+			{	// using gdal affine
+				const Point										aff{ 1., 2., 0., 2.5, 0., 2. };
+				const Box_indexer< float, 2 >					boxi{ aff, Index2d{ 4u, 2u } };
+				DOCTEST_FAST_CHECK_EQ( boxi,					Box< float, 2 >{ { 0.f, 2.f }, { 8.f, 6.f } } );
+				DOCTEST_FAST_CHECK_EQ( boxi.resolution(), 		Point{ 2.f, 2.f } );
+				DOCTEST_FAST_CHECK_EQ( boxi.extents(), 			Index2d{ 4u, 2u } );
+				DOCTEST_FAST_CHECK_EQ( boxi.offsets(), 			Index2d{ 1u, 4u } );
+				DOCTEST_FAST_CHECK_EQ( boxi.elements(), 		8 );
+				DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 0.f, 2.f } ), 	0u );
+				DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 8.f, 2.f } ), 	3u );
+				DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 0.f, 6.f } ), 	4u );
+				DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 8.f, 6.f } ), 	7u );
+				DOCTEST_FAST_CHECK_EQ( boxi.point( index( 0u, 0u ) ), 	Point{ 0.f, 2.f } );
+				DOCTEST_FAST_CHECK_EQ( boxi.point( index( 3u, 0u ) ), 	Point{ 6.f, 2.f } );
+				DOCTEST_FAST_CHECK_EQ( boxi.point( index( 0u, 1u ) ), 	Point{ 0.f, 4.f } );
+				DOCTEST_FAST_CHECK_EQ( boxi.point( index( 3u, 1u ) ), 	Point{ 6.f, 4.f } );
+				DOCTEST_FAST_CHECK_EQ( boxi.gdal_affines(), 	Point{ 0., 2., 0., 2., 0., 2. } );
+			}
+		}
+		{	// 2d reversed y-axis
+			const Box_indexer								boxi{ Box2d{ { 1., 2.5 }, { 7., 5. } }, { 2., -2. } };
+			DOCTEST_FAST_CHECK_EQ( boxi,					Box2d{ { 0., 2.0 }, { 8., 6. } } );
+			DOCTEST_FAST_CHECK_EQ( boxi.resolution(), 		Point{ 2., -2. } );
+			DOCTEST_FAST_CHECK_EQ( boxi.extents(), 			Index2d{ 4u, 2u } );
+			DOCTEST_FAST_CHECK_EQ( boxi.offsets(), 			Index2d{ 1u, 4u } );
+			DOCTEST_FAST_CHECK_EQ( boxi.elements(), 		8 );
+			DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 0., 6. } ), 	0u );
+			DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 8., 6. } ), 	3u );
+			DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 0., 2. } ), 	4u );
+			DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 8., 2. } ), 	7u );
+			DOCTEST_FAST_CHECK_EQ( boxi.point( index( 0u, 0u ) ), 	Point{ 0., 6. } );
+			DOCTEST_FAST_CHECK_EQ( boxi.point( index( 3u, 0u ) ), 	Point{ 6., 6. } );
+			DOCTEST_FAST_CHECK_EQ( boxi.point( index( 0u, 1u ) ), 	Point{ 0., 4. } );
+			DOCTEST_FAST_CHECK_EQ( boxi.point( index( 3u, 1u ) ), 	Point{ 6., 4. } );
+			DOCTEST_FAST_CHECK_EQ( boxi.gdal_affines(), 	std::array< double, 6 >{ 0., 2., 0., 6., 0., -2. } );
+			{	// using gdal affine
+				const Point										aff{ 1., 2., 0., 2.5, 0., -2. };
+				const Box_indexer< float, 2 >					boxi{ aff, Index2d{ 4u, 2u } };
+				// const Box_indexer								boxi{ Box2d{ { 1., 2.5 }, { 7., 5. } }, { 2., -2. } };
+				DOCTEST_FAST_CHECK_EQ( boxi,					Box< float, 2 >{ { 0.f, 2.f }, { 8.f, 6.f } } );
+				DOCTEST_FAST_CHECK_EQ( boxi.resolution(), 		Point{ 2.f, -2.f } );
+				DOCTEST_FAST_CHECK_EQ( boxi.extents(), 			Index2d{ 4u, 2u } );
+				DOCTEST_FAST_CHECK_EQ( boxi.offsets(), 			Index2d{ 1u, 4u } );
+				DOCTEST_FAST_CHECK_EQ( boxi.elements(), 		8 );
+				DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 0.f, 6.f } ), 	0u );
+				DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 8.f, 6.f } ), 	3u );
+				DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 0.f, 2.f } ), 	4u );
+				DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 8.f, 2.f } ), 	7u );
+				DOCTEST_FAST_CHECK_EQ( boxi.point( index( 0u, 0u ) ), 	Point{ 0.f, 6.f } );
+				DOCTEST_FAST_CHECK_EQ( boxi.point( index( 3u, 0u ) ), 	Point{ 6.f, 6.f } );
+				DOCTEST_FAST_CHECK_EQ( boxi.point( index( 0u, 1u ) ), 	Point{ 0.f, 4.f } );
+				DOCTEST_FAST_CHECK_EQ( boxi.point( index( 3u, 1u ) ), 	Point{ 6.f, 4.f } );
+				DOCTEST_FAST_CHECK_EQ( boxi.gdal_affines(), 	Point{ 0., 2., 0., 6., 0., -2. } );
+			}
 		}
 		{	// 3d Box_indexer
 			const Box_indexer								boxi{ Box3d{ { 1., 2.5, 0. }, { 7., 5., 3. } }, { 2., 2., 2. } };

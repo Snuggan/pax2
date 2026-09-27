@@ -54,9 +54,14 @@ namespace pax {
 		DOCTEST_FAST_CHECK_LE( pt, pt2 );
 	}
 	DOCTEST_TEST_CASE( "Point other" ) {
-		auto pt2  = Point{ 0.0, 1.0, 4.0, 1.0, 4.0 };
+		const auto pt2  = Point{ 0.0, 1.0, 4.0, 1.0, 4.0 };
 		DOCTEST_FAST_CHECK_EQ( min( pt, pt2 ), Point{ 0.0, 1.0, 2.0, 1.0, 4.0 } );
 		DOCTEST_FAST_CHECK_EQ( max( pt, pt2 ), Point{ 0.0, 1.0, 4.0, 3.0, 4.0 } );
+		{
+			auto pt_ = pt;
+			DOCTEST_FAST_CHECK_EQ( pt_ += pt2, Point{ 0.0, 2.0,  6.0, 4.0, 8.0 } );
+			DOCTEST_FAST_CHECK_EQ( pt_ -= pt2, pt );
+		}
 		DOCTEST_FAST_CHECK_EQ( pt + pt2, Point{ 0.0, 2.0,  6.0, 4.0, 8.0 } );
 		DOCTEST_FAST_CHECK_EQ( pt - pt2, Point{ 0.0, 0.0, -2.0, 2.0, 0.0 } );
 		DOCTEST_FAST_CHECK_EQ( pt*2., point( 0., 2, 4, 6, 8 ) );
