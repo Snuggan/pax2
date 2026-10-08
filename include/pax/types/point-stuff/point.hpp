@@ -6,9 +6,8 @@
 
 #include "base.hpp"
 #include <array>
-#include <cmath>		// std::fma, std::floor, std::abs
+#include <cmath>		// std::fma
 #include <utility>		// std::forward
-#include <format>
 
 
 namespace pax {
@@ -128,6 +127,18 @@ namespace pax {
 	/// @}
 
 
+	/// Return a pairwise min() of the elements of the arguments.
+	template< arithmetic A, std::size_t N, typename F >
+	constexpr Point< A, N > pairwise( 
+		Point< A, N >	pt0_, 
+		Point< A, N >	pt1_,
+		F 			 && f_
+	) noexcept {
+		auto [ ... t0 ] = pt0_;
+		auto [ ... t1 ] = pt1_;
+		return { f_( t0, t1 ) ... };
+	}
+
 	/// Check if all elements in pt0_ are smaller than the counterpart in pt1_.
 	template< arithmetic A, std::size_t N >
 	constexpr bool all_lt( Point< A, N > pt0_, Point< A, N > pt1_ )						noexcept	{
@@ -147,17 +158,13 @@ namespace pax {
 	/// Return a pairwise min() of the elements of the arguments.
 	template< arithmetic A, std::size_t N >
 	constexpr Point< A, N > min( Point< A, N > pt0_, Point< A, N > pt1_ )				noexcept	{
-		auto [ ... t0 ] = pt0_;
-		auto [ ... t1 ] = pt1_;
-		return { ( ( t0 <= t1 ) ? t0 : t1 ) ... };
+		return pairwise( pt0_, pt1_, []( A t0, A t1 ) { return ( t0 <= t1 ) ? t0 : t1; } );
 	}
 
 	/// Return a pairwise min() of the elements of the arguments.
 	template< arithmetic A, std::size_t N >
 	constexpr Point< A, N > max( Point< A, N > pt0_, Point< A, N > pt1_ )				noexcept	{
-		auto [ ... t0 ] = pt0_;
-		auto [ ... t1 ] = pt1_;
-		return { ( ( t0 >= t1 ) ? t0 : t1 ) ... };
+		return pairwise( pt0_, pt1_, []( A t0, A t1 ) { return ( t0 >= t1 ) ? t0 : t1; } );
 	}
 
 
@@ -173,9 +180,7 @@ namespace pax {
 	/// Add the elements pairwise.
 	template< arithmetic A, std::size_t N >
 	constexpr Point< A, N >   operator+ ( Point< A, N >   pt0_, Point< A, N > pt1_ )	noexcept	{
-		auto [ ... t0 ] = pt0_;
-		auto [ ... t1 ] = pt1_;
-		return { ( t0 + t1 ) ... };
+		return pairwise( pt0_, pt1_, []( A t0, A t1 ) { return t0 + t1; } );
 	}
 
 	/// Subtract the elements pairwise.
@@ -190,9 +195,7 @@ namespace pax {
 	/// Subtract the elements pairwise.
 	template< arithmetic A, std::size_t N >
 	constexpr Point< A, N >   operator- ( Point< A, N >   pt0_, Point< A, N > pt1_ )	noexcept	{
-		auto [ ... t0 ] = pt0_;
-		auto [ ... t1 ] = pt1_;
-		return { ( t0 - t1 ) ... };
+		return pairwise( pt0_, pt1_, []( A t0, A t1 ) { return t0 - t1; } );
 	}
 
 	/// Multiply the elements by a scalar.
@@ -251,19 +254,14 @@ namespace pax {
 	/// The vector cross product in R^3.
 	template< arithmetic A >
 	constexpr Point< A, 3 > cross_product( Point< A, 3 > x_, Point< A, 3 > y_ )			noexcept	{
-		return { 
-			x_[ 1 ]*y_[ 2 ] - x_[ 2 ]*y_[ 1 ],
-			x_[ 2 ]*y_[ 0 ] - x_[ 0 ]*y_[ 2 ],
-			x_[ 0 ]*y_[ 1 ] - x_[ 1 ]*y_[ 0 ]
-		};
+		const auto xy = [ &x_, &y_ ]( std::size_t i, std::size_t j )	{	return x_[ i ]*y_[ j ] - x_[ j ]*y_[ i ];		};
+		return { xy( 1, 2 ), xy( 2, 0 ), xy( 0, 1 ) };
 	}
 
 	/// The vector cross product in R^7.
 	template< arithmetic A >
 	constexpr Point< A, 7 > cross_product( Point< A, 7 > x_, Point< A, 7 > y_ )			noexcept	{
-		const auto xy = [ &x_, &y_ ]( std::size_t i, std::size_t j ) {
-			return x_[ i ]*y_[ j ] - x_[ j ]*y_[ i ];
-		};
+		const auto xy = [ &x_, &y_ ]( std::size_t i, std::size_t j )	{	return x_[ i ]*y_[ j ] - x_[ j ]*y_[ i ];		};
 		return { 
 			xy( 1, 3 ) + xy( 2, 6 ) + xy( 4, 5 ), 
 			xy( 2, 4 ) + xy( 3, 0 ) + xy( 5, 6 ), 

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "point.hpp"
+#include <format>
 
 
 namespace pax {
@@ -153,7 +154,7 @@ namespace pax {
 			return offsets().back()*extents().back();
 		}
 		
-		/// The total number of elements (product of all sizes).
+		/// There are no elements (elements() == 0).
 		constexpr bool empty()										const noexcept	{
 			return !offsets().back() || !extents().back();
 		}
@@ -276,8 +277,8 @@ namespace pax {
 		/// east  = aff_[0] + col*aff_[1] + row*aff_[2];
 		/// north = aff_[3] + col*aff_[4] + row*aff_[5];
 		constexpr Box_indexer( 
-			const Point< double, 6 >		aff_,
-			const Index< rank >				cols_rows_
+			const Point< double, 6 >		aff_,		//< gdal affine values, [e0, ec, er, n0, nc, nr].
+			const Index< rank >				cols_rows_	//< Number of columns and rows.
 		) requires( rank == 2 ) :
 		    Box_indexer{ 
 				BBox(	Pt{	F( aff_[0] ), F( aff_[3] ) }, 
@@ -288,7 +289,7 @@ namespace pax {
 			}
 		{
 			if( ( aff_[2] != 0 ) || ( aff_[4] != 0 ) ) throw std::runtime_error( 
-				std::format(	"Support for oblique affine transformations are not implemented, "
+				std::format(	"Oblique affine transformations is not supported, "
 								"so aff_[2] and aff_[4] must both be zero in {}.", aff_ ) );
 		}
 
@@ -309,7 +310,6 @@ namespace pax {
 			// The exts are necessary to include points with any coordinate value on the max edge:
 			return Idx::scalar_index( { smallest( std::fma( pt, factor, offset ), exts - 1 ) ... } );
 		}
-		using Idx::scalar_index;
 		
 		/// Given an index, returns the coordinates of the element's lower left corner. 
 		/// - Mainly used for debugging. 
@@ -328,7 +328,7 @@ namespace pax {
 		/// east  = aff[0] + col*aff[1] + row*aff[2];
 		/// north = aff[3] + col*aff[4] + row*aff[5];
 		constexpr Point< double, 6 > gdal_affines()	const noexcept requires( rank == 2 )	{
-			return {	// Negative resolution means reversed axis mean max instead of min.
+			return {	// Negative resolution signifies reversed axis => max instead of min.
 				( x( resolution() ) > 0 ) ? x( min() ) : x( max() ),	x( resolution() ),		double{},
 				( y( resolution() ) > 0 ) ? y( min() ) : y( max() ),	double{},				y( resolution() )
 			};

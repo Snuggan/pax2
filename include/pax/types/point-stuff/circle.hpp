@@ -4,10 +4,15 @@
 
 #pragma once
 
-#include "box.hpp"
+#include "point.hpp"
+#include <format>
 
 
 namespace pax {
+
+	template< floating F, std::size_t N >							requires( is_static< N > )
+	struct Box;
+
 
 	/// Implements an object with coordinates and a scalar value.
 	/// It can have any rank you please, but two is probably usual.
@@ -23,9 +28,7 @@ namespace pax {
 
 		constexpr Circle()									 	  = default;
 		constexpr Circle( const Circle & )						  = default;
-		constexpr Circle( Circle && )							  = default;
 		constexpr Circle & operator=( const Circle & )			  = default;
-		constexpr Circle & operator=( Circle && )				  = default;
 
 		constexpr Circle( const Point< F, N > & center_, const F radius_ ) noexcept
 			: m_center( center_ ), m_radius{ ( radius_ >= 0 ) ? radius_ : -radius_ } {}
@@ -34,15 +37,11 @@ namespace pax {
 			const F					east_,
 			const F					north_,
 			const F					radius_
-		) noexcept requires( rank == 2 ) : Circle( Pt{ east_, north_ }, radius_ ) {}
+		) noexcept requires( rank == 2 ) : Circle( { east_, north_ }, radius_ ) {}
 
 
+		/// The radius length.
 		constexpr coord_type radius()								const noexcept	{	return m_radius;	}
-
-		/// Check if center coordinates and radius are equal.
-		constexpr bool operator==( const Circle & c_ ) 				const noexcept	{
-			return ( center() == c_.center() ) && ( radius() == c_.radius() );
-		}
 
 		/// The center coordinates.
 		constexpr const Point< F, N > & center()					const noexcept	{	return m_center;	}
@@ -62,6 +61,11 @@ namespace pax {
 			return { ( c + c_.radius() ) ... };
 		}
 
+		/// Check if center coordinates and radius are equal.
+		constexpr bool operator==( const Circle & c_ ) 				const noexcept	{
+			return ( center() == c_.center() ) && ( radius() == c_.radius() );
+		}
+
 		/// The point is inside, but not on, the circle.
 		constexpr bool strictly_inside( const Point< F, N > & pt_ )	const noexcept	{
 			return euclidean2( center(), pt_ ) <  radius()*radius();
@@ -72,12 +76,12 @@ namespace pax {
 			return euclidean2( center(), pt_ ) <= radius()*radius();
 		}
 
-		/// Box contents to std::string.
+		/// Circle contents to std::string.
 		explicit constexpr operator std::string() 					const			{
 			return std::format( "{{{}, {}}}", center(), radius() );
 		}
 
-		/// Stream a box contents.
+		/// Stream a Circle's contents.
 		template< typename Out >
 		friend constexpr Out & operator<<(
 			Out				  & out_,
@@ -144,27 +148,20 @@ namespace pax {
 	public:
 		constexpr Circle_w_id()									  = default;
 		constexpr Circle_w_id( const Circle_w_id & )			  = default;
-		constexpr Circle_w_id( Circle_w_id && )					  = default;
 		constexpr Circle_w_id & operator=( const Circle_w_id & )  = default;
-		constexpr Circle_w_id & operator=( Circle_w_id && )		  = default;
-
-		constexpr Circle_w_id(
-			const Base				  & circle_,
-			const std::string_view		id_
-		) noexcept : Base{ circle_ }, m_id{ id_ } {}
 
 		constexpr Circle_w_id(
 			const Base::Pt			  & center_,
 			const F						radius_,
 			const std::string_view		id_
-		) noexcept : Circle_w_id( Base{ center_, radius_ }, id_ ) {}
+		) noexcept : Base{ center_, radius_ }, m_id{ id_ } {}
 
 		constexpr Circle_w_id(
 			const F						east_,
 			const F						north_,
 			const F						radius_,
 			const std::string_view		id_
-		) noexcept requires( N == 2 ) : Circle_w_id( Base( { east_, north_ }, radius_ ), id_ ) {}
+		) noexcept requires( N == 2 ) : Base{ { east_, north_ }, radius_ }, m_id{ id_ } {}
 	
 		/// Return the [unique] id. No other circle/plot may have the same. 
 		constexpr const std::string & id() 							const noexcept	{	return m_id;	}

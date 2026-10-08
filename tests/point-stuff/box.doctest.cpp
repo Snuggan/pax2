@@ -26,14 +26,14 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( 	bx.grow( Point{ 5., 2., 0. } ),
 			 					Box3d{ { 1., -2.5, 0. }, { 5., 2., 3. } } );
 
-		DOCTEST_FAST_CHECK_UNARY( !bx.strictly_inside( bx.min() ) );
-		DOCTEST_FAST_CHECK_UNARY( !bx.strictly_inside( bx.max() ) );
+		DOCTEST_FAST_CHECK_UNARY( !bx.strictly_inside( min( bx ) ) );
+		DOCTEST_FAST_CHECK_UNARY( !bx.strictly_inside( max( bx ) ) );
 		DOCTEST_FAST_CHECK_UNARY( !bx.strictly_inside( Point{ 2., -2.5, 2.  } ) );
 		DOCTEST_FAST_CHECK_UNARY(  bx.strictly_inside( Point{ 2., -2.2, 2.  } ) );
-		DOCTEST_FAST_CHECK_UNARY(  bx.inside_or_on   ( bx.min() ) );
-		DOCTEST_FAST_CHECK_UNARY(  bx.inside_or_on   ( bx.max() ) );
-		DOCTEST_FAST_CHECK_UNARY(  bx.in_range       ( bx.min() ) );
-		DOCTEST_FAST_CHECK_UNARY( !bx.in_range       ( bx.max() ) );
+		DOCTEST_FAST_CHECK_UNARY(  bx.inside_or_on   ( min( bx ) ) );
+		DOCTEST_FAST_CHECK_UNARY(  bx.inside_or_on   ( max( bx ) ) );
+		DOCTEST_FAST_CHECK_UNARY(  bx.in_range       ( min( bx ) ) );
+		DOCTEST_FAST_CHECK_UNARY( !bx.in_range       ( max( bx ) ) );
 	}
 	DOCTEST_TEST_CASE( "Indexer object" ) {
 		constexpr auto idx		  = index( 3u, 5u, 7u );

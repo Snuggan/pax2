@@ -5,6 +5,7 @@
 
 
 #include <pax/types/point-stuff/circle.hpp>
+#include <pax/types/point-stuff/box.hpp>
 #include <pax/doctest.hpp>
 
 
