@@ -4,7 +4,9 @@
 
 #pragma once
 
+#include "../base.hpp"
 #include "spheroid.hpp"
+#include <array>
 #include <utility>		// std::forward
 
 
@@ -37,5 +39,33 @@ namespace pax {
 		temp.fill( a_ );
 		return temp;
 	}
+
+
+	enum {	lon_idx  = 0,	lat_idx, 	};
+	template< Spheroid Sph, floating F, std::size_t N >		requires( N > lon_idx )
+	constexpr F   lon( const Lonlat< Sph, F, N > & ll_ )	noexcept	{	return std::get< lon_idx >( ll_ );		}
+	template< Spheroid Sph, floating F, std::size_t N >		requires( N > lon_idx )
+	constexpr F & lon(       Lonlat< Sph, F, N > & ll_ )	noexcept	{	return std::get< lon_idx >( ll_ );		}
+	template< Spheroid Sph, floating F, std::size_t N >		requires( N > lat_idx )
+	constexpr F   lat( const Lonlat< Sph, F, N > & ll_ )	noexcept	{	return std::get< lat_idx >( ll_ );		}
+	template< Spheroid Sph, floating F, std::size_t N >		requires( N > lat_idx )
+	constexpr F & lat(       Lonlat< Sph, F, N > & ll_ )	noexcept	{	return std::get< lat_idx >( ll_ );		}
+
+	template< Spheroid Sph, floating F, std::size_t N >
+	constexpr F spheroid( const Lonlat< Sph, F, N > & )		noexcept	{	return Sph;								}
+
+	/// The angle between ll0_ and ll1_ expressed in radians. 
+	template< Spheroid Sph, floating F, std::size_t N >
+	constexpr F angle(
+		const Lonlat< Sph, F, N > & ll0_, 
+		const Lonlat< Sph, F, N > & ll1_ 
+	)	noexcept;
+
+	/// The distance along the surface between ll0_ and ll1_ expressed in meters
+	template< Spheroid Sph, floating F, std::size_t N >
+	constexpr F distance(
+		const Lonlat< Sph, F, N > & ll0_, 
+		const Lonlat< Sph, F, N > & ll1_ 
+	)	noexcept;
 
 }	// namespace pax

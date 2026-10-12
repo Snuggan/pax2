@@ -5,6 +5,7 @@
 
 
 #include <pax/types/point-stuff/geodesy/lonlat.hpp>
+#include <pax/doctest.hpp>
 
 
 namespace pax {
