@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <pax/types/point-stuff/box.hpp>
+#include <pax/types/box.hpp>
 #include <pdal/PointView.hpp>			// PointViewPtr, PointId
 
 

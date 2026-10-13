@@ -4,8 +4,8 @@
 //	Comments are formatted for Doxygen (http://www.doxygen.nl) to read and create documentation.
 
 
-#include <pax/types/point-stuff/circle.hpp>
-#include <pax/types/point-stuff/box.hpp>
+#include <pax/types/circle.hpp>
+#include <pax/types/box.hpp>
 #include <pax/doctest.hpp>
 
 

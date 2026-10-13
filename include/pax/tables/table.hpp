@@ -5,7 +5,7 @@
 #pragma once
 
 #include "strided-iterator.hpp"
-#include "../types/point-stuff/box.hpp"
+#include "../types/box.hpp"
 #include <pax/debug.hpp>
 
 #include <vector>

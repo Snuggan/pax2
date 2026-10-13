@@ -4,7 +4,7 @@
 //	Comments are formatted for Doxygen (http://www.doxygen.nl) to read and create documentation.
 
 
-#include <pax/types/point-stuff/geodesy/spheroid.hpp>
+#include <pax/types/geodesy/spheroid.hpp>
 #include <pax/doctest.hpp>
 
 #include <numbers>

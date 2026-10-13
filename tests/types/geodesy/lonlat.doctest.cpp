@@ -4,7 +4,7 @@
 //	Comments are formatted for Doxygen (http://www.doxygen.nl) to read and create documentation.
 
 
-#include <pax/types/point-stuff/geodesy/lonlat.hpp>
+#include <pax/types/geodesy/lonlat.hpp>
 #include <pax/doctest.hpp>
 
 

@@ -3,7 +3,7 @@
 #pragma once
 
 #include <pax/tables/text-table.hpp>	// Handle a csv file.
-#include <pax/types/point-stuff/circle.hpp>
+#include <pax/types/circle.hpp>
 #include <pax/pdal/metrics-infrastructure/function-filter.hpp>
 
 #include <pdal/Filter.hpp>

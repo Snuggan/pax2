@@ -4,4 +4,4 @@
 
 #pragma once
 
-#include "../types/point-stuff/contiguous.hpp"
+#include "../types/contiguous.hpp"

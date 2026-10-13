@@ -1,6 +1,6 @@
 #include <pax/pdal/modules/pdal_plugin_filter_raster_metrics.hpp>
 #include <pax/pdal/metrics-infrastructure/function-filter.hpp>
-#include <pax/types/point-stuff/box.hpp>
+#include <pax/types/box.hpp>
 #include <pax/pdal/utilities/pdal.hpp>
 #include <pax/std/file.hpp>
 

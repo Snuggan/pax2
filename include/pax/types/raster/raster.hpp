@@ -5,7 +5,7 @@
 #pragma once
 
 #include "raster-meta.hpp"
-#include "../point-stuff/box.hpp"
+#include "../box.hpp"
 #include <pax/tables/table.hpp>
 
 #include <filesystem>
