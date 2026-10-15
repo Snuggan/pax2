@@ -16,29 +16,33 @@ namespace pax {
 	constexpr auto sqr( const auto x_ )	noexcept			{	return x_*x_;				}
 
 	DOCTEST_TEST_CASE( "spheroid functions" ) {
-		const auto a		  = grs1980.a();
-		const auto b		  = grs1980.b();
+		constexpr auto sph	  = wgs1984;
+		const auto a		  = sph.a();
+		const auto b		  = sph.b();
 
-		DOCTEST_CHECK_EQ( grs1980.a(),				6378137.0 );
-		DOCTEST_CHECK_EQ( grs1980.b(),				doctest::Approx( 6356752.3142 ) );
-		DOCTEST_CHECK_EQ( grs1980.f(),				doctest::Approx( 1./298.257222101 ) );
-		DOCTEST_CHECK_EQ( grs1980.f_inv(),			doctest::Approx( 298.257222101 ) );
-		DOCTEST_CHECK_EQ( grs1980.ff(),				doctest::Approx( ( a - b )/( a + b ) ) );
-		DOCTEST_CHECK_EQ( grs1980.e2(),				doctest::Approx( ( a*a - b*b )/( a*a ) ) );
-		DOCTEST_CHECK_EQ( grs1980.e2(),				doctest::Approx( 0.00669437999014 ) );
-		DOCTEST_CHECK_EQ( grs1980.ee2(),			doctest::Approx( ( a*a - b*b )/( b*b ) ) );
-		DOCTEST_CHECK_EQ( grs1980.ee2(),			doctest::Approx( grs1980.e2()/( 1.0 - grs1980.e2() ) ) );
-		DOCTEST_CHECK_EQ( grs1980.ee2(),			doctest::Approx( 0.0067395 ) );
-		DOCTEST_CHECK_EQ( grs1980.radius( 0.0 ),	a );
-		DOCTEST_CHECK_EQ( grs1980.radius( a90 ),	b );
-		DOCTEST_CHECK_EQ( grs1980.K( 0.0 ),			1.0/sqr( b ) );
-		DOCTEST_CHECK_EQ( grs1980.K( a90 ),			sqr( b/sqr( a ) ) );
-		DOCTEST_CHECK_EQ( grs1980.H( 0.0 ),			doctest::Approx( ( a*a + b*b )/( 2*a*b*b ) ) );
-		DOCTEST_CHECK_EQ( grs1980.H( a90 ),			b/( a*a ) );
-		DOCTEST_CHECK_EQ( grs1980.M( 0.0 ),			doctest::Approx( b*b/a ) );
-		DOCTEST_CHECK_EQ( grs1980.M( a90 ),			a*a/b );
-		DOCTEST_CHECK_EQ( grs1980.N( 0.0 ),			a );
-		DOCTEST_CHECK_EQ( grs1980.N( a90 ),			a/std::sqrt( 1.0 - grs1980.e2() ));
+		DOCTEST_CHECK_EQ( sph,					sph );
+		DOCTEST_CHECK_NE( grs1980,				sph );
+
+		DOCTEST_CHECK_EQ( sph.a(),				6378137.0 );
+		DOCTEST_CHECK_EQ( sph.b(),				doctest::Approx( 6356752.314245 ) );
+		DOCTEST_CHECK_EQ( sph.f(),				doctest::Approx( 1./298.257222101 ) );
+		DOCTEST_CHECK_EQ( sph.f_inv(),			doctest::Approx( 298.257222101 ) );
+		DOCTEST_CHECK_EQ( sph.ff(),				doctest::Approx( 0.00167922038638370 ) );
+		DOCTEST_CHECK_EQ( sph.e2(),				doctest::Approx( ( a*a - b*b )/( a*a ) ) );
+		DOCTEST_CHECK_EQ( sph.e2(),				doctest::Approx( 0.00669437999014132  ) );
+		DOCTEST_CHECK_EQ( sph.ee2(),			doctest::Approx( ( a*a - b*b )/( b*b ) ) );
+		DOCTEST_CHECK_EQ( sph.ee2(),			doctest::Approx( sph.e2()/( 1.0 - sph.e2() ) ) );
+		DOCTEST_CHECK_EQ( sph.ee2(),			doctest::Approx( 0.00673949674227643 ) );
+		DOCTEST_CHECK_EQ( sph.radius( 0.0 ),	a );
+		DOCTEST_CHECK_EQ( sph.radius( a90 ),	b );
+		DOCTEST_CHECK_EQ( sph.K( 0.0 ),			doctest::Approx( 1.0/sqr( b ) ) );
+		DOCTEST_CHECK_EQ( sph.K( a90 ),			sqr( b/sqr( a ) ) );
+		DOCTEST_CHECK_EQ( sph.H( 0.0 ),			doctest::Approx( ( a*a + b*b )/( 2*a*b*b ) ) );
+		DOCTEST_CHECK_EQ( sph.H( a90 ),			b/( a*a ) );
+		DOCTEST_CHECK_EQ( sph.M( 0.0 ),			doctest::Approx( b*b/a ) );
+		DOCTEST_CHECK_EQ( sph.M( a90 ),			doctest::Approx( a*a/b ) );
+		DOCTEST_CHECK_EQ( sph.N( 0.0 ),			a );
+		DOCTEST_CHECK_EQ( sph.N( a90 ),			a/std::sqrt( 1.0 - sph.e2() ));
 	}
 	DOCTEST_TEST_CASE( "spheroid instances" ) {
 		static_assert( airy1830				.valid() );

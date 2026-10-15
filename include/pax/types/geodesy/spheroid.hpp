@@ -111,7 +111,7 @@ namespace pax {
 
 		/// Spheroid contents to std::string.
 		explicit constexpr operator std::string() 					const			{
-			return std::format( "{{a: {}, b: {}}}", a(), b() );
+			return std::format( "{{a: {}, f: {}}}", a(), f() );
 		}
 
 		/// Stream a Spheroid's contents.
@@ -120,6 +120,12 @@ namespace pax {
 			Out				  & out_,
 			const Spheroid		c_
 		) {	return out_ << std::string( c_ );										}
+
+		/// Stream a Spheroid's contents.
+		friend bool operator==(
+			const Spheroid		sph0_,
+			const Spheroid		sph1_
+		) {	return ( sph0_.a() == sph1_.a() ) && ( sph0_.f() == sph1_.f() );										}
 	};
 
 	namespace earth {
