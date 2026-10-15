@@ -67,41 +67,36 @@ namespace pax {
 
 	template< typename Algo, Spheroid Sph, floating F, std::size_t N >
 	class Destination_implementation {
-		F						m_alpha{}, m_distance{}, m_beta1{}, m_alpha0{}, m_sigma1{}, 
-								m_omega1{}, m_k2{}, m_epsilon{},m_s1{};
-		Lonlat< Sph, F, N >		m_position1{};
+		F				m_alpha0{}, m_sigma1{}, m_sigma2{}, m_epsilon{};
 		
 		template< std::size_t M >
-		using Poly			  = Polynomial< Algo, F, M >;
+		using Poly	  = Polynomial< Algo, F, M >;
 
-		static constexpr F sqr ( const F x ) 			noexcept	{	return x*x;		}
+		static constexpr F sqr ( const F x ) 			noexcept	{	return x*x;			}
+
+		// Eq.  8 in "Algorithms for geodesics" by Charles F. F. Karney. 
+		constexpr F lambda( 
+			const F omega,
+			const F sigma
+		)	const noexcept	{	return omega - Sph.f()*std::sin( alpha0() )*I3( sigma );	}
 		
 	protected:		// Debugging purposes...
-		constexpr F position1()	const noexcept	{	return m_position1;					}
-		constexpr F alpha()		const noexcept	{	return m_alpha;						}
-		constexpr F distance()	const noexcept	{	return m_distance;					}
-
-		// Eq.  6 in "Algorithms for geodesics" by Charles F. F. Karney. 
-		constexpr F beta1()		const noexcept	{	return m_beta1;						}
 
 		// Eq. 10 in "Algorithms for geodesics" by Charles F. F. Karney. 
-		constexpr F alpha0()	const noexcept	{	return m_alpha0;					}
+		// Cached as it is used in many places.
+		constexpr F alpha0()	const noexcept	{	return m_alpha0;						}
 
 		// Eq. 11 in "Algorithms for geodesics" by Charles F. F. Karney. 
-		constexpr F sigma1()	const noexcept	{	return m_sigma1;					}
+		constexpr F sigma1()	const noexcept	{	return m_sigma1;						}
 
-		// Eq. 12 in "Algorithms for geodesics" by Charles F. F. Karney. 
-		constexpr F omega1()	const noexcept	{	return m_omega1;					}
-
-		// Eq.  9 in "Algorithms for geodesics" by Charles F. F. Karney. 
-		constexpr F k2()		const noexcept	{	return m_k2;						}
+		// Eq. 20 in "Algorithms for geodesics" by Charles F. F. Karney. 
+		constexpr F sigma2()	const noexcept	{	return m_sigma2;						}
 
 		// Eq. 16 in "Algorithms for geodesics" by Charles F. F. Karney. 
-		constexpr F epsilon()	const noexcept	{	return m_epsilon;					}
+		constexpr F epsilon()	const noexcept	{	return m_epsilon;						}
 
 		// Eq. 17 in "Algorithms for geodesics" by Charles F. F. Karney. 
 		constexpr F A1()		const noexcept	{
-			// const F A1  = ( 1 + 1.0/4e^2 + 1.0/64*e^4 + 1.0/256*e^6 )/( 1 - e );
 			static constexpr Poly< 4 >	A1poly({ 1.0, 0.25, 1.0/64, 1.0/256 });
 			const F 					eps_  = epsilon();
 			return A1poly( eps_*eps_ )/( 1 - eps_ );
@@ -147,32 +142,6 @@ namespace pax {
 			return sum*A1();
 		}
 
-		// Eq. 20 in "Algorithms for geodesics" by Charles F. F. Karney. 
-		constexpr F sigma2()	const noexcept	{
-			constexpr Poly< 3 >	C11poly({ 0.5,    - 9.0/32,  205.0/1536 });
-			constexpr Poly< 3 >	C12poly({ 5.0/16, -37.0/96, 1335.0/4096 });
-			const F eps_ = epsilon();
-			const F eps2 = eps_*eps_;
-			const F eps4 = eps2*eps2;
-			const std::array< F, 6 > C({
-				eps_     *C11poly( eps2 ),
-				eps2     *C12poly( eps2 ),
-				eps2*eps_*fma( eps2, -  75.0/ 128,  29.0/  96 ),
-				eps4     *fma( eps2, -2391.0/2560, 539.0/1536 ),
-				eps4*eps_* 3467.0/ 7680, 
-				eps4*eps2*38081.0/61440
-			});
-		
-			// F sum			  = deg2rad( 133.96266050208 );
-			F sum			  = tau_2();
-			F tausum		  = 0.0;
-			const F tau2l	  = 2*sum;
-			for( const F c : C ) 
-				sum			  = fma( c, std::sin( tausum += tau2l ), sum );
-
-			return sum;
-		}
-
 		// Eq. 23 in "Algorithms for geodesics" by Charles F. F. Karney. 
 		constexpr F I3( const F sigma )	const noexcept	{
 			static constexpr F			n = Sph.ff();
@@ -214,55 +183,47 @@ namespace pax {
 			return sum*A3();
 		}
 
-		// Eq.  7 in "Algorithms for geodesics" by Charles F. F. Karney. 
-		constexpr F s_1()		const noexcept	{	return I1( sigma1() )*Sph.b();			}
-		constexpr F s_2()		const noexcept	{	return s_1() + distance();				}
-		constexpr F tau_2()		const noexcept	{	return s_2()/( Sph.b()*A1() );			}
-
-		// Eq. 14 in "Algorithms for geodesics" by Charles F. F. Karney. 
-		constexpr F alpha2()	const noexcept	{
-			const F a0		  = alpha0();
-			return std::atan2(
-				std::sin( a0 ),	
-				std::cos( a0 )*std::cos( sigma2() )
-			);
-		}
-
-		// Eq. 13 in "Algorithms for geodesics" by Charles F. F. Karney. 
-		constexpr F beta2()		const noexcept	{
-			const F a0		  = alpha0();
+		constexpr F lambda2()	const noexcept	{
 			const F s2		  = sigma2();
-			const F cosa0	  = std::cos( a0 );
-			return std::atan2(
-				cosa0*std::sin( s2 ),	
-				std::hypot( cosa0*std::cos( s2 ), std::sin( a0 ) )
-			);
-		}
-
-		// Eq. 12 in "Algorithms for geodesics" by Charles F. F. Karney. 
-		constexpr F omega2()	const noexcept	{
-			const F s2		  = sigma2();
-			return std::atan2(
+			// Eq. 12 in "Algorithms for geodesics" by Charles F. F. Karney. 
+			const F omega2	  = std::atan2(
 				std::sin( alpha0() )*std::sin( s2 ),	
 				std::cos( s2 )
 			);
+			return lambda( omega2, s2 );
 		}
-
-		// Eq.  8 in "Algorithms for geodesics" by Charles F. F. Karney. 
-		constexpr F lambda( 
-			const F omega,
-			const F sigma
-		)	const noexcept	{
-			return omega - Sph.f()*std::sin( alpha0() )*I3( sigma );
-		}
-		constexpr F lambda1()	const noexcept	{	return lambda( omega1(), sigma1() );		}
-		constexpr F lambda2()	const noexcept	{	return lambda( omega2(), sigma2() );		}
-		constexpr F lambda12()	const noexcept	{	return lambda2() - lambda1();				}
 
 		// Eq.  6 in "Algorithms for geodesics" by Charles F. F. Karney. 
 		constexpr F phi2()		const noexcept	{
-			return std::atan2( std::tan( beta2() ), 1 - Sph.f() );
+			const F a0		  = alpha0();
+			const F s2		  = sigma2();
+			const F cosa0	  = std::cos( a0 );
+			// Eq. 13 in "Algorithms for geodesics" by Charles F. F. Karney. 
+			const F beta2	  = std::atan2(
+				cosa0*std::sin( s2 ),	
+				std::hypot( cosa0*std::cos( s2 ), std::sin( a0 ) )
+			);
+			return std::atan2( std::tan( beta2 ), 1 - Sph.f() );
 		}
+
+		// // Eq. 14 in "Algorithms for geodesics" by Charles F. F. Karney.
+		// constexpr F alpha2()	const noexcept	{
+		// 	const F a0		  = alpha0();
+		// 	return std::atan2(
+		// 		std::sin( a0 ),
+		// 		std::cos( a0 )*std::cos( sigma2() )
+		// 	);
+		// }
+
+		// constexpr F lambda12()	const noexcept	{
+		// 	const F sigma1	  = sigma1();
+		// 	// Eq. 12 in "Algorithms for geodesics" by Charles F. F. Karney.
+		// 	const F omega1	  = std::atan2( // Eq 12.
+		// 		std::sin( alpha0() )*std::sin( sigma1 ),
+		// 		std::cos( sigma1 )
+		// 	);
+		// 	return lambda2() - lambda( omega1, sigma1 );
+		// }
 
 	public:
 		constexpr Destination_implementation(
@@ -270,15 +231,13 @@ namespace pax {
 			const F						alpha_radians_,
 			const F						distance_
 		) noexcept {
-			m_position1			  = pos1_;
-			m_alpha				  = alpha_radians_;
-			m_distance			  = distance_;
-			m_beta1				  = Sph.parametric_latitude( deg2rad( lat( pos1_ ) ) );	// Eq 6.
 			{
+				// Calculate alpha0 and sigma1.
+				const F beta1	  = Sph.parametric_latitude( deg2rad( lat( pos1_ ) ) );	// Eq 6.
 				const F sina	  = std::sin( alpha_radians_ );
 				const F cosa	  = std::cos( alpha_radians_ );
-				const F sinb	  = std::sin( m_beta1 );
-				const F cosb	  = std::cos( m_beta1 );
+				const F sinb	  = std::sin( beta1 );
+				const F cosb	  = std::cos( beta1 );
 				m_alpha0		  = std::atan2( // Eq 10.
 					sina*cosb,	
 					std::hypot( cosa, sina*sinb ) 
@@ -287,15 +246,36 @@ namespace pax {
 					sinb,
 					cosa*cosb 
 				);
-			}
-			m_omega1			  = std::atan2( // Eq 12.
-				std::sin( m_alpha0 )*std::sin( m_sigma1 ), 
-				std::cos( m_sigma1 ) 
-			);
-			m_k2				  = Sph.ee2()*sqr( std::cos( alpha0() ) );
-			{
-				const F sqrtk	  = std::sqrt( 1.0 + k2() );
+			} {
+				// Calculate epsilon.
+				// Eq.  9 in "Algorithms for geodesics" by Charles F. F. Karney. 
+				const F k2		  = Sph.ee2()*sqr( std::cos( alpha0() ) );
+				const F sqrtk	  = std::sqrt( 1.0 + k2 );
 				m_epsilon		  = ( sqrtk - 1.0 )/( sqrtk + 1.0 );
+			} {
+				// Calculate sigma2.
+				constexpr Poly< 3 >	C11poly({ 0.5,    - 9.0/32,  205.0/1536 });
+				constexpr Poly< 3 >	C12poly({ 5.0/16, -37.0/96, 1335.0/4096 });
+				const F eps_ = epsilon();
+				const F eps2 = eps_*eps_;
+				const F eps4 = eps2*eps2;
+				const std::array< F, 6 > C({
+					eps_     *C11poly( eps2 ),
+					eps2     *C12poly( eps2 ),
+					eps2*eps_*fma( eps2, -  75.0/ 128,  29.0/  96 ),
+					eps4     *fma( eps2, -2391.0/2560, 539.0/1536 ),
+					eps4*eps_* 3467.0/ 7680, 
+					eps4*eps2*38081.0/61440
+				});
+		
+				// Eq.  7 in "Algorithms for geodesics" by Charles F. F. Karney. 
+				const F s1		  = I1( sigma1() )*Sph.b();
+				m_sigma2		  = ( s1 + distance_ )/( Sph.b()*A1() );
+
+				F tausum		  = 0.0;
+				const F tau2l	  = 2*m_sigma2;
+				for( const F c : C ) 
+					m_sigma2	  = fma( c, std::sin( tausum += tau2l ), m_sigma2 );
 			}
 		}
 
