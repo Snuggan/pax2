@@ -24,7 +24,7 @@ namespace pax {
 		using base = Destination_implementation< horner_fma, earth::wgs1984, double, 2 >;
 		using base::Destination_implementation;
 	public:
-		using base::A1, base::A3, base::alpha0, base::epsilon, base::I1, base::I3, 
+		using base::A1, base::alpha0, base::epsilon, base::I1, base::I3, 
 			  base::lambda2, base::phi2, base::sigma1, base::sigma2;
 	};
 	DOCTEST_TEST_CASE( "lonlat destination" ) {
@@ -40,8 +40,8 @@ namespace pax {
 
 		// DOCTEST_FAST_CHECK_EQ( dest.k2(),					doctest::Approx( 0.00574802962857 ) );
 		DOCTEST_FAST_CHECK_EQ( dest.epsilon(),				doctest::Approx( 0.00143289220416 ) );
-		DOCTEST_FAST_CHECK_EQ( dest.A1(),					doctest::Approx( 1.00143546236207 ) );
-		DOCTEST_FAST_CHECK_EQ( dest.I1( dest.sigma1() ),	doctest::Approx( 0.76831538886412 ) );
+		DOCTEST_FAST_CHECK_EQ( dest.A1( dest.epsilon() ),	doctest::Approx( 1.00143546236207 ) );
+		DOCTEST_FAST_CHECK_EQ( dest.I1( dest.sigma1(), dest.epsilon() ),	doctest::Approx( 0.76831538886412 ) );
 		// DOCTEST_FAST_CHECK_EQ( dest.s_1(),					doctest::Approx(  4883990.626232 ) );
 		// DOCTEST_FAST_CHECK_EQ( dest.s_2(),					doctest::Approx( 14883990.626232 ) );
 		// DOCTEST_FAST_CHECK_EQ( rad2deg( dest.tau_2() ),		doctest::Approx( 133.96266050208 ) );
@@ -51,9 +51,9 @@ namespace pax {
 		// DOCTEST_FAST_CHECK_EQ( rad2deg( dest.beta2() ),		doctest::Approx(  41.69771809250 ) );
 		// DOCTEST_FAST_CHECK_EQ( rad2deg( dest.omega2() ),	doctest::Approx( 158.28412147112 ) );
 
-		DOCTEST_FAST_CHECK_EQ( dest.A3(),					doctest::Approx(   0.99928424306 ) );
-		DOCTEST_FAST_CHECK_EQ( dest.I3( dest.sigma1() ),	doctest::Approx(   0.76773786069 ) );
-		DOCTEST_FAST_CHECK_EQ( dest.I3( dest.sigma2() ),	doctest::Approx(   2.33534322170 ) );
+		// DOCTEST_FAST_CHECK_EQ( dest.A3(),					doctest::Approx(   0.99928424306 ) );
+		DOCTEST_FAST_CHECK_EQ( dest.I3( dest.sigma1(), dest.epsilon() ),	doctest::Approx( 0.76773786069 ) );
+		DOCTEST_FAST_CHECK_EQ( dest.I3( dest.sigma2(), dest.epsilon() ),	doctest::Approx( 2.33534322170 ) );
 		// DOCTEST_FAST_CHECK_EQ( rad2deg( dest.lambda1() ),	doctest::Approx(  20.26715038016 ) );
 		DOCTEST_FAST_CHECK_EQ( rad2deg( dest.lambda2() ),	doctest::Approx( 158.11205042393 ) );
 
