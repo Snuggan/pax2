@@ -69,9 +69,6 @@ namespace pax {
 	class Destination_implementation {
 		F				m_alpha0{}, m_sigma1{}, m_sigma2{}, m_epsilon{};
 		
-		template< std::size_t M >
-		using Poly	  = Polynomial< Algo, F, M >;
-
 		static constexpr F sqr ( const F x ) 			noexcept	{	return x*x;			}
 
 		// Eq.  8 in "Algorithms for geodesics" by Charles F. F. Karney. 
@@ -97,7 +94,7 @@ namespace pax {
 
 		// Eq. 17 in "Algorithms for geodesics" by Charles F. F. Karney. 
 		static constexpr F A1( const F epsilon_ )	noexcept	{
-			static constexpr Poly< 4 >	A1poly({ 1.0, 0.25, 1.0/64, 1.0/256 });
+			static constexpr auto A1poly = polynomial( 1.0, 0.25, 1.0/64, 1.0/256 );
 			return A1poly( epsilon_*epsilon_ )/( 1 - epsilon_ );
 		}
 
@@ -107,17 +104,22 @@ namespace pax {
 			const F eps_	// epsilon
 		) noexcept {
 			// return 0.76831538886412;
-			constexpr Poly< 3 >	C11poly({ -0.5,    3.0/16, -1.0/32 });
-			constexpr Poly< 3 >	C12poly({ -1.0/16, 1.0/32, -9.0/2048 });
+			constexpr auto	C11poly = polynomial( -0.5,      3.0/16, -1.0/32 	);
+			constexpr auto	C12poly = polynomial( -1.0/  16, 1.0/32, -9.0/2048	);
+			constexpr auto	C13poly = polynomial( -1.0/  48, 3.0/256			);
+			constexpr auto	C14poly = polynomial( -5.0/ 512, 3.0/512			);
+			constexpr auto	C15poly = polynomial( -7.0/1280						);
+			constexpr auto	C16poly = polynomial( -7.0/2048						);
+
 			const F eps2 = eps_*eps_;
 			const F eps4 = eps2*eps2;
 			const std::array< F, 6 > C({
-				 eps_     *C11poly( eps2 ),
-				 eps2     *C12poly( eps2 ),
-				 eps2*eps_*fma( eps2, 3.0/256, -1.0/ 48 ),
-				 eps4     *fma( eps2, 3.0/512, -5.0/512 ),
-				-eps4*eps_*7.0/1280,
-				-eps4*eps2*7.0/2048
+				eps_      * C11poly( eps2 ),
+				eps2      * C12poly( eps2 ),
+				eps2*eps_ * C13poly( eps2 ),
+				eps4      * C14poly( eps2 ),
+				eps4*eps_ * C15poly( eps2 ),
+				eps4*eps2 * C16poly( eps2 )
 			});
 		
 			F sum			  = sigma_;
@@ -135,41 +137,48 @@ namespace pax {
 			const F eps_	// epsilon
 		) noexcept {
 			static constexpr F			n = Sph.ff();
-			static constexpr Poly< 6 >	A3poly({
-				1.0,
-				fma( n, 0.5, -0.5 ),
-				Poly< 3 >({ -0.25,   -0.125,   3.0/ 8 })( n ),
-				Poly< 3 >({ -1.0/16, -3.0/16, -1.0/16 })( n ),
-				fma( n, -1.0/32, -3.0/64 ),
-				-3.0/128
-			});
-			static constexpr Poly< 5 >	C31poly({
-				fma( n, -0.25, 0.25 ),
-				Poly< 3 >({ 0.125,  0.0,    -0.125  })( n ),
-				Poly< 3 >({ 3.0/64, 3.0/64, -1.0/64 })( n ),
-				fma( n, 1.0/64, 5.0/128 ),
-				3.0/128
-			});
-			static constexpr Poly< 4 >	C32poly({
-				Poly< 3 >({ 1.0/16, -3.0/32,  1.0/32 })( n ),
-				Poly< 3 >({ 3.0/64, -1.0/32, -3.0/64 })( n ),
-				fma( n, 1.0/128, 3.0/128 ),
-				5.0/256
-			});
-			static constexpr Poly< 3 >	C33poly({
-				Poly< 3 >({ 5.0/192, -3.0/64, 5.0/192 })( n ),
-				fma( n, -5.0/192, 3.0/128 ),
-				7.0/512
-			});
+			static constexpr auto A3poly = polynomial(
+				polynomial(  1.0 						)	( n ),
+				polynomial( -0.5,      0.5 				)	( n ),
+				polynomial( -0.25,    -0.125,    3.0/ 8 )	( n ),
+				polynomial( -1.0/ 16, -3.0/ 16, -1.0/16 )	( n ),
+				polynomial( -3.0/ 64, -1.0/ 32 			)	( n ),
+				polynomial( -3.0/128 					)	( n )
+			);
+			static constexpr auto C31poly = polynomial(
+				polynomial(  0.25,    -0.25				)	( n ),
+				polynomial(  0.125,    0.0,     -0.125	)	( n ),
+				polynomial(  3.0/ 64,  3.0/ 64, -1.0/64	)	( n ),
+				polynomial(  5.0/128,  1.0/ 64			)	( n ),
+				polynomial(  3.0/128					)	( n )
+			);
+			static constexpr auto C32poly = polynomial(
+				polynomial(  1.0/ 16, -3.0/ 32,  1.0/32 )	( n ),
+				polynomial(  3.0/ 64, -1.0/ 32, -3.0/64 )	( n ),
+				polynomial(  3.0/128,  1.0/128 			)	( n ),
+				polynomial(  5.0/256 					)	( n )
+			);
+			static constexpr auto C33poly = polynomial(
+				polynomial(  5.0/192, -3.0/ 64,  5.0/192 )	( n ),
+				polynomial(  3.0/128, -5.0/192 			)	( n ),
+				polynomial(  7.0/512 					)	( n )
+			);
+			static constexpr auto C34poly = polynomial(
+				polynomial(  7.0/512, -7.0/256 			)	( n ),
+				polynomial(  7.0/512 					)	( n )
+			);
+			static constexpr auto C35poly = polynomial(
+				polynomial( 21.0/2560 					)	( n )
+			);
 
 			const 		F eps2 = eps_*eps_;
 			const 		F eps4 = eps2*eps2;
 			const std::array< F, 5 > C({
-				eps_     *C31poly( eps2 ),
-				eps2     *C32poly( eps2 ),
-				eps2*eps_*C33poly( eps2 ),
-				eps4     *fma( eps2, 7.0/512, fma( n, -7.0/256, 7.0/512 ) ),
-				eps4*eps_*21.0/2560
+				eps_      * C31poly( eps2 ),
+				eps2      * C32poly( eps2 ),
+				eps2*eps_ * C33poly( eps2 ),
+				eps4      * C34poly( eps2 ),
+				eps4*eps_ * C35poly( eps2 )
 			});
 
 			F sum			  = sigma_;
@@ -247,18 +256,23 @@ namespace pax {
 				m_epsilon		  = ( sqrtk - 1.0 )/( sqrtk + 1.0 );
 			} {
 				// Calculate sigma2.
-				constexpr Poly< 3 >	C11poly({ 0.5,    - 9.0/32,  205.0/1536 });
-				constexpr Poly< 3 >	C12poly({ 5.0/16, -37.0/96, 1335.0/4096 });
+				constexpr auto	C11poly = polynomial(     0.5,      -   9.0/32,  205.0/1536	);
+				constexpr auto	C12poly = polynomial(     5.0/  16, -  37.0/96, 1335.0/4096	);
+				constexpr auto	C13poly = polynomial(    29.0/  96, -  75.0/ 128 			);
+				constexpr auto	C14poly = polynomial(   539.0/1536, -2391.0/2560 			);
+				constexpr auto	C15poly = polynomial(  3467.0/ 7680 						);
+				constexpr auto	C16poly = polynomial( 38081.0/61440 						);
+
 				const F eps_	  = epsilon();
 				const F eps2	  = eps_*eps_;
 				const F eps4	  = eps2*eps2;
 				const std::array< F, 6 > C({
-					eps_     *C11poly( eps2 ),
-					eps2     *C12poly( eps2 ),
-					eps2*eps_*fma( eps2, -  75.0/ 128,  29.0/  96 ),
-					eps4     *fma( eps2, -2391.0/2560, 539.0/1536 ),
-					eps4*eps_* 3467.0/ 7680, 
-					eps4*eps2*38081.0/61440
+					eps_      * C11poly( eps2 ),
+					eps2      * C12poly( eps2 ),
+					eps2*eps_ * C13poly( eps2 ),
+					eps4      * C14poly( eps2 ),
+					eps4*eps_ * C15poly( eps2 ),
+					eps4*eps2 * C16poly( eps2 )
 				});
 		
 				// Eq.  7 in "Algorithms for geodesics" by Charles F. F. Karney. 
