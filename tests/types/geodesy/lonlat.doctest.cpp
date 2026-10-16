@@ -11,7 +11,7 @@ namespace pax {
 
 	constexpr Spheroid 			sph{	earth::wgs1984	};
 	constexpr auto	origin	  = lonlat< sph >( 0.0, 40.0 );
-
+	
 	DOCTEST_TEST_CASE( "lonlat" ) {
 		DOCTEST_FAST_CHECK_EQ( lon( origin ),					0.0 );
 		DOCTEST_FAST_CHECK_EQ( lat( origin ),					40.0 );
