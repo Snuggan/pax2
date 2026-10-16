@@ -25,6 +25,7 @@ set( CMAKE_CXX_EXTENSIONS 				OFF )
 list( APPEND PAX_FLAGS
 #	-v									# Verbose.
 	-O3									# Turn on all sorts of optimizations.
+	-Wno-error=cpp
 	-Wpedantic -Wall -Wextra -Werror	# Maximum number of checks.
 	-Wno-unused-function				# What is unused in one target might be used in another...
 	-Wuninitialized						# Warns about uninitialized variables.
