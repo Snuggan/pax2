@@ -90,6 +90,7 @@ This file contains plot-related data such as coordinates, radius, field measurem
 - `east` is the eastern coordinate in the geographical reference system used in rasters and point cloud files.
 - `north` is the northern coordinate in the geographical reference system used in rasters and point cloud files.
 - `radius` in the unit used by geographical reference system used in rasters and point cloud files. Most probably meters. 
+- `id` is a unique _plot_ identifier.
 
 Then there are a number of required columns for the estimation we employ for Sweden:
 
