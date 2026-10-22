@@ -92,6 +92,32 @@ namespace pax {
 		[[nodiscard]] constexpr F operator()( const F x_ )							const noexcept	{
 			return Algo::operator()( std::span( *this ), x_ );
 		}
+		
+		/// Compare two polynomials for equality.
+		template< typename Algo1, floating F1, std::size_t N1 >
+		[[nodiscard]] constexpr bool operator==( const Polynomial< Algo1, F1, N1 > & o_ ) const noexcept	{
+			const auto	itr0 =    highest();
+			const auto	itr1 = o_.highest();
+			return ( this->crend() - itr0 == o_.crend() - itr1 )
+				? std::ranges::equal( itr0, this->crend(), itr1, o_.crend() )
+				: false;
+		}
+		
+		/// Lexicographically compare two polynomials. The comparison starts with the highest degree items. 
+		template< typename Algo1, floating F1, std::size_t N1 >
+		[[nodiscard]] constexpr auto operator<=>( const Polynomial< Algo1, F1, N1 > & o_ ) const noexcept	{
+			const auto	itr0 =    highest();
+			const auto	itr1 = o_.highest();
+			return ( this->crend() - itr0 == o_.crend() - itr1 )
+				? std::lexicographical_compare_three_way( itr0, this->crend(), itr1, o_.crend() )
+				: ( this->crend() - itr0 <=> o_.crend() - itr1 );
+		}
+		
+		[[nodiscard]] constexpr auto highest()										const noexcept	{
+			auto	itr = this->crbegin();
+			while( ( itr != this->crend() ) && !*itr )	++itr;
+			return itr;
+		}
 	};	
 	
 
@@ -172,6 +198,12 @@ namespace pax {
 	namespace {
 		template< std::size_t N = std::dynamic_extent > using Sp = std::span< const double, N >;
 		constexpr std::array< double, 4 > test{{ 1.0, 2.0, 3.0, 4.0 }};
+
+		static_assert( polynomial( 2, 1, 0, 0 ) 	== polynomial( 2.0, 1.0 ) );
+		static_assert( polynomial() 				== polynomial() );
+		static_assert( polynomial()				 	== polynomial( 0.0, 0.0, 0.0 ) );
+		static_assert( polynomial( 3, 2, 0, 0 ) 	<  polynomial( 2.0, 3.0 ) );
+		static_assert( polynomial( 3, 2, 0, 0 ) 	<  polynomial( 1.0, 2.0, 1.0 ) );
 
 		static_assert( polynomial( 2, 1 )( 3.0 )	== 5.0 );
 		static_assert( polynomial()( 5 )			== 0 );
