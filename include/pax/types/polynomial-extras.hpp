@@ -10,7 +10,7 @@
 namespace pax {
 	
 	template< typename Algo, typename X, std::size_t N0, std::size_t N >
-	using Poly = Polynomial< Algo, std::remove_cv_t< X >, ( N0 == std::dynamic_extent ) ? std::dynamic_extent : N >;
+	using Poly = Polynomial< Algo, std::decay_t< X >, ( N0 == std::dynamic_extent ) ? std::dynamic_extent : N >;
 
 
 	template< typename type0, typename type1 >
@@ -20,7 +20,7 @@ namespace pax {
 			  typename Algo1, typename X1, std::size_t N1 >
 	struct polymerge< Polynomial< Algo0, X0, N0 >, Polynomial< Algo1, X1, N1 > > {
 		using							Algo  = Algo0;
-		using							X	  = std::remove_cv_t< std::common_type_t< X0, X1 > >;
+		using							X	  = std::decay_t< std::common_type_t< X0, X1 > >;
 		static constexpr std::size_t 	N	  = std::max( N0, N1 );
 		using 							type  = Polynomial< Algo, X, N >;
 	};
@@ -57,7 +57,7 @@ namespace pax {
 		const Polynomial< Algo, X0, N0 >	  & p0_,
 		const std::type_identity_t< X0 >		x0_
 	) noexcept {
-		Polynomial< Algo, std::remove_cv_t< X0 >, N0 >	res( p0_.data(), p0_.size() );
+		Polynomial< Algo, std::decay_t< X0 >, N0 >	res( p0_.data(), p0_.size() );
 		for( auto & x : res )				x += x0_;
 		return res;
 	}
@@ -86,7 +86,7 @@ namespace pax {
 		const std::type_identity_t< X0 >		x0_,
 		const Polynomial< Algo, X0, N0 >	  & p0_
 	) noexcept {
-		Polynomial< Algo, std::remove_cv_t< X0 >, N0 >	res( p0_.data(), p0_.size() );
+		Polynomial< Algo, std::decay_t< X0 >, N0 >	res( p0_.data(), p0_.size() );
 		for( auto & x : res )				x = x0_ - x;
 		return res;
 	}
@@ -98,7 +98,7 @@ namespace pax {
 		const Polynomial< Algo, X0, N0 >	  & p0_,
 		const Polynomial< Algo, X1, N1 >	  & p1_
 	) noexcept {
-		using									X	= std::remove_cv_t< std::common_type_t< X0, X1 > >;
+		using									X	= std::decay_t< std::common_type_t< X0, X1 > >;
 		static constexpr std::size_t 			N	= traits::newN< N0 + !N0 + N1 + !N1 - 1, N0, N1 >;
 		Polynomial< Algo, X, N >				p{};
 		if constexpr( N == std::dynamic_extent ) p.resize( p0_.size() + p1_.size() - 1 );
@@ -119,7 +119,7 @@ namespace pax {
 		const Polynomial< Algo, X0, N0 >	  & p0_,
 		const std::type_identity_t< X0 >		x0_
 	) noexcept {
-		Polynomial< Algo, std::remove_cv_t< X0 >, N0 >	res = polynomial< Algo >( std::span< const X0, N0 >( p0_.data(), p0_.size() ) );
+		auto									res = polynomial< Algo, N0 >( p0_.data(), p0_.size() );
 		for( auto & x : res )					x *= x0_;
 		return res;
 	}
@@ -139,7 +139,7 @@ namespace pax {
 		const Polynomial< Algo, X0, N0 >  & p0_,
 		const Polynomial< Algo, X1, N1 >  & p1_
 	) noexcept {
-		using								X	  = std::remove_cv_t< std::common_type_t< X0, X1 > >;
+		using								X	  = std::decay_t< std::common_type_t< X0, X1 > >;
 		constexpr std::size_t 				N	  = traits::newN< N0 - N1 + 1, N0, N1 >;
 		const std::size_t					sz0	  = degree( p0_ );
 		const std::size_t					sz1	  = degree( p1_ );
@@ -164,7 +164,7 @@ namespace pax {
 		const Polynomial< Algo, X0, N0 >	  & p0_,
 		const std::type_identity_t< X0 >		x0_
 	) noexcept {
-		Polynomial< Algo, std::decay_t< X0 >, N0 >	res = polynomial< Algo >( std::span< const X0, N0 >( p0_.data(), p0_.size() ) );
+		auto									res = polynomial< Algo, N0 >( p0_.data(), p0_.size() );
 		for( auto & x : res )					x /= x0_;
 		return res;
 	}
@@ -174,7 +174,7 @@ namespace pax {
 	template< typename Algo, typename X, std::size_t N0 >
 	[[nodiscard]] constexpr auto derivate( const Polynomial< Algo, X, N0 > & p0_ ) noexcept {
 		static constexpr std::size_t 			N = ( N0 == std::dynamic_extent ) ? std::dynamic_extent : N0 ? N0 - 1 : 0;
-		auto									res = Polynomial< Algo, std::decay_t< X >, N >{};
+		auto									res = Polynomial< Algo, X, N >{};
 		if constexpr( N == std::dynamic_extent )
 			if( p0_.size() )					res.resize( p0_.size() - 1 );
 
@@ -191,7 +191,7 @@ namespace pax {
 		const std::type_identity_t< X >			x0_	  = 0
 	) noexcept {
 		static constexpr std::size_t 			N	  = ( N0 == std::dynamic_extent ) ? std::dynamic_extent : N0+1;
-		auto									res	  = Polynomial< Algo, std::decay_t< X >, N >{};
+		auto									res	  = Polynomial< Algo, X, N >{};
 		if constexpr( N == std::dynamic_extent )res.resize( p0_.size() + 1 );
 
 		res.front()									  = x0_;

@@ -23,7 +23,6 @@ namespace pax {
 #		else
 			// Can't use std::fma at compile time.
 #			warning( "std::fma is not constexpr in the std library used." )
-
 			// Use std::fma during run-time and the naive implementation otherwise.
 			if consteval	{	return m0_*m1_ + a_;				}
 			else			{	return std::fma( m0_, m1_, a_ );	}
@@ -64,7 +63,7 @@ namespace pax {
 			else if constexpr( N == 1u ) 	return p_[ 0 ];
 			else if constexpr( N == 2u ) 	return fma( x_, p_[ 1 ], p_[ 0 ] );
 			else {
-				using 		V     = std::remove_cv_t< F >;
+				using 		V     = std::decay_t< F >;
 				auto		itr   = p_.end();
 				auto		res	  = p_.empty() ? 0 : *( --itr );
 				V			cmp{};			// Compensation for rounding errors.
@@ -79,37 +78,21 @@ namespace pax {
 	};
 	
 	
-	template< floating F, std::size_t N >
-	using polynomial_base_t = std::conditional_t< N == std::dynamic_extent,
-		std::vector< std::remove_cv_t< F > >, std::array< std::remove_cv_t< F >, N > >;
-
 	/// Implements a polynomial that uses Algo to calculate the polynomial for a given x.
 	/// Available algorithms for Algo are horner_fma and comp_horner_fma, above.
 	template< typename Algo = horner_fma, floating F = double, std::size_t N = std::dynamic_extent >
-	struct Polynomial : public polynomial_base_t< F , N > {
+	struct Polynomial : public std::conditional_t< N == std::dynamic_extent,
+		std::vector< std::decay_t< F > >, std::array< std::decay_t< F >, N > >
+	{
 		using algorithm						  = Algo;
 		static constexpr std::size_t extent	  = N;
 		static constexpr bool is_static		  = N != std::dynamic_extent;
-		using base							  = polynomial_base_t< F , N >;
 		
 		/// Evaluate the polynomial at x_.
-		[[nodiscard]] constexpr F operator()( const std::type_identity_t< F > x_ )	const noexcept	{
-			return Algo::operator()( std::span( *this ), F( x_ ) );
+		[[nodiscard]] constexpr F operator()( const F x_ )							const noexcept	{
+			return Algo::operator()( std::span( *this ), x_ );
 		}
-	};
-
-	template< floating F, std::size_t N >
-	Polynomial( F( & )[ N ] )				-> Polynomial< horner_fma, F, N >;
-	
-	template< floating F >
-	Polynomial( F *, F * )					-> Polynomial< horner_fma, F, std::dynamic_extent >;
-	
-	template< floating F >
-	Polynomial( const F *, std::size_t )	-> Polynomial< horner_fma, F, std::dynamic_extent >;
-
-	template< floating F, std::size_t N >
-	Polynomial( std::span< F, N > )			-> Polynomial< horner_fma, F, std::dynamic_extent >;
-	
+	};	
 	
 
 	/// A polynomial's degree. Polynomials with fewer items than two have degrre 0, etc. 
@@ -119,51 +102,42 @@ namespace pax {
 	}
 
 
-	/// Returns a Polynomial< horner_fma, ... > of size sizeof...( Args ).
-	template< arithmetic... Args >
+	/// Returns a Polynomial< Algo, ... > of size sizeof...( Args ).
+	template< typename Algo = horner_fma, arithmetic... Args >
 	[[nodiscard]] constexpr auto polynomial( Args && ...args_ ) 					noexcept		{
 		constexpr std::size_t N = sizeof...( Args );
-		using F = std::remove_cv_t< std::common_type_t< float, Args... > >;
-		using P = Polynomial< horner_fma, F, N ? N : std::dynamic_extent >;
+		using F = std::decay_t< std::common_type_t< float, Args... > >;
+		using P = Polynomial< Algo, F, N ? N : std::dynamic_extent >;
 		return P{{ static_cast< F >( std::forward< Args >( args_ ) )... }};
 	}
 
 	/// Returns a Polynomial< Algo, ... > of size sp_.size() with the contents of sp_.
 	template< typename Algo = horner_fma, floating F, std::size_t N >
 	[[nodiscard]] constexpr auto polynomial( const std::span< F, N > sp_ ) 			noexcept		{
-		auto res = Polynomial< Algo, std::remove_cv_t< F >, N >{};
+		auto res = Polynomial< Algo, std::decay_t< F >, N >{};
 		if constexpr( N == std::dynamic_extent )		res.resize( sp_.size() );
 		std::ranges::copy_n( sp_.data(), sp_.size(), res.data() );
 		return res;
 	}
 
 	/// Returns a Polynomial< Algo, ... > of statical size N with the contents of arr_.
-	template< typename Algo = horner_fma, floating F, std::size_t N >
+	template< typename Algo = horner_fma, std::size_t N, floating F >
 	[[nodiscard]] constexpr auto polynomial( F( & arr_ )[ N ] ) 					noexcept		{
-		auto res = Polynomial< Algo, std::remove_cv_t< F >, N >{};
+		auto res = Polynomial< Algo, std::decay_t< F >, N >{};
 		std::ranges::copy_n( arr_, N, res.data() );
 		return res;
 	}
 
 	/// Returns a Polynomial< Algo, ... > of dynamic size with the contents at ptr_.
-	template< typename Algo = horner_fma, floating F >
+	template< typename Algo = horner_fma, std::size_t N = std::dynamic_extent, floating F >
 	[[nodiscard]] constexpr auto polynomial( const F * ptr_, const std::size_t sz_ ) noexcept		{
-		return polynomial< Algo >( std::span{ ptr_, sz_ } );
+		return polynomial< Algo >( std::span< const F, N >{ ptr_, sz_ } );
 	}
 
 	/// Returns a Polynomial< horner_fma, ... > of dynamic size with the contents at [begin_, end_[.
-	template< typename Algo = horner_fma, floating F >
+	template< typename Algo = horner_fma, std::size_t N = std::dynamic_extent, floating F >
 	[[nodiscard]] constexpr auto polynomial( const F * begin_, const F * end_ ) 	noexcept		{
-		return polynomial< Algo >( std::span{ begin_, end_ } );
-	}
-
-	/// Returns a Polynomial< comp_horner_fma, ... >.
-	template< typename... Args >
-	[[nodiscard]] constexpr auto polynomial_comp( Args && ...args_ )				noexcept		{
-		constexpr std::size_t N = sizeof...( Args );
-		using F = std::remove_cv_t< std::common_type_t< float, Args... > >;
-		using P = Polynomial< comp_horner_fma, F, N ? N : std::dynamic_extent >;
-		return P({ static_cast< F >( std::forward< Args >( args_ ) )... });
+		return polynomial< Algo >( std::span< const F, N >{ begin_, end_ } );
 	}
 
 
@@ -203,10 +177,10 @@ namespace pax {
 		static_assert( polynomial()( 5 )			== 0 );
 		static_assert( polynomial().extent			== std::dynamic_extent );
 		static_assert( polynomial( 2 ).extent		== 1u );
-		static_assert( polynomial_comp( 2, 1 )[ 0 ] == 2.0 );
-		static_assert( polynomial_comp()( 5 )		== 0 );
-		static_assert( polynomial_comp().extent		== std::dynamic_extent );
-		static_assert( polynomial_comp( 2 ).extent	== 1u );
+		static_assert( polynomial< comp_horner_fma >( 2, 1 )[ 0 ] 	== 2.0 );
+		static_assert( polynomial< comp_horner_fma >()( 5 )			== 0 );
+		static_assert( polynomial< comp_horner_fma >().extent		== std::dynamic_extent );
+		static_assert( polynomial< comp_horner_fma >( 2 ).extent	== 1u );
 
 		static_assert( horner_fma()     ( Sp< 0 >{}, 				 2 ) ==  0 );
 		static_assert( horner_fma()     ( Sp< 1 >{ test.data(), 1 }, 2 ) ==  1 );
