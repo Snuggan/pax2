@@ -8,6 +8,7 @@
 #include <span>
 #include <array>
 #include <vector>
+#include <algorithm>	// std::ranges::equal, std::lexicographical_compare_three_way, etc.
 #include <cmath>		// std::fma
 #include <utility>		// std::forward
 
@@ -76,20 +77,40 @@ namespace pax {
 			}
 		}
 	};
-
+	
+	
+	template< floating F, std::size_t N >
+	using polynomial_base_t = std::conditional_t< N == std::dynamic_extent,
+		std::vector< std::remove_cv_t< F > >, std::array< std::remove_cv_t< F >, N > >;
 
 	/// Implements a polynomial that uses Algo to calculate the polynomial for a given x.
 	/// Available algorithms for Algo are horner_fma and comp_horner_fma, above.
-	template< typename Algo, floating F = double, std::size_t N = std::dynamic_extent >
-	struct Polynomial : public std::conditional_t< N == std::dynamic_extent, std::vector< F >, std::array< F, N > > {
+	template< typename Algo = horner_fma, floating F = double, std::size_t N = std::dynamic_extent >
+	struct Polynomial : public polynomial_base_t< F , N > {
 		using algorithm						  = Algo;
 		static constexpr std::size_t extent	  = N;
-
+		static constexpr bool is_static		  = N != std::dynamic_extent;
+		using base							  = polynomial_base_t< F , N >;
+		
 		/// Evaluate the polynomial at x_.
 		[[nodiscard]] constexpr F operator()( const std::type_identity_t< F > x_ )	const noexcept	{
 			return Algo::operator()( std::span( *this ), F( x_ ) );
 		}
 	};
+
+	template< floating F, std::size_t N >
+	Polynomial( F( & )[ N ] )				-> Polynomial< horner_fma, F, N >;
+	
+	template< floating F >
+	Polynomial( F *, F * )					-> Polynomial< horner_fma, F, std::dynamic_extent >;
+	
+	template< floating F >
+	Polynomial( const F *, std::size_t )	-> Polynomial< horner_fma, F, std::dynamic_extent >;
+
+	template< floating F, std::size_t N >
+	Polynomial( std::span< F, N > )			-> Polynomial< horner_fma, F, std::dynamic_extent >;
+	
+	
 
 	/// A polynomial's degree. Polynomials with fewer items than two have degrre 0, etc. 
 	template< typename Algo, floating F, std::size_t N >
@@ -98,23 +119,52 @@ namespace pax {
 	}
 
 
-	/// Returns a Polynomial< horner_fma, ... > of size N.
-	template< typename... Args >
+	/// Returns a Polynomial< horner_fma, ... > of size sizeof...( Args ).
+	template< arithmetic... Args >
 	[[nodiscard]] constexpr auto polynomial( Args && ...args_ ) 					noexcept		{
 		constexpr std::size_t N = sizeof...( Args );
-		using F = std::remove_cv_t< std::common_type_t< double, Args... > >;
+		using F = std::remove_cv_t< std::common_type_t< float, Args... > >;
 		using P = Polynomial< horner_fma, F, N ? N : std::dynamic_extent >;
-		return P({ static_cast< F >( std::forward< Args >( args_ ) )... });
-	};
+		return P{{ static_cast< F >( std::forward< Args >( args_ ) )... }};
+	}
+
+	/// Returns a Polynomial< Algo, ... > of size sp_.size() with the contents of sp_.
+	template< typename Algo = horner_fma, floating F, std::size_t N >
+	[[nodiscard]] constexpr auto polynomial( const std::span< F, N > sp_ ) 			noexcept		{
+		auto res = Polynomial< Algo, std::remove_cv_t< F >, N >{};
+		if constexpr( N == std::dynamic_extent )		res.resize( sp_.size() );
+		std::ranges::copy_n( sp_.data(), sp_.size(), res.data() );
+		return res;
+	}
+
+	/// Returns a Polynomial< Algo, ... > of statical size N with the contents of arr_.
+	template< typename Algo = horner_fma, floating F, std::size_t N >
+	[[nodiscard]] constexpr auto polynomial( F( & arr_ )[ N ] ) 					noexcept		{
+		auto res = Polynomial< Algo, std::remove_cv_t< F >, N >{};
+		std::ranges::copy_n( arr_, N, res.data() );
+		return res;
+	}
+
+	/// Returns a Polynomial< Algo, ... > of dynamic size with the contents at ptr_.
+	template< typename Algo = horner_fma, floating F >
+	[[nodiscard]] constexpr auto polynomial( const F * ptr_, const std::size_t sz_ ) noexcept		{
+		return polynomial< Algo >( std::span{ ptr_, sz_ } );
+	}
+
+	/// Returns a Polynomial< horner_fma, ... > of dynamic size with the contents at [begin_, end_[.
+	template< typename Algo = horner_fma, floating F >
+	[[nodiscard]] constexpr auto polynomial( const F * begin_, const F * end_ ) 	noexcept		{
+		return polynomial< Algo >( std::span{ begin_, end_ } );
+	}
 
 	/// Returns a Polynomial< comp_horner_fma, ... >.
 	template< typename... Args >
 	[[nodiscard]] constexpr auto polynomial_comp( Args && ...args_ )				noexcept		{
 		constexpr std::size_t N = sizeof...( Args );
-		using F = std::remove_cv_t< std::common_type_t< double, Args... > >;
+		using F = std::remove_cv_t< std::common_type_t< float, Args... > >;
 		using P = Polynomial< comp_horner_fma, F, N ? N : std::dynamic_extent >;
 		return P({ static_cast< F >( std::forward< Args >( args_ ) )... });
-	};
+	}
 
 
 	/// Stream the elements to out_.
@@ -146,6 +196,9 @@ namespace pax {
 
 
 	namespace {
+		template< std::size_t N = std::dynamic_extent > using Sp = std::span< const double, N >;
+		constexpr std::array< double, 4 > test{{ 1.0, 2.0, 3.0, 4.0 }};
+
 		static_assert( polynomial( 2, 1 )( 3.0 )	== 5.0 );
 		static_assert( polynomial()( 5 )			== 0 );
 		static_assert( polynomial().extent			== std::dynamic_extent );
@@ -155,18 +208,18 @@ namespace pax {
 		static_assert( polynomial_comp().extent		== std::dynamic_extent );
 		static_assert( polynomial_comp( 2 ).extent	== 1u );
 
-		template< unsigned N > using Sp = std::span< const double, N >;
-		constexpr std::array< double, 4 > test{{ 1.0, 2.0, 3.0, 4.0 }};
 		static_assert( horner_fma()     ( Sp< 0 >{}, 				 2 ) ==  0 );
 		static_assert( horner_fma()     ( Sp< 1 >{ test.data(), 1 }, 2 ) ==  1 );
 		static_assert( horner_fma()     ( Sp< 2 >{ test.data(), 2 }, 2 ) ==  5 );
 		static_assert( horner_fma()     ( Sp< 3 >{ test.data(), 3 }, 2 ) == 17 );
 		static_assert( horner_fma()     ( Sp< 4 >{ test.data(), 4 }, 2 ) == 49 );
+		static_assert( horner_fma()     ( Sp     { test.data(), 4 }, 2 ) == 49 );
 		static_assert( comp_horner_fma()( Sp< 0 >{}, 				 2 ) ==  0 );
 		static_assert( comp_horner_fma()( Sp< 1 >{ test.data(), 1 }, 2 ) ==  1 );
 		static_assert( comp_horner_fma()( Sp< 2 >{ test.data(), 2 }, 2 ) ==  5 );
 		static_assert( comp_horner_fma()( Sp< 3 >{ test.data(), 3 }, 2 ) == 17 );
 		static_assert( comp_horner_fma()( Sp< 4 >{ test.data(), 4 }, 2 ) == 49 );
+		static_assert( comp_horner_fma()( Sp     { test.data(), 4 }, 2 ) == 49 );
 	}
 
 }	// namespace pax
