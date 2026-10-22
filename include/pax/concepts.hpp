@@ -125,6 +125,16 @@ namespace pax::traits {
 	concept string							= contiguous< T > && character< value_type_t< T > >;
 }	// namespace pax::traits
 
+namespace pax {
+	template< typename ... I >	concept integer		= ( std::integral< std::remove_cvref_t< I > > && ... );
+	template< typename ... U >	concept uinteger	= ( std::unsigned_integral< std::remove_cvref_t< U > > && ... );
+	template< typename ... F >	concept floating	= ( std::floating_point< F > && ... );
+	template< typename ... A >	concept arithmetic	= ( ( floating< A > || integer< A > ) && ... );
+
+	template< std::size_t N >
+	constexpr bool is_static		= ( N != traits::dynamic_extent );
+}	// namespace pax
+
 namespace std {
 	template< typename T >
 	[[nodiscard]] constexpr T * begin( T * const & ptr_ )		noexcept	{	return ptr_;							}

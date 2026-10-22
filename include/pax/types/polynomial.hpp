@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "base.hpp"
+#include <pax/concepts.hpp>
 #include <span>
 #include <array>
 #include <vector>

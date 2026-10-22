@@ -16,13 +16,11 @@ namespace pax {
 	template< typename type0, typename type1 >
 	struct polymerge;
 
-	template< typename Algo0, typename X0, std::size_t N0, 
-			  typename Algo1, typename X1, std::size_t N1 >
-	struct polymerge< Polynomial< Algo0, X0, N0 >, Polynomial< Algo1, X1, N1 > > {
-		using							Algo  = Algo0;
-		using							X	  = std::decay_t< std::common_type_t< X0, X1 > >;
-		static constexpr std::size_t 	N	  = std::max( N0, N1 );
-		using 							type  = Polynomial< Algo, X, N >;
+	template< typename Algo, arithmetic X0, std::size_t N0, 
+			  				 arithmetic X1, std::size_t N1 >
+	struct polymerge< Polynomial< Algo, X0, N0 >, Polynomial< Algo, X1, N1 > > {
+		using				X	  = std::decay_t< std::common_type_t< X0, X1 > >;
+		using 				type  = Polynomial< Algo, X, std::max( N0, N1 ) >;
 	};
 
 	template< typename type0, typename type1 >
@@ -30,10 +28,10 @@ namespace pax {
 
 
 
-	template< bool Addition, typename Algo0, typename X0, std::size_t N0, typename Algo1, typename X1, std::size_t N1 >
+	template< bool Addition, typename Algo, arithmetic X0, std::size_t N0, arithmetic X1, std::size_t N1 >
 	[[nodiscard]] constexpr auto addsub(
-		const Polynomial< Algo0, X0, N0 > & p0_,
-		const Polynomial< Algo1, X1, N1 > & p1_
+		const Polynomial< Algo, X0, N0 > & p0_,
+		const Polynomial< Algo, X1, N1 > & p1_
 	) noexcept {
 		polymerge_t< std::decay_t< decltype( p0_ ) >, std::decay_t< decltype( p1_ ) > >	p{};
 		if constexpr( p.extent == std::dynamic_extent )	p.resize( std::max( p0_.size(), p1_.size() ) );
@@ -45,7 +43,7 @@ namespace pax {
 		return p;
 	}
 
-	/// Add two Polynomials.
+	/// Addition.
 	template< typename Algo, typename X0, std::size_t N0, typename X1, std::size_t N1 >
 	[[nodiscard]] constexpr auto operator+(
 		const Polynomial< Algo, X0, N0 >	  & p0_,
@@ -68,7 +66,7 @@ namespace pax {
 		const Polynomial< Algo, X0, N0 >	  & p0_
 	) noexcept {	return p0_ + x0_;							}
 
-	/// Subtract two Polynomials.
+	/// Subtraction.
 	template< typename Algo, typename X0, std::size_t N0, typename X1, std::size_t N1 >
 	[[nodiscard]] constexpr auto operator-(
 		const Polynomial< Algo, X0, N0 >	  & p0_,
@@ -92,7 +90,7 @@ namespace pax {
 	}
 
 
-	/// Multiply two Polynomials.
+	/// Multiplication.
 	template< typename Algo, typename X0, std::size_t N0, typename X1, std::size_t N1 >
 	[[nodiscard]] constexpr auto operator*(
 		const Polynomial< Algo, X0, N0 >	  & p0_,
@@ -130,10 +128,8 @@ namespace pax {
 		const Polynomial< Algo, X0, N0 >	  & p0_
 	) noexcept {	return p0_ * x0_;							}
 
-	/// Divide two Polynomials.
-	/** - If you want the remainder, use p1_%p2_. If you want both efficiently, use \ref remainder( *this, p_ ).
-		- Algorithm from "A Generalization of Synthetic Division and A General Theorem of Division of Polynomials", by Lianghuo Fan.
-	**/
+	/// Division.
+	/// "A Generalization of Synthetic Division and A General Theorem of Division of Polynomials", by Lianghuo Fan.
 	template< typename Algo, typename X0, std::size_t N0, typename X1, std::size_t N1 >
 	[[nodiscard]] constexpr auto operator/(
 		const Polynomial< Algo, X0, N0 >  & p0_,
@@ -170,7 +166,7 @@ namespace pax {
 	}
 
 
-	/// Derivate a Polynomial.
+	/// Derivate a polynomial.
 	template< typename Algo, typename X, std::size_t N0 >
 	[[nodiscard]] constexpr auto derivate( const Polynomial< Algo, X, N0 > & p0_ ) noexcept {
 		static constexpr std::size_t 			N = ( N0 == std::dynamic_extent ) ? std::dynamic_extent : N0 ? N0 - 1 : 0;
@@ -184,7 +180,7 @@ namespace pax {
 		return res;
 	}
 
-	/// Integrate a Polynomial.
+	/// Integrate a polynomial.
 	template< typename Algo, typename X, std::size_t N0 >
 	[[nodiscard]] constexpr auto integrate(
 		const Polynomial< Algo, X, N0 >		  & p0_, 

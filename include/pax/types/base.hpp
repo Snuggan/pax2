@@ -24,14 +24,6 @@
 namespace pax {
 	using traits::contiguous, traits::value_type_t, traits::extent_v, traits::character;
 
-	template< typename ... I >	concept integer		= ( std::integral< std::remove_cvref_t< I > > && ... );
-	template< typename ... U >	concept uinteger	= ( std::unsigned_integral< std::remove_cvref_t< U > > && ... );
-	template< typename ... F >	concept floating	= ( std::floating_point< F > && ... );
-	template< typename ... A >	concept arithmetic	= ( ( floating< A > || integer< A > ) && ... );
-
-	template< std::size_t N >
-	constexpr bool is_static		= ( N != traits::dynamic_extent );
-
 	template< typename ... V >
 	concept all_arithmetic			= contiguous< V ... > && arithmetic< value_type_t< V > ... >;
 	
