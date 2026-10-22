@@ -16,8 +16,8 @@ namespace pax {
 	template< typename type0, typename type1 >
 	struct polymerge;
 
-	template< typename Algo, arithmetic X0, std::size_t N0, 
-			  				 arithmetic X1, std::size_t N1 >
+	template< typename Algo, is::floating X0, std::size_t N0, 
+			  				 is::floating X1, std::size_t N1 >
 	struct polymerge< Polynomial< Algo, X0, N0 >, Polynomial< Algo, X1, N1 > > {
 		using				X	  = std::decay_t< std::common_type_t< X0, X1 > >;
 		using 				type  = Polynomial< Algo, X, std::max( N0, N1 ) >;
@@ -28,7 +28,7 @@ namespace pax {
 
 
 
-	template< bool Addition, typename Algo, arithmetic X0, std::size_t N0, arithmetic X1, std::size_t N1 >
+	template< bool Addition, typename Algo, is::floating X0, std::size_t N0, is::floating X1, std::size_t N1 >
 	[[nodiscard]] constexpr auto addsub(
 		const Polynomial< Algo, X0, N0 > & p0_,
 		const Polynomial< Algo, X1, N1 > & p1_
@@ -97,7 +97,7 @@ namespace pax {
 		const Polynomial< Algo, X1, N1 >	  & p1_
 	) noexcept {
 		using									X	= std::decay_t< std::common_type_t< X0, X1 > >;
-		static constexpr std::size_t 			N	= traits::newN< N0 + !N0 + N1 + !N1 - 1, N0, N1 >;
+		static constexpr std::size_t 			N	= is::newN< N0 + !N0 + N1 + !N1 - 1, N0, N1 >;
 		Polynomial< Algo, X, N >				p{};
 		if constexpr( N == std::dynamic_extent ) p.resize( p0_.size() + p1_.size() - 1 );
 
@@ -136,7 +136,7 @@ namespace pax {
 		const Polynomial< Algo, X1, N1 >  & p1_
 	) noexcept {
 		using								X	  = std::decay_t< std::common_type_t< X0, X1 > >;
-		constexpr std::size_t 				N	  = traits::newN< N0 - N1 + 1, N0, N1 >;
+		constexpr std::size_t 				N	  = is::newN< N0 - N1 + 1, N0, N1 >;
 		const std::size_t					sz0	  = degree( p0_ );
 		const std::size_t					sz1	  = degree( p1_ );
 		const std::size_t					sz    = sz0 - sz1;
