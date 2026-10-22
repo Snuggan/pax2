@@ -126,9 +126,9 @@ namespace pax::traits {
 }	// namespace pax::traits
 
 namespace pax {
-	template< typename ... I >	concept integer		= ( std::integral< std::remove_cvref_t< I > > && ... );
-	template< typename ... U >	concept uinteger	= ( std::unsigned_integral< std::remove_cvref_t< U > > && ... );
-	template< typename ... F >	concept floating	= ( std::floating_point< F > && ... );
+	template< typename ... I >	concept integer		= ( std::integral         < std::decay_t< I > > && ... );
+	template< typename ... U >	concept uinteger	= ( std::unsigned_integral< std::decay_t< U > > && ... );
+	template< typename ... F >	concept floating	= ( std::floating_point   < std::decay_t< F > > && ... );
 	template< typename ... A >	concept arithmetic	= ( ( floating< A > || integer< A > ) && ... );
 
 	template< std::size_t N >
