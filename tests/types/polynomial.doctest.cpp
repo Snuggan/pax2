@@ -23,7 +23,45 @@ namespace pax {
 	template< double a, unsigned N >
 	constexpr double mula< a, N, N > = a + N;
 	
-	static_assert( polynomial( 14, 4, 8 ).extent == 3 );
+
+
+	namespace {
+		template< std::size_t N = std::dynamic_extent > using Sp = std::span< const double, N >;
+		constexpr std::array< double, 4 > test{{ 1.0, 2.0, 3.0, 4.0 }};
+
+		static_assert( degree( polynomial() ) == 0 );
+		static_assert( degree( polynomial( 14, 0 ) ) == 0 );
+		static_assert( degree( polynomial( 14, 4, 0 ) ) == 1 );
+		static_assert( polynomial( 14, 4, 8 ).extent == 3 );
+
+		static_assert( polynomial( 2, 1, 0, 0 ) 	== polynomial( 2.0, 1.0 ) );
+		static_assert( polynomial() 				== polynomial() );
+		static_assert( polynomial()				 	== polynomial( 0.0, 0.0, 0.0 ) );
+		static_assert( polynomial( 3, 2, 0, 0 ) 	<  polynomial( 2.0, 3.0 ) );
+		static_assert( polynomial( 3, 2, 0, 0 ) 	<  polynomial( 1.0, 2.0, 1.0 ) );
+
+		static_assert( polynomial( 2, 1 )( 3.0 )	== 5.0 );
+		static_assert( polynomial()( 5 )			== 0 );
+		static_assert( polynomial().extent			== std::dynamic_extent );
+		static_assert( polynomial( 2 ).extent		== 1u );
+		static_assert( polynomial< comp_horner_fma >( 2, 1 )[ 0 ] 	== 2.0 );
+		static_assert( polynomial< comp_horner_fma >()( 5 )			== 0 );
+		static_assert( polynomial< comp_horner_fma >().extent		== std::dynamic_extent );
+		static_assert( polynomial< comp_horner_fma >( 2 ).extent	== 1u );
+
+		static_assert( horner_fma()     ( Sp< 0 >{}, 				 2 ) ==  0 );
+		static_assert( horner_fma()     ( Sp< 1 >{ test.data(), 1 }, 2 ) ==  1 );
+		static_assert( horner_fma()     ( Sp< 2 >{ test.data(), 2 }, 2 ) ==  5 );
+		static_assert( horner_fma()     ( Sp< 3 >{ test.data(), 3 }, 2 ) == 17 );
+		static_assert( horner_fma()     ( Sp< 4 >{ test.data(), 4 }, 2 ) == 49 );
+		static_assert( horner_fma()     ( Sp     { test.data(), 4 }, 2 ) == 49 );
+		static_assert( comp_horner_fma()( Sp< 0 >{}, 				 2 ) ==  0 );
+		static_assert( comp_horner_fma()( Sp< 1 >{ test.data(), 1 }, 2 ) ==  1 );
+		static_assert( comp_horner_fma()( Sp< 2 >{ test.data(), 2 }, 2 ) ==  5 );
+		static_assert( comp_horner_fma()( Sp< 3 >{ test.data(), 3 }, 2 ) == 17 );
+		static_assert( comp_horner_fma()( Sp< 4 >{ test.data(), 4 }, 2 ) == 49 );
+		static_assert( comp_horner_fma()( Sp     { test.data(), 4 }, 2 ) == 49 );
+	}
 
 	DOCTEST_TEST_CASE( "polynomial output" ) {
 		// std::cout << polynomial(-1., 2, 3, -4, 5, 1, -1 ) << '\n';

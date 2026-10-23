@@ -8,6 +8,10 @@
 
 
 namespace pax {
+	namespace is {
+		template< std::size_t N, std::size_t ...NN >
+		constexpr std::size_t newN = ( true && ... && ( NN != std::dynamic_extent ) ) ? N : std::dynamic_extent;
+	}
 	
 	template< typename Algo, typename X, std::size_t N0, std::size_t N >
 	using Poly = Polynomial< Algo, std::decay_t< X >, ( N0 == std::dynamic_extent ) ? std::dynamic_extent : N >;

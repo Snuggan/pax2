@@ -129,7 +129,7 @@ namespace pax {
 	template< typename ... I >	concept integer		= ( std::integral         < std::decay_t< I > > && ... );
 	template< typename ... U >	concept uinteger	= ( std::unsigned_integral< std::decay_t< U > > && ... );
 	template< typename ... F >	concept floating	= ( std::floating_point   < std::decay_t< F > > && ... );
-	template< typename ... A >	concept arithmetic	= ( ( floating< A > || integer< A > ) && ... );
+	template< typename ... A >	concept arithmetic	= ( std::is_arithmetic_v  < std::decay_t< A > > && ... );
 
 	template< std::size_t N >
 	constexpr bool is_static		= ( N != traits::dynamic_extent );
