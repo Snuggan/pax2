@@ -263,7 +263,7 @@ namespace pax {
 				m_sigma2			  = ( s1 + distance_ )/( Sph.b()*A1( eps_ ) );
 				const F cos_sigma2	  = std::cos( m_sigma2 );
 
-			// sin(nx) = chebyshev2< n-1 >( cos(x) )*sin(x): https://en.wikipedia.org/wiki/Chebyshev_polynomials
+				// sin(nx) = chebyshev2< n-1 >( cos(x) )*sin(x): https://en.wikipedia.org/wiki/Chebyshev_polynomials
 				m_sigma2			  = fma( std::sin( m_sigma2 ),
 												eps_ * fma( C11( eps2 ), cheby2<  1 >( cos_sigma2 ),
 												eps_ * fma( C12( eps2 ), cheby2<  3 >( cos_sigma2 ),
@@ -278,26 +278,7 @@ namespace pax {
 
 		constexpr Lonlat< Sph, F, N > destination() const noexcept {
 			return { rad2deg( lambda2() ), rad2deg( phi2() ) };
-		}
-		
-		
-		template< std::size_t I, std::size_t ...Is, typename ...Poly >
-		static constexpr double chained_fma(
-			const double eps_,
-			const double eps2_, 
-			const std::tuple< Poly... > polys_,
-			const double x_
-		) {
-			if constexpr( sizeof...( Is ) )	
-				return eps_ * fma( 
-					polys_[ I ]( eps2_ ), 
-					cheby2< I >( x_ ), 
-					chained_fma< Is... >( eps_, eps2_, polys_, x_ )
-				);
-			else
-				return eps_ * polys_[ I ]( eps2_ ) * cheby2< I >( x_ );
-		}
-		
+		}		
 	};
 
 
