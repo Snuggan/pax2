@@ -135,37 +135,37 @@ namespace pax {
 		) noexcept {
 			static constexpr F n	 = Sph.ff();
 			static constexpr auto A3 = polynomial< Algo >(
-				  polynomial< Algo >(  1.0 			   )		( n ),
-				( polynomial< Algo >( -1.0,  1.0 	   )/  2 )	( n ),
-				( polynomial< Algo >( -2.0, -1.0,  3.0 )/  8 )	( n ),
-				( polynomial< Algo >( -1.0, -3.0, -1.0 )/ 16 )	( n ),
-				( polynomial< Algo >( -3.0, -2.0 	   )/ 64 )	( n ),
-				( polynomial< Algo >( -3.0 			   )/128 )	( n )
+				( polynomial< Algo >( 128.0 			 )/128 ) ( n ),
+				( polynomial< Algo >( -64.0,  64.0		 )/128 ) ( n ),
+				( polynomial< Algo >( -32.0, -16.0, 48.0 )/128 ) ( n ),
+				( polynomial< Algo >(  -8.0, -24.0, -8.0 )/128 ) ( n ),
+				( polynomial< Algo >(  -6.0,  -4.0 		 )/128 ) ( n ),
+				( polynomial< Algo >(  -3.0 			 )/128 ) ( n )
 			);
 			static constexpr auto C31 = polynomial< Algo >(
-				( polynomial< Algo >(  1.0, -1.0	   )/  4 )	( n ),
-				( polynomial< Algo >(  1.0,  0.0, -1.0 )/  8 )	( n ),
-				( polynomial< Algo >(  3.0,  3.0, -1.0 )/ 64 )	( n ),
-				( polynomial< Algo >(  5.0,  2.0	   )/128 )	( n ),
-				( polynomial< Algo >(  3.0			   )/128 )	( n )
+				( polynomial< Algo >( 32.0, -32.0	  	 )/128 ) ( n ),
+				( polynomial< Algo >( 16.0,   0.0, -16.0 )/128 ) ( n ),
+				( polynomial< Algo >(  6.0,   6.0,  -2.0 )/128 ) ( n ),
+				( polynomial< Algo >(  5.0,   2.0		 )/128 ) ( n ),
+				( polynomial< Algo >(  3.0			 	 )/128 ) ( n )
 			);
 			static constexpr auto C32 = polynomial< Algo >(
-				( polynomial< Algo >( 2.0,  -3.0,  1.0 )/ 32 )	( n ),
-				( polynomial< Algo >( 3.0,  -2.0, -3.0 )/ 64 )	( n ),
-				( polynomial< Algo >( 3.0,   1.0 	   )/128 )	( n ),
-				( polynomial< Algo >( 5.0 			   )/256 )	( n )
+				( polynomial< Algo >( 16.0, -24.0,   8.0 )/256 ) ( n ),
+				( polynomial< Algo >( 12.0,  -8.0, -12.0 )/256 ) ( n ),
+				( polynomial< Algo >(  6.0,   2.0 		 )/256 ) ( n ),
+				( polynomial< Algo >(  5.0 				 )/256 ) ( n )
 			);
 			static constexpr auto C33 = polynomial< Algo >(
-				( polynomial< Algo >( 5.0,  -9.0,  5.0 )/192 )	( n ),
-				( polynomial< Algo >( 9.0, -10.0 	   )/384 )	( n ),
-				( polynomial< Algo >( 7.0 			   )/512 )	( n )
+				( polynomial< Algo >(  5.0,  -9.0,   5.0 )/192 ) ( n ),
+				( polynomial< Algo >(  9.0, -10.0 		 )/384 ) ( n ),
+				( polynomial< Algo >(  7.0 				 )/512 ) ( n )
 			);
 			static constexpr auto C34 = polynomial< Algo >(
-				( polynomial< Algo >( 7.0, -14.0 	   )/512 )	( n ),
-				( polynomial< Algo >( 7.0 			   )/512 )	( n )
+				( polynomial< Algo >(  7.0, -14.0 		 )/512 ) ( n ),
+				( polynomial< Algo >(  7.0 				 )/512 ) ( n )
 			);
 			static constexpr auto C35 = polynomial< Algo >(
-				polynomial< Algo >( 21.0/2560 				 )	( n )
+				( polynomial< Algo >( 21.0/2560 		 )	   ) ( n )
 			);
 
 			const F eps2			  = eps_*eps_;
@@ -248,12 +248,12 @@ namespace pax {
 			} {
 				// Calculate sigma2.
 				// Eq. 21 in "Algorithms for geodesics" by Charles F. F. Karney. 
-				static constexpr auto C11 = ( polynomial< Algo >(   768.0,  -432.0,  205.0 )/ 1536 );
-				static constexpr auto C12 = ( polynomial< Algo >(  3840.0, -4736.0, 4005.0 )/12288 );
-				static constexpr auto C13 = ( polynomial< Algo >(   116.0,  -225.0		   )/  384 );
-				static constexpr auto C14 = ( polynomial< Algo >(  2695.0, -7173.0		   )/ 7680 );
-				static constexpr auto C15 = ( polynomial< Algo >(  3467.0				   )/ 7680 );
-				static constexpr auto C16 = ( polynomial< Algo >( 38081.0				   )/61440 );
+				static constexpr auto C11 = ( polynomial< Algo >( 30720.0, -17280.0,  8200.0 )/61440 );
+				static constexpr auto C12 = ( polynomial< Algo >( 19200.0, -23680.0, 20025.0 )/61440 );
+				static constexpr auto C13 = ( polynomial< Algo >( 18560.0, -36000.0			 )/61440 );
+				static constexpr auto C14 = ( polynomial< Algo >( 21560.0, -57384.0			 )/61440 );
+				static constexpr auto C15 = ( polynomial< Algo >( 27736.0					 )/61440 );
+				static constexpr auto C16 = ( polynomial< Algo >( 38081.0					 )/61440 );
 
 				const F eps_		  = epsilon();
 				const F eps2		  = eps_*eps_;
