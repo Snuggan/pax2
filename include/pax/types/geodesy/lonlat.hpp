@@ -280,6 +280,24 @@ namespace pax {
 			return { rad2deg( lambda2() ), rad2deg( phi2() ) };
 		}
 		
+		
+		template< std::size_t I, std::size_t ...Is, typename ...Poly >
+		static constexpr double chained_fma(
+			const double eps_,
+			const double eps2_, 
+			const std::tuple< Poly... > polys_,
+			const double x_
+		) {
+			if constexpr( sizeof...( Is ) )	
+				return eps_ * fma( 
+					polys_[ I ]( eps2_ ), 
+					cheby2< I >( x_ ), 
+					chained_fma< Is... >( eps_, eps2_, polys_, x_ )
+				);
+			else
+				return eps_ * polys_[ I ]( eps2_ ) * cheby2< I >( x_ );
+		}
+		
 	};
 
 
