@@ -134,10 +134,10 @@ namespace pax {
 	
 
 	/// Returns a Polynomial< Algo, ... > of size sizeof...( Args ).
-	template< typename Algo = horner_fma, is::arithmetic... Args >
+	template< typename Algo = horner_fma, is::floating min_type = float, is::arithmetic... Args >
 	[[nodiscard]] constexpr auto polynomial( Args && ...args_ ) 							noexcept		{
 		constexpr std::size_t N = sizeof...( Args );
-		using F = std::decay_t< std::common_type_t< float, Args... > >;
+		using F = std::decay_t< std::common_type_t< min_type, Args... > >;
 		using P = Polynomial< Algo, F, N ? N : std::dynamic_extent >;
 		return P{{ static_cast< F >( std::forward< Args >( args_ ) )... }};
 	}
