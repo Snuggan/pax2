@@ -5,7 +5,7 @@
 #pragma once
 
 #include "../base.hpp"
-#include "../polynomial.hpp"
+#include "../polynomial-extras.hpp"
 #include "spheroid.hpp"
 #include <array>
 #include <utility>		// std::forward
@@ -69,6 +69,9 @@ namespace pax {
 	class Destination_implementation {
 		F				m_alpha0{}, m_sigma1{}, m_sigma2{}, m_epsilon{};
 		
+		template< std::size_t M >
+		static constexpr auto cheby2 = chebyshev2< M, F, Algo >;
+
 		static constexpr F sqr ( const F x ) 			noexcept	{	return x*x;			}
 
 		// Eq.  8 in "Algorithms for geodesics" by Charles F. F. Karney. 
@@ -94,7 +97,7 @@ namespace pax {
 
 		// Eq. 17 in "Algorithms for geodesics" by Charles F. F. Karney. 
 		static constexpr F A1( const F epsilon_ )	noexcept	{
-			static constexpr auto A1poly = polynomial( 1.0, 0.25, 1.0/64, 1.0/256 );
+			static constexpr auto A1poly = polynomial< Algo >( 1.0, 0.25, 1.0/64, 1.0/256 );
 			return A1poly( epsilon_*epsilon_ )/( 1 - epsilon_ );
 		}
 
@@ -104,31 +107,26 @@ namespace pax {
 			const F eps_	// epsilon
 		) noexcept {
 			// return 0.76831538886412;
-			constexpr auto	C11poly = polynomial( -0.5,      3.0/16, -1.0/32 	);
-			constexpr auto	C12poly = polynomial( -1.0/  16, 1.0/32, -9.0/2048	);
-			constexpr auto	C13poly = polynomial( -1.0/  48, 3.0/256			);
-			constexpr auto	C14poly = polynomial( -5.0/ 512, 3.0/512			);
-			constexpr auto	C15poly = polynomial( -7.0/1280						);
-			constexpr auto	C16poly = polynomial( -7.0/2048						);
+			constexpr auto C11		  = polynomial< Algo >( -0.5,      3.0/ 16, -1.0/32 	);
+			constexpr auto C12		  = polynomial< Algo >( -1.0/  16, 1.0/ 32, -9.0/2048	);
+			constexpr auto C13		  = polynomial< Algo >( -1.0/  48, 3.0/256				);
+			constexpr auto C14		  = polynomial< Algo >( -5.0/ 512, 3.0/512				);
+			constexpr auto C15		  = polynomial< Algo >( -7.0/1280						);
+			constexpr auto C16		  = polynomial< Algo >( -7.0/2048						);
 
-			const F eps2 = eps_*eps_;
-			const F eps4 = eps2*eps2;
-			const std::array< F, 6 > C({
-				eps_      * C11poly( eps2 ),
-				eps2      * C12poly( eps2 ),
-				eps2*eps_ * C13poly( eps2 ),
-				eps4      * C14poly( eps2 ),
-				eps4*eps_ * C15poly( eps2 ),
-				eps4*eps2 * C16poly( eps2 )
-			});
-		
-			F sum			  = sigma_;
-			F sigmasum		  = 0.0;
-			const F sigma2l	  = 2*sigma_;
-			for( const F c : C ) 
-				sum			  = fma( c, std::sin( sigmasum += sigma2l ), sum );
+			const F eps2			  = eps_*eps_;
+			const F eps4			  = eps2*eps2;
+			const F cos_sig			  = std::cos( sigma_ );
 
-			return sum*A1( eps_ );
+			// sin(nx) = chebyshev2< n-1 >( cos(x) )*sin(x): https://en.wikipedia.org/wiki/Chebyshev_polynomials
+			return	fma( std::sin( sigma_ ),
+						fma( eps_      * C11( eps2 ), cheby2<  1 >( cos_sig ),
+						fma( eps2      * C12( eps2 ), cheby2<  3 >( cos_sig ),
+						fma( eps2*eps_ * C13( eps2 ), cheby2<  5 >( cos_sig ),
+						fma( eps4      * C14( eps2 ), cheby2<  7 >( cos_sig ),
+						fma( eps4*eps_ * C15( eps2 ), cheby2<  9 >( cos_sig ),
+							 eps4*eps2 * C16( eps2 )* cheby2< 11 >( cos_sig ) ) ) ) ) ),
+						sigma_ ) * A1( eps_ );
 		}
 
 		// Eq. 23 in "Algorithms for geodesics" by Charles F. F. Karney. 
@@ -136,65 +134,60 @@ namespace pax {
 			const F sigma_,
 			const F eps_	// epsilon
 		) noexcept {
-			static constexpr F			n = Sph.ff();
-			static constexpr auto A3poly = polynomial(
-				polynomial(  1.0 						)	( n ),
-				polynomial( -0.5,      0.5 				)	( n ),
-				polynomial( -0.25,    -0.125,    3.0/ 8 )	( n ),
-				polynomial( -1.0/ 16, -3.0/ 16, -1.0/16 )	( n ),
-				polynomial( -3.0/ 64, -1.0/ 32 			)	( n ),
-				polynomial( -3.0/128 					)	( n )
+			static constexpr F n	 = Sph.ff();
+			static constexpr auto A3 = polynomial< Algo >(
+				polynomial< Algo >(  1.0 						)	( n ),
+				polynomial< Algo >( -0.5,      0.5 				)	( n ),
+				polynomial< Algo >( -0.25,    -0.125,    3.0/ 8 )	( n ),
+				polynomial< Algo >( -1.0/ 16, -3.0/ 16, -1.0/16 )	( n ),
+				polynomial< Algo >( -3.0/ 64, -1.0/ 32 			)	( n ),
+				polynomial< Algo >( -3.0/128 					)	( n )
 			);
-			static constexpr auto C31poly = polynomial(
-				polynomial(  0.25,    -0.25				)	( n ),
-				polynomial(  0.125,    0.0,     -0.125	)	( n ),
-				polynomial(  3.0/ 64,  3.0/ 64, -1.0/64	)	( n ),
-				polynomial(  5.0/128,  1.0/ 64			)	( n ),
-				polynomial(  3.0/128					)	( n )
+			static constexpr auto C31 = polynomial< Algo >(
+				polynomial< Algo >(  0.25,    -0.25				)	( n ),
+				polynomial< Algo >(  0.125,    0.0,     -0.125	)	( n ),
+				polynomial< Algo >(  3.0/ 64,  3.0/ 64, -1.0/64	)	( n ),
+				polynomial< Algo >(  5.0/128,  1.0/ 64			)	( n ),
+				polynomial< Algo >(  3.0/128					)	( n )
 			);
-			static constexpr auto C32poly = polynomial(
-				polynomial(  1.0/ 16, -3.0/ 32,  1.0/32 )	( n ),
-				polynomial(  3.0/ 64, -1.0/ 32, -3.0/64 )	( n ),
-				polynomial(  3.0/128,  1.0/128 			)	( n ),
-				polynomial(  5.0/256 					)	( n )
+			static constexpr auto C32 = polynomial< Algo >(
+				polynomial< Algo >(  1.0/ 16, -3.0/ 32,  1.0/32 )	( n ),
+				polynomial< Algo >(  3.0/ 64, -1.0/ 32, -3.0/64 )	( n ),
+				polynomial< Algo >(  3.0/128,  1.0/128 			)	( n ),
+				polynomial< Algo >(  5.0/256 					)	( n )
 			);
-			static constexpr auto C33poly = polynomial(
-				polynomial(  5.0/192, -3.0/ 64,  5.0/192 )	( n ),
-				polynomial(  3.0/128, -5.0/192 			)	( n ),
-				polynomial(  7.0/512 					)	( n )
+			static constexpr auto C33 = polynomial< Algo >(
+				polynomial< Algo >(  5.0/192, -3.0/ 64,  5.0/192 )	( n ),
+				polynomial< Algo >(  3.0/128, -5.0/192 			)	( n ),
+				polynomial< Algo >(  7.0/512 					)	( n )
 			);
-			static constexpr auto C34poly = polynomial(
-				polynomial(  7.0/512, -7.0/256 			)	( n ),
-				polynomial(  7.0/512 					)	( n )
+			static constexpr auto C34 = polynomial< Algo >(
+				polynomial< Algo >(  7.0/512, -7.0/256 			)	( n ),
+				polynomial< Algo >(  7.0/512 					)	( n )
 			);
-			static constexpr auto C35poly = polynomial(
-				polynomial( 21.0/2560 					)	( n )
+			static constexpr auto C35 = polynomial< Algo >(
+				polynomial< Algo >( 21.0/2560 					)	( n )
 			);
 
-			const 		F eps2 = eps_*eps_;
-			const 		F eps4 = eps2*eps2;
-			const std::array< F, 5 > C({
-				eps_      * C31poly( eps2 ),
-				eps2      * C32poly( eps2 ),
-				eps2*eps_ * C33poly( eps2 ),
-				eps4      * C34poly( eps2 ),
-				eps4*eps_ * C35poly( eps2 )
-			});
+			const F eps2			  = eps_*eps_;
+			const F eps4			  = eps2*eps2;
+			const F cos_sig 		  = std::cos( sigma_ );
 
-			F sum			  = sigma_;
-			F sigmasum		  = 0.0;
-			const F sigma2l	  = 2*sigma_;
-			for( const F c : C )
-				sum			  = fma( c, std::sin( sigmasum += sigma2l ), sum );
-
-			// Eq. 24 in "Algorithms for geodesics" by Charles F. F. Karney. 
-			return sum*A3poly( eps_ );
+			// sin(nx) = chebyshev2< n-1 >( cos(x) )*sin(x): https://en.wikipedia.org/wiki/Chebyshev_polynomials
+			return	fma( std::sin( sigma_ ), 
+						fma( eps_      * C31( eps2 ), cheby2< 1 >( cos_sig ),
+						fma( eps2      * C32( eps2 ), cheby2< 3 >( cos_sig ),
+						fma( eps2*eps_ * C33( eps2 ), cheby2< 5 >( cos_sig ),
+						fma( eps4      * C34( eps2 ), cheby2< 7 >( cos_sig ),
+							 eps4*eps_ * C35( eps2 )* cheby2< 9 >( cos_sig ) ) ) ) ),
+						sigma_
+					) * A3( eps_ );	// Eq. 24 in "Algorithms for geodesics" by Charles F. F. Karney. 
 		}
 
 		constexpr F lambda2()	const noexcept	{
-			const F s2		  = sigma2();
+			const F s2				  = sigma2();
 			// Eq. 12 in "Algorithms for geodesics" by Charles F. F. Karney. 
-			const F omega2	  = std::atan2(
+			const F omega2			  = std::atan2(
 				std::sin( alpha0() )*std::sin( s2 ),	
 				std::cos( s2 )
 			);
@@ -203,11 +196,11 @@ namespace pax {
 
 		// Eq.  6 in "Algorithms for geodesics" by Charles F. F. Karney. 
 		constexpr F phi2()		const noexcept	{
-			const F a0		  = alpha0();
-			const F s2		  = sigma2();
-			const F cosa0	  = std::cos( a0 );
+			const F a0				  = alpha0();
+			const F s2				  = sigma2();
+			const F cosa0			  = std::cos( a0 );
 			// Eq. 13 in "Algorithms for geodesics" by Charles F. F. Karney. 
-			const F beta2	  = std::atan2(
+			const F beta2			  = std::atan2(
 				cosa0*std::sin( s2 ),	
 				std::hypot( cosa0*std::cos( s2 ), std::sin( a0 ) )
 			);
@@ -241,48 +234,47 @@ namespace pax {
 		) noexcept {
 			{
 				// Calculate alpha0 and sigma1.
-				const F beta1	  = Sph.parametric_latitude( deg2rad( lat( pos1_ ) ) );		// Eq 6.
-				const F sina	  = std::sin( alpha_radians_ );
-				const F cosa	  = std::cos( alpha_radians_ );
-				const F sinb	  = std::sin( beta1 );
-				const F cosb	  = std::cos( beta1 );
-				m_alpha0		  = std::atan2( sina*cosb, std::hypot( cosa, sina*sinb ) ); // Eq 10.
-				m_sigma1		  = std::atan2( sinb, cosa*cosb );							// Eq 11.
+				const F beta1		  = Sph.parametric_latitude( deg2rad( lat( pos1_ ) ) );		// Eq 6.
+				const F sina		  = std::sin( alpha_radians_ );
+				const F cosa		  = std::cos( alpha_radians_ );
+				const F sinb		  = std::sin( beta1 );
+				const F cosb		  = std::cos( beta1 );
+				m_alpha0			  = std::atan2( sina*cosb, std::hypot( cosa, sina*sinb ) ); // Eq 10.
+				m_sigma1			  = std::atan2( sinb, cosa*cosb );							// Eq 11.
 			} {
 				// Calculate epsilon.
 				// Eq.  9 in "Algorithms for geodesics" by Charles F. F. Karney. 
-				const F k2		  = Sph.ee2()*sqr( std::cos( alpha0() ) );
-				const F sqrtk	  = std::sqrt( 1.0 + k2 );
-				m_epsilon		  = ( sqrtk - 1.0 )/( sqrtk + 1.0 );
+				const F k2			  = Sph.ee2()*sqr( std::cos( alpha0() ) );
+				const F sqrtk		  = std::sqrt( 1.0 + k2 );
+				m_epsilon			  = ( sqrtk - 1.0 )/( sqrtk + 1.0 );
 			} {
 				// Calculate sigma2.
-				constexpr auto	C11poly = polynomial(     0.5,      -   9.0/32,  205.0/1536	);
-				constexpr auto	C12poly = polynomial(     5.0/  16, -  37.0/96, 1335.0/4096	);
-				constexpr auto	C13poly = polynomial(    29.0/  96, -  75.0/ 128 			);
-				constexpr auto	C14poly = polynomial(   539.0/1536, -2391.0/2560 			);
-				constexpr auto	C15poly = polynomial(  3467.0/ 7680 						);
-				constexpr auto	C16poly = polynomial( 38081.0/61440 						);
+				constexpr auto C11	  = polynomial< Algo >(     0.5,      -   9.0/32,  205.0/1536	);
+				constexpr auto C12	  = polynomial< Algo >(     5.0/  16, -  37.0/96, 1335.0/4096	);
+				constexpr auto C13	  = polynomial< Algo >(    29.0/  96, -  75.0/ 128 			);
+				constexpr auto C14	  = polynomial< Algo >(   539.0/1536, -2391.0/2560 			);
+				constexpr auto C15	  = polynomial< Algo >(  3467.0/ 7680 						);
+				constexpr auto C16	  = polynomial< Algo >( 38081.0/61440 						);
 
-				const F eps_	  = epsilon();
-				const F eps2	  = eps_*eps_;
-				const F eps4	  = eps2*eps2;
-				const std::array< F, 6 > C({
-					eps_      * C11poly( eps2 ),
-					eps2      * C12poly( eps2 ),
-					eps2*eps_ * C13poly( eps2 ),
-					eps4      * C14poly( eps2 ),
-					eps4*eps_ * C15poly( eps2 ),
-					eps4*eps2 * C16poly( eps2 )
-				});
+				const F eps_		  = epsilon();
+				const F eps2		  = eps_*eps_;
+				const F eps4		  = eps2*eps2;
 		
 				// Eq.  7 in "Algorithms for geodesics" by Charles F. F. Karney. 
-				const F s1		  = I1( sigma1(), eps_ )*Sph.b();
-				m_sigma2		  = ( s1 + distance_ )/( Sph.b()*A1( eps_ ) );
+				const F s1			  = I1( sigma1(), eps_ )*Sph.b();
+				m_sigma2			  = ( s1 + distance_ )/( Sph.b()*A1( eps_ ) );
+				const F cos_sig2	  = std::cos( m_sigma2 );
 
-				F tausum		  = 0.0;
-				const F tau2l	  = 2*m_sigma2;
-				for( const F c : C ) 
-					m_sigma2	  = fma( c, std::sin( tausum += tau2l ), m_sigma2 );
+			// sin(nx) = chebyshev2< n-1 >( cos(x) )*sin(x): https://en.wikipedia.org/wiki/Chebyshev_polynomials
+				m_sigma2			  = fma( std::sin( m_sigma2 ),
+											fma( eps_      * C11( eps2 ), cheby2< 1 >( cos_sig2 ),
+											fma( eps2      * C12( eps2 ), cheby2< 3 >( cos_sig2 ),
+											fma( eps2*eps_ * C13( eps2 ), cheby2< 5 >( cos_sig2 ),
+											fma( eps4      * C14( eps2 ), cheby2< 7 >( cos_sig2 ),
+											fma( eps4*eps_ * C15( eps2 ), cheby2< 9 >( cos_sig2 ),
+												 eps4*eps2 * C16( eps2 )* cheby2<11 >( cos_sig2 ) ) ) ) ) ),
+											m_sigma2
+										);
 			}
 		}
 
@@ -295,9 +287,9 @@ namespace pax {
 
 	template< typename Algo, Spheroid Sph, floating F, std::size_t N >
 	static constexpr Lonlat< Sph, F, N > destination(
-		const Lonlat< Sph, F, N >	pos1_, 
-		const F						alpha_radians_,
-		const F						distance_
+		const Lonlat< Sph, F, N >		pos1_, 
+		const F							alpha_radians_,
+		const F							distance_
 	) noexcept {
 		return Destination< Algo, Sph, F, N >( pos1_, alpha_radians_, distance_ ).destination();
 	}
