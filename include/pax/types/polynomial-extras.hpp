@@ -12,7 +12,45 @@ namespace pax {
 		template< std::size_t N, std::size_t ...NN >
 		constexpr std::size_t newN = ( true && ... && ( NN != std::dynamic_extent ) ) ? N : std::dynamic_extent;
 	}
-	
+
+
+	/// Stream the elements of sap_ to out_ as id sp_ was a polynomial of x.
+	template< typename Out, is::floating F, std::size_t N >
+	Out & as_polynomial(
+		Out								  & out_, 
+		const std::span< F, N >				sp_ 
+	) {
+		std::size_t 						pow{};
+		bool								first( true );
+		for( auto item : sp_ ) {
+			if( item ) {
+				if( !first ) {
+					out_						 << ( ( item > 0 ) ? " + " : " - " );
+					item				  = std::abs( item );
+				}
+				if( pow ) {
+					if( item != 1 )			out_ << item;
+					out_						 << 'x';
+					if( pow > 1 )			out_ << '^' << pow;
+				} else						out_ << item;
+				first = false;
+			}
+			++pow;
+		}
+		if( first )							out_ << 0;
+		return out_;
+	}
+
+	/// Stream the elements of a polynomial to out_.
+	template< typename Out, typename Algo, is::floating F, std::size_t N >
+	Out & operator<<(
+		Out								  & out_, 
+		const Polynomial< Algo, F, N >	  & poly_ 
+	) {
+		return as_polynomial( out_, std::span( poly_ ) );
+	}
+
+
 	template< typename Algo, typename X, std::size_t N0, std::size_t N >
 	using Poly = Polynomial< Algo, std::decay_t< X >, ( N0 == std::dynamic_extent ) ? std::dynamic_extent : N >;
 
@@ -141,8 +179,8 @@ namespace pax {
 	) noexcept {
 		using								X	  = std::decay_t< std::common_type_t< X0, X1 > >;
 		constexpr std::size_t 				N	  = is::newN< N0 - N1 + 1, N0, N1 >;
-		const std::size_t					sz0	  = degree( p0_ );
-		const std::size_t					sz1	  = degree( p1_ );
+		const std::size_t					sz0	  = p0_.degree();
+		const std::size_t					sz1	  = p1_.degree();
 		const std::size_t					sz    = sz0 - sz1;
 		Polynomial< Algo, X, N >			q{};
 		if constexpr( N == std::dynamic_extent )	q.resize( sz + 1 );

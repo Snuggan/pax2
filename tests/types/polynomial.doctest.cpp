@@ -25,13 +25,13 @@ namespace pax {
 	
 
 
-	namespace {
+	namespace {	// Static asserts
 		template< std::size_t N = std::dynamic_extent > using Sp = std::span< const double, N >;
 		constexpr std::array< double, 4 > test{{ 1.0, 2.0, 3.0, 4.0 }};
 
-		static_assert( degree( polynomial() ) == 0 );
-		static_assert( degree( polynomial( 14, 0 ) ) == 0 );
-		static_assert( degree( polynomial( 14, 4, 0 ) ) == 1 );
+		static_assert( polynomial().degree() == 0 );
+		static_assert( polynomial( 14, 0 ).degree() == 0 );
+		static_assert( polynomial( 14, 4, 0 ).degree() == 1 );
 		static_assert( polynomial( 14, 4, 8 ).extent == 3 );
 
 		static_assert( polynomial( 2, 1, 0, 0 ) 	== polynomial( 2.0, 1.0 ) );
