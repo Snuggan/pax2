@@ -101,31 +101,30 @@ namespace pax {
 			return A1poly( epsilon_*epsilon_ )/( 1 - epsilon_ );
 		}
 
-		// Eq. 23 in "Algorithms for geodesics" by Charles F. F. Karney. 
+		// Eq. 15, 17, 18 in "Algorithms for geodesics" by Charles F. F. Karney. 
 		static constexpr F I1(
 			const F sigma_,
 			const F eps_	// epsilon
 		) noexcept {
 			// return 0.76831538886412;
-			constexpr auto C11		  = polynomial< Algo >( -0.5,      3.0/ 16, -1.0/32 	);
-			constexpr auto C12		  = polynomial< Algo >( -1.0/  16, 1.0/ 32, -9.0/2048	);
-			constexpr auto C13		  = polynomial< Algo >( -1.0/  48, 3.0/256				);
-			constexpr auto C14		  = polynomial< Algo >( -5.0/ 512, 3.0/512				);
-			constexpr auto C15		  = polynomial< Algo >( -7.0/1280						);
-			constexpr auto C16		  = polynomial< Algo >( -7.0/2048						);
+			static constexpr auto C11 = ( polynomial< Algo >(  -16.0,  6.0, -1.0 )/  32 );
+			static constexpr auto C12 = ( polynomial< Algo >( -128.0, 64.0, -9.0 )/2048 );
+			static constexpr auto C13 = ( polynomial< Algo >(  -16.0,  9.0 		 )/ 768 );
+			static constexpr auto C14 = ( polynomial< Algo >(   -5.0,  3.0		 )/ 512 );
+			static constexpr auto C15 = ( polynomial< Algo >(   -7.0			 )/1280 );
+			static constexpr auto C16 = ( polynomial< Algo >(   -7.0			 )/2048 );
 
 			const F eps2			  = eps_*eps_;
-			const F eps4			  = eps2*eps2;
-			const F cos_sig			  = std::cos( sigma_ );
+			const F cos_sigma		  = std::cos( sigma_ );
 
 			// sin(nx) = chebyshev2< n-1 >( cos(x) )*sin(x): https://en.wikipedia.org/wiki/Chebyshev_polynomials
 			return	fma( std::sin( sigma_ ),
-						fma( eps_      * C11( eps2 ), cheby2<  1 >( cos_sig ),
-						fma( eps2      * C12( eps2 ), cheby2<  3 >( cos_sig ),
-						fma( eps2*eps_ * C13( eps2 ), cheby2<  5 >( cos_sig ),
-						fma( eps4      * C14( eps2 ), cheby2<  7 >( cos_sig ),
-						fma( eps4*eps_ * C15( eps2 ), cheby2<  9 >( cos_sig ),
-							 eps4*eps2 * C16( eps2 )* cheby2< 11 >( cos_sig ) ) ) ) ) ),
+							eps_ * fma( C11( eps2 ), cheby2<  1 >( cos_sigma ),
+							eps_ * fma( C12( eps2 ), cheby2<  3 >( cos_sigma ),
+							eps_ * fma( C13( eps2 ), cheby2<  5 >( cos_sigma ),
+							eps_ * fma( C14( eps2 ), cheby2<  7 >( cos_sigma ),
+							eps_ * fma( C15( eps2 ), cheby2<  9 >( cos_sigma ),
+							eps_ * 	    C16( eps2 )* cheby2< 11 >( cos_sigma ) ) ) ) ) ),
 						sigma_ ) * A1( eps_ );
 		}
 
@@ -136,50 +135,49 @@ namespace pax {
 		) noexcept {
 			static constexpr F n	 = Sph.ff();
 			static constexpr auto A3 = polynomial< Algo >(
-				polynomial< Algo >(  1.0 						)	( n ),
-				polynomial< Algo >( -0.5,      0.5 				)	( n ),
-				polynomial< Algo >( -0.25,    -0.125,    3.0/ 8 )	( n ),
-				polynomial< Algo >( -1.0/ 16, -3.0/ 16, -1.0/16 )	( n ),
-				polynomial< Algo >( -3.0/ 64, -1.0/ 32 			)	( n ),
-				polynomial< Algo >( -3.0/128 					)	( n )
+				  polynomial< Algo >(  1.0 			   )		( n ),
+				( polynomial< Algo >( -1.0,  1.0 	   )/  2 )	( n ),
+				( polynomial< Algo >( -2.0, -1.0,  3.0 )/  8 )	( n ),
+				( polynomial< Algo >( -1.0, -3.0, -1.0 )/ 16 )	( n ),
+				( polynomial< Algo >( -3.0, -2.0 	   )/ 64 )	( n ),
+				( polynomial< Algo >( -3.0 			   )/128 )	( n )
 			);
 			static constexpr auto C31 = polynomial< Algo >(
-				polynomial< Algo >(  0.25,    -0.25				)	( n ),
-				polynomial< Algo >(  0.125,    0.0,     -0.125	)	( n ),
-				polynomial< Algo >(  3.0/ 64,  3.0/ 64, -1.0/64	)	( n ),
-				polynomial< Algo >(  5.0/128,  1.0/ 64			)	( n ),
-				polynomial< Algo >(  3.0/128					)	( n )
+				( polynomial< Algo >(  1.0, -1.0	   )/  4 )	( n ),
+				( polynomial< Algo >(  1.0,  0.0, -1.0 )/  8 )	( n ),
+				( polynomial< Algo >(  3.0,  3.0, -1.0 )/ 64 )	( n ),
+				( polynomial< Algo >(  5.0,  2.0	   )/128 )	( n ),
+				( polynomial< Algo >(  3.0			   )/128 )	( n )
 			);
 			static constexpr auto C32 = polynomial< Algo >(
-				polynomial< Algo >(  1.0/ 16, -3.0/ 32,  1.0/32 )	( n ),
-				polynomial< Algo >(  3.0/ 64, -1.0/ 32, -3.0/64 )	( n ),
-				polynomial< Algo >(  3.0/128,  1.0/128 			)	( n ),
-				polynomial< Algo >(  5.0/256 					)	( n )
+				( polynomial< Algo >( 2.0,  -3.0,  1.0 )/ 32 )	( n ),
+				( polynomial< Algo >( 3.0,  -2.0, -3.0 )/ 64 )	( n ),
+				( polynomial< Algo >( 3.0,   1.0 	   )/128 )	( n ),
+				( polynomial< Algo >( 5.0 			   )/256 )	( n )
 			);
 			static constexpr auto C33 = polynomial< Algo >(
-				polynomial< Algo >(  5.0/192, -3.0/ 64,  5.0/192 )	( n ),
-				polynomial< Algo >(  3.0/128, -5.0/192 			)	( n ),
-				polynomial< Algo >(  7.0/512 					)	( n )
+				( polynomial< Algo >( 5.0,  -9.0,  5.0 )/192 )	( n ),
+				( polynomial< Algo >( 9.0, -10.0 	   )/384 )	( n ),
+				( polynomial< Algo >( 7.0 			   )/512 )	( n )
 			);
 			static constexpr auto C34 = polynomial< Algo >(
-				polynomial< Algo >(  7.0/512, -7.0/256 			)	( n ),
-				polynomial< Algo >(  7.0/512 					)	( n )
+				( polynomial< Algo >( 7.0, -14.0 	   )/512 )	( n ),
+				( polynomial< Algo >( 7.0 			   )/512 )	( n )
 			);
 			static constexpr auto C35 = polynomial< Algo >(
-				polynomial< Algo >( 21.0/2560 					)	( n )
+				polynomial< Algo >( 21.0/2560 				 )	( n )
 			);
 
 			const F eps2			  = eps_*eps_;
-			const F eps4			  = eps2*eps2;
-			const F cos_sig 		  = std::cos( sigma_ );
+			const F cos_sigma 		  = std::cos( sigma_ );
 
 			// sin(nx) = chebyshev2< n-1 >( cos(x) )*sin(x): https://en.wikipedia.org/wiki/Chebyshev_polynomials
 			return	fma( std::sin( sigma_ ), 
-						fma( eps_      * C31( eps2 ), cheby2< 1 >( cos_sig ),
-						fma( eps2      * C32( eps2 ), cheby2< 3 >( cos_sig ),
-						fma( eps2*eps_ * C33( eps2 ), cheby2< 5 >( cos_sig ),
-						fma( eps4      * C34( eps2 ), cheby2< 7 >( cos_sig ),
-							 eps4*eps_ * C35( eps2 )* cheby2< 9 >( cos_sig ) ) ) ) ),
+							eps_ * fma( C31( eps2 ), cheby2< 1 >( cos_sigma ),
+							eps_ * fma( C32( eps2 ), cheby2< 3 >( cos_sigma ),
+							eps_ * fma( C33( eps2 ), cheby2< 5 >( cos_sigma ),
+							eps_ * fma( C34( eps2 ), cheby2< 7 >( cos_sigma ),
+							eps_ *      C35( eps2 )* cheby2< 9 >( cos_sigma ) ) ) ) ),
 						sigma_
 					) * A3( eps_ );	// Eq. 24 in "Algorithms for geodesics" by Charles F. F. Karney. 
 		}
@@ -249,30 +247,30 @@ namespace pax {
 				m_epsilon			  = ( sqrtk - 1.0 )/( sqrtk + 1.0 );
 			} {
 				// Calculate sigma2.
-				constexpr auto C11	  = polynomial< Algo >(     0.5,      -   9.0/32,  205.0/1536	);
-				constexpr auto C12	  = polynomial< Algo >(     5.0/  16, -  37.0/96, 1335.0/4096	);
-				constexpr auto C13	  = polynomial< Algo >(    29.0/  96, -  75.0/ 128 			);
-				constexpr auto C14	  = polynomial< Algo >(   539.0/1536, -2391.0/2560 			);
-				constexpr auto C15	  = polynomial< Algo >(  3467.0/ 7680 						);
-				constexpr auto C16	  = polynomial< Algo >( 38081.0/61440 						);
+				// Eq. 21 in "Algorithms for geodesics" by Charles F. F. Karney. 
+				static constexpr auto C11 = ( polynomial< Algo >(   768.0,  -432.0,  205.0 )/ 1536 );
+				static constexpr auto C12 = ( polynomial< Algo >(  3840.0, -4736.0, 4005.0 )/12288 );
+				static constexpr auto C13 = ( polynomial< Algo >(   116.0,  -225.0		   )/  384 );
+				static constexpr auto C14 = ( polynomial< Algo >(  2695.0, -7173.0		   )/ 7680 );
+				static constexpr auto C15 = ( polynomial< Algo >(  3467.0				   )/ 7680 );
+				static constexpr auto C16 = ( polynomial< Algo >( 38081.0				   )/61440 );
 
 				const F eps_		  = epsilon();
 				const F eps2		  = eps_*eps_;
-				const F eps4		  = eps2*eps2;
 		
 				// Eq.  7 in "Algorithms for geodesics" by Charles F. F. Karney. 
 				const F s1			  = I1( sigma1(), eps_ )*Sph.b();
 				m_sigma2			  = ( s1 + distance_ )/( Sph.b()*A1( eps_ ) );
-				const F cos_sig2	  = std::cos( m_sigma2 );
+				const F cos_sigma2	  = std::cos( m_sigma2 );
 
 			// sin(nx) = chebyshev2< n-1 >( cos(x) )*sin(x): https://en.wikipedia.org/wiki/Chebyshev_polynomials
 				m_sigma2			  = fma( std::sin( m_sigma2 ),
-											fma( eps_      * C11( eps2 ), cheby2< 1 >( cos_sig2 ),
-											fma( eps2      * C12( eps2 ), cheby2< 3 >( cos_sig2 ),
-											fma( eps2*eps_ * C13( eps2 ), cheby2< 5 >( cos_sig2 ),
-											fma( eps4      * C14( eps2 ), cheby2< 7 >( cos_sig2 ),
-											fma( eps4*eps_ * C15( eps2 ), cheby2< 9 >( cos_sig2 ),
-												 eps4*eps2 * C16( eps2 )* cheby2<11 >( cos_sig2 ) ) ) ) ) ),
+												eps_ * fma( C11( eps2 ), cheby2<  1 >( cos_sigma2 ),
+												eps_ * fma( C12( eps2 ), cheby2<  3 >( cos_sigma2 ),
+												eps_ * fma( C13( eps2 ), cheby2<  5 >( cos_sigma2 ),
+												eps_ * fma( C14( eps2 ), cheby2<  7 >( cos_sigma2 ),
+												eps_ * fma( C15( eps2 ), cheby2<  9 >( cos_sigma2 ),
+												eps_ *      C16( eps2 )* cheby2< 11 >( cos_sigma2 ) ) ) ) ) ),
 											m_sigma2
 										);
 			}
