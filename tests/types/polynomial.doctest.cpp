@@ -64,6 +64,30 @@ namespace pax {
 	}
 
 	DOCTEST_TEST_CASE( "polynomial output" ) {
+		// std::cout << "First order Chebychev polynomial:\n\\mbox{}\n";
+		// std::cout << "\\\\$T_0(x) = " << chebyshev1< 0 > << "$\n";
+		// std::cout << "\\\\$T_1(x) = " << chebyshev1< 1 > << "$\n";
+		// std::cout << "\\\\$T_2(x) = " << chebyshev1< 2 > << "$\n";
+		// std::cout << "\\\\$T_3(x) = " << chebyshev1< 3 > << "$\n";
+		// std::cout << "\\\\$T_4(x) = " << chebyshev1< 4 > << "$\n";
+		// std::cout << "\\\\$T_5(x) = " << chebyshev1< 5 > << "$\n";
+		// std::cout << "\\\\$T_6(x) = " << chebyshev1< 6 > << "$\n";
+		// std::cout << "\\\\$T_7(x) = " << chebyshev1< 7 > << "$\n";
+		// std::cout << "\\\\$T_8(x) = " << chebyshev1< 8 > << "$\n";
+		// std::cout << "\\\\$T_9(x) = " << chebyshev1< 9 > << "$\n";
+		//
+		// std::cout << "\nSecond order Chebychev polynomial:\n\\mbox{}\n";
+		// std::cout << "\\\\$U_0(x) = " << chebyshev2< 0 > << "$\n";
+		// std::cout << "\\\\$U_1(x) = " << chebyshev2< 1 > << "$\n";
+		// std::cout << "\\\\$U_2(x) = " << chebyshev2< 2 > << "$\n";
+		// std::cout << "\\\\$U_3(x) = " << chebyshev2< 3 > << "$\n";
+		// std::cout << "\\\\$U_4(x) = " << chebyshev2< 4 > << "$\n";
+		// std::cout << "\\\\$U_5(x) = " << chebyshev2< 5 > << "$\n";
+		// std::cout << "\\\\$U_6(x) = " << chebyshev2< 6 > << "$\n";
+		// std::cout << "\\\\$U_7(x) = " << chebyshev2< 7 > << "$\n";
+		// std::cout << "\\\\$U_8(x) = " << chebyshev2< 8 > << "$\n";
+		// std::cout << "\\\\$U_9(x) = " << chebyshev2< 9 > << "$\n";
+		//
 		// std::cout << polynomial(-1., 2, 3, -4, 5, 1, -1 ) << '\n';
 		// std::cout << polynomial( 0. ) << '\n';
 		// std::cout << polynomial( 1. ) << '\n';
