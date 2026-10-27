@@ -69,8 +69,8 @@ namespace pax {
 	class Destination_implementation {
 		F				m_alpha0{}, m_sigma1{}, m_sigma2{}, m_epsilon{};
 		
-		template< std::size_t M >
-		static constexpr auto cheby2 = chebyshev2< M, F, Algo >;
+		template< std::size_t M >	// chebyshev2_x2 is more efficient than chebyshev2.
+		static constexpr auto cheby2 = chebyshev2_x2< M, F, Algo >;	
 
 		static constexpr F sqr ( const F x ) 			noexcept	{	return x*x;			}
 

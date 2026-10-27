@@ -14,6 +14,71 @@ namespace pax {
 	}
 
 
+	/// This is a wrapper for Polynomial, to be used with polynomials where every second element is zero. 
+	/// It works similar to Polynomial, but is faster as it ignore those zero-valued elements. It does not give 
+	/// you access to its innards, you need to convert it back to Polynomial for that (with ´.polynomial()´)
+	template< typename Algo, is::floating F, std::size_t N >
+	class Polynomial_x2 {
+		using P0  = Polynomial< Algo, F, N >;
+		using P   = Polynomial< Algo, F, ( N == std::dynamic_extent ) ? std::dynamic_extent : N/2 + 1 >;
+		P			m_poly{};
+		bool		m_preed{};
+	
+	public:
+		constexpr Polynomial_x2()										noexcept	= default;
+		constexpr Polynomial_x2( const Polynomial_x2 & )				noexcept	= default;
+		constexpr Polynomial_x2( Polynomial_x2 && )						noexcept	= default;
+		constexpr Polynomial_x2 & operator=( const Polynomial_x2 & )	noexcept	= default;
+		constexpr Polynomial_x2 & operator=( Polynomial_x2 && )			noexcept	= default;
+	
+		/// Constructor, from a "normal" polynomial.
+		constexpr Polynomial_x2( const P0 & p0_ ) 					{	*this = p0_;			}
+	
+		/// Operator =, of a "normal" polynomial.
+		constexpr Polynomial_x2 & operator=( const P0 & p0_ ) {
+			m_poly		  = P{};
+			m_preed		  = bool( p0_.size() && !p0_.front() );
+			if constexpr( N == std::dynamic_extent )	m_poly.resize( p0_.size()/2 + !m_preed );
+			bool on		  = m_preed;
+			auto ptr	  = m_poly.data();
+			for( const auto e : p0_ ) {
+				if(( on = !on ))		*( ptr++ ) = e;
+				else if( e != 0 )		throw "Every second term should be zero, but isn't.";
+			}
+			return *this;
+		}
+	
+		/// Return a "normal" polynomial ( with every second term a zero).
+		constexpr auto polynomial()										const noexcept	{
+			P0 res{};
+			if constexpr( N == std::dynamic_extent )	res.resize( m_poly.size()*2 + m_preed - 1 );
+			auto ptr	  = res.data() + m_preed;
+			for( const auto e : m_poly ) {
+				*ptr	  = e;
+				ptr		 += 2;
+			}
+			return res;
+		}
+	
+	
+		/// Evaluate the polynomial at x_, using the given algorithm Algo.
+		[[nodiscard]] constexpr F operator()( const F x_ )				const noexcept	{
+			return Algo::operator()( std::span( m_poly ), x_ * x_ ) * ( m_preed ? x_ : F( 1 ) );
+		}
+	
+		/// The polynomial's degree. Polynomials with zero or one item have degrre 0. 
+		[[nodiscard]] constexpr std::size_t degree()					const noexcept	{
+			return 2*m_poly.degree() + m_preed;
+		}
+
+		/// Stream the elements of a polynomial to out_.
+		template< typename Out >
+		friend Out & operator<<( Out & out_, const Polynomial_x2 & poly_ ) {
+			return out_ << poly_.polynomial();
+		}
+	};
+
+
 	/// Stream the elements of sap_ to out_ as id sp_ was a polynomial of x.
 	template< typename Out, is::floating F, std::size_t N >
 	Out & as_polynomial(
@@ -318,6 +383,10 @@ namespace pax {
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
 	constexpr auto chebyshev1		  = Polyiter< Chebyshev1< X, Algo >, X, N >::poly;
 
+	/// Chebyshev Polynomials of the first kind: https://en.wikipedia.org/wiki/Chebyshev_Polynomials
+	template< std::size_t N, typename X = double, typename Algo = horner_fma >
+	constexpr auto chebyshev1_x2	  = Polynomial_x2( chebyshev1< N, X, Algo > );
+
 	template< typename X, typename Algo = horner_fma >
 	struct Chebyshev2 : Chebyshev1< X, Algo > {
 		static constexpr auto			poly1 = Polynomial< Algo, X, 2 >({ 0, 2 });
@@ -326,6 +395,10 @@ namespace pax {
 	/// Chebyshev Polynomials of the second kind: https://en.wikipedia.org/wiki/Chebyshev_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
 	constexpr auto chebyshev2		  = Polyiter< Chebyshev2< X, Algo >, X, N >::poly;
+
+	/// Chebyshev Polynomials of the first kind: https://en.wikipedia.org/wiki/Chebyshev_Polynomials
+	template< std::size_t N, typename X = double, typename Algo = horner_fma >
+	constexpr auto chebyshev2_x2	  = Polynomial_x2( chebyshev2< N, X, Algo > );
 
 
 	template< typename X, typename Algo = horner_fma >
@@ -340,6 +413,10 @@ namespace pax {
 	template< typename X = double, typename Algo = horner_fma >
 	constexpr auto fibonacci< 0, X, Algo >  = Polynomial< Algo, X, 1 >({ 0 });
 
+	/// Fibonacci Polynomials: https://en.wikipedia.org/wiki/Fibonacci_Polynomials
+	template< std::size_t N, typename X = double, typename Algo = horner_fma >
+	constexpr auto fibonacci_x2		  = Polynomial_x2( fibonacci< N, X, Algo > );
+
 
 	template< typename X, typename Algo = horner_fma >
 	struct Hermite1 : Fibonacci< X, Algo > {
@@ -350,6 +427,10 @@ namespace pax {
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
 	constexpr auto hermite1			  = Polyiter< Hermite1< X, Algo >, X, N >::poly;
 
+	/// Pprobabilist's Hermite Polynomials: https://en.wikipedia.org/wiki/Hermite_Polynomials
+	template< std::size_t N, typename X = double, typename Algo = horner_fma >
+	constexpr auto hermite1_x2		  = Polynomial_x2( hermite1< N, X, Algo > );
+
 
 	template< typename X, typename Algo = horner_fma >
 	struct Hermite2 : Chebyshev2< X, Algo > {
@@ -359,6 +440,10 @@ namespace pax {
 	/// Physicist's Hermite Polynomials: https://en.wikipedia.org/wiki/Hermite_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
 	constexpr auto hermite2			  = Polyiter< Hermite2< X, Algo >, X, N >::poly;
+
+	/// Physicist's Hermite Polynomials: https://en.wikipedia.org/wiki/Hermite_Polynomials
+	template< std::size_t N, typename X = double, typename Algo = horner_fma >
+	constexpr auto hermite2_x2		  = Polynomial_x2( hermite2< N, X, Algo > );
 
 
 	template< typename X, X a, X b, typename Algo = horner_fma >
@@ -413,6 +498,10 @@ namespace pax {
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
 	constexpr auto legendre			  = Polyiter< Legendre< X, Algo >, X, N >::poly;
 
+	/// Legendre Polynomials: https://en.wikipedia.org/wiki/Legendre_Polynomials
+	template< std::size_t N, typename X = double, typename Algo = horner_fma >
+	constexpr auto legendre_x2		  = Polynomial_x2( legendre< N, X, Algo > );
+
 
 	template< typename X, typename Algo = horner_fma >
 	struct Lucas : Fibonacci< X, Algo > {
@@ -422,6 +511,10 @@ namespace pax {
 	/// Lucas Polynomials: https://en.wikipedia.org/wiki/Fibonacci_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
 	constexpr auto lucas			  = Polyiter< Lucas< X, Algo >, X, N >::poly;
+
+	/// Lucas Polynomials: https://en.wikipedia.org/wiki/Fibonacci_Polynomials
+	template< std::size_t N, typename X = double, typename Algo = horner_fma >
+	constexpr auto lucas_x2			  = Polynomial_x2( lucas< N, X, Algo > );
 	
 
 
@@ -435,5 +528,4 @@ namespace pax {
 		             -1'672'280'820.0L,                53'327'946.0L,                -1'256'850.0L, 
 		                     20'615.0L,                      -210.0L,                         1.0L
 	};
-
 }	// namespace pax

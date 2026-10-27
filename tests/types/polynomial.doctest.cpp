@@ -184,20 +184,33 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( chebyshev1< 6 >, polynomial( -1.0, 0, 18,   0, -48,  0, 32 ) );
 		DOCTEST_FAST_CHECK_EQ( chebyshev2< 5 >, polynomial(  0.0, 6,  0, -32,   0, 32 ) );
 		DOCTEST_FAST_CHECK_EQ( chebyshev2< 6 >, polynomial( -1.0, 0, 24,   0, -80,  0, 64 ) );
+
+		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< 5 >.polynomial(), polynomial(  0.0, 5,  0, -20,   0, 16 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< 6 >.polynomial(), polynomial( -1.0, 0, 18,   0, -48,  0, 32 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 5 >.polynomial(), polynomial(  0.0, 6,  0, -32,   0, 32 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 6 >.polynomial(), polynomial( -1.0, 0, 24,   0, -80,  0, 64 ) );
 	}
 	DOCTEST_TEST_CASE( "polynomial fibonacci" ) {
 		DOCTEST_FAST_CHECK_EQ( fibonacci< 0 >, polynomial( 0.0 ) );
 		DOCTEST_FAST_CHECK_EQ( fibonacci< 1 >, polynomial( 1.0 ) );
 		DOCTEST_FAST_CHECK_EQ( fibonacci< 5 >, polynomial( 1.0, 0, 3, 0, 1 ) );
 		DOCTEST_FAST_CHECK_EQ( fibonacci< 6 >, polynomial( 0.0, 3, 0, 4, 0, 1 ) );
+
+		DOCTEST_FAST_CHECK_EQ( fibonacci_x2< 0 >.polynomial(), polynomial( 0.0 ) );
+		DOCTEST_FAST_CHECK_EQ( fibonacci_x2< 1 >.polynomial(), polynomial( 1.0 ) );
+		DOCTEST_FAST_CHECK_EQ( fibonacci_x2< 5 >.polynomial(), polynomial( 1.0, 0, 3, 0, 1 ) );
+		DOCTEST_FAST_CHECK_EQ( fibonacci_x2< 6 >.polynomial(), polynomial( 0.0, 3, 0, 4, 0, 1 ) );
 	}
 	DOCTEST_TEST_CASE( "polynomial hermite" ) {
-		// He
 		DOCTEST_FAST_CHECK_EQ( hermite1< 5 >, polynomial(    0.0,  15,   0,  -10,    0,  1 ) );
 		DOCTEST_FAST_CHECK_EQ( hermite1< 6 >, polynomial(  -15.0,   0,  45,    0,  -15,  0,  1 ) );
-		// H
 		DOCTEST_FAST_CHECK_EQ( hermite2< 5 >, polynomial(    0.0, 120,   0, -160,    0, 32 ) );
 		DOCTEST_FAST_CHECK_EQ( hermite2< 6 >, polynomial( -120.0,   0, 720,    0, -480,  0, 64 ) );
+
+		DOCTEST_FAST_CHECK_EQ( hermite1_x2< 5 >.polynomial(), polynomial(    0.0,  15,   0,  -10,    0,  1 ) );
+		DOCTEST_FAST_CHECK_EQ( hermite1_x2< 6 >.polynomial(), polynomial(  -15.0,   0,  45,    0,  -15,  0,  1 ) );
+		DOCTEST_FAST_CHECK_EQ( hermite2_x2< 5 >.polynomial(), polynomial(    0.0, 120,   0, -160,    0, 32 ) );
+		DOCTEST_FAST_CHECK_EQ( hermite2_x2< 6 >.polynomial(), polynomial( -120.0,   0, 720,    0, -480,  0, 64 ) );
 	}
 	DOCTEST_TEST_CASE( "polynomial jacobi" ) {
 		{
@@ -225,14 +238,40 @@ namespace pax {
 	DOCTEST_TEST_CASE( "polynomial legendre" ) {
 		DOCTEST_FAST_CHECK_EQ( legendre< 5 >, polynomial(  0.0, 15,   0, -70,    0, 63 )/8 );
 		DOCTEST_FAST_CHECK_EQ( legendre< 6 >, polynomial( -5.0,  0, 105,   0, -315,  0, 231 )/16 );
+		DOCTEST_FAST_CHECK_EQ( legendre_x2< 5 >.polynomial(), polynomial(  0.0, 15,   0, -70,    0, 63 )/8 );
+		DOCTEST_FAST_CHECK_EQ( legendre_x2< 6 >.polynomial(), polynomial( -5.0,  0, 105,   0, -315,  0, 231 )/16 );
 	}
 	DOCTEST_TEST_CASE( "polynomial lucas" ) {
 		DOCTEST_FAST_CHECK_EQ( lucas< 5 >, polynomial( 0.0, 5, 0, 5, 0, 1 ) );
 		DOCTEST_FAST_CHECK_EQ( lucas< 6 >, polynomial( 2.0, 0, 9, 0, 6, 0, 1 ) );
+		DOCTEST_FAST_CHECK_EQ( lucas_x2< 5 >.polynomial(), polynomial( 0.0, 5, 0, 5, 0, 1 ) );
+		DOCTEST_FAST_CHECK_EQ( lucas_x2< 6 >.polynomial(), polynomial( 2.0, 0, 9, 0, 6, 0, 1 ) );
 	}
 	DOCTEST_TEST_CASE( "polynomial wilkinsons" ) {
 		DOCTEST_FAST_CHECK_EQ( wilkinsons< long double >( 1.0 ), 0.0 );
 		// DOCTEST_FAST_CHECK_EQ( wilkinsons< long double >( 2.0 ), 0.0 );
+	}
+
+	DOCTEST_TEST_CASE( "polynomial_x2" ) {
+		{
+			constexpr auto 						p0 = polynomial();
+			const Polynomial_x2					p2( p0 );
+			DOCTEST_FAST_CHECK_EQ( p0( 2 ),		p2( 2 ) );
+			DOCTEST_FAST_CHECK_EQ( p0.degree(),	p2.degree() );
+			DOCTEST_FAST_CHECK_EQ( p0,			p2.polynomial() );
+		} {
+			constexpr auto 						p0 = chebyshev1< 8 >;
+			const Polynomial_x2					p2( p0 );
+			DOCTEST_FAST_CHECK_EQ( p0( 2 ),		p2( 2 ) );
+			DOCTEST_FAST_CHECK_EQ( p0.degree(),	p2.degree() );
+			DOCTEST_FAST_CHECK_EQ( p0,			p2.polynomial() );
+		} {
+			constexpr auto 						p0 = chebyshev1< 9 >;
+			const Polynomial_x2					p2( p0 );
+			DOCTEST_FAST_CHECK_EQ( p0( 2 ), 	p2( 2 ) );
+			DOCTEST_FAST_CHECK_EQ( p0.degree(),	p2.degree() );
+			DOCTEST_FAST_CHECK_EQ( p0, 			p2.polynomial() );
+		}
 	}
 
 }	// namespace pax
