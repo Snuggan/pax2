@@ -19,10 +19,11 @@ namespace pax {
 	/// you access to its innards, you need to convert it back to Polynomial for that (with ´.polynomial()´)
 	template< typename Algo, is::floating F, std::size_t N >
 	class Polynomial_x2 {
-		using P0  = Polynomial< Algo, F, N >;
-		using P   = Polynomial< Algo, F, ( N == std::dynamic_extent ) ? std::dynamic_extent : N/2 + 1 >;
-		P			m_poly{};
-		bool		m_preed{};
+		static constexpr std::size_t 	extent	= ( N == std::dynamic_extent ) ? std::dynamic_extent : N/2 + 1;
+		using 							P0		= Polynomial< Algo, F, N >;
+		using 							P		= Polynomial< Algo, F, extent >;
+		P								m_poly{};
+		bool							m_preed{};
 	
 	public:
 		constexpr Polynomial_x2()										noexcept	= default;
@@ -43,12 +44,12 @@ namespace pax {
 			auto ptr	  = m_poly.data();
 			for( const auto e : p0_ ) {
 				if(( on = !on ))		*( ptr++ ) = e;
-				else if( e != 0 )		throw "Every second term should be zero, but isn't.";
+				else if( e != 0 )		throw "Polynomial_x2: Every second term should be zero, but isn't.";
 			}
 			return *this;
 		}
 	
-		/// Return a "normal" polynomial ( with every second term a zero).
+		/// Return a "normal" polynomial (with every second term a zero).
 		constexpr auto polynomial()										const noexcept	{
 			P0 res{};
 			if constexpr( N == std::dynamic_extent )	res.resize( m_poly.size()*2 + m_preed - 1 );

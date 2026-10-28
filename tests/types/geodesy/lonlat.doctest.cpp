@@ -4,7 +4,7 @@
 //	Comments are formatted for Doxygen (http://www.doxygen.nl) to read and create documentation.
 
 
-#include <pax/types/geodesy/lonlat.hpp>
+#include <pax/types/geodesy/lonlat-great-circle.hpp>
 #include <pax/doctest.hpp>
 
 namespace pax {
@@ -20,9 +20,9 @@ namespace pax {
 	}
 
 
-	struct Destination_test : Destination_implementation< horner_fma, earth::wgs1984, double, 2 > {
-		using base = Destination_implementation< horner_fma, earth::wgs1984, double, 2 >;
-		using base::Destination_implementation;
+	struct Destination_test : Great_circle_distance< horner_fma, earth::wgs1984, double, 2 > {
+		using base = Great_circle_distance< horner_fma, earth::wgs1984, double, 2 >;
+		using base::Great_circle_distance;
 	public:
 		using base::A1, base::alpha0, base::epsilon, base::I1, base::I3, 
 			  base::lambda2, base::phi2, base::sigma1, base::sigma2;
@@ -60,8 +60,8 @@ namespace pax {
 		// DOCTEST_FAST_CHECK_EQ( rad2deg( dest.lambda12() ),	doctest::Approx( 137.84490004377 ) );
 		DOCTEST_FAST_CHECK_EQ( rad2deg( dest.phi2() ),		doctest::Approx(  41.79331020506 ) );
 
-		DOCTEST_FAST_CHECK_EQ( lon( dest.destination() ),	doctest::Approx( 158.11205042393 ) );
-		DOCTEST_FAST_CHECK_EQ( lat( dest.destination() ),	doctest::Approx(  41.79331020506 ) );
+		DOCTEST_FAST_CHECK_EQ( lon( dest.great_circle_destination() ),	doctest::Approx( 158.11205042393 ) );
+		DOCTEST_FAST_CHECK_EQ( lat( dest.great_circle_destination() ),	doctest::Approx(  41.79331020506 ) );
 	}
 	
 }	// namespace pax
