@@ -8,7 +8,6 @@
 #	-j [jobs]	--	Specifies the number of recipes (jobs) to run simultaneously. 
 #					With no argument, make runs as many recipes simultaneously as possible.
 #
-#
 #	To backup files, for example:
 #	rsync -a --info=progress2 --exclude=1-rar-source* /Volumes/Pegasus/sverige/ /Volumes/LaCie/sverige
 #
