@@ -12,6 +12,8 @@
 #	To backup files, for example:
 #	rsync -a --info=progress2 --exclude=1-rar-source* /Volumes/Pegasus/sverige/ /Volumes/LaCie/sverige
 #
+#	July 2026
+#
 #############################################################################################################
 
 
@@ -177,32 +179,32 @@ FILTER_MIN_Z			:= -2
 FILTER_MAX_Z			:= 50
 FILTER_LM				:= true
 
-PDAL_FILTER_PIPELINE	:=	{	"pipeline":[ 											\
-	{																					\
-		"type":"filters.hag_dem",														\
-		"raster":"$(strip $(FILTER_DEM))",												\
-		"band":"1",																		\
-		"zero_ground":"false"															\
-	},{																					\
-		"type":"filters.slu_lm",														\
-		"min_z":"$(strip $(FILTER_MIN_Z))",												\
-		"max_z":"$(strip $(FILTER_MAX_Z))",												\
-		"lm_filter":"$(strip $(FILTER_LM))"												\
-	},{																					\
-		"type":"filters.remove_overlap",												\
-		"overlap_resolution":"$(strip $(FILTER_OVERLAP_RESOLUTION))"					\
-	}																					\
-] }
+PDAL_FILTER_PIPELINE	:=	{	"pipeline":[ 														\
+								{																	\
+									"type":"filters.hag_dem",										\
+									"raster":"$(strip $(FILTER_DEM))",								\
+									"band":"1",														\
+									"zero_ground":"false"											\
+								},{																	\
+									"type":"filters.slu_lm",										\
+									"min_z":"$(strip $(FILTER_MIN_Z))",								\
+									"max_z":"$(strip $(FILTER_MAX_Z))",								\
+									"lm_filter":"$(strip $(FILTER_LM))"								\
+								},{																	\
+									"type":"filters.remove_overlap",								\
+									"overlap_resolution":"$(strip $(FILTER_OVERLAP_RESOLUTION))"	\
+								}																	\
+							] }
 
-PDAL_FILTER 			 = timeit pdal translate 										\
-							--verbose=$(pdal_debug)  									\
-							--json="$(strip $(subst ",\",$(PDAL_FILTER_PIPELINE)))"		\
-							--input="$(strip $<)" 										\
-							--output="$(strip $(temporary_dir)$@)" 						\
+PDAL_FILTER 			 = timeit pdal translate 													\
+							--verbose=$(pdal_debug)  												\
+							--json="$(strip $(subst ",\",$(PDAL_FILTER_PIPELINE)))"					\
+							--input="$(strip $<)" 													\
+							--output="$(strip $(temporary_dir)$@)" 									\
 							--metadata="$(strip $(temporary_dir)$@).json"
 
-PDAL_FILTER_PROGRESS	:= `date "+%H:%M:%S"`: pdal filtered: 							\
-							overlap_res=$(FILTER_OVERLAP_RESOLUTION), 					\
+PDAL_FILTER_PROGRESS	:= `date "+%H:%M:%S"`: pdal filtered: 										\
+							overlap_res=$(FILTER_OVERLAP_RESOLUTION), 								\
 							keep=[$(FILTER_MIN_Z),$(FILTER_MAX_Z)], 
 
 POINT_CLOUD_SUFFICES	 =  .las .laz .LAS .LAZ
@@ -231,27 +233,27 @@ $(DEST_FILTER_FILES): $(pc_filtered_dir)%: $(pc_source_dir)%
 
 
 ####	METRICS0 (calculation)		######################################
-#	'raster_metrics' calculates raster and plot rasters for all point cloud files in $(pc_filtered_dir).
+#	'raster_metrics' calculates raster and plot metrics for all point cloud files in $(pc_filtered_dir).
 
 PDAL_METRICS_PIPELINE	:=	{	"pipeline":[						\
-	{																\
-		"type":$(PDAL_PLUGIN_raster_metrics),						\
-		"resolution":"$(strip $(metric_resolution))",				\
-		"metrics":"$(strip $(metrics_set))",						\
-		"nilsson_level":"$(nilsson_level)", 						\
-		"gdalopts":"BIGTIFF=IF_SAFER,COMPRESS=DEFLATE",				\
-		"data_type":"float"											\
-	},{																\
-		"type":$(PDAL_PLUGIN_plot_stuff),							\
-		"plot_file":"$(base_data_dir)plots.csv",					\
-		"plot_points_dest":"$(plots_individual_points_dir)",		\
-		"metrics":"$(strip $(metrics_set))",						\
-		"nilsson_level":"$(nilsson_level)",							\
-		"points_format":".laz",										\
-		"id_column":"id",											\
-		"plot_buffer":"$(plots_individual_points_dir_max_dist)"		\
-	}																\
-] }
+								{																			\
+									"type":$(PDAL_PLUGIN_raster_metrics),									\
+									"resolution":"$(strip $(metric_resolution))",							\
+									"metrics":"$(strip $(metrics_set))",									\
+									"nilsson_level":"$(nilsson_level)", 									\
+									"gdalopts":"BIGTIFF=IF_SAFER,COMPRESS=DEFLATE",							\
+									"data_type":"float"														\
+								},{																			\
+									"type":$(PDAL_PLUGIN_plot_stuff),										\
+									"plot_file":"$(base_data_dir)plots.csv",								\
+									"plot_points_dest":"$(plots_individual_points_dir)",					\
+									"metrics":"$(strip $(metrics_set))",									\
+									"nilsson_level":"$(nilsson_level)",										\
+									"points_format":".laz",													\
+									"id_column":"id",														\
+									"plot_buffer":"$(plots_individual_points_dir_max_dist)"					\
+								}																			\
+							] }
 
 PDAL_METRICS			 = timeit pdal translate 															\
 							--verbose=$(pdal_debug)  														\
