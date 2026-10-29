@@ -179,9 +179,9 @@ namespace pax {
 
 	public:
 		constexpr Great_circle_distance(
-			const Lonlat< Sph, F, N >	pos1_, 
-			const F						alpha_radians_,
-			const F						distance_
+			const Lonlat< Sph, F, N >		pos1_, 
+			const std::type_identity_t< F >	alpha_radians_,
+			const std::type_identity_t< F >	distance_
 		) noexcept {
 			{
 				// Calculate alpha0 and sigma1.
@@ -238,8 +238,8 @@ namespace pax {
 	template< typename Algo, Spheroid Sph, floating F, std::size_t N >
 	static constexpr Lonlat< Sph, F, N > great_circle_destination(
 		const Lonlat< Sph, F, N >		pos1_, 
-		const F							alpha_radians_,
-		const F							distance_
+		const std::type_identity_t< F >	alpha_radians_,
+		const std::type_identity_t< F >	distance_
 	) noexcept {
 		return Destination< Algo, Sph, F, N >( pos1_, alpha_radians_, distance_ ).great_circle_destination();
 	}
