@@ -16,10 +16,20 @@
 #
 #############################################################################################################
 
+# – Rename the present metrics step to raster_metrics.
+# – Test run.
+# – Duplicate raster_metrics and name the copy plot_metrics.
+# – Remove all plot-related stuff from raster_metrics.
+# – Remove all raster-related stuff from plot_metrics.
+# – Make raster_metrics a requirement for plot_metrics.
+# – Make plots.csv (or whatever it is called) a requirement for ploit_metrics.
+# – Test run.
+
+
 
 # This specifies what metrics to calculate.
 # Lots and lots of extra metrics:
-#metrics_set								:= extra-allt
+#metrics_set 							:= extra-allt
 # Necessary metrics only:
 metrics_set								:= basic-linear
 
