@@ -12,7 +12,7 @@
 #	To backup files, for example:
 #	rsync -a --info=progress2 --exclude=1-rar-source* /Volumes/Pegasus/sverige/ /Volumes/LaCie/sverige
 #
-#	July 2026
+#	October 2026, separate raster and plot metrics calculation
 #
 #############################################################################################################
 
