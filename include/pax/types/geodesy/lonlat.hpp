@@ -15,8 +15,9 @@ namespace pax {
 	template< Spheroid Sph, floating F, std::size_t N >
 	struct Lonlat : std::array< F, N > {};
 
-	using Lonlat2d		  = Lonlat< earth::wgs1984, double, 2 >;
-	using Lonlat3d		  = Lonlat< earth::wgs1984, double, 3 >;
+	template< Spheroid Sph = earth::wgs1984 >
+	using Lonlat2d		  = Lonlat< Sph, double, 2 >;
+
 
 	/// Create a Lonlat with element type F out of a bunch of elements.
 	template< Spheroid Sph, floating F, arithmetic ... Fs >

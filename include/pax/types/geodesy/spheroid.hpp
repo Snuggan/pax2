@@ -10,9 +10,8 @@
 
 namespace pax {
 
-	template< typename F = double >
 	struct Spheroid {
-		using value_type = F;
+		using value_type = double;
 
 		// DON'T USE! Must be "published" if Sphereoid is to be a template argument...
 		value_type													m_a{}, m_f{};
