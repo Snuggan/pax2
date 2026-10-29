@@ -516,6 +516,24 @@ namespace pax {
 	/// Lucas Polynomials: https://en.wikipedia.org/wiki/Fibonacci_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
 	constexpr auto lucas_x2			  = Polynomial_x2( lucas< N, X, Algo > );
+
+
+	template< typename Algo, typename X, std::size_t N >
+	constexpr auto Touchard() {
+		if constexpr( N == 0 )			return polynomial< Algo, X >( 0 );
+		else if constexpr( N == 1 )		return polynomial< Algo, X >( 0, 1 );
+		else {
+			auto previous			  = Touchard< Algo, X, N-1 >();
+			previous				  = previous + derivate( previous );
+			Polynomial< Algo, X, N+1 >	res{};
+			std::copy( previous.begin(), previous.end(), res.begin() + 1 );
+			return res;
+		}
+	};
+
+	/// Touchard Polynomials: https://en.wikipedia.org/wiki/Touchard_polynomials
+	template< std::size_t N, typename X = double, typename Algo = horner_fma >
+	constexpr auto touchard			  = Touchard< Algo, X, N >();
 	
 
 
