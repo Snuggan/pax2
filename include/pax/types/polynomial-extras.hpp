@@ -305,287 +305,306 @@ namespace pax {
 	}
 
 
+	namespace detail {
+		template< typename Poly, typename X, std::size_t N >
+			requires( N != std::dynamic_extent )
+		struct Polyiter {
+		private:
+			template< std::size_t M >			using pp = Polynomial< typename Poly::algorithm, X, M >;
+			static constexpr pp< N   >			p1 = Polyiter< Poly, X, N-1 >::poly;
+			static constexpr pp< N-1 >			p2 = Polyiter< Poly, X, N-2 >::poly;
 
-	template< typename Poly, typename X, std::size_t N >
-		requires( N != std::dynamic_extent )
-	struct Polyiter {
-	private:
-		template< std::size_t M >			using pp = Polynomial< typename Poly::algorithm, X, M >;
-		static constexpr pp< N   >			p1 = Polyiter< Poly, X, N-1 >::poly;
-		static constexpr pp< N-1 >			p2 = Polyiter< Poly, X, N-2 >::poly;
+			// The general case.
+			template< std::size_t L, std::size_t M >
+			static consteval pp< std::max( N+L-1, N+M-2 ) > calc( const pp< L > & c1, const pp< M > & c2 ) noexcept {
+				return p1*c1 + p2*c2;
+			}
 
-		// The general case.
-		template< std::size_t L, std::size_t M >
-		static consteval pp< std::max( N+L-1, N+M-2 ) > calc( const pp< L > & c1, const pp< M > & c2 ) noexcept {
-			return p1*c1 + p2*c2;
-		}
+			// Special case for when every second coefficient is zero.
+			static consteval pp< N + 1 > calc( const X c1, const X c2 ) noexcept {
+				static constexpr std::size_t 	start  = 2 - ( N % 2 );
+				pp< N+1 >						p0{};
+				p0[ N ]						 =	p1[ N-1 ]*c1;
+				p0[ 0 ]						 =	p2[ 0   ]*c2;
+				for( std::size_t i=start; i<N-1; i+=2 )
+					p0[ i ]					 =	p1[ i-1 ]*c1 + p2[ i ]*c2;
+				return p0;
+			}
 
-		// Special case for when every second coefficient is zero.
-		static consteval pp< N + 1 > calc( const X c1, const X c2 ) noexcept {
-			static constexpr std::size_t 	start  = 2 - ( N % 2 );
-			pp< N+1 >						p0{};
-			p0[ N ]						 =	p1[ N-1 ]*c1;
-			p0[ 0 ]						 =	p2[ 0   ]*c2;
-			for( std::size_t i=start; i<N-1; i+=2 )
-				p0[ i ]					 =	p1[ i-1 ]*c1 + p2[ i ]*c2;
-			return p0;
-		}
+		public:
+			static constexpr auto poly		 = calc( Poly::template c1< N >, Poly::template c2< N > )/Poly::template divis < N >;
+		};
 
-	public:
-		static constexpr auto poly		 = calc( Poly::template c1< N >, Poly::template c2< N > )/Poly::template divis < N >;
-	};
+		template< typename Poly, typename X >
+		struct Polyiter< Poly, X, 0 > {	static constexpr auto poly = Poly::poly0;	};
 
-	template< typename Poly, typename X >
-	struct Polyiter< Poly, X, 0 > {	static constexpr auto poly = Poly::poly0;	};
-
-	template< typename Poly, typename X >
-	struct Polyiter< Poly, X, 1 > {	static constexpr auto poly = Poly::poly1;	};
+		template< typename Poly, typename X >
+		struct Polyiter< Poly, X, 1 > {	static constexpr auto poly = Poly::poly1;	};
 
 
 
-	template< typename Algo, typename X, std::size_t N, std::size_t a >
-	constexpr auto Abel() {
-		if constexpr( N == 0 )			return polynomial< Algo, X >( 1 );
-		else {
-			Polynomial< Algo, X, N + 1 >	res{};
-			res[ 1 ] = 1;
-			for( std::size_t j=2; j<N+1; ++j )
-				for( std::size_t i=j; i>0; --i )
-					res[ i ] = res[ i - 1 ] - a*N*res[ i ];
-			return res;
-		}
-	};
+		template< typename Algo, typename X, std::size_t N, std::size_t a >
+		constexpr auto Abel() {
+			if constexpr( N == 0 )			return polynomial< Algo, X >( 1 );
+			else {
+				Polynomial< Algo, X, N + 1 >	res{};
+				res[ 1 ] = 1;
+				for( std::size_t j=2; j<N+1; ++j )
+					for( std::size_t i=j; i>0; --i )
+						res[ i ] = res[ i - 1 ] - a*N*res[ i ];
+				return res;
+			}
+		};
 
-	/// Touchard Polynomials: https://en.wikipedia.org/wiki/Touchard_polynomials
-	template< std::size_t N, std::size_t a, typename X = double, typename Algo = horner_fma >
-	constexpr auto abel				  = Abel< Algo, X, N, a >();
+		template< typename X, typename Algo = horner_fma >
+		struct Bessel {
+			using 							algorithm = Algo;
+			template< std::size_t N >		static constexpr auto c1 =  Polynomial< Algo, X, 2 >({ 0, 2*N - 1 });
+			template< std::size_t N >		static constexpr auto c2 =  Polynomial< Algo, X, 1 >({ 1 });
+			template< std::size_t N >		static constexpr X divis  =  1;
+			static constexpr auto			poly0 = Polynomial< Algo, X, 1 >({ 1 });
+			static constexpr auto			poly1 = Polynomial< Algo, X, 2 >({ 1, 1 });
+		};
+
+		template< typename X, typename Algo = horner_fma >
+		struct Bessel_reversed : Bessel< X, Algo > {
+			template< std::size_t N >		static constexpr auto c1 =  Polynomial< Algo, X, 1 >({ 2*N - 1 });
+			template< std::size_t N >		static constexpr auto c2 =  Polynomial< Algo, X, 3 >({ 0, 0, 1 });
+		};
+
+		template< typename X, typename Algo = horner_fma >
+		struct Chebyshev1 {
+			using 							algorithm = Algo;
+			template< std::size_t N >		static constexpr X c1 =  2;
+			template< std::size_t N >		static constexpr X c2 = -1;
+			template< std::size_t N >		static constexpr X divis  =  1;
+			static constexpr auto			poly0 = Polynomial< Algo, X, 1 >({ 1 });
+			static constexpr auto			poly1 = Polynomial< Algo, X, 2 >({ 0, 1 });
+		};
+
+		template< typename X, typename Algo = horner_fma >
+		struct Chebyshev2 : Chebyshev1< X, Algo > {
+			static constexpr auto			poly1 = Polynomial< Algo, X, 2 >({ 0, 2 });
+		};
+
+		template< typename X, std::size_t a, typename Algo = horner_fma >
+		struct Dickson1 {
+			using 							algorithm = Algo;
+			template< std::size_t N >		static constexpr auto c1 =  Polynomial< Algo, X, 2 >({ 0, 1 });
+			template< std::size_t N >		static constexpr auto c2 =  Polynomial< Algo, X, 1 >({ -X( a ) });
+			template< std::size_t N >		static constexpr X divis  =  1;
+			static constexpr auto			poly0 = Polynomial< Algo, X, 1 >({ 2 });
+			static constexpr auto			poly1 = Polynomial< Algo, X, 2 >({ 0, 1 });
+		};
+
+		template< typename X, std::size_t a, typename Algo = horner_fma >
+		struct Dickson2 : Dickson1< X, a, Algo > {
+			static constexpr auto			poly0 = Polynomial< Algo, X, 1 >({ 1 });
+		};
+
+		template< typename X, typename Algo = horner_fma >
+		struct Fibonacci : Chebyshev1< X, Algo > {
+			template< std::size_t N >		static constexpr X c1 =  1;
+			template< std::size_t N >		static constexpr X c2 =  1;
+		};
+
+		template< typename X, typename Algo = horner_fma >
+		struct Hermite1 : Fibonacci< X, Algo > {
+			template< std::size_t N >		static constexpr X c2 = X( 1 ) - N;
+		};
 	
+		template< typename X, typename Algo = horner_fma >
+		struct Hermite2 : Chebyshev2< X, Algo > {
+			template< std::size_t N >		static constexpr X c2 = X( 2 ) - 2*N;
+		};
+
+		template< typename X, X a, X b, typename Algo = horner_fma >
+		struct Jacobi {
+			using 							algorithm = Algo;
+			template< std::size_t N >		static constexpr X n2ab  =  2*N + a + b;
+			template< std::size_t N >		static constexpr auto c1 =  
+												Polynomial< Algo, X, 2 >({ a*a-b*b, n2ab<N>*(n2ab<N>-2) })*(n2ab<N>-1);
+			template< std::size_t N >		static constexpr auto c2 =  
+												Polynomial< Algo, X, 1 >({ -2*(N+a-1)*(N+b-1)*n2ab<N> });
+			template< std::size_t N >		static constexpr X divis  = 2*N*(N+a+b)*(n2ab<N>-2);
+			static constexpr auto			poly0 = Polynomial< Algo, X, 1 >({ 1 });
+			static constexpr auto			poly1 = Polynomial< Algo, X, 2 >({ a - (a+b)*0.5, (a+b)*0.5 + 1 });
+		};
+
+		template< typename X, X a, typename Algo = horner_fma >
+		struct Laguerre_generalized {
+			using 							algorithm = Algo;
+			template< std::size_t N >		static constexpr auto c1 = Polynomial< Algo, X, 2 >({ 2*N - 1 + a, -1 });
+			template< std::size_t N >		static constexpr auto c2 = Polynomial< Algo, X, 1 >({ -a - N + 1 });
+			template< std::size_t N >		static constexpr X divis = N;
+			static constexpr auto			poly0 = Polynomial< Algo, X, 1 >({ 1 });
+			static constexpr auto			poly1 = Polynomial< Algo, X, 2 >({ 1 + a, -1 });
+		};
+
+		template< typename X, typename Algo = horner_fma >
+		struct Laguerre : Laguerre_generalized< X, 0.0, Algo > {};
+
+		template< typename X, typename Algo = horner_fma >
+		struct Legendre : Chebyshev1< X, Algo > {
+			template< std::size_t N >		static constexpr X c1 =  X( 2*N - 1 );
+			template< std::size_t N >		static constexpr X c2 = -X(   N - 1 );
+			template< std::size_t N >		static constexpr X divis   =  N;
+		};
+
+		template< typename X, typename Algo = horner_fma >
+		struct Lucas : Fibonacci< X, Algo > {
+			static constexpr auto			poly0 = Polynomial< Algo, X, 1 >({ 2 });
+		};
+
+		template< bool Alternative, typename Algo, typename X, std::size_t N >
+		constexpr auto Shapiro() {
+			constexpr std::size_t 			Sz = std::size_t( 1u ) << N;
+			if constexpr( N == 0 )			return polynomial< Algo, X >( 0 );
+			else if constexpr( N == 1 )
+				return Alternative ? polynomial< Algo, X >( 1, -1 ) : polynomial< Algo, X >( 1, 1 );
+			else {
+				auto res		  = Polynomial< Algo, X, Sz >();
+				res[ 0 ]		  = res[ 1 ] = res[ 2 ] = 1;
+				res[ 3 ]		  = -1;
+				std::size_t half  = 2u;
+				while( ( half *= 2 ) < Sz ) {
+					std::copy( res.begin(), res.begin() + half/2u, res.begin() + half );
+					auto ptr0 = res.begin()       + half/2u;
+					auto ptr2 = res.begin()+ half + half/2u;
+					while( ptr0 < res.begin() + half )	*( ptr2++ ) = -*( ptr0++ );
+				}
+				if constexpr( Alternative )
+					for( auto ptr = res.begin() + Sz/2; ptr < res.end(); ++ptr )	*ptr = -*ptr;
+				return res;
+			}
+		};
+
+		template< typename Algo, typename X, std::size_t N >
+		constexpr auto Touchard() {
+			if constexpr( N == 0 )			return polynomial< Algo, X >( 0 );
+			else if constexpr( N == 1 )		return polynomial< Algo, X >( 0, 1 );
+			else {
+				auto previous			  = Touchard< Algo, X, N-1 >();
+				previous				  = previous + derivate( previous );
+				Polynomial< Algo, X, N+1 >	res{};
+				std::copy( previous.begin(), previous.end(), res.begin() + 1 );
+				return res;
+			}
+		};
+	}
 
 
-	template< typename X, typename Algo = horner_fma >
-	struct Bessel {
-		using 							algorithm = Algo;
-		template< std::size_t N >		static constexpr auto c1 =  Polynomial< Algo, X, 2 >({ 0, 2*N - 1 });
-		template< std::size_t N >		static constexpr auto c2 =  Polynomial< Algo, X, 1 >({ 1 });
-		template< std::size_t N >		static constexpr X divis  =  1;
-		static constexpr auto			poly0 = Polynomial< Algo, X, 1 >({ 1 });
-		static constexpr auto			poly1 = Polynomial< Algo, X, 2 >({ 1, 1 });
-	};
-
-	/// Bessel Polynomials: https://en.wikipedia.org/wiki/Bessel_Polynomials
+	/// Touchard polynomials: https://en.wikipedia.org/wiki/Abel_polynomials
+	template< std::size_t N, std::size_t a, typename X = double, typename Algo = horner_fma >
+	constexpr auto abel				  = detail::Abel< Algo, X, N, a >();
+	
+	/// Bessel polynomials: https://en.wikipedia.org/wiki/Bessel_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
-	constexpr auto bessel			  = Polyiter< Bessel< X, Algo >, X, N >::poly;
+	constexpr auto bessel			  = detail::Polyiter< detail::Bessel< X, Algo >, X, N >::poly;
 
-
-	template< typename X, typename Algo = horner_fma >
-	struct Bessel_reversed : Bessel< X, Algo > {
-		template< std::size_t N >		static constexpr auto c1 =  Polynomial< Algo, X, 1 >({ 2*N - 1 });
-		template< std::size_t N >		static constexpr auto c2 =  Polynomial< Algo, X, 3 >({ 0, 0, 1 });
-	};
-
-	/// Reverse Bessel Polynomials: https://en.wikipedia.org/wiki/Bessel_Polynomials
+	/// Bessel reversed polynomials: https://en.wikipedia.org/wiki/Bessel_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
-	constexpr auto bessel_reversed	  = Polyiter< Bessel_reversed< X, Algo >, X, N >::poly;
+	constexpr auto bessel_reversed	  = detail::Polyiter< detail::Bessel_reversed< X, Algo >, X, N >::poly;
 
-
-	template< typename X, typename Algo = horner_fma >
-	struct Chebyshev1 {
-		using 							algorithm = Algo;
-		template< std::size_t N >		static constexpr X c1 =  2;
-		template< std::size_t N >		static constexpr X c2 = -1;
-		template< std::size_t N >		static constexpr X divis  =  1;
-		static constexpr auto			poly0 = Polynomial< Algo, X, 1 >({ 1 });
-		static constexpr auto			poly1 = Polynomial< Algo, X, 2 >({ 0, 1 });
-	};
-
-	/// Chebyshev Polynomials of the first kind: https://en.wikipedia.org/wiki/Chebyshev_Polynomials
+	/// Chebyshev polynomials of the first kind: https://en.wikipedia.org/wiki/Chebyshev_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
-	constexpr auto chebyshev1		  = Polyiter< Chebyshev1< X, Algo >, X, N >::poly;
+	constexpr auto chebyshev1		  = detail::Polyiter< detail::Chebyshev1< X, Algo >, X, N >::poly;
 
-	/// Chebyshev Polynomials of the first kind: https://en.wikipedia.org/wiki/Chebyshev_Polynomials
+	/// Chebyshev polynomials of the first kind: https://en.wikipedia.org/wiki/Chebyshev_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
 	constexpr auto chebyshev1_x2	  = Polynomial_x2( chebyshev1< N, X, Algo > );
 
-	template< typename X, typename Algo = horner_fma >
-	struct Chebyshev2 : Chebyshev1< X, Algo > {
-		static constexpr auto			poly1 = Polynomial< Algo, X, 2 >({ 0, 2 });
-	};
-
-	/// Chebyshev Polynomials of the second kind: https://en.wikipedia.org/wiki/Chebyshev_Polynomials
+	/// Chebyshev polynomials of the second kind: https://en.wikipedia.org/wiki/Chebyshev_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
-	constexpr auto chebyshev2		  = Polyiter< Chebyshev2< X, Algo >, X, N >::poly;
+	constexpr auto chebyshev2		  = detail::Polyiter< detail::Chebyshev2< X, Algo >, X, N >::poly;
 
 	/// Chebyshev Polynomials of the first kind: https://en.wikipedia.org/wiki/Chebyshev_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
 	constexpr auto chebyshev2_x2	  = Polynomial_x2( chebyshev2< N, X, Algo > );
 
+	/// Dickson polynomials of the first kind: https://en.wikipedia.org/wiki/Dickson_polynomial
+	template< std::size_t N, std::size_t a = 1, typename X = double, typename Algo = horner_fma >
+	constexpr auto dickson1			  = detail::Polyiter< detail::Dickson1< X, a, Algo >, X, N >::poly;
 
-	template< typename X, typename Algo = horner_fma >
-	struct Fibonacci : Chebyshev1< X, Algo > {
-		template< std::size_t N >		static constexpr X c1 =  1;
-		template< std::size_t N >		static constexpr X c2 =  1;
-	};
+	/// Dickson polynomials of the first kind: https://en.wikipedia.org/wiki/Dickson_polynomial
+	template< std::size_t N, std::size_t a = 1, typename X = double, typename Algo = horner_fma >
+	constexpr auto dickson1_x2		  = Polynomial_x2( dickson1< N, a, X, Algo > );
 
-	/// Fibonacci Polynomials: https://en.wikipedia.org/wiki/Fibonacci_Polynomials
+	/// Dickson polynomials of the seconnd kind: https://en.wikipedia.org/wiki/Dickson_polynomial
+	template< std::size_t N, std::size_t a = 1, typename X = double, typename Algo = horner_fma >
+	constexpr auto dickson2			  = detail::Polyiter< detail::Dickson2< X, a, Algo >, X, N >::poly;
+
+	/// Dickson polynomials of the second kind: https://en.wikipedia.org/wiki/Dickson_polynomial
+	template< std::size_t N, std::size_t a = 1, typename X = double, typename Algo = horner_fma >
+	constexpr auto dickson2_x2		  = Polynomial_x2( dickson2< N, a, X, Algo > );
+
+	/// Fibonacci polynomials: https://en.wikipedia.org/wiki/Fibonacci_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
-	constexpr auto fibonacci		  = Polyiter< Fibonacci< X, Algo >, X, N-1 >::poly;
+	constexpr auto fibonacci		  = detail::Polyiter< detail::Fibonacci< X, Algo >, X, N-1 >::poly;
 	template< typename X = double, typename Algo = horner_fma >
 	constexpr auto fibonacci< 0, X, Algo >  = Polynomial< Algo, X, 1 >({ 0 });
 
-	/// Fibonacci Polynomials: https://en.wikipedia.org/wiki/Fibonacci_Polynomials
+	/// Fibonacci polynomials: https://en.wikipedia.org/wiki/Fibonacci_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
 	constexpr auto fibonacci_x2		  = Polynomial_x2( fibonacci< N, X, Algo > );
 
-
-	template< typename X, typename Algo = horner_fma >
-	struct Hermite1 : Fibonacci< X, Algo > {
-		template< std::size_t N >		static constexpr X c2 = X( 1 ) - N;
-	};
-	
-	/// Pprobabilist's Hermite Polynomials: https://en.wikipedia.org/wiki/Hermite_Polynomials
+	/// Pprobabilist's Hermite polynomials: https://en.wikipedia.org/wiki/Hermite_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
-	constexpr auto hermite1			  = Polyiter< Hermite1< X, Algo >, X, N >::poly;
+	constexpr auto hermite1			  = detail::Polyiter< detail::Hermite1< X, Algo >, X, N >::poly;
 
-	/// Pprobabilist's Hermite Polynomials: https://en.wikipedia.org/wiki/Hermite_Polynomials
+	/// Pprobabilist's Hermite polynomials: https://en.wikipedia.org/wiki/Hermite_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
 	constexpr auto hermite1_x2		  = Polynomial_x2( hermite1< N, X, Algo > );
 
-
-	template< typename X, typename Algo = horner_fma >
-	struct Hermite2 : Chebyshev2< X, Algo > {
-		template< std::size_t N >		static constexpr X c2 = X( 2 ) - 2*N;
-	};
-
-	/// Physicist's Hermite Polynomials: https://en.wikipedia.org/wiki/Hermite_Polynomials
+	/// Physicist's Hermite polynomials: https://en.wikipedia.org/wiki/Hermite_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
-	constexpr auto hermite2			  = Polyiter< Hermite2< X, Algo >, X, N >::poly;
+	constexpr auto hermite2			  = detail::Polyiter< detail::Hermite2< X, Algo >, X, N >::poly;
 
-	/// Physicist's Hermite Polynomials: https://en.wikipedia.org/wiki/Hermite_Polynomials
+	/// Physicist's Hermite polynomials: https://en.wikipedia.org/wiki/Hermite_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
 	constexpr auto hermite2_x2		  = Polynomial_x2( hermite2< N, X, Algo > );
 
-
-	template< typename X, X a, X b, typename Algo = horner_fma >
-	struct Jacobi {
-		using 							algorithm = Algo;
-		template< std::size_t N >		static constexpr X n2ab  =  2*N + a + b;
-		template< std::size_t N >		static constexpr auto c1 =  
-											Polynomial< Algo, X, 2 >({ a*a-b*b, n2ab<N>*(n2ab<N>-2) })*(n2ab<N>-1);
-		template< std::size_t N >		static constexpr auto c2 =  
-											Polynomial< Algo, X, 1 >({ -2*(N+a-1)*(N+b-1)*n2ab<N> });
-		template< std::size_t N >		static constexpr X divis  = 2*N*(N+a+b)*(n2ab<N>-2);
-		static constexpr auto			poly0 = Polynomial< Algo, X, 1 >({ 1 });
-		static constexpr auto			poly1 = Polynomial< Algo, X, 2 >({ a - (a+b)*0.5, (a+b)*0.5 + 1 });
-	};
-
-	/// Jacobi Polynomials: https://en.wikipedia.org/wiki/Jacobi_Polynomials
+	/// Jacobi polynomials: https://en.wikipedia.org/wiki/Jacobi_Polynomials
 	template< std::size_t N, typename X, X a, X b, typename Algo = horner_fma >
-	constexpr auto jacobi			  = Polyiter< Jacobi< X, a, b, Algo >, X, N >::poly;
+	constexpr auto jacobi			  = detail::Polyiter< detail::Jacobi< X, a, b, Algo >, X, N >::poly;
 
-
-	template< typename X, X a, typename Algo = horner_fma >
-	struct Laguerre_generalized {
-		using 							algorithm = Algo;
-		template< std::size_t N >		static constexpr auto c1 = Polynomial< Algo, X, 2 >({ 2*N - 1 + a, -1 });
-		template< std::size_t N >		static constexpr auto c2 = Polynomial< Algo, X, 1 >({ -a - N + 1 });
-		template< std::size_t N >		static constexpr X divis = N;
-		static constexpr auto			poly0 = Polynomial< Algo, X, 1 >({ 1 });
-		static constexpr auto			poly1 = Polynomial< Algo, X, 2 >({ 1 + a, -1 });
-	};
-
-	/// Generalized Laguerre Polynomials: https://en.wikipedia.org/wiki/Laguerre_Polynomials
+	/// Generalized Laguerre polynomials: https://en.wikipedia.org/wiki/Laguerre_Polynomials
 	template< std::size_t N, typename X, X a, typename Algo = horner_fma >
-	constexpr auto laguerre_generalized = Polyiter< Laguerre_generalized< X, a, Algo >, X, N >::poly;
+	constexpr auto laguerre_generalized = detail::Polyiter< detail::Laguerre_generalized< X, a, Algo >, X, N >::poly;
 
-
-	template< typename X, typename Algo = horner_fma >
-	struct Laguerre : Laguerre_generalized< X, 0.0, Algo > {};
-
-	/// Laguerre Polynomials: https://en.wikipedia.org/wiki/Laguerre_Polynomials
+	/// Laguerre polynomials: https://en.wikipedia.org/wiki/Laguerre_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
-	constexpr auto laguerre			  = Polyiter< Laguerre< X, Algo >, X, N >::poly;
+	constexpr auto laguerre			  = detail::Polyiter< detail::Laguerre< X, Algo >, X, N >::poly;
 
-
-	template< typename X, typename Algo = horner_fma >
-	struct Legendre : Chebyshev1< X, Algo > {
-		template< std::size_t N >		static constexpr X c1 =  X( 2*N - 1 );
-		template< std::size_t N >		static constexpr X c2 = -X(   N - 1 );
-		template< std::size_t N >		static constexpr X divis   =  N;
-	};
-
-	/// Legendre Polynomials: https://en.wikipedia.org/wiki/Legendre_Polynomials
+	/// Legendre polynomials: https://en.wikipedia.org/wiki/Legendre_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
-	constexpr auto legendre			  = Polyiter< Legendre< X, Algo >, X, N >::poly;
+	constexpr auto legendre			  = detail::Polyiter< detail::Legendre< X, Algo >, X, N >::poly;
 
-	/// Legendre Polynomials: https://en.wikipedia.org/wiki/Legendre_Polynomials
+	/// Legendre polynomials: https://en.wikipedia.org/wiki/Legendre_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
 	constexpr auto legendre_x2		  = Polynomial_x2( legendre< N, X, Algo > );
 
-
-	template< typename X, typename Algo = horner_fma >
-	struct Lucas : Fibonacci< X, Algo > {
-		static constexpr auto			poly0 = Polynomial< Algo, X, 1 >({ 2 });
-	};
-
-	/// Lucas Polynomials: https://en.wikipedia.org/wiki/Fibonacci_Polynomials
+	/// Lucas polynomials: https://en.wikipedia.org/wiki/Fibonacci_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
-	constexpr auto lucas			  = Polyiter< Lucas< X, Algo >, X, N >::poly;
+	constexpr auto lucas			  = detail::Polyiter< detail::Lucas< X, Algo >, X, N >::poly;
 
-	/// Lucas Polynomials: https://en.wikipedia.org/wiki/Fibonacci_Polynomials
+	/// Lucas polynomials: https://en.wikipedia.org/wiki/Fibonacci_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
 	constexpr auto lucas_x2			  = Polynomial_x2( lucas< N, X, Algo > );
 
-
-	template< bool Alternative, typename Algo, typename X, std::size_t N >
-	constexpr auto Shapiro() {
-		constexpr std::size_t 			Sz = std::size_t( 1u ) << N;
-		if constexpr( N == 0 )			return polynomial< Algo, X >( 0 );
-		else if constexpr( N == 1 )
-			return Alternative ? polynomial< Algo, X >( 1, -1 ) : polynomial< Algo, X >( 1, 1 );
-		else {
-			auto res		  = Polynomial< Algo, X, Sz >();
-			res[ 0 ]		  = res[ 1 ] = res[ 2 ] = 1;
-			res[ 3 ]		  = -1;
-			std::size_t half  = 2u;
-			while( ( half *= 2 ) < Sz ) {
-				std::copy( res.begin(), res.begin() + half/2u, res.begin() + half );
-				auto ptr0 = res.begin()       + half/2u;
-				auto ptr2 = res.begin()+ half + half/2u;
-				while( ptr0 < res.begin() + half )	*( ptr2++ ) = -*( ptr0++ );
-			}
-			if constexpr( Alternative )
-				for( auto ptr = res.begin() + Sz/2; ptr < res.end(); ++ptr )	*ptr = -*ptr;
-			return res;
-		}
-	};
-
-	/// Touchard Polynomials: https://en.wikipedia.org/wiki/Touchard_polynomials
+	/// Touchard polynomials: https://en.wikipedia.org/wiki/Touchard_polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
-	constexpr auto shapiro1			  = Shapiro< false, Algo, X, N >();
+	constexpr auto shapiro1			  = detail::Shapiro< false, Algo, X, N >();
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
-	constexpr auto shapiro2			  = Shapiro< true,  Algo, X, N >();
+	constexpr auto shapiro2			  = detail::Shapiro< true,  Algo, X, N >();
 
-
-	template< typename Algo, typename X, std::size_t N >
-	constexpr auto Touchard() {
-		if constexpr( N == 0 )			return polynomial< Algo, X >( 0 );
-		else if constexpr( N == 1 )		return polynomial< Algo, X >( 0, 1 );
-		else {
-			auto previous			  = Touchard< Algo, X, N-1 >();
-			previous				  = previous + derivate( previous );
-			Polynomial< Algo, X, N+1 >	res{};
-			std::copy( previous.begin(), previous.end(), res.begin() + 1 );
-			return res;
-		}
-	};
-
-	/// Touchard Polynomials: https://en.wikipedia.org/wiki/Touchard_polynomials
+	/// Touchard polynomials: https://en.wikipedia.org/wiki/Touchard_polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
-	constexpr auto touchard			  = Touchard< Algo, X, N >();
+	constexpr auto touchard			  = detail::Touchard< Algo, X, N >();
 
-
+	/// Wilkinsons polynomial: https://en.wikipedia.org/wiki/Wilkinsons_polynomial
 	template< typename X = long double, typename Algo = horner_fma >
-	constexpr auto wilkinsons	  = Polynomial< Algo, X, 21 >{ 
+	constexpr auto wilkinsons		  = Polynomial< Algo, X, 21 >{ 
 		  2'432'902'008'176'640'000.0L, -8752'948'036'761'600'000.0L, 13803'759'753'640'704'000.0L,
 		-12'870'931'245'150'988'800.0L,  8037'811'822'645'051'776.0L, -3599'979'517'947'607'200.0L, 
 		  1'206'647'803'780'373'360.0L,  -311'333'643'161'390'640.0L,    63'030'812'099'294'896.0L, 

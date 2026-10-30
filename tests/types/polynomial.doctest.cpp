@@ -198,6 +198,30 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 5 >.polynomial(), polynomial(  0.0, 6,  0, -32,   0, 32 ) );
 		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 6 >.polynomial(), polynomial( -1.0, 0, 24,   0, -80,  0, 64 ) );
 	}
+	DOCTEST_TEST_CASE( "polynomial dickson" ) {
+		{
+			constexpr std::size_t a = 1u;
+			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 0, a >.polynomial(), polynomial( 2 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 1, a >.polynomial(), polynomial( 0, 1 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 5, a >.polynomial(), polynomial( 0.0, 5.0*a*a, 0, -5.0*a, 0, 1 ) );
+		} {
+			constexpr std::size_t a = 2u;
+			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 0, a >.polynomial(), polynomial( 2 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 1, a >.polynomial(), polynomial( 0, 1 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 5, a >.polynomial(), polynomial( 0.0, 5.0*a*a, 0, -5.0*a, 0, 1 ) );
+		}
+		{
+			constexpr std::size_t a = 1u;
+			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 0, a >.polynomial(), polynomial( 1 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 1, a >.polynomial(), polynomial( 0, 1 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 4, a >.polynomial(), polynomial( a*a, 0.0, -3.0*a, 0, 1 ) );
+		} {
+			constexpr std::size_t a = 2u;
+			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 0, a >.polynomial(), polynomial( 1 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 1, a >.polynomial(), polynomial( 0, 1 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 4, a >.polynomial(), polynomial( a*a, 0.0, -3.0*a, 0, 1 ) );
+		}
+	}
 	DOCTEST_TEST_CASE( "polynomial fibonacci" ) {
 		DOCTEST_FAST_CHECK_EQ( fibonacci< 0 >, polynomial( 0.0 ) );
 		DOCTEST_FAST_CHECK_EQ( fibonacci< 1 >, polynomial( 1.0 ) );
