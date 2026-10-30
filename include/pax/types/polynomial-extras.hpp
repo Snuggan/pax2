@@ -538,23 +538,6 @@ namespace pax {
 
 
 	template< typename Algo, typename X, std::size_t N >
-	constexpr auto Shapiro0() {
-		if constexpr( N == 0 )			return polynomial< Algo, X >( 0 );
-		else if constexpr( N == 1 )		return polynomial< Algo, X >( 1, 1 );
-		else if constexpr( N == 2 )		return polynomial< Algo, X >( 1, 1, 1, -1 );
-		else {
-			constexpr auto previous	  = Shapiro0< Algo, X, N-1 >();
-			Polynomial< Algo, X, 2*previous.extent >	res{};
-			std::copy( previous.begin(), previous.end(), res.begin() );
-			std::copy( previous.begin(), previous.begin() + previous.extent/2, res.begin() + previous.extent );
-			auto ptr0 = previous.begin() + previous.extent/2;
-			auto ptr2 = res.begin() + previous.extent + previous.extent/2;
-			while( ptr0 < previous.end() )	*( ptr2++ ) = -*( ptr0++ );
-			return res;
-		}
-	};
-
-	template< typename Algo, typename X, std::size_t N >
 	constexpr auto Shapiro1() {
 		constexpr std::size_t 	Sz = std::size_t( 1u ) << N;
 		if constexpr( N == 0 )			return polynomial< Algo, X >( 0 );
