@@ -173,6 +173,14 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( derivate( integrate( p ) ), p );
 	}
 
+	DOCTEST_TEST_CASE( "polynomial abel" ) {
+		DOCTEST_FAST_CHECK_EQ( abel< 0, 1 >, polynomial( 1 ) );
+		DOCTEST_FAST_CHECK_EQ( abel< 1, 1 >, polynomial( 0, 1 ) );
+		DOCTEST_FAST_CHECK_EQ( abel< 4, 1 >, polynomial( 0.0, -64, 48, -12, 1 ) );
+		DOCTEST_FAST_CHECK_EQ( abel< 0, 2 >, polynomial( 1 ) );
+		DOCTEST_FAST_CHECK_EQ( abel< 1, 1 >, polynomial( 0, 1 ) );
+		DOCTEST_FAST_CHECK_EQ( abel< 6, 2 >, polynomial( 0.0, -248832, 103680, -17280, 1440, -60, 1 ) );
+	}
 	DOCTEST_TEST_CASE( "polynomial bessel" ) {
 		DOCTEST_FAST_CHECK_EQ( bessel< 4 >, polynomial( 1.0, 10,  45, 105, 105 ) );
 		DOCTEST_FAST_CHECK_EQ( bessel< 5 >, polynomial( 1.0, 15, 105, 420, 945, 945 ) );

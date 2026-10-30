@@ -344,6 +344,25 @@ namespace pax {
 
 
 
+	template< typename Algo, typename X, std::size_t N, std::size_t a >
+	constexpr auto Abel() {
+		if constexpr( N == 0 )			return polynomial< Algo, X >( 1 );
+		else {
+			Polynomial< Algo, X, N + 1 >	res{};
+			res[ 1 ] = 1;
+			for( std::size_t j=2; j<N+1; ++j )
+				for( std::size_t i=j; i>0; --i )
+					res[ i ] = res[ i - 1 ] - a*N*res[ i ];
+			return res;
+		}
+	};
+
+	/// Touchard Polynomials: https://en.wikipedia.org/wiki/Touchard_polynomials
+	template< std::size_t N, std::size_t a, typename X = double, typename Algo = horner_fma >
+	constexpr auto abel				  = Abel< Algo, X, N, a >();
+	
+
+
 	template< typename X, typename Algo = horner_fma >
 	struct Bessel {
 		using 							algorithm = Algo;
@@ -534,7 +553,6 @@ namespace pax {
 	/// Touchard Polynomials: https://en.wikipedia.org/wiki/Touchard_polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
 	constexpr auto touchard			  = Touchard< Algo, X, N >();
-	
 
 
 	template< typename X = long double, typename Algo = horner_fma >
