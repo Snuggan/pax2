@@ -538,6 +538,62 @@ namespace pax {
 
 
 	template< typename Algo, typename X, std::size_t N >
+	constexpr auto Shapiro0() {
+		if constexpr( N == 0 )			return polynomial< Algo, X >( 0 );
+		else if constexpr( N == 1 )		return polynomial< Algo, X >( 1, 1 );
+		else if constexpr( N == 2 )		return polynomial< Algo, X >( 1, 1, 1, -1 );
+		else {
+			constexpr auto previous	  = Shapiro0< Algo, X, N-1 >();
+			Polynomial< Algo, X, 2*previous.extent >	res{};
+			std::copy( previous.begin(), previous.end(), res.begin() );
+			std::copy( previous.begin(), previous.begin() + previous.extent/2, res.begin() + previous.extent );
+			auto ptr0 = previous.begin() + previous.extent/2;
+			auto ptr2 = res.begin() + previous.extent + previous.extent/2;
+			while( ptr0 < previous.end() )	*( ptr2++ ) = -*( ptr0++ );
+			return res;
+		}
+	};
+
+	template< typename Algo, typename X, std::size_t N >
+	constexpr auto Shapiro1() {
+		constexpr std::size_t 	Sz = std::size_t( 1u ) << N;
+		if constexpr( N == 0 )			return polynomial< Algo, X >( 0 );
+		else if constexpr( N == 1 )		return polynomial< Algo, X >( 1, 1 );
+		else {
+			auto res		  = Polynomial< Algo, X, Sz >();
+			res[ 0 ]		  = res[ 1 ] = res[ 2 ] = 1;
+			res[ 3 ]		  = -1;
+			std::size_t half  = 2u;
+			while( ( half *= 2 ) < Sz ) {
+				std::copy( res.begin(), res.begin() + half/2u, res.begin() + half );
+				auto ptr0 = res.begin()       + half/2u;
+				auto ptr2 = res.begin()+ half + half/2u;
+				while( ptr0 < res.begin() + half )	*( ptr2++ ) = -*( ptr0++ );
+			}
+			return res;
+		}
+	};
+
+	template< typename Algo, typename X, std::size_t N >
+	constexpr auto Shapiro2() {
+		if constexpr( N == 0 )			return polynomial< Algo, X >( 0 );
+		else {
+			auto res	  = Shapiro1< Algo, X, N >();
+			auto ptr	  = res.begin() + res.extent/2 - 1;
+			while( ++ptr < res.end() )	*ptr = -*ptr;
+			return res;
+		}
+	};
+
+	/// Touchard Polynomials: https://en.wikipedia.org/wiki/Touchard_polynomials
+	template< std::size_t N, typename X = double, typename Algo = horner_fma >
+	constexpr auto shapiro1			  = Shapiro1< Algo, X, N >();
+
+	template< std::size_t N, typename X = double, typename Algo = horner_fma >
+	constexpr auto shapiro2			  = Shapiro2< Algo, X, N >();
+
+
+	template< typename Algo, typename X, std::size_t N >
 	constexpr auto Touchard() {
 		if constexpr( N == 0 )			return polynomial< Algo, X >( 0 );
 		else if constexpr( N == 1 )		return polynomial< Algo, X >( 0, 1 );

@@ -255,6 +255,16 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( lucas_x2< 5 >.polynomial(), polynomial( 0.0, 5, 0, 5, 0, 1 ) );
 		DOCTEST_FAST_CHECK_EQ( lucas_x2< 6 >.polynomial(), polynomial( 2.0, 0, 9, 0, 6, 0, 1 ) );
 	}
+	DOCTEST_TEST_CASE( "polynomial shapiro" ) {
+		DOCTEST_FAST_CHECK_EQ( shapiro1< 0 >, polynomial( 0.0 ) );
+		DOCTEST_FAST_CHECK_EQ( shapiro1< 1 >, polynomial( 1.0, 1 ) );
+		DOCTEST_FAST_CHECK_EQ( shapiro1< 2 >, polynomial( 1.0, 1, 1, -1 ) );
+		DOCTEST_FAST_CHECK_EQ( shapiro1< 3 >, polynomial( 1.0, 1, 1, -1, 1, 1, -1, 1 ) );
+		DOCTEST_FAST_CHECK_EQ( shapiro2< 0 >, polynomial( 0.0 ) );
+		DOCTEST_FAST_CHECK_EQ( shapiro2< 1 >, polynomial( 1.0, -1 ) );
+		DOCTEST_FAST_CHECK_EQ( shapiro2< 2 >, polynomial( 1.0, 1, -1, 1 ) );
+		DOCTEST_FAST_CHECK_EQ( shapiro2< 3 >, polynomial( 1.0, 1, 1, -1, -1, -1, 1, -1 ) );
+	}
 	DOCTEST_TEST_CASE( "polynomial touchard" ) {
 		DOCTEST_FAST_CHECK_EQ( touchard< 0 >, polynomial() );
 		DOCTEST_FAST_CHECK_EQ( touchard< 5 >, polynomial( 0.0, 1, 15, 25, 10, 1 ) );
