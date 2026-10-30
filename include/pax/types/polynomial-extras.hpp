@@ -16,7 +16,7 @@ namespace pax {
 
 	/// This is a wrapper for Polynomial, to be used with polynomials where every second element is zero. 
 	/// It works similar to Polynomial, but is faster as it ignore those zero-valued elements. It does not give 
-	/// you access to its innards, you need to convert it back to Polynomial for that (with ´.polynomial()´)
+	/// you access to the innards, you need to convert it back to Polynomial for that (with ´.polynomial()´).
 	template< typename Algo, is::floating F, std::size_t N >
 	class Polynomial_x2 {
 		static constexpr std::size_t 	extent	= ( N == std::dynamic_extent ) ? std::dynamic_extent : N/2 + 1;
@@ -24,17 +24,17 @@ namespace pax {
 		using 							P		= Polynomial< Algo, F, extent >;
 		P								m_poly{};
 		bool							m_preed{};
-	
+
 	public:
 		constexpr Polynomial_x2()										noexcept	= default;
 		constexpr Polynomial_x2( const Polynomial_x2 & )				noexcept	= default;
 		constexpr Polynomial_x2( Polynomial_x2 && )						noexcept	= default;
 		constexpr Polynomial_x2 & operator=( const Polynomial_x2 & )	noexcept	= default;
 		constexpr Polynomial_x2 & operator=( Polynomial_x2 && )			noexcept	= default;
-	
+
 		/// Constructor, from a "normal" polynomial.
 		constexpr Polynomial_x2( const P0 & p0_ ) 					{	*this = p0_;			}
-	
+
 		/// Operator =, of a "normal" polynomial.
 		constexpr Polynomial_x2 & operator=( const P0 & p0_ ) {
 			m_poly		  = P{};
@@ -48,7 +48,7 @@ namespace pax {
 			}
 			return *this;
 		}
-	
+
 		/// Return a "normal" polynomial (with every second term a zero).
 		constexpr auto polynomial()										const noexcept	{
 			P0 res{};
@@ -60,13 +60,12 @@ namespace pax {
 			}
 			return res;
 		}
-	
-	
+
 		/// Evaluate the polynomial at x_, using the given algorithm Algo.
 		[[nodiscard]] constexpr F operator()( const F x_ )				const noexcept	{
 			return Algo::operator()( std::span( m_poly ), x_ * x_ ) * ( m_preed ? x_ : F( 1 ) );
 		}
-	
+
 		/// The polynomial's degree. Polynomials with zero or one item have degrre 0. 
 		[[nodiscard]] constexpr std::size_t degree()					const noexcept	{
 			return 2*m_poly.degree() + m_preed;
@@ -511,7 +510,7 @@ namespace pax {
 	struct Legendre : Chebyshev1< X, Algo > {
 		template< std::size_t N >		static constexpr X c1 =  X( 2*N - 1 );
 		template< std::size_t N >		static constexpr X c2 = -X(   N - 1 );
-		template< std::size_t N >		static constexpr X divis  =  N;
+		template< std::size_t N >		static constexpr X divis   =  N;
 	};
 
 	/// Legendre Polynomials: https://en.wikipedia.org/wiki/Legendre_Polynomials
@@ -537,11 +536,12 @@ namespace pax {
 	constexpr auto lucas_x2			  = Polynomial_x2( lucas< N, X, Algo > );
 
 
-	template< typename Algo, typename X, std::size_t N >
-	constexpr auto Shapiro1() {
-		constexpr std::size_t 	Sz = std::size_t( 1u ) << N;
+	template< bool Alternative, typename Algo, typename X, std::size_t N >
+	constexpr auto Shapiro() {
+		constexpr std::size_t 			Sz = std::size_t( 1u ) << N;
 		if constexpr( N == 0 )			return polynomial< Algo, X >( 0 );
-		else if constexpr( N == 1 )		return polynomial< Algo, X >( 1, 1 );
+		else if constexpr( N == 1 )
+			return Alternative ? polynomial< Algo, X >( 1, -1 ) : polynomial< Algo, X >( 1, 1 );
 		else {
 			auto res		  = Polynomial< Algo, X, Sz >();
 			res[ 0 ]		  = res[ 1 ] = res[ 2 ] = 1;
@@ -553,27 +553,17 @@ namespace pax {
 				auto ptr2 = res.begin()+ half + half/2u;
 				while( ptr0 < res.begin() + half )	*( ptr2++ ) = -*( ptr0++ );
 			}
-			return res;
-		}
-	};
-
-	template< typename Algo, typename X, std::size_t N >
-	constexpr auto Shapiro2() {
-		if constexpr( N == 0 )			return polynomial< Algo, X >( 0 );
-		else {
-			auto res	  = Shapiro1< Algo, X, N >();
-			auto ptr	  = res.begin() + res.extent/2 - 1;
-			while( ++ptr < res.end() )	*ptr = -*ptr;
+			if constexpr( Alternative )
+				for( auto ptr = res.begin() + Sz/2; ptr < res.end(); ++ptr )	*ptr = -*ptr;
 			return res;
 		}
 	};
 
 	/// Touchard Polynomials: https://en.wikipedia.org/wiki/Touchard_polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
-	constexpr auto shapiro1			  = Shapiro1< Algo, X, N >();
-
+	constexpr auto shapiro1			  = Shapiro< false, Algo, X, N >();
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
-	constexpr auto shapiro2			  = Shapiro2< Algo, X, N >();
+	constexpr auto shapiro2			  = Shapiro< true,  Algo, X, N >();
 
 
 	template< typename Algo, typename X, std::size_t N >
