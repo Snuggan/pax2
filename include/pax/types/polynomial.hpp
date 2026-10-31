@@ -21,8 +21,8 @@
 
 namespace pax {
 	namespace is {
-		template< typename ... F >	concept floating	= ( std::floating_point < F > && ... );
-		template< typename ... A >	concept arithmetic	= ( std::is_arithmetic_v< A > && ... );
+		template< typename ... F >	concept floating	= ( std::floating_point < std::decay_t< F > > && ... );
+		template< typename ... A >	concept arithmetic	= ( std::is_arithmetic_v< std::decay_t< A > > && ... );
 	}
 
 	template< is::floating F >

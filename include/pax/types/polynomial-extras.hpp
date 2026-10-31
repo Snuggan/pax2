@@ -19,7 +19,7 @@ namespace pax {
 	/// you access to the innards, you need to convert it back to Polynomial for that (with ´.polynomial()´).
 	template< typename Algo, is::floating F, std::size_t N >
 	class Polynomial_x2 {
-		static constexpr std::size_t 	extent	= ( N == std::dynamic_extent ) ? std::dynamic_extent : N/2 + 1;
+		static constexpr std::size_t 	extent	= ( N == std::dynamic_extent ) ? std::dynamic_extent : ( N + 1 )/2;
 		using 							P0		= Polynomial< Algo, F, N >;
 		using 							P		= Polynomial< Algo, F, extent >;
 		P								m_poly{};
@@ -39,7 +39,7 @@ namespace pax {
 		constexpr Polynomial_x2 & operator=( const P0 & p0_ ) {
 			m_poly		  = P{};
 			m_preed		  = bool( p0_.size() && !p0_.front() );
-			if constexpr( N == std::dynamic_extent )	m_poly.resize( p0_.size()/2 + !m_preed );
+			if constexpr( N == std::dynamic_extent )		m_poly.resize( p0_.size()/2 + !m_preed );
 			bool on		  = m_preed;
 			auto ptr	  = m_poly.data();
 			for( const auto e : p0_ ) {
@@ -52,11 +52,15 @@ namespace pax {
 		/// Return a "normal" polynomial (with every second term a zero).
 		constexpr auto polynomial()										const noexcept	{
 			P0 res{};
-			if constexpr( N == std::dynamic_extent )	res.resize( m_poly.size()*2 + m_preed - 1 );
-			auto ptr	  = res.data() + m_preed;
-			for( const auto e : m_poly ) {
-				*ptr	  = e;
-				ptr		 += 2;
+			if constexpr( N == 0 )							{}
+			else if constexpr( N == 1 )						res[ 0 ] = m_poly[ 0 ];
+			else {
+				if constexpr( N == std::dynamic_extent )	res.resize( m_poly.size()*2 + m_preed - 1 );
+				auto ptr	  = res.begin() + m_preed;
+				for( const auto e : m_poly ) {
+					*ptr	  = e;
+					ptr		 += 2;
+				}
 			}
 			return res;
 		}
@@ -195,7 +199,6 @@ namespace pax {
 		for( auto & x : res )				x = x0_ - x;
 		return res;
 	}
-
 
 	/// Multiplication.
 	template< typename Algo, typename X0, std::size_t N0, typename X1, std::size_t N1 >
@@ -541,7 +544,7 @@ namespace pax {
 	/// Fibonacci polynomials: https://en.wikipedia.org/wiki/Fibonacci_Polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
 	constexpr auto fibonacci		  = detail::Polyiter< detail::Fibonacci< X, Algo >, X, N-1 >::poly;
-	template< typename X = double, typename Algo = horner_fma >
+	template< typename X, typename Algo >
 	constexpr auto fibonacci< 0, X, Algo >  = Polynomial< Algo, X, 1 >({ 0 });
 
 	/// Fibonacci polynomials: https://en.wikipedia.org/wiki/Fibonacci_Polynomials
@@ -592,9 +595,11 @@ namespace pax {
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
 	constexpr auto lucas_x2			  = Polynomial_x2( lucas< N, X, Algo > );
 
-	/// Touchard polynomials: https://en.wikipedia.org/wiki/Touchard_polynomials
+	/// Shapiro polynomials of the first kind: https://en.wikipedia.org/wiki/Shapiro_polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
 	constexpr auto shapiro1			  = detail::Shapiro< false, Algo, X, N >();
+
+	/// Shapiro polynomials of the second kind: https://en.wikipedia.org/wiki/Shapiro_polynomials
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
 	constexpr auto shapiro2			  = detail::Shapiro< true,  Algo, X, N >();
 
