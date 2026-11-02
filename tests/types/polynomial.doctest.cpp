@@ -44,10 +44,10 @@ namespace pax {
 		static_assert( polynomial()( 5 )			== 0 );
 		static_assert( polynomial().extent			== std::dynamic_extent );
 		static_assert( polynomial( 2 ).extent		== 1u );
-		static_assert( polynomial< comp_horner_fma >( 2, 1 )[ 0 ] 	== 2.0 );
-		static_assert( polynomial< comp_horner_fma >()( 5 )			== 0 );
-		static_assert( polynomial< comp_horner_fma >().extent		== std::dynamic_extent );
-		static_assert( polynomial< comp_horner_fma >( 2 ).extent	== 1u );
+		static_assert( polynomial< horner_fma_comp >( 2, 1 )[ 0 ] 	== 2.0 );
+		static_assert( polynomial< horner_fma_comp >()( 5 )			== 0 );
+		static_assert( polynomial< horner_fma_comp >().extent		== std::dynamic_extent );
+		static_assert( polynomial< horner_fma_comp >( 2 ).extent	== 1u );
 
 		static_assert( horner_fma()     ( Sp< 0 >{}, 				 2 ) ==  0 );
 		static_assert( horner_fma()     ( Sp< 1 >{ test.data(), 1 }, 2 ) ==  1 );
@@ -55,12 +55,12 @@ namespace pax {
 		static_assert( horner_fma()     ( Sp< 3 >{ test.data(), 3 }, 2 ) == 17 );
 		static_assert( horner_fma()     ( Sp< 4 >{ test.data(), 4 }, 2 ) == 49 );
 		static_assert( horner_fma()     ( Sp     { test.data(), 4 }, 2 ) == 49 );
-		static_assert( comp_horner_fma()( Sp< 0 >{}, 				 2 ) ==  0 );
-		static_assert( comp_horner_fma()( Sp< 1 >{ test.data(), 1 }, 2 ) ==  1 );
-		static_assert( comp_horner_fma()( Sp< 2 >{ test.data(), 2 }, 2 ) ==  5 );
-		static_assert( comp_horner_fma()( Sp< 3 >{ test.data(), 3 }, 2 ) == 17 );
-		static_assert( comp_horner_fma()( Sp< 4 >{ test.data(), 4 }, 2 ) == 49 );
-		static_assert( comp_horner_fma()( Sp     { test.data(), 4 }, 2 ) == 49 );
+		static_assert( horner_fma_comp()( Sp< 0 >{}, 				 2 ) ==  0 );
+		static_assert( horner_fma_comp()( Sp< 1 >{ test.data(), 1 }, 2 ) ==  1 );
+		static_assert( horner_fma_comp()( Sp< 2 >{ test.data(), 2 }, 2 ) ==  5 );
+		static_assert( horner_fma_comp()( Sp< 3 >{ test.data(), 3 }, 2 ) == 17 );
+		static_assert( horner_fma_comp()( Sp< 4 >{ test.data(), 4 }, 2 ) == 49 );
+		static_assert( horner_fma_comp()( Sp     { test.data(), 4 }, 2 ) == 49 );
 	}
 
 	DOCTEST_TEST_CASE( "polynomial output" ) {
@@ -122,21 +122,21 @@ namespace pax {
 		}
 	}
 	DOCTEST_TEST_CASE( "polynomial compensated horner" ) {
-		{	// static comp_horner_fma
-			DOCTEST_FAST_CHECK_EQ( comp_horner_fma()( poly.first< 1 >(), 2 ),	answer[ 0 ] );
-			DOCTEST_FAST_CHECK_EQ( comp_horner_fma()( poly.first< 2 >(), 2 ),	answer[ 1 ] );
-			DOCTEST_FAST_CHECK_EQ( comp_horner_fma()( poly.first< 3 >(), 2 ),	answer[ 2 ] );
-			DOCTEST_FAST_CHECK_EQ( comp_horner_fma()( poly.first< 4 >(), 2 ),	answer[ 3 ] );
-			DOCTEST_FAST_CHECK_EQ( comp_horner_fma()( poly.first< 5 >(), 2 ),	answer[ 4 ] );
-			// static_assert( comp_horner_fma( poly.first< 5 >(), 2 )	==	answer[ 4 ] );
+		{	// static horner_fma_comp
+			DOCTEST_FAST_CHECK_EQ( horner_fma_comp()( poly.first< 1 >(), 2 ),	answer[ 0 ] );
+			DOCTEST_FAST_CHECK_EQ( horner_fma_comp()( poly.first< 2 >(), 2 ),	answer[ 1 ] );
+			DOCTEST_FAST_CHECK_EQ( horner_fma_comp()( poly.first< 3 >(), 2 ),	answer[ 2 ] );
+			DOCTEST_FAST_CHECK_EQ( horner_fma_comp()( poly.first< 4 >(), 2 ),	answer[ 3 ] );
+			DOCTEST_FAST_CHECK_EQ( horner_fma_comp()( poly.first< 5 >(), 2 ),	answer[ 4 ] );
+			// static_assert( horner_fma_comp( poly.first< 5 >(), 2 )	==	answer[ 4 ] );
 		}
-		{	// dynamic comp_horner_fma
-			DOCTEST_FAST_CHECK_EQ( comp_horner_fma()( poly.first( 1 ), 2 ),		answer[ 0 ] );
-			DOCTEST_FAST_CHECK_EQ( comp_horner_fma()( poly.first( 2 ), 2 ),		answer[ 1 ] );
-			DOCTEST_FAST_CHECK_EQ( comp_horner_fma()( poly.first( 3 ), 2 ),		answer[ 2 ] );
-			DOCTEST_FAST_CHECK_EQ( comp_horner_fma()( poly.first( 4 ), 2 ),		answer[ 3 ] );
-			DOCTEST_FAST_CHECK_EQ( comp_horner_fma()( poly.first( 5 ), 2 ),		answer[ 4 ] );
-			// static_assert( comp_horner_fma( poly.first( 5 ), 2 ) == answer[ 4 ] );
+		{	// dynamic horner_fma_comp
+			DOCTEST_FAST_CHECK_EQ( horner_fma_comp()( poly.first( 1 ), 2 ),		answer[ 0 ] );
+			DOCTEST_FAST_CHECK_EQ( horner_fma_comp()( poly.first( 2 ), 2 ),		answer[ 1 ] );
+			DOCTEST_FAST_CHECK_EQ( horner_fma_comp()( poly.first( 3 ), 2 ),		answer[ 2 ] );
+			DOCTEST_FAST_CHECK_EQ( horner_fma_comp()( poly.first( 4 ), 2 ),		answer[ 3 ] );
+			DOCTEST_FAST_CHECK_EQ( horner_fma_comp()( poly.first( 5 ), 2 ),		answer[ 4 ] );
+			// static_assert( horner_fma_comp( poly.first( 5 ), 2 ) == answer[ 4 ] );
 		}
 	}
 	DOCTEST_TEST_CASE( "polynomial addition" ) {
@@ -188,38 +188,64 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( bessel_reversed< 5 >, polynomial( 945.0, 945, 420, 105, 15, 1 ) );
 	}
 	DOCTEST_TEST_CASE( "polynomial chebyshev" ) {
+		DOCTEST_FAST_CHECK_EQ( chebyshev2< 1 >( 3 ), 6 );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2< 2 >( 3 ), 35 );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2< 4 >( 3 ), 1189 );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2< 5 >( 3 ), 6930 );
+
 		DOCTEST_FAST_CHECK_EQ( chebyshev1< 5 >, polynomial(  0.0, 5,  0, -20,   0, 16 ) );
 		DOCTEST_FAST_CHECK_EQ( chebyshev1< 6 >, polynomial( -1.0, 0, 18,   0, -48,  0, 32 ) );
 		DOCTEST_FAST_CHECK_EQ( chebyshev2< 5 >, polynomial(  0.0, 6,  0, -32,   0, 32 ) );
 		DOCTEST_FAST_CHECK_EQ( chebyshev2< 6 >, polynomial( -1.0, 0, 24,   0, -80,  0, 64 ) );
 
-		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< 5 >.polynomial(), polynomial(  0.0, 5,  0, -20,   0, 16 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< 6 >.polynomial(), polynomial( -1.0, 0, 18,   0, -48,  0, 32 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 5 >.polynomial(), polynomial(  0.0, 6,  0, -32,   0, 32 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 6 >.polynomial(), polynomial( -1.0, 0, 24,   0, -80,  0, 64 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 1 >( 3 ), 6 );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 2 >( 3 ), 35 );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 4 >( 3 ), 1189 );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 5 >( 3 ), 6930 );
+
+		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< 5 >, polynomial(  0.0,  5,  0, -20,   0, 16 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< 6 >, polynomial( -1.0,  0, 18,   0, -48,  0, 32 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 1 >, polynomial(  0.0,  2 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 2 >, polynomial( -1.0,  0,  4 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 3 >, polynomial(  0.0, -4,  0, 8 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 4 >, polynomial(  1.0, 0, -12, 0, 16 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 5 >, polynomial(  0.0,  6,  0, -32,   0, 32 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 5 >, polynomial(  0.0,  6,  0, -32,   0, 32 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 6 >, polynomial( -1.0,  0, 24,   0, -80,  0, 64 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 7 >, polynomial(  0.0, -8, 0, 80,   0, -192,  0, 128 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 9 >, polynomial(  0.0, 10, 0, -160,   0, 672,  0, -1024, 0, 512 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2<11 >, polynomial(  0.0, -12, 0, 280, 0, -1792, 0, 4608, 0, -5120, 0, 2048 ) );
 	}
 	DOCTEST_TEST_CASE( "polynomial dickson" ) {
 		{
 			constexpr std::size_t a = 1u;
-			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 0, a >.polynomial(), polynomial( 2 ) );
-			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 1, a >.polynomial(), polynomial( 0, 1 ) );
-			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 5, a >.polynomial(), polynomial( 0.0, 5.0*a*a, 0, -5.0*a, 0, 1 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 0, a >, polynomial( 2 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 1, a >, polynomial( 0, 1 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 5, a >, polynomial( 0.0, 5.0*a*a, 0, -5.0*a, 0, 1 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 5, a >( 3 ), 123 );
+			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 6, a >( 3 ), 322 );
 		} {
 			constexpr std::size_t a = 2u;
-			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 0, a >.polynomial(), polynomial( 2 ) );
-			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 1, a >.polynomial(), polynomial( 0, 1 ) );
-			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 5, a >.polynomial(), polynomial( 0.0, 5.0*a*a, 0, -5.0*a, 0, 1 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 0, a >, polynomial( 2 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 1, a >, polynomial( 0, 1 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 5, a >, polynomial( 0.0, 5.0*a*a, 0, -5.0*a, 0, 1 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 5, a >( 3 ),  33 );
+			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 6, a >( 3 ),  65 );
 		}
 		{
 			constexpr std::size_t a = 1u;
-			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 0, a >.polynomial(), polynomial( 1 ) );
-			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 1, a >.polynomial(), polynomial( 0, 1 ) );
-			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 4, a >.polynomial(), polynomial( a*a, 0.0, -3.0*a, 0, 1 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 0, a >, polynomial( 1 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 1, a >, polynomial( 0, 1 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 4, a >, polynomial( a*a, 0.0, -3.0*a, 0, 1 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 4, a >( 3 ),  55 );
+			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 5, a >( 3 ), 144 );
 		} {
 			constexpr std::size_t a = 2u;
-			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 0, a >.polynomial(), polynomial( 1 ) );
-			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 1, a >.polynomial(), polynomial( 0, 1 ) );
-			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 4, a >.polynomial(), polynomial( a*a, 0.0, -3.0*a, 0, 1 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 0, a >, polynomial( 1 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 1, a >, polynomial( 0, 1 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 4, a >, polynomial( a*a, 0.0, -3.0*a, 0, 1 ) );
+			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 4, a >( 3 ),  31 );
+			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 5, a >( 3 ),  63 );
 		}
 	}
 	DOCTEST_TEST_CASE( "polynomial fibonacci" ) {
@@ -228,10 +254,12 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( fibonacci< 5 >, polynomial( 1.0, 0, 3, 0, 1 ) );
 		DOCTEST_FAST_CHECK_EQ( fibonacci< 6 >, polynomial( 0.0, 3, 0, 4, 0, 1 ) );
 
-		DOCTEST_FAST_CHECK_EQ( fibonacci_x2< 0 >.polynomial(), polynomial( 0.0 ) );
-		DOCTEST_FAST_CHECK_EQ( fibonacci_x2< 1 >.polynomial(), polynomial( 1.0 ) );
-		DOCTEST_FAST_CHECK_EQ( fibonacci_x2< 5 >.polynomial(), polynomial( 1.0, 0, 3, 0, 1 ) );
-		DOCTEST_FAST_CHECK_EQ( fibonacci_x2< 6 >.polynomial(), polynomial( 0.0, 3, 0, 4, 0, 1 ) );
+		DOCTEST_FAST_CHECK_EQ( fibonacci_x2< 0 >, polynomial( 0.0 ) );
+		DOCTEST_FAST_CHECK_EQ( fibonacci_x2< 1 >, polynomial( 1.0 ) );
+		DOCTEST_FAST_CHECK_EQ( fibonacci_x2< 5 >, polynomial( 1.0, 0, 3, 0, 1 ) );
+		DOCTEST_FAST_CHECK_EQ( fibonacci_x2< 6 >, polynomial( 0.0, 3, 0, 4, 0, 1 ) );
+		DOCTEST_FAST_CHECK_EQ( fibonacci_x2< 5 >(3 ), 109 );
+		DOCTEST_FAST_CHECK_EQ( fibonacci_x2< 6 >(3 ), 360 );
 	}
 	DOCTEST_TEST_CASE( "polynomial hermite" ) {
 		DOCTEST_FAST_CHECK_EQ( hermite1< 5 >, polynomial(    0.0,  15,   0,  -10,    0,  1 ) );
@@ -239,10 +267,15 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( hermite2< 5 >, polynomial(    0.0, 120,   0, -160,    0, 32 ) );
 		DOCTEST_FAST_CHECK_EQ( hermite2< 6 >, polynomial( -120.0,   0, 720,    0, -480,  0, 64 ) );
 
-		DOCTEST_FAST_CHECK_EQ( hermite1_x2< 5 >.polynomial(), polynomial(    0.0,  15,   0,  -10,    0,  1 ) );
-		DOCTEST_FAST_CHECK_EQ( hermite1_x2< 6 >.polynomial(), polynomial(  -15.0,   0,  45,    0,  -15,  0,  1 ) );
-		DOCTEST_FAST_CHECK_EQ( hermite2_x2< 5 >.polynomial(), polynomial(    0.0, 120,   0, -160,    0, 32 ) );
-		DOCTEST_FAST_CHECK_EQ( hermite2_x2< 6 >.polynomial(), polynomial( -120.0,   0, 720,    0, -480,  0, 64 ) );
+		DOCTEST_FAST_CHECK_EQ( hermite1_x2< 5 >, polynomial(    0.0,  15,   0,  -10,    0,  1 ) );
+		DOCTEST_FAST_CHECK_EQ( hermite1_x2< 6 >, polynomial(  -15.0,   0,  45,    0,  -15,  0,  1 ) );
+		DOCTEST_FAST_CHECK_EQ( hermite2_x2< 5 >, polynomial(    0.0, 120,   0, -160,    0, 32 ) );
+		DOCTEST_FAST_CHECK_EQ( hermite2_x2< 6 >, polynomial( -120.0,   0, 720,    0, -480,  0, 64 ) );
+
+		DOCTEST_FAST_CHECK_EQ( hermite1_x2< 5 >( 3 ),    18 );
+		DOCTEST_FAST_CHECK_EQ( hermite1_x2< 6 >( 3 ),   -96 );
+		DOCTEST_FAST_CHECK_EQ( hermite2_x2< 5 >( 3 ),  3816 );
+		DOCTEST_FAST_CHECK_EQ( hermite2_x2< 6 >( 3 ), 14136 );
 	}
 	DOCTEST_TEST_CASE( "polynomial jacobi" ) {
 		{
@@ -270,14 +303,18 @@ namespace pax {
 	DOCTEST_TEST_CASE( "polynomial legendre" ) {
 		DOCTEST_FAST_CHECK_EQ( legendre< 5 >, polynomial(  0.0, 15,   0, -70,    0, 63 )/8 );
 		DOCTEST_FAST_CHECK_EQ( legendre< 6 >, polynomial( -5.0,  0, 105,   0, -315,  0, 231 )/16 );
-		DOCTEST_FAST_CHECK_EQ( legendre_x2< 5 >.polynomial(), polynomial(  0.0, 15,   0, -70,    0, 63 )/8 );
-		DOCTEST_FAST_CHECK_EQ( legendre_x2< 6 >.polynomial(), polynomial( -5.0,  0, 105,   0, -315,  0, 231 )/16 );
+		DOCTEST_FAST_CHECK_EQ( legendre_x2< 5 >, polynomial(  0.0, 15,   0, -70,    0, 63 )/8 );
+		DOCTEST_FAST_CHECK_EQ( legendre_x2< 6 >, polynomial( -5.0,  0, 105,   0, -315,  0, 231 )/16 );
+		DOCTEST_FAST_CHECK_EQ( legendre_x2< 5 >( 3 ), 1683 );
+		DOCTEST_FAST_CHECK_EQ( legendre_x2< 6 >( 3 ), 8989 );
 	}
 	DOCTEST_TEST_CASE( "polynomial lucas" ) {
 		DOCTEST_FAST_CHECK_EQ( lucas< 5 >, polynomial( 0.0, 5, 0, 5, 0, 1 ) );
 		DOCTEST_FAST_CHECK_EQ( lucas< 6 >, polynomial( 2.0, 0, 9, 0, 6, 0, 1 ) );
-		DOCTEST_FAST_CHECK_EQ( lucas_x2< 5 >.polynomial(), polynomial( 0.0, 5, 0, 5, 0, 1 ) );
-		DOCTEST_FAST_CHECK_EQ( lucas_x2< 6 >.polynomial(), polynomial( 2.0, 0, 9, 0, 6, 0, 1 ) );
+		DOCTEST_FAST_CHECK_EQ( lucas_x2< 5 >, polynomial( 0.0, 5, 0, 5, 0, 1 ) );
+		DOCTEST_FAST_CHECK_EQ( lucas_x2< 6 >, polynomial( 2.0, 0, 9, 0, 6, 0, 1 ) );
+		DOCTEST_FAST_CHECK_EQ( lucas_x2< 5 >( 3 ),  393 );
+		DOCTEST_FAST_CHECK_EQ( lucas_x2< 6 >( 3 ), 1298 );
 	}
 	DOCTEST_TEST_CASE( "polynomial shapiro" ) {
 		DOCTEST_FAST_CHECK_EQ( shapiro1< 0 >, polynomial( 0.0 ) );
@@ -296,28 +333,6 @@ namespace pax {
 	DOCTEST_TEST_CASE( "polynomial wilkinsons" ) {
 		DOCTEST_FAST_CHECK_EQ( wilkinsons< long double >( 1.0 ), 0.0 );
 		// DOCTEST_FAST_CHECK_EQ( wilkinsons< long double >( 2.0 ), 0.0 );
-	}
-
-	DOCTEST_TEST_CASE( "polynomial_x2" ) {
-		{
-			constexpr auto 						p0 = polynomial();
-			const Polynomial_x2					p2( p0 );
-			DOCTEST_FAST_CHECK_EQ( p0( 2 ),		p2( 2 ) );
-			DOCTEST_FAST_CHECK_EQ( p0.degree(),	p2.degree() );
-			DOCTEST_FAST_CHECK_EQ( p0,			p2.polynomial() );
-		} {
-			constexpr auto 						p0 = chebyshev1< 8 >;
-			const Polynomial_x2					p2( p0 );
-			DOCTEST_FAST_CHECK_EQ( p0( 2 ),		p2( 2 ) );
-			DOCTEST_FAST_CHECK_EQ( p0.degree(),	p2.degree() );
-			DOCTEST_FAST_CHECK_EQ( p0,			p2.polynomial() );
-		} {
-			constexpr auto 						p0 = chebyshev1< 9 >;
-			const Polynomial_x2					p2( p0 );
-			DOCTEST_FAST_CHECK_EQ( p0( 2 ), 	p2( 2 ) );
-			DOCTEST_FAST_CHECK_EQ( p0.degree(),	p2.degree() );
-			DOCTEST_FAST_CHECK_EQ( p0, 			p2.polynomial() );
-		}
 	}
 
 }	// namespace pax

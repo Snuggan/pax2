@@ -23,7 +23,7 @@ namespace pax {
 		F				m_alpha0{}, m_sigma1{}, m_sigma2{}, m_epsilon{};
 		
 		template< std::size_t M >	// chebyshev2_x2 is more efficient than chebyshev2.
-		static constexpr auto cheby2 = chebyshev2_x2< M, F, Algo >;	
+		static constexpr auto cheby2 = chebyshev2_x2< M >;	
 
 		static constexpr F sqr ( const F x ) 				noexcept	{	return x*x;							}
 
@@ -71,7 +71,7 @@ namespace pax {
 			const F cos_sigma		  = std::cos( sigma_ );
 
 			// sin(nx) = chebyshev2< n-1 >( cos(x) )*sin(x): https://en.wikipedia.org/wiki/Chebyshev_polynomials
-			return	fma( std::sin( sigma_ ),
+			const auto res = 	fma( std::sin( sigma_ ),
 							eps_ * fma( C11( eps2 ), cheby2<  1 >( cos_sigma ),
 							eps_ * fma( C12( eps2 ), cheby2<  3 >( cos_sigma ),
 							eps_ * fma( C13( eps2 ), cheby2<  5 >( cos_sigma ),
@@ -79,6 +79,7 @@ namespace pax {
 							eps_ * fma( C15( eps2 ), cheby2<  9 >( cos_sigma ),
 							eps_ * 	    C16( eps2 )* cheby2< 11 >( cos_sigma ) ) ) ) ) ),
 						sigma_ ) * A1( eps_ );
+			return res;
 		}
 
 		// Eq. 23 in "Algorithms for geodesics" by Charles F. F. Karney. 

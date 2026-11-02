@@ -37,52 +37,58 @@ namespace pax {
 #		endif
 	}
 
+	enum class Horners { fma_all, fma_odd, fma_even, fma_compensated };
+
 	/// Horner's iterative method with std::fma.
-	struct horner_fma {
+	template< Horners variant >
+	struct Horner {
 		template< is::floating F, std::size_t N >
 		[[nodiscard]] static constexpr F operator()(
 			std::span< F, N >				p_,
 			const std::type_identity_t< F >	x_
 		) noexcept {
+			static constexpr bool every_2nd = ( variant == Horners::fma_even ) || ( variant == Horners::fma_odd );
+			static constexpr bool non_logical_size = every_2nd && ( ( N & 1u ) == ( variant == Horners::fma_odd ) );
 			if		constexpr( N == 0u ) 	return {};
 			else if constexpr( N == 1u ) 	return p_[ 0 ];
 			else if constexpr( N == 2u ) 	return fma( x_, p_[ 1 ], p_[ 0 ] );
 			else if constexpr( N == 3u ) 	return fma( x_, fma( x_, p_[ 2 ], p_[ 1 ] ), p_[ 0 ] );
 			else {
-				auto		itr	  = p_.end();
-				auto		res	  = p_.empty() ? 0 : *( --itr );
-				while( itr != p_.begin() ) 
-							res	  = fma( x_, res, *( --itr ) );
-				return res;
-			}
-		}
-	};
+				auto	itr			  = p_.end();
+				if constexpr( non_logical_size )
+						assert( !*( --itr ) && "Last coeff should be zero but is not" );
+				auto	res			  = ( p_.begin() == itr ) ? 0 : *( --itr );
 
-	/// Compensated Horner using fma.
-	/// It is similar to horner_fma, but more accurate and somewhat slower.
-	struct comp_horner_fma {
-		template< is::floating F, std::size_t N >
-		[[nodiscard]] static constexpr F operator()(
-			std::span< F, N >				p_,
-			const std::type_identity_t< F >	x_
-		) noexcept {
-			if		constexpr( N == 0u ) 	return {};
-			else if constexpr( N == 1u ) 	return p_[ 0 ];
-			else if constexpr( N == 2u ) 	return fma( x_, p_[ 1 ], p_[ 0 ] );
-			else {
-				auto		itr   = p_.end();
-				auto		res	  = p_.empty() ? 0 : *( --itr );
-				std::decay_t< F >	cmp{};	// Compensation for rounding errors.
-				while( itr != p_.begin() ) {
-					auto	tmp	  = res;
-					res			  =	fma( x_, res, *( --itr ) );
-					cmp			 +=	( tmp * x_ + *itr ) - ( res - cmp );
+				if constexpr( every_2nd ) {
+					const F	x2			  = x_ * x_;
+					while( itr > p_.begin() + 1 ) {
+							assert( !*( --itr ) && "Every second coeff should be zero" );
+							res			  = fma( x2, res, *( --itr ) );
+					}
+					return ( variant == Horners::fma_even ) ? res : res * x_;
+				} else {
+					if constexpr( variant == Horners::fma_all ) {	// Quick Horner.
+						while( itr != p_.begin() )	res = fma( x_, res, *( --itr ) );
+						return res;
+					} else {										// Compensated Horner.
+						std::decay_t< F >	cmp{};					// Compensation for rounding errors.
+						while( itr != p_.begin() ) {
+							auto tmp	  = res;
+							res			  =	fma( x_, res, *( --itr ) );
+							cmp			 +=	( tmp * x_ + *itr ) - ( res - cmp );
+						}
+						return res + cmp;
+					}
 				}
-				return res + cmp;
 			}
 		}
 	};
 	
+	using horner_fma		  = Horner< Horners::fma_all >;			///< Quick Horner algorithm using fma, if available.
+	using horner_fma_even	  = Horner< Horners::fma_even >;		///< Quick, when odd coeffs are zero.
+	using horner_fma_odd	  = Horner< Horners::fma_odd >;			///< Quick, when even coeffs are zero.
+	using horner_fma_comp	  = Horner< Horners::fma_compensated >;	///< More accurate Horner, but slightly slower.
+
 	
 	/// Implements a polynomial that uses Algo to calculate the polynomial for a given x.
 	/// Available algorithms for Algo are horner_fma and comp_horner_fma, above.
@@ -96,7 +102,7 @@ namespace pax {
 		
 		/// Evaluate the polynomial at x_, using the given algorithm Algo.
 		[[nodiscard]] constexpr F operator()( const F x_ )									const noexcept	{
-			return Algo::operator()( std::span( *this ), x_ );
+			return Algo::operator()( std::span< const F, N >( *this ), x_ );
 		}
 		
 		/// Compare two polynomials for equality.
