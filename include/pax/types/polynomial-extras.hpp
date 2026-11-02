@@ -453,8 +453,8 @@ namespace pax {
 	constexpr auto chebyshev2		  = detail::Polyiter< detail::Chebyshev2< X, Algo >, X, N >::poly;
 
 	/// Chebyshev Polynomials of the first kind: https://en.wikipedia.org/wiki/Chebyshev_Polynomials
+	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
 	template< std::size_t N, typename X = double >
-	// constexpr auto chebyshev2_x2	  = chebyshev2< N, X, Horner< ( N & 1u ) ? Horners::fma_even : Horners::fma_odd > >;
 	constexpr auto chebyshev2_x2	  = chebyshev2< N, X, Horner< ( N & 1u ) ? Horners::fma_odd : Horners::fma_even > >;
 
 	/// Dickson polynomials of the first kind: https://en.wikipedia.org/wiki/Dickson_polynomial
@@ -462,6 +462,7 @@ namespace pax {
 	constexpr auto dickson1			  = detail::Polyiter< detail::Dickson1< X, a, Algo >, X, N >::poly;
 
 	/// Dickson polynomials of the first kind: https://en.wikipedia.org/wiki/Dickson_polynomial
+	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
 	template< std::size_t N, std::size_t a = 1, typename X = double >
 	constexpr auto dickson1_x2		  = dickson1< N, a, X, Horner< ( N & 1u ) ? Horners::fma_odd : Horners::fma_even > >;
 
@@ -470,6 +471,7 @@ namespace pax {
 	constexpr auto dickson2			  = detail::Polyiter< detail::Dickson2< X, a, Algo >, X, N >::poly;
 
 	/// Dickson polynomials of the second kind: https://en.wikipedia.org/wiki/Dickson_polynomial
+	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
 	template< std::size_t N, std::size_t a = 1, typename X = double >
 	constexpr auto dickson2_x2		  = dickson2< N, a, X, Horner< ( N & 1u ) ? Horners::fma_odd : Horners::fma_even > >;
 
@@ -480,6 +482,7 @@ namespace pax {
 	constexpr auto fibonacci< 0, X, Algo >  = Polynomial< Algo, X, 1 >({ 0 });
 
 	/// Fibonacci polynomials: https://en.wikipedia.org/wiki/Fibonacci_Polynomials
+	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
 	template< std::size_t N, typename X = double >
 	constexpr auto fibonacci_x2		  = fibonacci< N, X, Horner< ( N & 1u ) ? Horners::fma_even : Horners::fma_odd > >;
 
@@ -488,6 +491,7 @@ namespace pax {
 	constexpr auto hermite1			  = detail::Polyiter< detail::Hermite1< X, Algo >, X, N >::poly;
 
 	/// Pprobabilist's Hermite polynomials: https://en.wikipedia.org/wiki/Hermite_Polynomials
+	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
 	template< std::size_t N, typename X = double >
 	constexpr auto hermite1_x2		  = hermite1< N, X, Horner< ( N & 1u ) ? Horners::fma_odd : Horners::fma_even > >;
 
@@ -496,6 +500,7 @@ namespace pax {
 	constexpr auto hermite2			  = detail::Polyiter< detail::Hermite2< X, Algo >, X, N >::poly;
 
 	/// Physicist's Hermite polynomials: https://en.wikipedia.org/wiki/Hermite_Polynomials
+	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
 	template< std::size_t N, typename X = double >
 	constexpr auto hermite2_x2		  = hermite2< N, X, Horner< ( N & 1u ) ? Horners::fma_odd : Horners::fma_even > >;
 
@@ -516,6 +521,7 @@ namespace pax {
 	constexpr auto legendre			  = detail::Polyiter< detail::Legendre< X, Algo >, X, N >::poly;
 
 	/// Legendre polynomials: https://en.wikipedia.org/wiki/Legendre_Polynomials
+	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
 	template< std::size_t N, typename X = double >
 	constexpr auto legendre_x2		  = legendre< N, X, Horner< ( N & 1u ) ? Horners::fma_odd : Horners::fma_even > >;
 
@@ -524,6 +530,7 @@ namespace pax {
 	constexpr auto lucas			  = detail::Polyiter< detail::Lucas< X, Algo >, X, N >::poly;
 
 	/// Lucas polynomials: https://en.wikipedia.org/wiki/Fibonacci_Polynomials
+	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
 	template< std::size_t N, typename X = double, typename Algo = horner_fma >
 	constexpr auto lucas_x2			  = lucas< N, X, Horner< ( N & 1u ) ? Horners::fma_odd : Horners::fma_even > >;
 
