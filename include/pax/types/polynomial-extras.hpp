@@ -1,9 +1,7 @@
 //	Copyright (c) 2014-2026, Peder Axensten, all rights reserved.
 //	Contact: peder ( at ) axensten.se
 
-
 #pragma once
-
 #include "polynomial.hpp"
 
 
@@ -11,6 +9,12 @@ namespace pax {
 	namespace is {
 		template< std::size_t N, std::size_t ...NN >
 		constexpr std::size_t newN = ( true && ... && ( NN != std::dynamic_extent ) ) ? N : std::dynamic_extent;
+
+		template< typename A0, typename A1 >	struct Merge_algo		{	using type = horner_fma;		};
+		template< typename A0, typename A1 >	using Merge_algo_t		=	typename Merge_algo< A0, A1 >::type;
+		template< typename A >	struct Merge_algo< A, A >				{	using type = A;				};
+		template< typename A >	struct Merge_algo< horner_fma_comp, A >	{	using type = horner_fma_comp;	};
+		template< typename A >	struct Merge_algo< A, horner_fma_comp >	{	using type = horner_fma_comp;	};
 	}
 
 
@@ -51,45 +55,29 @@ namespace pax {
 	}
 
 
-	template< typename Algo, typename X, std::size_t N0, std::size_t N >
-	using Poly = Polynomial< Algo, std::decay_t< X >, ( N0 == std::dynamic_extent ) ? std::dynamic_extent : N >;
-
-
-	template< typename type0, typename type1 >
-	struct polymerge;
-
-	template< typename Algo, is::floating X0, std::size_t N0, 
-			  				 is::floating X1, std::size_t N1 >
-	struct polymerge< Polynomial< Algo, X0, N0 >, Polynomial< Algo, X1, N1 > > {
-		using				X	  = std::decay_t< std::common_type_t< X0, X1 > >;
-		using 				type  = Polynomial< Algo, X, std::max( N0, N1 ) >;
-	};
-
-	template< typename type0, typename type1 >
-	using polymerge_t = polymerge< type0, type1 >::type;
-
-
-
-	template< bool Addition, typename Algo, is::floating X0, std::size_t N0, is::floating X1, std::size_t N1 >
+	template< bool Addition, typename Algo0, is::floating X0, std::size_t N0, 
+							 typename Algo1, is::floating X1, std::size_t N1 >
 	[[nodiscard]] constexpr auto addsub(
-		const Polynomial< Algo, X0, N0 > & p0_,
-		const Polynomial< Algo, X1, N1 > & p1_
+		const Polynomial< Algo0, X0, N0 > & p0_,
+		const Polynomial< Algo1, X1, N1 > & p1_
 	) noexcept {
-		polymerge_t< std::decay_t< decltype( p0_ ) >, std::decay_t< decltype( p1_ ) > >	p{};
+		using						X	  = std::decay_t< std::common_type_t< X0, X1 > >;
+		Polynomial< is::Merge_algo_t< Algo0, Algo1 >, X, std::max( N0, N1 ) >	p{};
 		if constexpr( p.extent == std::dynamic_extent )	p.resize( std::max( p0_.size(), p1_.size() ) );
 
-		auto 								itr	  = p.begin();
+		auto 						itr	  = p.begin();
 		std::copy( p0_.begin(), p0_.end(), itr );
-		if constexpr( Addition )			for( const auto x1 : p1_ )	*( itr++ ) += x1;
-		else								for( const auto x1 : p1_ )	*( itr++ ) -= x1;
+		if constexpr( Addition )	for( const auto x1 : p1_ )	*( itr++ ) += x1;
+		else						for( const auto x1 : p1_ )	*( itr++ ) -= x1;
 		return p;
 	}
 
 	/// Addition.
-	template< typename Algo, typename X0, std::size_t N0, typename X1, std::size_t N1 >
+	template< typename Algo0, is::floating X0, std::size_t N0, 
+			  typename Algo1, is::floating X1, std::size_t N1 >
 	[[nodiscard]] constexpr auto operator+(
-		const Polynomial< Algo, X0, N0 >	  & p0_,
-		const Polynomial< Algo, X1, N1 >	  & p1_
+		const Polynomial< Algo0, X0, N0 >	  & p0_,
+		const Polynomial< Algo1, X1, N1 >	  & p1_
 	) noexcept {	return addsub< true >( p0_, p1_ );			}
 
 	template< typename Algo, typename X0, std::size_t N0 >
@@ -109,10 +97,11 @@ namespace pax {
 	) noexcept {	return p0_ + x0_;							}
 
 	/// Subtraction.
-	template< typename Algo, typename X0, std::size_t N0, typename X1, std::size_t N1 >
+	template< typename Algo0, is::floating X0, std::size_t N0, 
+			  typename Algo1, is::floating X1, std::size_t N1 >
 	[[nodiscard]] constexpr auto operator-(
-		const Polynomial< Algo, X0, N0 >	  & p0_,
-		const Polynomial< Algo, X1, N1 >	  & p1_
+		const Polynomial< Algo0, X0, N0 >	  & p0_,
+		const Polynomial< Algo1, X1, N1 >	  & p1_
 	) noexcept {	return addsub< false >( p0_, p1_ );			}
 
 	template< typename Algo, typename X0, std::size_t N0 >
@@ -132,14 +121,15 @@ namespace pax {
 	}
 
 	/// Multiplication.
-	template< typename Algo, typename X0, std::size_t N0, typename X1, std::size_t N1 >
+	template< typename Algo0, is::floating X0, std::size_t N0, 
+			  typename Algo1, is::floating X1, std::size_t N1 >
 	[[nodiscard]] constexpr auto operator*(
-		const Polynomial< Algo, X0, N0 >	  & p0_,
-		const Polynomial< Algo, X1, N1 >	  & p1_
+		const Polynomial< Algo0, X0, N0 >	  & p0_,
+		const Polynomial< Algo1, X1, N1 >	  & p1_
 	) noexcept {
 		using									X	= std::decay_t< std::common_type_t< X0, X1 > >;
 		static constexpr std::size_t 			N	= is::newN< N0 + !N0 + N1 + !N1 - 1, N0, N1 >;
-		Polynomial< Algo, X, N >				p{};
+		Polynomial< is::Merge_algo_t< Algo0, Algo1 >, X, N >	p{};
 		if constexpr( N == std::dynamic_extent ) p.resize( p0_.size() + p1_.size() - 1 );
 
 		auto 									itr = p.begin();
@@ -171,17 +161,18 @@ namespace pax {
 
 	/// Division.
 	/// "A Generalization of Synthetic Division and A General Theorem of Division of Polynomials", by Lianghuo Fan.
-	template< typename Algo, typename X0, std::size_t N0, typename X1, std::size_t N1 >
+	template< typename Algo0, is::floating X0, std::size_t N0, 
+			  typename Algo1, is::floating X1, std::size_t N1 >
 	[[nodiscard]] constexpr auto operator/(
-		const Polynomial< Algo, X0, N0 >  & p0_,
-		const Polynomial< Algo, X1, N1 >  & p1_
+		const Polynomial< Algo0, X0, N0 >  & p0_,
+		const Polynomial< Algo1, X1, N1 >  & p1_
 	) noexcept {
 		using								X	  = std::decay_t< std::common_type_t< X0, X1 > >;
 		constexpr std::size_t 				N	  = is::newN< N0 - N1 + 1, N0, N1 >;
 		const std::size_t					sz0	  = p0_.degree();
 		const std::size_t					sz1	  = p1_.degree();
 		const std::size_t					sz    = sz0 - sz1;
-		Polynomial< Algo, X, N >			q{};
+		Polynomial< is::Merge_algo_t< Algo0, Algo1 >, X, N >	q{};
 		if constexpr( N == std::dynamic_extent )	q.resize( sz + 1 );
 
 		q[ sz ] 								  = p0_[ sz0 ] / p1_[ sz1 ];

@@ -60,10 +60,10 @@ namespace pax {
 				auto	res			  = ( p_.begin() == itr ) ? 0 : *( --itr );
 
 				if constexpr( every_2nd ) {
-					const F	x2			  = x_ * x_;
+					const F	x2		  = x_ * x_;
 					while( itr > p_.begin() + 1 ) {
-							assert( !*( --itr ) && "Every second coeff should be zero" );
-							res			  = fma( x2, res, *( --itr ) );
+						assert( !*( --itr ) && "Every second coeff should be zero" );
+						res			  = fma( x2, res, *( --itr ) );
 					}
 					return ( variant == Horners::fma_even ) ? res : res * x_;
 				} else {
@@ -73,9 +73,9 @@ namespace pax {
 					} else {										// Compensated Horner.
 						std::decay_t< F >	cmp{};					// Compensation for rounding errors.
 						while( itr != p_.begin() ) {
-							auto tmp	  = res;
-							res			  =	fma( x_, res, *( --itr ) );
-							cmp			 +=	( tmp * x_ + *itr ) - ( res - cmp );
+							auto tmp  = res;
+							res		  =	fma( x_, res, *( --itr ) );
+							cmp		 +=	( tmp * x_ + *itr ) - ( res - cmp );
 						}
 						return res + cmp;
 					}
@@ -142,7 +142,7 @@ namespace pax {
 	/// Returns a Polynomial< Algo, ... > of size sizeof...( Args ).
 	template< typename Algo = horner_fma, is::floating min_type = float, is::arithmetic... Args >
 	[[nodiscard]] constexpr auto polynomial( Args && ...args_ ) 							noexcept		{
-		constexpr std::size_t N = sizeof...( Args );
+		static constexpr std::size_t N = sizeof...( Args );
 		using F = std::decay_t< std::common_type_t< min_type, Args... > >;
 		using P = Polynomial< Algo, F, N ? N : std::dynamic_extent >;
 		return P{{ static_cast< F >( std::forward< Args >( args_ ) )... }};
