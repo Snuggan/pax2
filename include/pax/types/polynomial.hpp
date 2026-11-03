@@ -85,8 +85,8 @@ namespace pax {
 	};
 	
 	using horner_fma		  = Horner< Horners::fma_all >;			///< Quick Horner algorithm using fma, if available.
-	using horner_fma_even	  = Horner< Horners::fma_even >;		///< Quick, when odd coeffs are zero.
-	using horner_fma_odd	  = Horner< Horners::fma_odd >;			///< Quick, when even coeffs are zero.
+	using horner_fma_even	  = Horner< Horners::fma_even >;		///< Quick, use when odd coeffs are zero.
+	using horner_fma_odd	  = Horner< Horners::fma_odd >;			///< Quick, use when even coeffs are zero.
 	using horner_fma_comp	  = Horner< Horners::fma_compensated >;	///< More accurate Horner, but slightly slower.
 
 	
