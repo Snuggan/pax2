@@ -37,7 +37,8 @@ namespace pax {
 #		endif
 	}
 
-	enum class Horners { fma_all, fma_odd, fma_even, fma_compensated };
+	enum Horners {	fma_all = 0, 			fma_odd, 				fma_even, 
+					fma_compensated = 4,	fma_compensated_odd,	fma_compensated_even };
 
 	/// Horner's iterative method with std::fma.
 	template< Horners variant >
@@ -47,39 +48,38 @@ namespace pax {
 			std::span< F, N >				p_,
 			const std::type_identity_t< F >	x_
 		) noexcept {
-			static constexpr bool every_2nd = ( variant == Horners::fma_even ) || ( variant == Horners::fma_odd );
-			static constexpr bool non_logical_size = every_2nd && ( ( N & 1u ) == ( variant == Horners::fma_odd ) );
+			static  constexpr bool every_2nd = variant & ( Horners::fma_odd | Horners::fma_even );
+			static  constexpr bool non_logical_size = every_2nd && ( ( N & 1u ) == ( variant & Horners::fma_odd ) );
 			if		constexpr( N == 0u ) 	return {};
 			else if constexpr( N == 1u ) 	return p_[ 0 ];
 			else if constexpr( N == 2u ) 	return fma( x_, p_[ 1 ], p_[ 0 ] );
 			else if constexpr( N == 3u ) 	return fma( x_, fma( x_, p_[ 2 ], p_[ 1 ] ), p_[ 0 ] );
 			else {
-				auto	itr			  = p_.end();
-				if constexpr( non_logical_size )
+				auto	itr		  = p_.end();
+				if constexpr( non_logical_size )					// If the every_2nd is out of sync.
 						assert( !*( --itr ) && "Last coeff should be zero but is not" );
-				auto	res			  = ( p_.begin() == itr ) ? 0 : *( --itr );
+				auto	res		  = ( p_.begin() == itr ) ? 0 : *( --itr );
+				const F	xx		  = every_2nd ? x_ * x_ : x_;		// Optimisation when enery 2nd coeff is zero.
 
-				if constexpr( every_2nd ) {
-					const F	x2		  = x_ * x_;
-					while( itr > p_.begin() + 1 ) {
-						assert( !*( --itr ) && "Every second coeff should be zero" );
-						res			  = fma( x2, res, *( --itr ) );
+				if constexpr( variant >= Horners::fma_compensated ) {	// Compensated Horner.
+					std::decay_t< F >	cmp{};						// Compensation for rounding errors.
+					while( itr > p_.begin() + every_2nd ) {
+						if constexpr( every_2nd )					// Optimisation when enery 2nd coeff is zero.
+							assert( !*( --itr ) && "Every second coeff should be zero (compensated)" );
+						auto tmp  = res;
+						res		  =	fma( xx, res, *( --itr ) );
+						cmp		 +=	( tmp * xx + *itr ) - ( res - cmp );
 					}
-					return ( variant == Horners::fma_even ) ? res : res * x_;
-				} else {
-					if constexpr( variant == Horners::fma_all ) {	// Quick Horner.
-						while( itr != p_.begin() )	res = fma( x_, res, *( --itr ) );
-						return res;
-					} else {										// Compensated Horner.
-						std::decay_t< F >	cmp{};					// Compensation for rounding errors.
-						while( itr != p_.begin() ) {
-							auto tmp  = res;
-							res		  =	fma( x_, res, *( --itr ) );
-							cmp		 +=	( tmp * x_ + *itr ) - ( res - cmp );
-						}
-						return res + cmp;
+					res += cmp;
+				} else {												// Quick Horner.
+					while( itr > p_.begin() + every_2nd ) {
+						if constexpr( every_2nd )					// Optimisation when enery 2nd coeff is zero.
+							assert( !*( --itr ) && "Every second coeff should be zero" );
+						res = fma( xx, res, *( --itr ) );
 					}
 				}
+				if constexpr( variant & Horners::fma_odd )			res *= x_;
+				return res;
 			}
 		}
 	};
@@ -88,6 +88,8 @@ namespace pax {
 	using horner_fma_even	  = Horner< Horners::fma_even >;		///< Quick, use when odd coeffs are zero.
 	using horner_fma_odd	  = Horner< Horners::fma_odd >;			///< Quick, use when even coeffs are zero.
 	using horner_fma_comp	  = Horner< Horners::fma_compensated >;	///< More accurate Horner, but slightly slower.
+	using horner_fma_comp_even= Horner< Horners::fma_compensated_even >;
+	using horner_fma_comp_odd = Horner< Horners::fma_compensated_odd >;
 
 	
 	/// Implements a polynomial that uses Algo to calculate the polynomial for a given x.

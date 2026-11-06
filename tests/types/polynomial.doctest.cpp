@@ -22,6 +22,15 @@ namespace pax {
 
 	template< double a, unsigned N >
 	constexpr double mula< a, N, N > = a + N;
+
+	template< std::size_t N >
+	using even_or_odd_comp			  = Horner< ( N & 1u ) ? Horners::fma_compensated_even : Horners::fma_compensated_odd >;
+	
+	template< std::size_t N >
+	constexpr auto chebyshev1_comp	  = chebyshev1< N, double, horner_fma_comp >;
+	
+	template< std::size_t N >
+	constexpr auto chebyshev1_comp_x2 = chebyshev1< N, double, even_or_odd_comp< N + 1 > >;
 	
 
 
@@ -63,6 +72,19 @@ namespace pax {
 		static_assert( horner_fma_comp()( Sp     { test.data(), 4 }, 2 ) == 49 );
 	}
 
+	DOCTEST_TEST_CASE( "polynomial algorithm variants" ) {
+		constexpr std::size_t 		N = 60;
+		constexpr double	 		x = 2.0;
+		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< N   >( x ),		chebyshev1< N   >( x ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< N+1 >( x ),		chebyshev1< N+1 >( x ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev1_comp_x2< N   >( x ),	chebyshev1_comp< N   >( x ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev1_comp_x2< N+1 >( x ),	chebyshev1_comp< N+1 >( x ) );
+
+		DOCTEST_FAST_CHECK_EQ( chebyshev1_comp_x2< N   >( x ),	chebyshev1_x2< N   >( x ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev1_comp_x2< N+1 >( x ),	chebyshev1_x2< N+1 >( x ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev1_comp< N   >( x ),		chebyshev1< N   >( x ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev1_comp< N+1 >( x ),		chebyshev1< N+1 >( x ) );
+	}
 	DOCTEST_TEST_CASE( "polynomial output" ) {
 		// std::cout << "First order Chebychev polynomial:\n\\mbox{}\n";
 		// std::cout << "\\\\$T_0(x) = " << chebyshev1< 0 > << "$\n";
