@@ -2,12 +2,11 @@
 
 #pragma once
 
-#include <pax/tables/text-table.hpp>	// Handle a csv file.
+#include <pax/tables/text-table.hpp>	// Handle csv files.
 #include <pax/types/circle.hpp>
 #include <pax/pdal/metrics-infrastructure/function-filter.hpp>
 
 #include <pdal/Filter.hpp>
-// #include <pdal/Streamable.hpp>
 
 #include <string>
 #include <string_view>

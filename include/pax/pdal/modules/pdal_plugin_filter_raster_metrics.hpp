@@ -2,10 +2,11 @@
 
 #pragma once
 
+#include <pax/types/box.hpp>									// Box_indexer
 #include <pax/pdal/metrics-infrastructure/function-filter.hpp>	// Point_aggregator, Function_filter
-#include <pax/types/box.hpp>						// Box_indexer
+
 #include <pdal/Filter.hpp>
-// #include <pdal/Streamable.hpp>
+
 #include <string>
 #include <filesystem>
 

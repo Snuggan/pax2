@@ -1,10 +1,24 @@
 #include <pax/pdal/modules/pdal_plugin_filter_plot_stuff.hpp>
 #include <pax/pdal/utilities/pdal.hpp>
 
-#include <pdal/util/FileUtils.hpp>
-#include <pdal/util/ProgramArgs.hpp>
+
+// pdal
+// #include <pdal/util/FileUtils.hpp>
+// #include <pdal/util/ProgramArgs.hpp>
 #include <pdal/StageFactory.hpp>
 #include <pdal/io/BufferReader.hpp>
+#if __has_include( <pdal/GDALUtils.hpp> )	// PDAL 2.1
+#	include <pdal/GDALUtils.hpp>
+#else										// PDAL 2.2
+#	include <pdal/private/gdal/GDALError.hpp>
+#	include <pdal/private/gdal/GDALUtils.hpp>
+#	include <pdal/private/gdal/Raster.hpp>
+#endif
+
+// #include <pax/reporting/debug.hpp>
+// #define DEBUG Debug{}
+#define DEBUG log()->get(pdal::LogLevel::Debug)
+
 
 #include <unordered_map>
 #include <unordered_set>
@@ -32,12 +46,15 @@ namespace pax {
 	// This is what prevents this filter to be streaming. 
 	// I can not get the metadata/headerinfo of the files to be processed...
 	void plot_stuff::setting_needs_PointView( pdal::PointViewPtr view_ptr_ ) {
+		DEBUG << "plot_stuff::setting_needs_PointView start\n";
 		m_view_ptr						  = view_ptr_;
 		m_plots							  = get_plots( view_ptr_ );
+		DEBUG << "plot_stuff::setting_needs_PointView end\n";
 	}
 
 
 	void plot_stuff::addArgs( pdal::ProgramArgs & args ) {
+		DEBUG << "plot_stuff::addArgs start\n";
 		std::ostringstream				metrics_help_stream;
 		metrics::Function_filter::help( metrics_help_stream );
 
@@ -57,11 +74,13 @@ namespace pax {
 											m_id_column, m_id_column );
 		args.add( "plot_buffer",		"How much to enlarge the plot diameters. A zero value (the default) will use the plot diameter. ",
 											m_plot_buffer, m_plot_buffer );
+		DEBUG << "plot_stuff::addArgs end\n";
 	}
 
 
 	// Read a plot file and return a vector of the plots in the bbox.
 	std::vector< Plot_w_points > plot_stuff::get_plots( pdal::PointViewPtr view_ptr_ ) {
+		DEBUG << "plot_stuff::get_plots start\n";
 		using Plot_w_id					  = Circle_w_id< double, 2 >;
 
 		const auto							bbox = box( *view_ptr_ );
@@ -92,12 +111,14 @@ namespace pax {
 				plots.emplace_back( plot, do_metrics(), do_points(), has_return_number, height_dim );
 			}
 		}
+		DEBUG << "plot_stuff::get_plots end\n";
 		return plots;
 	}
 
 
 	/// Do pre-flight stuff.
 	void plot_stuff::prepared( pdal::PointTableRef /*table_*/ ) {
+		DEBUG << "plot_stuff::prepared start\n";
 		log()->get( pdal::LogLevel::Debug )
 			<< "\n\tPlot stuff arguments:" 
 			<< "\n\tplot_file:         " << m_plot_file
@@ -109,24 +130,30 @@ namespace pax {
 			<< "\n\tplot_buffer:       " << m_plot_buffer
 			<< "\n\tmetrics:           " << std::format( "{}", m_metrics )
 			<< "\n";
+		DEBUG << "plot_stuff::prepared end\n";
 	}
 
 
 	/// Do pre-flight stuff.
 	void plot_stuff::ready( pdal::PointTableRef /*pt_table_*/ ) {
+		DEBUG << "plot_stuff::ready start\n";
 		// Check argumeents.
 		if( m_plot_buffer < 0 )				m_plot_buffer = 0;;
+		DEBUG << "plot_stuff::ready end\n";
 	}
 
 
 	bool plot_stuff::processOne( pdal::PointRef & pt_ ) {
+		DEBUG << "plot_stuff::processOne start\n";
 		++m_metadata.points_processed;
 		for( auto & plot : m_plots )		m_metadata.points_in_plots += plot.process( pt_ );
+		DEBUG << "plot_stuff::processOne end\n";
 		return true;
 	}
 
 
 	pdal::PointViewSet plot_stuff::run( pdal::PointViewPtr view_ptr_ ) {
+		DEBUG << "plot_stuff::run start\n";
 		setting_needs_PointView( view_ptr_ );
 
 		// Process the points.
@@ -141,6 +168,7 @@ namespace pax {
 		// Create new point cloud (pdal::PointViewSet) with the result (pdal::PointViewPtr) and return it.
 		pdal::PointViewSet		result;
 		result.insert( view_ptr_ );
+		DEBUG << "plot_stuff::run end\n";
 		return result;
 	}
 
@@ -157,6 +185,7 @@ namespace pax {
 
 
 	void plot_stuff::done( pdal::PointTableRef /*table_*/ ) {
+		DEBUG << "plot_stuff::done start\n";
 		try {
 			// Calculate and save metrics.
 			if( do_metrics() ) {
@@ -197,12 +226,14 @@ namespace pax {
 		result.add( "points-processed",		m_metadata.points_processed );
 		result.add( "points-in-plots",		m_metadata.points_in_plots );
 		meta.add( result );
+		DEBUG << "plot_stuff::done end\n";
 	}
 
 
 
 	/// Process a point. Return true if it was inside the plot.
 	bool Plot_w_points::process( const pdal::PointRef & pt_ ) 			noexcept		{
+		// DEBUG << "Plot_w_points::process start\n";
 		if( contains( *this, point( pt_ ) ) ) {
 			if( m_do_points )			m_points_idx.push_back( pt_.pointId() );
 			if( m_do_metrics )			m_metric_agg.push_back(
@@ -211,6 +242,7 @@ namespace pax {
 			);
 			return true;
 		}
+		// DEBUG << "Plot_w_points::process end\n";
 		return false;
 	}
 
@@ -221,6 +253,7 @@ namespace pax {
 		const dir_path					  & plot_points_dest_dir_,
 		std::string_view					plot_points_file_format_
 	) const {
+		// DEBUG << "Plot_w_points::save_plot_points start\n";
 		const std::filesystem::path	plot_points_dest   
 			  = plot_points_dest_dir_ / ( Plot_w_id::id() + plot_points_file_format_ );
 		try{
@@ -260,6 +293,7 @@ namespace pax {
 				error_.what(), Plot_w_id::id(), to_string( plot_points_dest )
 			) );
 		}
+		// DEBUG << "Plot_w_points::save_plot_points end\n";
 	}
 
 	
@@ -272,6 +306,7 @@ namespace pax {
 		const std::span< const metrics::Function_filter >	metrics_,
 		const std::string_view								id_col_name_
 	) {
+		// DEBUG << "plot_stuff::save_metrics start\n";
 		static constexpr const std::string_view	merge_items  = ";{}";	// Semicolon separator.
 		std::vector< std::string >				metric_names{};
 		try{
@@ -360,7 +395,8 @@ namespace pax {
 				error_.what(), std::span( metric_names ), to_string( plot_metrics_dest_ )
 			) );
 		}
+		// DEBUG << "plot_stuff::save_metrics end\n";
 	}
 
-
+#undef DEBUG
 } // namespace pdal

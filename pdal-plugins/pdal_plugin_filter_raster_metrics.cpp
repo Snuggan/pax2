@@ -1,23 +1,19 @@
 #include <pax/pdal/modules/pdal_plugin_filter_raster_metrics.hpp>
-#include <pax/pdal/metrics-infrastructure/function-filter.hpp>
-#include <pax/types/box.hpp>
 #include <pax/pdal/utilities/pdal.hpp>
 #include <pax/std/file.hpp>
 
-
 // pdal
-#include <pdal/util/FileUtils.hpp>
-#include <pdal/util/ProgramArgs.hpp>
-#if __has_include( <pdal/GDALUtils.hpp> )
-	// PDAL 2.1
+// #include <pdal/util/FileUtils.hpp>
+// #include <pdal/util/ProgramArgs.hpp>
+// #include <pdal/StageFactory.hpp>
+// #include <pdal/io/BufferReader.hpp>
+#if __has_include( <pdal/GDALUtils.hpp> )	// PDAL 2.1
 #	include <pdal/GDALUtils.hpp>
-#else
-	// PDAL 2.2
+#else										// PDAL 2.2
 #	include <pdal/private/gdal/GDALError.hpp>
 #	include <pdal/private/gdal/GDALUtils.hpp>
 #	include <pdal/private/gdal/Raster.hpp>
 #endif
-
 
 // #include <pax/reporting/debug.hpp>
 // #define DEBUG Debug{}
@@ -47,19 +43,19 @@ namespace pax {
 	// This is what prevents this filter to be streaming. 
 	// I can not get the metadata/headerinfo of the files to be processed...
 	void raster_metrics::setting_needs_PointView( pdal::PointViewPtr view_ptr_ ) {
-		DEBUG << "raster_metrics::setting_needs_PointView start";
+		DEBUG << "raster_metrics::setting_needs_PointView start\n";
 
 		// Raster normally have a reversed y-axis, so we give a negative y resolution.
 		const Point2d				resolution{ m_alignment, -m_alignment };
 		pr_bbox					  = Box_indexer{ box( *view_ptr_ ), resolution };
 		pr_z_accumulators.resize( pr_bbox.elements() );
 
-		DEBUG << "raster_metrics::setting_needs_PointView end";		
+		DEBUG << "raster_metrics::setting_needs_PointView end\n";		
 	}
 
 
 	void raster_metrics::addArgs( pdal::ProgramArgs & args ) {
-		DEBUG << "raster_metrics::addArgs start";
+		DEBUG << "raster_metrics::addArgs start\n";
 		// setPositional() Makes the argument required.
 		args.add( "dest", 
 			"Destination directory and file name template for the metric raster files. "
@@ -75,13 +71,13 @@ namespace pax {
 		args.add( "gdalopts", 			"GDAL driver options (name=value,name=value...)", m_options );
 		args.add( "data_type", 			"Data type for output raster (\"int8\", \"uint64\", \"float\", etc.)", m_dataType, m_dataType );
 		args.add( "nodata", 			"No data value, a sentinal value to say that no value was set for nodata", m_noData, m_noData );
-		DEBUG << "raster_metrics::addArgs end";
+		DEBUG << "raster_metrics::addArgs end\n";
 	}
 
 
 	/// Do pre-flight stuff.
 	void raster_metrics::prepared( pdal::PointTableRef /*table_*/ ) {
-		DEBUG << "raster_metrics::prepared start";
+		DEBUG << "raster_metrics::prepared start\n";
 		DEBUG
 			<< "\n\tRaster metrics arguments:" 
 			<< "\n\talignment:         " << m_alignment 
@@ -94,13 +90,13 @@ namespace pax {
 			<< "\n\tgdalopts:          " << std::format( "{}", m_options )
 			<< "\n\tmetrics:           " << std::format( "{}", m_metrics )
 			<< "\n";
-		DEBUG << "raster_metrics::prepared end";
+		DEBUG << "raster_metrics::prepared end\n";
 	}
 	
 	
 	/// This is called just before the pipeline is executed. 
 	void raster_metrics::ready( pdal::PointTableRef table_ ) {
-		DEBUG << "raster_metrics::ready start";
+		DEBUG << "raster_metrics::ready start\n";
 
 		// "Z" is the standard height, could be either height above ground or height above the geoid (sea level).
 		// "HeightAboveGround", if available, is the height abouve ground. It is possible that both heights are available. 
@@ -119,7 +115,7 @@ namespace pax {
 		// Default m_alignment is m_resolution. 
 		if( m_alignment <= 0.0 )	m_alignment = m_resolution;
 
-		DEBUG << "raster_metrics::ready end";
+		DEBUG << "raster_metrics::ready end\n";
 	}
 
 
@@ -141,13 +137,13 @@ namespace pax {
 
 
 	// void raster_metrics::filter( pdal::PointView & view_ ) {
-	// 	DEBUG << "raster_metrics::filter start";
-	// 	DEBUG << "raster_metrics::filter end";
+	// 	DEBUG << "raster_metrics::filter start\n";
+	// 	DEBUG << "raster_metrics::filter end\n";
 	// }
 
 
 	pdal::PointViewSet raster_metrics::run( pdal::PointViewPtr view_ptr_ ) {
-		DEBUG << "raster_metrics::run start";
+		DEBUG << "raster_metrics::run start\n";
 
 		setting_needs_PointView( view_ptr_ );
 
@@ -163,12 +159,12 @@ namespace pax {
 		result.insert( view_ptr_ );
 		return result;
 
-		DEBUG << "raster_metrics::run end";
+		DEBUG << "raster_metrics::run end\n";
 	}
 
 
 	void raster_metrics::done( pdal::PointTableRef /*table_*/ ) {
-		DEBUG << "raster_metrics::done start";
+		DEBUG << "raster_metrics::done start\n";
 		// Save metrics' rasters.
 	    pdal::gdal::registerDrivers();
 		pdal::gdal::GDALError			err;
@@ -227,7 +223,8 @@ namespace pax {
 			metrics_node.add( to_string( metric ), dest );
 		}
 		meta.add( metrics_node );
-		DEBUG << "raster_metrics::done end";
+		DEBUG << "raster_metrics::done end\n";
 	}
 
+#undef DEBUG
 }	// namespace pax
