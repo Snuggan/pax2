@@ -85,18 +85,15 @@ namespace pax {
 		Polynomial< Algo, X0, N0 >			  & p0_,
 		const std::type_identity_t< X0 >		x0_
 	) noexcept {
-		for( auto & x : p0_ )				x += x0_;
+		for( auto & x : p0_ )			   x += x0_;
 		return p0_;
 	}
 
 	template< typename Algo, is::floating X0, std::size_t N0 >
 	[[nodiscard]] constexpr auto operator+(
-		const Polynomial< Algo, X0, N0 >	  & p0_,
+		Polynomial< Algo, X0, N0 >				p0_,
 		const std::type_identity_t< X0 >		x0_
-	) noexcept {
-		Polynomial< Algo, std::decay_t< X0 >, N0 >	res( p0_.data(), p0_.size() );
-		return res += x0_;
-	}
+	) noexcept {	return p0_ += x0_;							}
 
 	template< typename Algo, is::floating X0, std::size_t N0 >
 	[[nodiscard]] constexpr auto operator+(
@@ -122,16 +119,15 @@ namespace pax {
 	[[nodiscard]] constexpr auto operator-(
 		const Polynomial< Algo, X0, N0 >	  & p0_,
 		const std::type_identity_t< X0 >		x0_
-	) noexcept {	return p0_ - x0_;							}
+	) noexcept {	return p0_ + -x0_;							}
 
 	template< typename Algo, is::floating X0, std::size_t N0 >
 	[[nodiscard]] constexpr auto operator-(
 		const std::type_identity_t< X0 >		x0_,
-		const Polynomial< Algo, X0, N0 >	  & p0_
+		Polynomial< Algo, X0, N0 >				p0_
 	) noexcept {
-		Polynomial< Algo, std::decay_t< X0 >, N0 >	res( p0_.data(), p0_.size() );
-		for( auto & x : res )				x = x0_ - x;
-		return res;
+		for( auto & x : p0_ )				x = x0_ - x;
+		return p0_;
 	}
 
 	/// Multiplication.
@@ -162,18 +158,15 @@ namespace pax {
 		Polynomial< Algo, X0, N0 >			  & p0_,
 		const std::type_identity_t< X0 >		x0_
 	) noexcept {
-		for( auto & x : p0_ )					x *= x0_;
+		for( auto & x : p0_ )			   x *= x0_;
 		return p0_;
 	}
 
 	template< typename Algo, is::floating X0, std::size_t N0 >
 	[[nodiscard]] constexpr auto operator*(
-		const Polynomial< Algo, X0, N0 >	  & p0_,
+		Polynomial< Algo, X0, N0 >				p0_,
 		const std::type_identity_t< X0 >		x0_
-	) noexcept {
-		auto									res = polynomial< Algo, N0 >( p0_.data(), p0_.size() );
-		return res *= x0_;
-	}
+	) noexcept {	return p0_ *= x0_;							}
 
 	template< typename Algo, is::floating X0, std::size_t N0 >
 	[[nodiscard]] constexpr auto operator*(
@@ -214,31 +207,28 @@ namespace pax {
 		Polynomial< Algo, X0, N0 >			  & p0_,
 		const std::type_identity_t< X0 >		x0_
 	) noexcept {
-		for( auto & x : p0_ )					x /= x0_;
+		for( auto & x : p0_ )			   x /= x0_;
 		return p0_;
 	}
 
 	template< typename Algo, is::floating X0, std::size_t N0 >
 	[[nodiscard]] constexpr auto operator/(
-		const Polynomial< Algo, X0, N0 >	  & p0_,
+		Polynomial< Algo, X0, N0 >				p0_,
 		const std::type_identity_t< X0 >		x0_
-	) noexcept {
-		auto									res = polynomial< Algo, N0 >( p0_.data(), p0_.size() );
-		return res /= x0_;
-	}
+	) noexcept {	return p0_ /= x0_;							}
 
 
 	/// Derivate a polynomial.
 	template< typename Algo, is::floating X, std::size_t N0 >
 	[[nodiscard]] constexpr auto derivate( const Polynomial< Algo, X, N0 > & p0_ ) noexcept {
-		static constexpr std::size_t 			N = ( N0 == std::dynamic_extent ) ? std::dynamic_extent : N0 ? N0 - 1 : 0;
-		auto									res = Polynomial< Algo, X, N >{};
+		static constexpr std::size_t 			N	  = ( N0 == std::dynamic_extent ) ? std::dynamic_extent : N0 ? N0 - 1 : 0;
+		auto									res	  = Polynomial< Algo, X, N >{};
 		if constexpr( N == std::dynamic_extent )
 			if( p0_.size() )					res.resize( p0_.size() - 1 );
 
-		std::size_t 							i = 0;
-		auto									src = p0_.data();
-		for( auto & x : res )					x = *( ++src ) * ++i;
+		std::size_t 							i	  = 0;
+		auto									src	  = p0_.data();
+		for( auto & x : res )					x	  = *( ++src ) * ++i;
 		return res;
 	}
 
@@ -255,7 +245,7 @@ namespace pax {
 		res.front()									  = x0_;
 		std::size_t 							i	  = 0;
 		auto									dest  = res.data();
-		for( auto & x : p0_ )					*( ++dest )	  = x/++i;
+		for( auto & x : p0_ )					*( ++dest ) = x/++i;
 		return res;
 	}
 
