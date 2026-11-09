@@ -357,10 +357,10 @@ namespace pax {
 					// and use it as a predicative. 
 					std::unordered_set< std::size_t >	table_row_ok{};
 					DEBUG0 << std::format( "plots_table_:       {} rows, {} cols", plots_table_.rows(), plots_table_.cols() );
-					for( std::size_t i{}; i<plots_table_.rows(); ++i ) {
-						if( plot_id_idx.contains( std::string( plots_table_[ id_col, i ] ) ) ) {
-							DEBUG0 << "Insert " << i << ": " << std::string( plots_table_[ id_col, i ] );
-							table_row_ok.insert( i );
+					for( std::size_t row{}; row<plots_table_.rows(); ++row ) {
+						if( plot_id_idx.contains( std::string( plots_table_[ id_col, row ] ) ) ) {
+							DEBUG0 << "Insert row " << row << ": " << std::string( plots_table_[ id_col, row ] );
+							table_row_ok.insert( row );
 						}
 					}
 					if( table_row_ok.size() != plots_.size() ) {
@@ -400,9 +400,9 @@ namespace pax {
 					// Stream those metric rows that have actual metric values.
 					const auto					begin = metrics_.begin();
 					const auto					end   = metrics_.end();
-					for( std::size_t i{}; i<reduced_table.rows(); ++i ) {
-						const std::size_t		plot_idx = plot_id_idx.at( std::string( reduced_table[ id_col, i ] ) );
-						assert( plots_[ plot_idx ].id() == std::string( reduced_table[ id_col, i ] ) );
+					for( std::size_t row{}; row<reduced_table.rows(); ++row ) {
+						const std::size_t		plot_idx = plot_id_idx.at( std::string( reduced_table[ id_col, row ] ) );
+						assert( plots_[ plot_idx ].id() == std::string( reduced_table[ id_col, row ] ) );
 
 						auto				  & metric_aggrs = plots_[ plot_idx ].metric_aggregator();
 						auto					itr   = begin;
