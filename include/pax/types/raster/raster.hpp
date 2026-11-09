@@ -16,9 +16,9 @@ namespace pax {
 
 	/// Similar to pax::Table, but with georeference coordinates too. Reads/writes rasters through gdal. 
 	template< arithmetic A >
-	class Raster : public Table< A, Box_indexer2d > {
+	class Raster : public Table< A > {
 		using value_type				  = std::remove_cv_t< A >;
-		using Base						  = Table< value_type, Box_indexer2d >;
+		using Base						  = Table< value_type >;
 		
 		Raster(
 			std::vector< A >			 && data_,

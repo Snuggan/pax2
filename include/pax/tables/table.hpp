@@ -27,15 +27,12 @@ namespace pax {
 
 	/// Handle 2-dimensional data. 
 	/// With time, use mdarray?
-	template< 
-		typename T, 
-		typename Indexer_			  = Indexer2d
-	>
-		requires( Indexer_::rank == 2u )
-	class Table : Indexer_ {
-		using Indexer				  = Indexer_;
-		using Idx					  = Indexer::Idx;
+	template< typename T >
+	class Table : Indexer2d {
+		using Indexer				  = Indexer2d;
+		using Idx					  = Indexer2d::Idx;
 		using index_type			  = Idx::value_type;
+		using Indexer2d::scalar_index;
 
 		using element_type			  = T;
 		using value_type			  = std::remove_cv_t< element_type >;
@@ -52,7 +49,7 @@ namespace pax {
 			const Row		 			row_, 
 			const std::ptrdiff_t 		stride_ 
 		)	const noexcept	{
-			return { m_data.data() + Indexer::scalar_index( col_, row_ ), stride_ };
+			return { m_data.data() + Indexer2d::scalar_index( col_, row_ ), stride_ };
 		};
 
 		constexpr Strided_iterator< element_type > stride( 
@@ -60,7 +57,7 @@ namespace pax {
 			const Row		 			row_, 
 			const std::ptrdiff_t 		stride_ 
 		)	noexcept		{
-			return { m_data.data() + Indexer::scalar_index( col_, row_ ), stride_ };
+			return { m_data.data() + Indexer2d::scalar_index( col_, row_ ), stride_ };
 		};
 
 	public:
@@ -71,30 +68,30 @@ namespace pax {
 		constexpr Table & operator=( Table && )				  noexcept	=	default;
 
 		constexpr Table( const Col cols_, const Row rows_ )
-			: Indexer( cols_, rows_ ), m_data( cols_()*rows_() ) {}
+			: Indexer2d( cols_, rows_ ), m_data( cols_()*rows_() ) {}
 
 		template< typename U, index_type N >			requires std::is_same_v< value_type, std::remove_cv_t< U > >
 		constexpr Table(
 			const std::span< U, N >	data_, 
 			const Col		 		cols_
-		) : Indexer( cols_, Row( data_.size()/cols_ ) ), m_data( data_.begin(), data_.end() ) {}
+		) : Indexer2d( cols_, Row( data_.size()/cols_ ) ), m_data( data_.begin(), data_.end() ) {}
 
 		constexpr value_type operator[]( const Col c_, const Row r_ )					const noexcept	{
-			return m_data[ Indexer::scalar_index( c_, r_ ) ];
+			return m_data[ scalar_index( c_, r_ ) ];
 		}
 		constexpr element_type & operator[]( const Col c_, const Row r_ )					  noexcept	{
-			return m_data[ Indexer::scalar_index( c_, r_ ) ];
+			return m_data[ scalar_index( c_, r_ ) ];
 		}
 		constexpr value_type operator[]( const Idx i_ ) 								const noexcept	{
-			return m_data[ Indexer::scalar_index( i_ ) ];
+			return m_data[ scalar_index( i_ ) ];
 		}
 		constexpr element_type & operator[]( const Idx i_ )									  noexcept	{
-			return m_data[ Indexer::scalar_index( i_ ) ];
+			return m_data[ scalar_index( i_ ) ];
 		}
 
-		using Indexer::rows;
-		using Indexer::cols;
-		using Indexer::elements;
+		using Indexer2d::rows;
+		using Indexer2d::cols;
+		using Indexer2d::elements;
 		constexpr const value_type * data()			const noexcept	{	return m_data.data();						}
 		constexpr value_type * data()					  noexcept	{	return m_data.data();						}
 
@@ -114,8 +111,8 @@ namespace pax {
 		constexpr auto end_col  ( const Col c_ )		  noexcept	{	return stride( c_, rows(), cols() );		}
 
 		/// Iterators for row r_.
-		constexpr auto begin_row( Row r_ )			const noexcept	{	return stride( Col{}, r_, 1u );				}
-		constexpr auto begin_row( Row r_ )				  noexcept	{	return stride( Col{}, r_, 1u );				}
+		constexpr auto begin_row( const Row r_ )	const noexcept	{	return stride( Col{}, r_, 1u );				}
+		constexpr auto begin_row( const Row r_ )		  noexcept	{	return stride( Col{}, r_, 1u );				}
 		constexpr auto end_row  ( Row r_ )			const noexcept	{	return stride( Col{}, Row( ++r_ ), 1u );	}
 		constexpr auto end_row  ( Row r_ )				  noexcept	{	return stride( Col{}, Row( ++r_ ), 1u );	}
 
@@ -132,15 +129,15 @@ namespace pax {
 		/// If the table is decreased, the values within the new size are retained. 
 		constexpr void resize( const Col cols_, const Row rows_ ) {
 			const index_type				new_size( cols_()*rows_() );
-			pax::Indexer< 2 > new_indexer = new_size ? pax::Indexer< 2 >{ cols_,  rows_ } : pax::Indexer< 2 >{};
+			Indexer2d new_indexer = new_size ? Indexer2d{ cols_,  rows_ } : Indexer2d{};
 			if( m_data.size()  < new_size )	m_data.resize( new_size );
 			pax::resize( 
-				pax::Indexer< 2 >{ cols(), rows() },
+				Indexer2d{ cols(), rows() },
 				new_indexer,
 				std::span( m_data )
 			);
 			if( m_data.size() != new_size )	m_data.resize( new_size );
-			static_cast< Indexer & >( *this )  = new_indexer;
+			static_cast< Indexer2d & >( *this )  = new_indexer;
 		}
 
 		/// Remove columns.
@@ -157,9 +154,9 @@ namespace pax {
 				srce			 += cols();
 			}
 			std::copy_n( srce, cols() - col_() - qtity_, dest );
-			static_cast< Indexer & >( *this )  = ( cols() > qtity_ ) 
-				? pax::Indexer< 2 >{ cols() - qtity_,  rows() } 
-				: pax::Indexer< 2 >{};
+			static_cast< Indexer2d & >( *this )  = ( cols() > qtity_ ) 
+				? Indexer2d{ cols() - qtity_,  rows() } 
+				: Indexer2d{};
 		}
 
 		/// Stream the rows for which predicate_[ i ] is true to out_ using col_mark_ as column deligneater. 
