@@ -28,12 +28,12 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( table.rows(),				3 );
 			DOCTEST_FAST_CHECK_EQ( table.cols(),				5 );
 			DOCTEST_FAST_CHECK_EQ( table.size(),				15 );
-			DOCTEST_FAST_CHECK_EQ( table[ 3, 1 ],				"B4" );
-			DOCTEST_FAST_CHECK_EQ( table.row( 1 )[ 3 ],			"B4" );
-			DOCTEST_FAST_CHECK_EQ( table.row( 1 ).size(),		table.cols() );
+			DOCTEST_FAST_CHECK_EQ( table[ Col( 3 ), Row( 1 ) ],	"B4" );
+			DOCTEST_FAST_CHECK_EQ( table.row( Row( 1 ) )[ 3 ],	"B4" );
+			DOCTEST_FAST_CHECK_EQ( table.row( Row( 1 ) ).size(),table.cols() );
 			DOCTEST_FAST_CHECK_EQ( table.begin()[ 8 ],			"B4" );
-			DOCTEST_FAST_CHECK_EQ( table.begin_row( 1 )[ 3 ],	"B4" );
-			DOCTEST_FAST_CHECK_EQ( table.begin_col( 3 )[ 1 ],	"B4" );
+			DOCTEST_FAST_CHECK_EQ( table.begin_row( Row( 1 ) )[ 3 ],	"B4" );
+			DOCTEST_FAST_CHECK_EQ( table.begin_col( Col( 3 ) )[ 1 ],	"B4" );
 		}
 		{	// Export a scalar.
 			const auto exported	  = table.export_values< int >( "r2" );

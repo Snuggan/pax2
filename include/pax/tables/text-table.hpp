@@ -96,7 +96,7 @@ namespace pax {
 			const auto[ cells, cols, col_mark ] = parse2table( std::basic_string_view( m_data.front() ) );
 			const std::span 				cells_ref{ cells };
 			m_header					  = Header{ cells_ref.subspan( 0, cols ) };
-			m_table						  = Table< view_type >{ cells_ref.subspan( cols ), cols };
+			m_table						  = Table< view_type >{ cells_ref.subspan( cols ), Col( cols ) };
 			m_col_mark 					  = col_mark;
 		}
 
@@ -105,30 +105,30 @@ namespace pax {
 
 
 		/// Dimensions.
-		constexpr auto rows()							const noexcept	{	return m_table.rows();			}
-		constexpr auto cols()							const noexcept	{	return m_table.cols();			}
-		constexpr auto size()							const noexcept	{	return m_table.elements();		}
+		constexpr Row  rows()							const noexcept	{	return m_table.rows();			}
+		constexpr Col  cols()							const noexcept	{	return m_table.cols();			}
+		constexpr Size size()							const noexcept	{	return m_table.elements();		}
 		
 		/// Access the cell at row r_, column c_.
-		constexpr auto operator[]( Size r_, Size c_ )	const			{	return m_table[ r_, c_ ];		}
+		constexpr auto operator[]( Col c_, Row r_ )		const			{	return m_table[ c_, r_ ];		}
 		
 		/// Access the header row.
 		constexpr const auto & header()					const noexcept	{	return m_header;				}
 		
 		/// Get row r_ as a span.
-		constexpr auto row( const Size r_ )				const noexcept	{	return m_table.row( r_ );		}
+		constexpr auto row( const Row r_ )				const noexcept	{	return m_table.row( r_ );		}
 		
 		/// Get iterators to all cells. 
 		constexpr auto begin()							const noexcept	{	return m_table.begin();			}
 		constexpr auto end()							const noexcept	{	return m_table.end();			}
 		
 		/// Get iterators to all cells in row r_. 
-		constexpr auto begin_row( const Size r_ )		const noexcept	{	return m_table.begin_row( r_ );	}
-		constexpr auto end_row( const Size r_ )			const noexcept	{	return m_table.end_row( r_ );	}
+		constexpr auto begin_row( const Row r_ )		const noexcept	{	return m_table.begin_row( r_ );	}
+		constexpr auto end_row( const Row r_ )			const noexcept	{	return m_table.end_row( r_ );	}
 		
 		/// Get iterators to all cells in column c_. 
-		constexpr auto begin_col( const Size c_ )		const noexcept	{	return m_table.begin_col( c_ );	}
-		constexpr auto end_col( const Size c_ )			const noexcept	{	return m_table.end_col( c_ );	}
+		constexpr auto begin_col( const Col c_ )		const noexcept	{	return m_table.begin_col( c_ );	}
+		constexpr auto end_col( const Col c_ )			const noexcept	{	return m_table.end_col( c_ );	}
 
 
 		/// Fuse other_ into this by adding the other_ as columns.
@@ -137,21 +137,21 @@ namespace pax {
 		constexpr void insert_cols( Text_table && other_ ) {
 			if( m_table.rows() != other_.m_table.rows() )	throw error_message( std::format( 
 				"Text_table: The tables must have the equal number of rows, but {} (this) != {} (other).", 
-				m_table.rows(), other_.m_table.rows() ) );
+				m_table.rows()(), other_.m_table.rows()() ) );
 			
 			// Copy columns with same existing id, save index of others.
 			std::vector< Size > 			cols_to_add{};
-			for( Size i{}; i<other_.m_table.cols(); ++i ) {
-				const auto c			  = m_header.add( other_.m_header[ i ] );
-				if( c < m_table.cols() )	std::copy_n( other_.m_table.begin_col( i ), m_table.rows(), m_table.begin_col( c ) );
-				else						cols_to_add.push_back( i );
+			for( Col col{}; col<other_.m_table.cols(); ++col ) {
+				const Col c				  = Col( m_header.add( other_.m_header[ col() ] ) );
+				if( c < m_table.cols() )	std::copy_n( other_.m_table.begin_col( col ), m_table.rows()(), m_table.begin_col( c ) );
+				else						cols_to_add.push_back( col );
 			}
 			
 			// Add the columns with new header. 
-			Size		 					c{ m_table.cols() };
+			Col			 					c{ m_table.cols() };
 			m_table.resize( c + cols_to_add.size(), m_table.rows() );
-			for( const Size j : cols_to_add ) {
-				std::copy_n( other_.m_table.begin_col( j ), m_table.rows(), m_table.begin_col( c ) );
+			for( const Size col : cols_to_add ) {
+				std::copy_n( other_.m_table.begin_col( Col( col ) ), m_table.rows(), m_table.begin_col( c ) );
 				++c;
 			}
 

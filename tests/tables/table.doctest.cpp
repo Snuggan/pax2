@@ -12,8 +12,8 @@
 namespace pax {
 
 	constexpr std::size_t 		sz = 32;
-	constexpr std::size_t 		cols = 4;
-	constexpr std::size_t 		rows = sz/cols;
+	constexpr Col		 		cols{ 4u };
+	constexpr Row		 		rows{ sz/cols() };
 	static  int arr[ 64 ] = {
 		 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 
 		16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 
@@ -41,70 +41,72 @@ namespace pax {
 	template< typename T >
 	void resize_check(
 		Table< T >			  & table,
-		const std::size_t 		cols_, 
-		const std::size_t 		rows_
+		const Col		 		cols_, 
+		const Row		 		rows_
 	) {
 		table.resize( cols_, rows_ );
 		DOCTEST_FAST_CHECK_EQ( table.rows(),	rows_ );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 	cols_ );
-		DOCTEST_FAST_CHECK_EQ( table[ 1, 3 ],	13 );
-		DOCTEST_FAST_CHECK_EQ( table[ 3, 7 ],	31 );
+		DOCTEST_FAST_CHECK_EQ( table[ Col( 1 ), Row( 3 ) ],	13 );
+		DOCTEST_FAST_CHECK_EQ( table[ Col( 3 ), Row( 7 ) ],	31 );
 	}
 
 
 	DOCTEST_TEST_CASE( "Test consistency of ::data() and ::data_handle" ) { 
-		Table< int >			table{ 10, 12 };
+		Table< int >			table{ Col( 10 ), Row( 12 ) };
 		{	// Preliminaries.
-			table[ 2, 3 ] = 23;
-			DOCTEST_FAST_CHECK_EQ( table[ 2, 3 ],	23 );
+			table[ Col( 2 ), Row( 3 ) ]		  = 23;
+			DOCTEST_FAST_CHECK_EQ( table[ Col( 2 ), Row( 3 ) ],	23 );
+			// DOCTEST_FAST_CHECK_EQ( table[ Row( 2 ), Col( 3 ) ],	23 );
+			// DOCTEST_FAST_CHECK_EQ( table[ 2u, 3u ],				23 );
 		}
 		{	// Resize.
-			table.resize( 8, 9 );
-			DOCTEST_FAST_CHECK_EQ( table[ 2, 3 ],	23 );
+			table.resize( Col( 8 ), Row( 9 ) );
+			DOCTEST_FAST_CHECK_EQ( table[ Col( 2 ), Row( 3 ) ],	23 );
 		}
 		{	// Copy constructor.
 			Table< int >		table2{ table };
-			table2[ 2, 3 ]	  = -3;
+			table2[ Col( 2 ), Row( 3 ) ]	  = -3;
 			
-			DOCTEST_FAST_CHECK_EQ( table [ 2, 3 ],	23 );
-			DOCTEST_FAST_CHECK_EQ( table2[ 2, 3 ],	-3 );
-			table[ 2, 3 ]	  = 23;
+			DOCTEST_FAST_CHECK_EQ( table [ Col( 2 ), Row( 3 ) ],	23 );
+			DOCTEST_FAST_CHECK_EQ( table2[ Col( 2 ), Row( 3 ) ],	-3 );
+			table[ Col( 2 ), Row( 3 ) ]	  = 23;
 		}
 		{	// Copy operator.
 			Table< int >		table2{};
-			table2			  = table;
-			table2[ 2, 3 ]	  = -3;
+			table2							  = table;
+			table2[ Col( 2 ), Row( 3 ) ]	  = -3;
 			
-			DOCTEST_FAST_CHECK_EQ( table [ 2, 3 ],	23 );
-			DOCTEST_FAST_CHECK_EQ( table2[ 2, 3 ],	-3 );
-			table[ 2, 3 ]	  = 23;
+			DOCTEST_FAST_CHECK_EQ( table [ Col( 2 ), Row( 3 ) ],	23 );
+			DOCTEST_FAST_CHECK_EQ( table2[ Col( 2 ), Row( 3 ) ],	-3 );
+			table[ Col( 2 ), Row( 3 ) ]		  = 23;
 		}
 		{	// Move operator.
 			Table< int >		table2{ table };
-			table2[ 2, 3 ]	  = -3;
-			table			  = std::move( table2 );
+			table2[ Col( 2 ), Row( 3 ) ]	  = -3;
+			table							  = std::move( table2 );
 			
-			DOCTEST_FAST_CHECK_EQ( table [ 2, 3 ],	-3 );
-			table[ 2, 3 ]	  = 23;
+			DOCTEST_FAST_CHECK_EQ( table [ Col( 2 ), Row( 3 ) ],	-3 );
+			table[ Col( 2 ), Row( 3 ) ]		  = 23;
 		}
 		{	// Move constructor.
 			Table< int >		table2{ std::move( table ) };
-			table2[ 2, 3 ]	  = -3;
+			table2[ Col( 2 ), Row( 3 ) ]	  = -3;
 			
-			DOCTEST_FAST_CHECK_EQ( table2[ 2, 3 ],	-3 );
-			table			  = table2;
+			DOCTEST_FAST_CHECK_EQ( table2[ Col( 2 ), Row( 3 ) ],	-3 );
+			table							  = table2;
 		}
 	}
 	DOCTEST_TEST_CASE( "Table basics, constructed with rows and cols" ) { 
 		{
-			Table< int >		   table{ 0, 0 };
+			Table< int >		   table{ Col( 0 ), Row( 0 ) };
 			DOCTEST_FAST_CHECK_EQ( table.cols(),			0 );
 			DOCTEST_FAST_CHECK_EQ( table.rows(),			0 );
 			DOCTEST_FAST_CHECK_EQ( table.elements(),		0 );
 			DOCTEST_FAST_CHECK_EQ( sum( table.span() ),		0 );
 		}
 		{
-			Table< int >		   table{ 10, 12 };
+			Table< int >		   table{ Col( 10 ), Row( 12 ) };
 			DOCTEST_FAST_CHECK_EQ( table.cols(),			 10 );
 			DOCTEST_FAST_CHECK_EQ( table.rows(),			 12 );
 			DOCTEST_FAST_CHECK_EQ( table.elements(),		120 );
@@ -121,29 +123,29 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( sum( table.span() ),		31*16 );
 		}
 		{	// row( i ).
-			const auto r	  = table.row( 2 );
+			const auto r	  = table.row( Row( 2 ) );
 			DOCTEST_FAST_CHECK_EQ( sum( r ),			38 );
 			DOCTEST_FAST_CHECK_EQ( r[ 0 ],				 8 );
-			DOCTEST_FAST_CHECK_EQ( r[ cols - 1 ],		11 );
+			DOCTEST_FAST_CHECK_EQ( r[ cols() - 1 ],		11 );
 		}
 		{	// Change a row.
-			auto itr		  = table.begin_row( 3 );
-			const auto end	  = table.end_row( 3 );
+			auto itr		  = table.begin_row( Row( 3 ) );
+			const auto end	  = table.end_row( Row( 3 ) );
 			while( itr < end ) {
 				*itr = -*itr;
 				++itr;
 			}
-			DOCTEST_FAST_CHECK_EQ( table[ 1, 3 ],			-13 );
-			DOCTEST_FAST_CHECK_EQ( sum( table.span() ),		31*16 - 2*54 );
+			DOCTEST_FAST_CHECK_EQ( table[ Col( 1 ), Row( 3 ) ],	-13 );
+			DOCTEST_FAST_CHECK_EQ( sum( table.span() ),			31*16 - 2*54 );
 		}
 		{	// Change a column.
-			auto itr		  = table.begin_col( 1 );
-			const auto end	  = table.end_col( 1 );
+			auto itr		  = table.begin_col( Col( 1 ) );
+			const auto end	  = table.end_col( Col( 1 ) );
 			while( itr < end ) {
 				*itr = -*itr;
 				++itr;
 			}
-			DOCTEST_FAST_CHECK_EQ( table[ 1, 3 ],			+13 );
+			DOCTEST_FAST_CHECK_EQ( table[ Col( 1 ), Row( 3 ) ],			+13 );
 			DOCTEST_FAST_CHECK_EQ( sum( table.span() ),		31*16 - 2*54 - 2*( 107 - 13 ) );
 		}
 	}
@@ -152,129 +154,129 @@ namespace pax {
 			static constexpr int data0[] = { 1, 2, 3, 4, 5 };
 			static constexpr int data1[] = { 1, 0, 0, 0, 0 };
 			{	// 1x5 -> 5x1 -> 0x0
-				Table table( std::span{ data0 }, 5 );
+				Table table( std::span{ data0 }, Col( 5 ) );
 				DOCTEST_FAST_CHECK_EQ( table.rows(), 1 );
 				DOCTEST_FAST_CHECK_EQ( table.cols(), 5 );
 				DOCTEST_FAST_CHECK_EQ( table.span(), std::span( data0 ) );
-				table.resize( 1, 5 );
+				table.resize( Col( 1 ), Row( 5 ) );
 				DOCTEST_FAST_CHECK_EQ( table.rows(), 5 );
 				DOCTEST_FAST_CHECK_EQ( table.cols(), 1 );
 				DOCTEST_FAST_CHECK_EQ( table.span(), std::span( data1 ) );
-				table.resize( 2, 0 );
+				table.resize( Col( 2 ), Row( 0 ) );
 				DOCTEST_FAST_CHECK_EQ( table.rows(), 0 );
 				DOCTEST_FAST_CHECK_EQ( table.cols(), 0 );
 				DOCTEST_FAST_CHECK_EQ( table.span(), std::span< int >{} );
 			}
 			{	// 5x1 -> 1x5 -> 0x0
-				Table table( std::span{ data0 }, 1 );
+				Table table( std::span{ data0 }, Col( 1 ) );
 				DOCTEST_FAST_CHECK_EQ( table.rows(), 5 );
 				DOCTEST_FAST_CHECK_EQ( table.cols(), 1 );
 				DOCTEST_FAST_CHECK_EQ( table.span(), std::span( data0 ) );
-				table.resize( 5, 1 );
+				table.resize( Col( 5 ), Row( 1 ) );
 				DOCTEST_FAST_CHECK_EQ( table.rows(), 1 );
 				DOCTEST_FAST_CHECK_EQ( table.cols(), 5 );
 				DOCTEST_FAST_CHECK_EQ( table.span(), std::span( data1 ) );
-				table.resize( 0, 1 );
+				table.resize( Col( 8 ), Row( 0 ) );
 				DOCTEST_FAST_CHECK_EQ( table.rows(), 0 );
 				DOCTEST_FAST_CHECK_EQ( table.cols(), 0 );
 				DOCTEST_FAST_CHECK_EQ( table.span(), std::span< int >{} );
 			}
 			{	// 0x0 -> 4x5
 				Table< int > table;
-				table.resize( 5, 4 );
+				table.resize( Col( 5 ), Row( 4 ) );
 				DOCTEST_FAST_CHECK_EQ( table.rows(), 4 );
 				DOCTEST_FAST_CHECK_EQ( table.cols(), 5 );
 			}
 		}
 		{	// Normal resize.
-			Table table( sp, 4 );
+			Table table( sp, Col( 4 ) );
 			DOCTEST_FAST_CHECK_EQ( table.rows(),		 8 );
 			DOCTEST_FAST_CHECK_EQ( table.cols(), 		 4 );
-			DOCTEST_FAST_CHECK_EQ( table[ 1, 3 ],		13 );
-			DOCTEST_FAST_CHECK_EQ( table[ 3, 7 ],		31 );
+			DOCTEST_FAST_CHECK_EQ( table[ Col( 1 ), Row( 3 ) ],		13 );
+			DOCTEST_FAST_CHECK_EQ( table[ Col( 3 ), Row( 7 ) ],		31 );
 
-			resize_check( table, 9, 10 );		// Add rows and columns, 8x4 -> 10*9
-			resize_check( table, 6, 11 );		// Add rows, remove columns, 10x9 -> 11x6
-			resize_check( table, 8,  9 );		// Remove rows, add columns, 11x6 -> 9x8
-			resize_check( table, 4,  8 );		// Remove rows and columns, 9x8 -> 8x4
-			resize_check( table, 4, 10 );		// Add rows, 8x4 -> 10x4
-			resize_check( table, 4,  8 );		// Remove rows, 10x4 -> 8x4
-			resize_check( table, 6,  8 );		// Add columns, 8x4 -> 8x6
-			resize_check( table, 4,  8 );		// Remove columns, 8x6 -> 8x4
-			resize_check( table, 6,  8 );		// No change, 8x4 -> 8x4
+			resize_check( table, Col( 9 ), Row( 10 ) );		// Add rows and columns, 8x4 -> 10*9
+			resize_check( table, Col( 6 ), Row( 11 ) );		// Add rows, remove columns, 10x9 -> 11x6
+			resize_check( table, Col( 8 ), Row(  9 ) );		// Remove rows, add columns, 11x6 -> 9x8
+			resize_check( table, Col( 4 ), Row(  8 ) );		// Remove rows and columns, 9x8 -> 8x4
+			resize_check( table, Col( 4 ), Row( 10 ) );		// Add rows, 8x4 -> 10x4
+			resize_check( table, Col( 4 ), Row(  8 ) );		// Remove rows, 10x4 -> 8x4
+			resize_check( table, Col( 6 ), Row(  8 ) );		// Add columns, 8x4 -> 8x6
+			resize_check( table, Col( 4 ), Row(  8 ) );		// Remove columns, 8x6 -> 8x4
+			resize_check( table, Col( 6 ), Row(  8 ) );		// No change, 8x4 -> 8x4
 
 			// Really small, 8x4 -> 1x1
-			table[ 0, 0 ] = 42;
-			table.resize( 1, 1 );
-			DOCTEST_FAST_CHECK_EQ( table[ 0, 0 ],		42 );
+			table[ Col( 0 ), Row( 0 ) ] = 42;
+			table.resize( Col( 1 ), Row( 1 ) );
+			DOCTEST_FAST_CHECK_EQ( table[ Col( 0 ), Row( 0 ) ],		42 );
 
 			// Make big again, 1x1 -> 3x3
-			table.resize( 3, 3 );
-			DOCTEST_FAST_CHECK_EQ( table[ 0, 0 ],		42 );
+			table.resize( Col( 3 ), Row( 3 ) );
+			DOCTEST_FAST_CHECK_EQ( table[ Col( 0 ), Row( 0 ) ],		42 );
 		}
 	}
 	DOCTEST_TEST_CASE( "Table remove_rows" ) { 
-		Table table( sp, 8 );
+		Table table( sp, Col( 8 ) );
 		DOCTEST_FAST_CHECK_EQ( table.rows(),		 4 );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 8 );
-		DOCTEST_FAST_CHECK_EQ( table[ 7, 1 ],		15 );
-		DOCTEST_FAST_CHECK_EQ( table[ 7, 2 ],		23 );
+		DOCTEST_FAST_CHECK_EQ( table[ Col( 7 ), Row( 1 ) ],		15 );
+		DOCTEST_FAST_CHECK_EQ( table[ Col( 7 ), Row( 2 ) ],		23 );
 		
 		// table.print( std::cout );
 		// table.remove_rows( 2 );
 		// table.print( std::cout );
 		// DOCTEST_FAST_CHECK_EQ( table.rows(),		 3 );
-		// DOCTEST_FAST_CHECK_EQ( table.cols(), 		 8 );
-		// DOCTEST_FAST_CHECK_EQ( table[ 1, 7 ],		15 );
-		// DOCTEST_FAST_CHECK_EQ( table[ 2, 7 ],		31 );
+		// DOCTEST_FAST_CHECK_EQ( table.cols(), 	 8 );
+		// DOCTEST_FAST_CHECK_EQ( table[ Col( 1 ), Row( 7 ) ],		15 );
+		// DOCTEST_FAST_CHECK_EQ( table[ Col( 2 ), Row( 7 ) ],		31 );
 		//
 		// table.remove_rows( 2 );
 		// DOCTEST_FAST_CHECK_EQ( table.rows(),		 2 );
-		// DOCTEST_FAST_CHECK_EQ( table.cols(), 		 8 );
-		// DOCTEST_FAST_CHECK_EQ( table[ 0, 7 ],		 7 );
+		// DOCTEST_FAST_CHECK_EQ( table.cols(), 	 8 );
+		// DOCTEST_FAST_CHECK_EQ( table[ Col( 0 ), Row( 7 ) ],		 7 );
 		//
 		// table.remove_rows( 1 );
 		// DOCTEST_FAST_CHECK_EQ( table.rows(),		 1 );
-		// DOCTEST_FAST_CHECK_EQ( table.cols(), 		 8 );
-		// DOCTEST_FAST_CHECK_EQ( table[ 0, 7 ],		 7 );
+		// DOCTEST_FAST_CHECK_EQ( table.cols(), 	 8 );
+		// DOCTEST_FAST_CHECK_EQ( table[ Col( 0 ), Row( 7 ) ],		 7 );
 		//
 		// table.remove_rows( 0 );
 		// DOCTEST_FAST_CHECK_EQ( table.rows(),		 0 );
-		// DOCTEST_FAST_CHECK_EQ( table.cols(), 		 0 );
+		// DOCTEST_FAST_CHECK_EQ( table.cols(), 	 0 );
 	}
 	DOCTEST_TEST_CASE( "Table remove_cols" ) { 
 		{
-			Table table( sp, 4 );
-			table.remove_cols( 1, 2 );
+			Table table( sp, Col( 4 ) );
+			table.remove_cols( Col( 1 ), 2 );
 			DOCTEST_FAST_CHECK_EQ( table.rows(),	 8 );
 			DOCTEST_FAST_CHECK_EQ( table.cols(), 	 2 );
-			DOCTEST_FAST_CHECK_EQ( table[ 0, 7 ],	28 );
-			DOCTEST_FAST_CHECK_EQ( table[ 1, 7 ],	31 );
+			DOCTEST_FAST_CHECK_EQ( table[ Col( 0 ), Row( 7 ) ],	28 );
+			DOCTEST_FAST_CHECK_EQ( table[ Col( 1 ), Row( 7 ) ],	31 );
 		}
 
-		Table table( sp, 4 );
+		Table table( sp, Col( 4 ) );
 		DOCTEST_FAST_CHECK_EQ( table.rows(),		 8 );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 4 );
-		DOCTEST_FAST_CHECK_EQ( table[ 1, 7 ],		29 );
-		DOCTEST_FAST_CHECK_EQ( table[ 2, 7 ],		30 );
+		DOCTEST_FAST_CHECK_EQ( table[ Col( 1 ), Row( 7 ) ],		29 );
+		DOCTEST_FAST_CHECK_EQ( table[ Col( 2 ), Row( 7 ) ],		30 );
 		
-		table.remove_cols( 2 );
+		table.remove_cols( Col( 2 ) );
 		DOCTEST_FAST_CHECK_EQ( table.rows(),		 8 );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 3 );
-		DOCTEST_FAST_CHECK_EQ( table[ 1, 7 ],		29 );
-		DOCTEST_FAST_CHECK_EQ( table[ 2, 7 ],		31 );
+		DOCTEST_FAST_CHECK_EQ( table[ Col( 1 ), Row( 7 ) ],		29 );
+		DOCTEST_FAST_CHECK_EQ( table[ Col( 2 ), Row( 7 ) ],		31 );
 		
-		table.remove_cols( 2 );
+		table.remove_cols( Col( 2 ) );
 		DOCTEST_FAST_CHECK_EQ( table.rows(),		 8 );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 2 );
-		DOCTEST_FAST_CHECK_EQ( table[ 0, 7 ],		28 );
+		DOCTEST_FAST_CHECK_EQ( table[ Col( 0 ), Row( 7 ) ],		28 );
 		
-		table.remove_cols( 1 );
+		table.remove_cols( Col( 1 ) );
 		DOCTEST_FAST_CHECK_EQ( table.rows(),		 8 );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 1 );
-		DOCTEST_FAST_CHECK_EQ( table[ 0, 7 ],		28 );
+		DOCTEST_FAST_CHECK_EQ( table[ Col( 0 ), Row( 7 ) ],		28 );
 		
-		table.remove_cols( 0 );
+		table.remove_cols( Col( 0 ) );
 		DOCTEST_FAST_CHECK_EQ( table.rows(),		 0 );
 		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 0 );
 	}

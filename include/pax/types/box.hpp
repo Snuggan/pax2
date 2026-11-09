@@ -134,8 +134,13 @@ namespace pax {
 		constexpr Indexer( const Indexer & )					  = default;
 		constexpr Indexer & operator=( const Indexer & )		  = default;
 
-		constexpr Indexer( const Idx & extents_ )  					noexcept 
-			: m_extents( extents_ ), m_offsets{ calculate_offsets( extents_ ) } {}
+		template< uinteger ...U >									requires( sizeof...( U ) == N-2 )
+		constexpr Indexer(
+			const Col		col_,
+			const Row		row_,
+			U 		 && ... u_
+		) noexcept 
+			: m_extents( Idx{ col_(), row_(), std::forward< U >( u_ ) ... } ), m_offsets{ calculate_offsets( m_extents ) } {}
 
 		/// Number of elementa in each dimension.
 		constexpr const Idx & extents()								const noexcept	{	return m_extents;			}
@@ -144,10 +149,10 @@ namespace pax {
 		constexpr const Idx & offsets()								const noexcept	{	return m_offsets;			}
 		
 		/// The number of "columns", same as size()[ col_idx ].
-		constexpr index_type cols()									const noexcept	{	return col( extents() );	}
+		constexpr Col cols()										const noexcept	{	return col( extents() );	}
 		
 		/// The number of "rows", same as size()[ row_idx ].
-		constexpr index_type rows()									const noexcept	{	return row( extents() );	}
+		constexpr Row rows()										const noexcept	{	return row( extents() );	}
 
 		/// The total number of elements (product of all sizes).
 		constexpr index_type elements()								const noexcept	{
@@ -164,10 +169,20 @@ namespace pax {
 			return all_lt( idx_, extents() );
 		}
 		
+		// /// Calculate the index into a vector for the index represented by u_.
+		// template< uinteger ...U >									requires( sizeof...( U ) == N )
+		// constexpr index_type scalar_index( U && ... u_ )			const noexcept	{
+		// 	return scalar_index( Idx{ std::forward< U >( u_ ) ... } );
+		// }
+		
 		/// Calculate the index into a vector for the index represented by u_.
-		template< uinteger ...U >									requires( sizeof...( U ) == N )
-		constexpr index_type scalar_index( U && ... u_ )			const noexcept	{
-			return scalar_index( Idx{ std::forward< U >( u_ ) ... } );
+		template< uinteger ...U >									requires( sizeof...( U ) == N-2 )
+		constexpr index_type scalar_index(
+			const Col		col_,
+			const Row		row_,
+			U 		 && ... u_
+		)	const noexcept	{
+			return scalar_index( Idx{ col_(), row_(), std::forward< U >( u_ ) ... } );
 		}
 		
 		/// Calculate the index into a vector for the index represented by idx_.
@@ -217,7 +232,7 @@ namespace pax {
 		Pt									m_factor{};			// Multiply a point with this...
 		Pt									m_offset{};			// ...and add this to get the index. 
 
-		static constexpr Point< std::size_t, N > calculate_extents(
+		static constexpr Point< std::size_t, N > calculate_indexer(
 			const Pt					  & sides_,
 			const Pt					  & resolution_
 		) noexcept {
@@ -232,6 +247,19 @@ namespace pax {
 			const auto ci = static_cast< index_type >( c );
 			return ( ci < i ) ? ci : i;
 		};
+
+		static constexpr Indexer< rank > calculate_extents(
+			const Pt					  & sides_,
+			const Pt					  & resolution_
+		) noexcept {
+			// We want no zero-length dimension.
+			static constexpr auto mini	  = []( index_type i_ ) { return ( i_ > 1u ) ? i_ : 1u; };
+			const auto [ col,    row,    ... side ]		  = sides_;
+			const auto [ colres, rowres, ...  res ]		  = resolution_;
+			return {	Col( mini( col /std::abs( colres ) ) ), 
+						Row( mini( row /std::abs( rowres ) ) ), 
+							 mini( side/std::abs(    res ) ) ... };
+		}
 
 
 	public:
@@ -282,8 +310,8 @@ namespace pax {
 		) requires( rank == 2 ) :
 		    Box_indexer{ 
 				BBox(	Pt{	F( aff_[0] ), F( aff_[3] ) }, 
-						Pt{	F( aff_[0] + ( col( cols_rows_ ) - 1 )*std::abs( aff_[1] ) ),
-							F( aff_[3] + ( row( cols_rows_ ) - 1 )*std::abs( aff_[5] ) ) }
+						Pt{	F( aff_[0] + ( col( cols_rows_ )() - 1 )*std::abs( aff_[1] ) ),
+							F( aff_[3] + ( row( cols_rows_ )() - 1 )*std::abs( aff_[5] ) ) }
 				), 
 				Pt{ F( aff_[1] ), F( aff_[5] ) }
 			}

@@ -317,7 +317,7 @@ namespace pax {
 		const std::string_view								id_col_name_
 	) {
 		DEBUG0 << "plot_stuff::save_metrics start";
-		DEBUG0 << std::format( "plots_table_:       {} rows, {} cols", plots_table_.rows(), plots_table_.cols() );
+		DEBUG0 << std::format( "plots_table_:       {} cols, {} rows", plots_table_.cols()(), plots_table_.rows()() );
 		DEBUG0 << std::format( "plots_:             {} items", plots_.size() );
 		DEBUG0 << std::format( "plot_metrics_dest_: \"{}\"", plot_metrics_dest_.native() );
 		static constexpr const std::string_view	merge_items  = ";{}";	// Semicolon separator.
@@ -329,8 +329,8 @@ namespace pax {
 			DEBUG0 << std::format( "metrics_:           {}", metric_names );
 
 			if( !plots_.empty() && !plot_metrics_dest_.empty() && !metrics_.empty() ) {
-				const std::size_t 				id_col = plots_table_.header().index( id_col_name_ );
-				DEBUG0 << std::format( "ID column:          \"{}\" => {}", id_col_name_, id_col );
+				const Col						id_col = Col( plots_table_.header().index( id_col_name_ ) );
+				DEBUG0 << std::format( "ID column:          \"{}\" => {}", id_col_name_, id_col() );
 				if( id_col == -1u )
 					throw error_message( std::format( "In the plots table, there is no column \"{}\".", id_col_name_ ) );
 
@@ -356,8 +356,7 @@ namespace pax {
 					// Create an unordered set of all rows in plots_table_ with the same id as any item in plots_
 					// and use it as a predicative. 
 					std::unordered_set< std::size_t >	table_row_ok{};
-					DEBUG0 << std::format( "plots_table_:       {} rows, {} cols", plots_table_.rows(), plots_table_.cols() );
-					for( std::size_t row{}; row<plots_table_.rows(); ++row ) {
+					for( Row row{}; row<plots_table_.rows(); ++row ) {
 						if( plot_id_idx.contains( std::string( plots_table_[ id_col, row ] ) ) ) {
 							DEBUG0 << "Insert row " << row << ": " << std::string( plots_table_[ id_col, row ] );
 							table_row_ok.insert( row );
@@ -381,7 +380,7 @@ namespace pax {
 					pax::Debug{} << std::format( "reduced_table:\n{}", reduced_table );
 					pax::Debug{} << "plots_:\n" << plots_;
 					throw error_message( std::format( "Reduced table should have {} rows, but has {}.", 
-						plots_.size(), reduced_table.rows() ) );
+						plots_.size(), reduced_table.rows()() ) );
 				}
 
 				DEBUG0 << "plot_stuff::save_metrics insert metrics into reduced_table";
@@ -400,7 +399,7 @@ namespace pax {
 					// Stream those metric rows that have actual metric values.
 					const auto					begin = metrics_.begin();
 					const auto					end   = metrics_.end();
-					for( std::size_t row{}; row<reduced_table.rows(); ++row ) {
+					for( Row row{}; row<reduced_table.rows(); ++row ) {
 						const std::size_t		plot_idx = plot_id_idx.at( std::string( reduced_table[ id_col, row ] ) );
 						assert( plots_[ plot_idx ].id() == std::string( reduced_table[ id_col, row ] ) );
 

@@ -36,20 +36,20 @@ namespace pax {
 		DOCTEST_FAST_CHECK_UNARY( !bx.in_range       ( max( bx ) ) );
 	}
 	DOCTEST_TEST_CASE( "Indexer object" ) {
-		constexpr auto idx		  = index( 3u, 5u, 7u );
-		constexpr auto idx2		  = index( 2u, 4u, 6u );
+		constexpr auto idx		  = index( Col( 3u ), Row( 5u ), 7u );
+		constexpr auto idx2		  = index( Col( 2u ), Row( 4u ), 6u );
 
-		constexpr auto 		indexer = Indexer{ idx };
+		constexpr auto 		indexer = Indexer< 3 >{ Col( 3u ), Row( 5u ), 7u };
 		DOCTEST_FAST_CHECK_EQ( idx,  						idx );
 		DOCTEST_FAST_CHECK_EQ( indexer.elements(),  		105u );
 		DOCTEST_FAST_CHECK_EQ( indexer.extents(),  			idx );
-		DOCTEST_FAST_CHECK_EQ( indexer.offsets(),  			index( 1u, 3u, 15u ) );
+		DOCTEST_FAST_CHECK_EQ( indexer.offsets(),  			index( Col( 1u ), Row( 3u ), 15u ) );
 		DOCTEST_FAST_CHECK_UNARY(  indexer.valid_index( idx2 ) );
 		DOCTEST_FAST_CHECK_UNARY( !indexer.valid_index( idx  ) );
 		DOCTEST_FAST_CHECK_EQ( indexer.cols(),  			col( idx ) );
 		DOCTEST_FAST_CHECK_EQ( indexer.rows(),  			row( idx ) );
 		DOCTEST_FAST_CHECK_EQ( indexer.scalar_index( idx2 ),		104u );
-		DOCTEST_FAST_CHECK_EQ( indexer.scalar_index( 2u, 4u, 6u ),	104u );
+		DOCTEST_FAST_CHECK_EQ( indexer.scalar_index( Col( 2u ), Row( 4u ), 6u ),	104u );
 	}
 	DOCTEST_TEST_CASE( "Box_indexer object" ) {
 		{	// 2d Box_indexer
@@ -63,10 +63,10 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 8., 2. } ), 	3u );
 			DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 0., 6. } ), 	4u );
 			DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 8., 6. } ), 	7u );
-			DOCTEST_FAST_CHECK_EQ( boxi.point( index( 0u, 0u ) ), 	Point{ 0., 2. } );
-			DOCTEST_FAST_CHECK_EQ( boxi.point( index( 3u, 0u ) ), 	Point{ 6., 2. } );
-			DOCTEST_FAST_CHECK_EQ( boxi.point( index( 0u, 1u ) ), 	Point{ 0., 4. } );
-			DOCTEST_FAST_CHECK_EQ( boxi.point( index( 3u, 1u ) ), 	Point{ 6., 4. } );
+			DOCTEST_FAST_CHECK_EQ( boxi.point( index( Col( 0u ), Row( 0u ) ) ), 	Point{ 0., 2. } );
+			DOCTEST_FAST_CHECK_EQ( boxi.point( index( Col( 3u ), Row( 0u ) ) ), 	Point{ 6., 2. } );
+			DOCTEST_FAST_CHECK_EQ( boxi.point( index( Col( 0u ), Row( 1u ) ) ), 	Point{ 0., 4. } );
+			DOCTEST_FAST_CHECK_EQ( boxi.point( index( Col( 3u ), Row( 1u ) ) ), 	Point{ 6., 4. } );
 			DOCTEST_FAST_CHECK_EQ( boxi.gdal_affines(), 	std::array< double, 6 >{ 0., 2., 0., 2., 0., 2. } );
 			{	// using gdal affine
 				const Point										aff{ 1., 2., 0., 2.5, 0., 2. };
@@ -80,10 +80,10 @@ namespace pax {
 				DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 8.f, 2.f } ), 	3u );
 				DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 0.f, 6.f } ), 	4u );
 				DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 8.f, 6.f } ), 	7u );
-				DOCTEST_FAST_CHECK_EQ( boxi.point( index( 0u, 0u ) ), 	Point{ 0.f, 2.f } );
-				DOCTEST_FAST_CHECK_EQ( boxi.point( index( 3u, 0u ) ), 	Point{ 6.f, 2.f } );
-				DOCTEST_FAST_CHECK_EQ( boxi.point( index( 0u, 1u ) ), 	Point{ 0.f, 4.f } );
-				DOCTEST_FAST_CHECK_EQ( boxi.point( index( 3u, 1u ) ), 	Point{ 6.f, 4.f } );
+				DOCTEST_FAST_CHECK_EQ( boxi.point( index( Col( 0u ), Row( 0u ) ) ), 	Point{ 0.f, 2.f } );
+				DOCTEST_FAST_CHECK_EQ( boxi.point( index( Col( 3u ), Row( 0u ) ) ), 	Point{ 6.f, 2.f } );
+				DOCTEST_FAST_CHECK_EQ( boxi.point( index( Col( 0u ), Row( 1u ) ) ), 	Point{ 0.f, 4.f } );
+				DOCTEST_FAST_CHECK_EQ( boxi.point( index( Col( 3u ), Row( 1u ) ) ), 	Point{ 6.f, 4.f } );
 				DOCTEST_FAST_CHECK_EQ( boxi.gdal_affines(), 	Point{ 0., 2., 0., 2., 0., 2. } );
 			}
 		}
@@ -98,10 +98,10 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 8., 6. } ), 	3u );
 			DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 0., 2. } ), 	4u );
 			DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 8., 2. } ), 	7u );
-			DOCTEST_FAST_CHECK_EQ( boxi.point( index( 0u, 0u ) ), 	Point{ 0., 6. } );
-			DOCTEST_FAST_CHECK_EQ( boxi.point( index( 3u, 0u ) ), 	Point{ 6., 6. } );
-			DOCTEST_FAST_CHECK_EQ( boxi.point( index( 0u, 1u ) ), 	Point{ 0., 4. } );
-			DOCTEST_FAST_CHECK_EQ( boxi.point( index( 3u, 1u ) ), 	Point{ 6., 4. } );
+			DOCTEST_FAST_CHECK_EQ( boxi.point( index( Col( 0u ), Row( 0u ) ) ), 	Point{ 0., 6. } );
+			DOCTEST_FAST_CHECK_EQ( boxi.point( index( Col( 3u ), Row( 0u ) ) ), 	Point{ 6., 6. } );
+			DOCTEST_FAST_CHECK_EQ( boxi.point( index( Col( 0u ), Row( 1u ) ) ), 	Point{ 0., 4. } );
+			DOCTEST_FAST_CHECK_EQ( boxi.point( index( Col( 3u ), Row( 1u ) ) ), 	Point{ 6., 4. } );
 			DOCTEST_FAST_CHECK_EQ( boxi.gdal_affines(), 	std::array< double, 6 >{ 0., 2., 0., 6., 0., -2. } );
 			{	// using gdal affine
 				const Point										aff{ 1., 2., 0., 2.5, 0., -2. };
@@ -116,10 +116,10 @@ namespace pax {
 				DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 8.f, 6.f } ), 	3u );
 				DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 0.f, 2.f } ), 	4u );
 				DOCTEST_FAST_CHECK_EQ( boxi.scalar_index( Point{ 8.f, 2.f } ), 	7u );
-				DOCTEST_FAST_CHECK_EQ( boxi.point( index( 0u, 0u ) ), 	Point{ 0.f, 6.f } );
-				DOCTEST_FAST_CHECK_EQ( boxi.point( index( 3u, 0u ) ), 	Point{ 6.f, 6.f } );
-				DOCTEST_FAST_CHECK_EQ( boxi.point( index( 0u, 1u ) ), 	Point{ 0.f, 4.f } );
-				DOCTEST_FAST_CHECK_EQ( boxi.point( index( 3u, 1u ) ), 	Point{ 6.f, 4.f } );
+				DOCTEST_FAST_CHECK_EQ( boxi.point( index( Col( 0u ), Row( 0u ) ) ), 	Point{ 0.f, 6.f } );
+				DOCTEST_FAST_CHECK_EQ( boxi.point( index( Col( 3u ), Row( 0u ) ) ), 	Point{ 6.f, 6.f } );
+				DOCTEST_FAST_CHECK_EQ( boxi.point( index( Col( 0u ), Row( 1u ) ) ), 	Point{ 0.f, 4.f } );
+				DOCTEST_FAST_CHECK_EQ( boxi.point( index( Col( 3u ), Row( 1u ) ) ), 	Point{ 6.f, 4.f } );
 				DOCTEST_FAST_CHECK_EQ( boxi.gdal_affines(), 	Point{ 0., 2., 0., 6., 0., -2. } );
 			}
 		}

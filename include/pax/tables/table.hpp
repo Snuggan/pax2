@@ -19,11 +19,10 @@ namespace pax {
 	/// Rearranges the items of srce_ so that they correspond to the destination extent.
 	template< std::size_t N, typename T, std::size_t M >
 	constexpr void resize(
-		const Indexer< N >					srce_, 	///< The source extents.
-		const Indexer< N >					dest_, 	///< The destination extents. 
-		const std::span< T, M >				data_
+		const Indexer< N >				srce_, 	///< The source extents.
+		const Indexer< N >				dest_, 	///< The destination extents. 
+		const std::span< T, M >			data_
 	);
-
 
 
 	/// Handle 2-dimensional data. 
@@ -49,16 +48,16 @@ namespace pax {
 
 		/// Returns a strided iterator to first item at [ col_, row_ ].
 		constexpr Strided_iterator< const element_type > stride( 
-			const std::size_t 			col_, 
-			const std::size_t 			row_, 
+			const Col		 			col_, 
+			const Row		 			row_, 
 			const std::ptrdiff_t 		stride_ 
 		)	const noexcept	{
 			return { m_data.data() + Indexer::scalar_index( col_, row_ ), stride_ };
 		};
 
 		constexpr Strided_iterator< element_type > stride( 
-			const std::size_t 			col_, 
-			const std::size_t 			row_, 
+			const Col		 			col_, 
+			const Row		 			row_, 
 			const std::ptrdiff_t 		stride_ 
 		)	noexcept		{
 			return { m_data.data() + Indexer::scalar_index( col_, row_ ), stride_ };
@@ -71,19 +70,19 @@ namespace pax {
 		constexpr Table & operator=( const Table & )		  noexcept	=	default;
 		constexpr Table & operator=( Table && )				  noexcept	=	default;
 
-		constexpr Table( const index_type cols_, const index_type rows_ )
-			: Indexer( Idx{{ cols_, rows_ }} ), m_data( cols_*rows_ ) {}
+		constexpr Table( const Col cols_, const Row rows_ )
+			: Indexer( cols_, rows_ ), m_data( cols_()*rows_() ) {}
 
 		template< typename U, index_type N >			requires std::is_same_v< value_type, std::remove_cv_t< U > >
 		constexpr Table(
 			const std::span< U, N >	data_, 
-			const index_type 		cols_
-		) : Indexer( Idx{{ cols_, data_.size()/cols_ }} ), m_data( data_.begin(), data_.end() ) {}
+			const Col		 		cols_
+		) : Indexer( cols_, Row( data_.size()/cols_ ) ), m_data( data_.begin(), data_.end() ) {}
 
-		constexpr value_type operator[]( const index_type c_, const index_type r_ )		const noexcept	{
+		constexpr value_type operator[]( const Col c_, const Row r_ )					const noexcept	{
 			return m_data[ Indexer::scalar_index( c_, r_ ) ];
 		}
-		constexpr element_type & operator[]( const index_type c_, const index_type r_ )		  noexcept	{
+		constexpr element_type & operator[]( const Col c_, const Row r_ )					  noexcept	{
 			return m_data[ Indexer::scalar_index( c_, r_ ) ];
 		}
 		constexpr value_type operator[]( const Idx i_ ) 								const noexcept	{
@@ -96,47 +95,47 @@ namespace pax {
 		using Indexer::rows;
 		using Indexer::cols;
 		using Indexer::elements;
-		constexpr const value_type * data()				const noexcept	{	return m_data.data();						}
-		constexpr value_type * data()						  noexcept	{	return m_data.data();						}
+		constexpr const value_type * data()			const noexcept	{	return m_data.data();						}
+		constexpr value_type * data()					  noexcept	{	return m_data.data();						}
 
-		constexpr auto span()							const noexcept	{	return cspan_type( data(), elements() );	}
-		constexpr auto span()								  noexcept	{	return  span_type( data(), elements() );	}
+		constexpr auto span()						const noexcept	{	return cspan_type( data(), elements() );	}
+		constexpr auto span()							  noexcept	{	return  span_type( data(), elements() );	}
 
 		/// Iterators for all elements. Row first.
-		constexpr auto begin()							const noexcept	{	return m_data.begin();						}
-		constexpr auto begin()								  noexcept	{	return m_data.begin();						}
-		constexpr auto end  ()							const noexcept	{	return m_data.end();						}
-		constexpr auto end  ()								  noexcept	{	return m_data.end();						}
+		constexpr auto begin()						const noexcept	{	return m_data.begin();						}
+		constexpr auto begin()							  noexcept	{	return m_data.begin();						}
+		constexpr auto end  ()						const noexcept	{	return m_data.end();						}
+		constexpr auto end  ()							  noexcept	{	return m_data.end();						}
 
 		/// Iterators for column c_.
-		constexpr auto begin_col( const index_type c_ )	const noexcept	{	return stride( c_, 0u, cols() );			}
-		constexpr auto begin_col( const index_type c_ )		  noexcept	{	return stride( c_, 0u, cols() );			}
-		constexpr auto end_col  ( const index_type c_ )	const noexcept	{	return stride( c_, rows(), cols() );		}
-		constexpr auto end_col  ( const index_type c_ )		  noexcept	{	return stride( c_, rows(), cols() );		}
+		constexpr auto begin_col( const Col c_ )	const noexcept	{	return stride( c_, Row{},  cols() );		}
+		constexpr auto begin_col( const Col c_ )		  noexcept	{	return stride( c_, Row{},  cols() );		}
+		constexpr auto end_col  ( const Col c_ )	const noexcept	{	return stride( c_, rows(), cols() );		}
+		constexpr auto end_col  ( const Col c_ )		  noexcept	{	return stride( c_, rows(), cols() );		}
 
 		/// Iterators for row r_.
-		constexpr auto begin_row( const index_type r_ )	const noexcept	{	return stride( 0u, r_, 1u );				}
-		constexpr auto begin_row( const index_type r_ )		  noexcept	{	return stride( 0u, r_, 1u );				}
-		constexpr auto end_row  ( const index_type r_ )	const noexcept	{	return stride( 0u, r_ + 1u, 1u );			}
-		constexpr auto end_row  ( const index_type r_ )		  noexcept	{	return stride( 0u, r_ + 1u, 1u );			}
+		constexpr auto begin_row( Row r_ )			const noexcept	{	return stride( Col{}, r_, 1u );				}
+		constexpr auto begin_row( Row r_ )				  noexcept	{	return stride( Col{}, r_, 1u );				}
+		constexpr auto end_row  ( Row r_ )			const noexcept	{	return stride( Col{}, Row( ++r_ ), 1u );	}
+		constexpr auto end_row  ( Row r_ )				  noexcept	{	return stride( Col{}, Row( ++r_ ), 1u );	}
 
 		/// Return column c_ as a Strider.
-		constexpr CStrider col( const index_type c_ )	const noexcept	{	return { begin_col( c_ ), rows() };			}
-		constexpr MStrider col( const index_type c_ )		  noexcept	{	return { begin_col( c_ ), rows() };			}
+		constexpr CStrider col( const Col c_ )		const noexcept	{	return { begin_col( c_ ), rows()() };		}
+		constexpr MStrider col( const Col c_ )			  noexcept	{	return { begin_col( c_ ), rows()() };		}
 
 		/// Return row r_ as a Strider.
-		constexpr CStrider row( const index_type r_ )	const noexcept	{	return { begin_row( r_ ), cols() };			}
-		constexpr MStrider row( const index_type r_ )		  noexcept	{	return { begin_row( r_ ), cols() };			}
+		constexpr CStrider row( const Row r_ )		const noexcept	{	return { begin_row( r_ ), cols()() };		}
+		constexpr MStrider row( const Row r_ )			  noexcept	{	return { begin_row( r_ ), cols()() };		}
 
 		/// Resize the table.
 		/// If the table is enlarged, old values are retained and new items are set to T{}.
 		/// If the table is decreased, the values within the new size are retained. 
-		constexpr void resize( const index_type cols_, const index_type rows_ ) {
-			const index_type				new_size( cols_*rows_ );
-			pax::Indexer< 2 > new_indexer = new_size ? pax::Indexer< 2 >{{ cols_,  rows_  }} : pax::Indexer< 2 >{};
+		constexpr void resize( const Col cols_, const Row rows_ ) {
+			const index_type				new_size( cols_()*rows_() );
+			pax::Indexer< 2 > new_indexer = new_size ? pax::Indexer< 2 >{ cols_,  rows_ } : pax::Indexer< 2 >{};
 			if( m_data.size()  < new_size )	m_data.resize( new_size );
 			pax::resize( 
-				pax::Indexer< 2 >{{ cols(), rows() }},
+				pax::Indexer< 2 >{ cols(), rows() },
 				new_indexer,
 				std::span( m_data )
 			);
@@ -145,7 +144,7 @@ namespace pax {
 		}
 
 		/// Remove columns.
-		constexpr void remove_cols( const index_type col_, const index_type qtity_ = 1 ) {
+		constexpr void remove_cols( const Col col_, const index_type qtity_ = 1 ) {
 			assert( col_ + qtity_ <= cols() );
 
 			auto	dest		  = m_data.data() + col_;
@@ -157,9 +156,9 @@ namespace pax {
 				dest			 += new_row;
 				srce			 += cols();
 			}
-			std::copy_n( srce, cols() - col_ - qtity_, dest );
+			std::copy_n( srce, cols() - col_() - qtity_, dest );
 			static_cast< Indexer & >( *this )  = ( cols() > qtity_ ) 
-				? pax::Indexer< 2 >{{ cols() - qtity_,  rows() }} 
+				? pax::Indexer< 2 >{ cols() - qtity_,  rows() } 
 				: pax::Indexer< 2 >{};
 		}
 
@@ -172,7 +171,7 @@ namespace pax {
 			Predicate					 && row_predicate_, 
 			const char 						separator_ = ';'
 		) const {
-			for( index_type r{}; r<rows(); ++r ) {
+			for( Row r{}; r<rows(); ++r ) {
 				if( row_predicate_( r ) ) {
 					bool first			  = true;
 					for( auto && e : row( r ) ) {

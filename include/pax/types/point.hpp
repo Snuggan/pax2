@@ -18,6 +18,34 @@ namespace pax {
 
 
 
+	template< typename Tag >
+	struct Size {
+		using				tag		= Tag;
+		using				type	= std::size_t;
+		type				value;
+		constexpr Size()										noexcept		:	value{ 0u  } {}
+		explicit constexpr Size( type sz_ )						noexcept		:	value{ sz_ } {}
+		constexpr operator type()								const noexcept	{	return value;					}
+		constexpr type operator()()								const noexcept	{	return value;					}
+		constexpr Size & operator++()							noexcept		{	++value;		return *this;	}
+		constexpr Size & operator+=( type i )					noexcept		{	value += i;		return *this;	}
+		constexpr Size & operator--()							noexcept		{	--value;		return *this;	}
+		constexpr Size & operator-=( type i )					noexcept		{	value -= i;		return *this;	}
+
+		friend constexpr Size operator+( Size sz, type i )		noexcept		{	return Size{ sz() + i };		}
+		friend constexpr Size operator+( type i, Size sz )		noexcept		{	return Size{ sz() + i };		}
+		friend constexpr Size operator-( Size sz, type i )		noexcept		{	return Size{ sz() - i };		}
+		friend constexpr Size operator-( type i, Size sz )		noexcept		{	return Size{ sz() - i };		}
+
+		friend constexpr bool operator== ( Size sz0, Size sz1 )	noexcept		{	return sz0() ==  sz1();			}
+		friend constexpr auto operator<=>( Size sz0, Size sz1 )	noexcept		{	return sz0() <=> sz1();			}
+	};
+
+	using Col = Size< struct Col_tag >;
+	using Row = Size< struct Row_tag >;
+
+
+
 	/// This is the type used for arithmetic vectors with a fixed size.
 	template< arithmetic A, std::size_t N >									requires( is_static< N > )
 	using Point = std::array< A, N >;
@@ -69,8 +97,12 @@ namespace pax {
 	
 	/// Create an Index out of a bunch of elements.
 	template< uinteger ... Uis >	
-	constexpr Index< sizeof...( Uis ) > index( Uis && ... uis_ )						noexcept	{
-		return { static_cast< std::size_t >( std::forward< Uis >( uis_ ) ) ... };
+	constexpr Index< sizeof...( Uis ) + 2 > index( 
+		const Col			col_,
+		const Row			row_,
+		Uis 		 && ... uis_ 
+	) noexcept {
+		return { col_, row_, static_cast< std::size_t >( std::forward< Uis >( uis_ ) ) ... };
 	}
 	
 
@@ -86,14 +118,14 @@ namespace pax {
 	};
 
 	template< uinteger U, std::size_t N >				requires( N > col_idx )
-	constexpr U   col  ( const Point< U, N > & pt_ )	noexcept	{	return std::get< col_idx >( pt_ );		}
+	constexpr Col col  ( const Point< U, N > & pt_ )	noexcept	{	return Col( std::get< col_idx >( pt_ ) );	}
 	template< uinteger U, std::size_t N >				requires( N > col_idx )
-	constexpr U & col  (       Point< U, N > & pt_ )	noexcept	{	return std::get< col_idx >( pt_ );		}
+	constexpr U & col  (       Point< U, N > & pt_ )	noexcept	{	return std::get< col_idx >( pt_ );			}
 
 	template< uinteger U, std::size_t N >				requires( N > row_idx )
-	constexpr U   row  ( const Point< U, N > & pt_ )	noexcept	{	return std::get< row_idx >( pt_ );		}
+	constexpr Row row  ( const Point< U, N > & pt_ )	noexcept	{	return Row( std::get< row_idx >( pt_ ) );	}
 	template< uinteger U, std::size_t N >				requires( N > row_idx )
-	constexpr U & row  (       Point< U, N > & pt_ )	noexcept	{	return std::get< row_idx >( pt_ );		}
+	constexpr U & row  (       Point< U, N > & pt_ )	noexcept	{	return std::get< row_idx >( pt_ );			}
 
 	template< floating F, std::size_t N >				requires( N > x_idx )
 	constexpr F   x    ( const Point< F, N > & pt_ )	noexcept	{	return std::get< x_idx >( pt_ );		}

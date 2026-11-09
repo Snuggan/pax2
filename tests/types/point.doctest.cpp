@@ -14,13 +14,13 @@ namespace pax {
 	constexpr Point< unsigned, 5 > idx = point_t< unsigned >( 0.0, 1, 2u, 3.0f, char( 4 ) );
 
 	DOCTEST_TEST_CASE( "Point accessors" ) {
-		DOCTEST_FAST_CHECK_EQ( x    ( pt ),  0 );
-		DOCTEST_FAST_CHECK_EQ( y    ( pt ),  1 );
-		DOCTEST_FAST_CHECK_EQ( z    ( pt ),  2 );
-		DOCTEST_FAST_CHECK_EQ( east ( pt ),  0 );
-		DOCTEST_FAST_CHECK_EQ( north( pt ),  1 );
-		DOCTEST_FAST_CHECK_EQ( col  ( idx ), 0 );
-		DOCTEST_FAST_CHECK_EQ( row  ( idx ), 1 );
+		DOCTEST_FAST_CHECK_EQ( x    ( pt ),    0 );
+		DOCTEST_FAST_CHECK_EQ( y    ( pt ),    1 );
+		DOCTEST_FAST_CHECK_EQ( z    ( pt ),    2 );
+		DOCTEST_FAST_CHECK_EQ( east ( pt ),    0 );
+		DOCTEST_FAST_CHECK_EQ( north( pt ),    1 );
+		DOCTEST_FAST_CHECK_EQ( col  ( idx )(), 0 );
+		DOCTEST_FAST_CHECK_EQ( row  ( idx )(), 1 );
 		
 		auto pt2  = pt;
 		auto idx2 = idx;
