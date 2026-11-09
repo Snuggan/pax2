@@ -15,9 +15,10 @@
 #	include <pdal/private/gdal/Raster.hpp>
 #endif
 
-// #include <pax/reporting/debug.hpp>
-// #define DEBUG Debug{}
-#define DEBUG log()->get(pdal::LogLevel::Debug)
+#include <pax/reporting/debug.hpp>
+constexpr auto log_level = pdal::LogLevel::Debug;
+#define DEBUG0 if( debug_active ) pax::Debug{}
+#define DEBUG  log()->get( log_level )
 
 
 #include <unordered_map>
@@ -40,8 +41,11 @@ std::string pax::plot_stuff::getName()	const	{	return s_info.name;		}
 
 namespace pax {
 
-	plot_stuff::~plot_stuff() {}
+	bool debug_active{ false };
 
+
+	plot_stuff::~plot_stuff() {}
+	
 
 	// This is what prevents this filter to be streaming. 
 	// I can not get the metadata/headerinfo of the files to be processed...
@@ -55,6 +59,7 @@ namespace pax {
 
 	void plot_stuff::addArgs( pdal::ProgramArgs & args ) {
 		DEBUG << "plot_stuff::addArgs start\n";
+		debug_active				  =	( log()->getLevel() >= log_level );
 		std::ostringstream				metrics_help_stream;
 		metrics::Function_filter::help( metrics_help_stream );
 
@@ -144,10 +149,10 @@ namespace pax {
 
 
 	bool plot_stuff::processOne( pdal::PointRef & pt_ ) {
-		DEBUG << "plot_stuff::processOne start\n";
+		// DEBUG << "plot_stuff::processOne start\n";	// This generates a lot of output...
 		++m_metadata.points_processed;
 		for( auto & plot : m_plots )		m_metadata.points_in_plots += plot.process( pt_ );
-		DEBUG << "plot_stuff::processOne end\n";
+		// DEBUG << "plot_stuff::processOne end\n";
 		return true;
 	}
 
@@ -189,12 +194,16 @@ namespace pax {
 		try {
 			// Calculate and save metrics.
 			if( do_metrics() ) {
+				DEBUG << "plot_stuff::done: do_metrics()\n";
 				const auto metric_set		  = metrics::metric_set( std::span{ m_metrics }, m_metrics_nilsson );
+				DEBUG << "plot_stuff::done: save_metrics()\n";
 				save_metrics( m_all_plots_table, m_plots, m_metrics_dest, metric_set, m_id_column );
+				DEBUG << "plot_stuff::done: saved_metrics()\n";
 			}
 
 			// Seve the plots' points.
 			if( do_points() ) {
+				DEBUG << "plot_stuff::done: do_points()\n";
 				for( const auto & plot : m_plots )	if( plot.num_of_points() )				
 					plot.save_plot_points( 
 						m_view_ptr, 
@@ -206,6 +215,7 @@ namespace pax {
 			std::cerr << error_.what() << '\n';
 			throw;	// Or should we just terminate?
 		}
+		DEBUG << "plot_stuff::done try clause done\n";
 
 		// Export metadata.
 		pdal::MetadataNode					meta = getMetadata();
@@ -233,7 +243,7 @@ namespace pax {
 
 	/// Process a point. Return true if it was inside the plot.
 	bool Plot_w_points::process( const pdal::PointRef & pt_ ) 			noexcept		{
-		// DEBUG << "Plot_w_points::process start\n";
+		// DEBUG0 << "Plot_w_points::process start";	// This generates a lot of output...
 		if( contains( *this, point( pt_ ) ) ) {
 			if( m_do_points )			m_points_idx.push_back( pt_.pointId() );
 			if( m_do_metrics )			m_metric_agg.push_back(
@@ -242,7 +252,7 @@ namespace pax {
 			);
 			return true;
 		}
-		// DEBUG << "Plot_w_points::process end\n";
+		// DEBUG0 << "Plot_w_points::process end";
 		return false;
 	}
 
@@ -253,7 +263,7 @@ namespace pax {
 		const dir_path					  & plot_points_dest_dir_,
 		std::string_view					plot_points_file_format_
 	) const {
-		// DEBUG << "Plot_w_points::save_plot_points start\n";
+		DEBUG0 << "Plot_w_points::save_plot_points start";
 		const std::filesystem::path	plot_points_dest   
 			  = plot_points_dest_dir_ / ( Plot_w_id::id() + plot_points_file_format_ );
 		try{
@@ -293,7 +303,7 @@ namespace pax {
 				error_.what(), Plot_w_id::id(), to_string( plot_points_dest )
 			) );
 		}
-		// DEBUG << "Plot_w_points::save_plot_points end\n";
+		DEBUG0 << "Plot_w_points::save_plot_points end";
 	}
 
 	
@@ -306,19 +316,26 @@ namespace pax {
 		const std::span< const metrics::Function_filter >	metrics_,
 		const std::string_view								id_col_name_
 	) {
-		// DEBUG << "plot_stuff::save_metrics start\n";
+		DEBUG0 << "plot_stuff::save_metrics start";
+		DEBUG0 << std::format( "plots_table_:       {} rows, {} cols", plots_table_.rows(), plots_table_.cols() );
+		DEBUG0 << std::format( "plots_:             {} items", plots_.size() );
+		DEBUG0 << std::format( "plot_metrics_dest_: \"{}\"", plot_metrics_dest_.native() );
 		static constexpr const std::string_view	merge_items  = ";{}";	// Semicolon separator.
 		std::vector< std::string >				metric_names{};
 		try{
+			DEBUG0 << "plot_stuff::save_metrics what metrics to calculate";
 			metric_names.reserve( metrics_.size() );
 			for( const auto name : metrics_ )	metric_names.push_back( to_string( name ) );
+			DEBUG0 << std::format( "metrics_:           {}", metric_names );
 
 			if( !plots_.empty() && !plot_metrics_dest_.empty() && !metrics_.empty() ) {
 				const std::size_t 				id_col = plots_table_.header().index( id_col_name_ );
+				DEBUG0 << std::format( "ID column:          \"{}\" => {}", id_col_name_, id_col );
 				if( id_col == -1u )
 					throw error_message( std::format( "In the plots table, there is no column \"{}\".", id_col_name_ ) );
 
 				// Create an unordered map of all id -> index in plots_.
+				DEBUG0 << "plot_stuff::save_metrics Create an unordered map of all id -> index in plots_";
 				std::unordered_map< std::string, std::size_t >		plot_id_idx{};
 				for( std::size_t i{}; i<plots_.size(); ++i )		plot_id_idx.insert( { plots_[ i ].id(), i } );
 
@@ -333,19 +350,26 @@ namespace pax {
 
 				// Usually there are few plots in the plots_table, so we optimize by only working on those few rows.
 				// Carculate a reduced Text_table, with only the rows corresponding to the plots in plots_.
+				DEBUG0 << "plot_stuff::save_metrics create reduced_table";
 				Text_table< char >				reduced_table{};
 				{
 					// Create an unordered set of all rows in plots_table_ with the same id as any item in plots_
 					// and use it as a predicative. 
 					std::unordered_set< std::size_t >	table_row_ok{};
-					for( std::size_t i{}; i<plots_table_.rows(); ++i )
-						if( plot_id_idx.contains( std::string( plots_table_[ i, id_col ] ) ) ) {
+					DEBUG0 << std::format( "plots_table_:       {} rows, {} cols", plots_table_.rows(), plots_table_.cols() );
+					for( std::size_t i{}; i<plots_table_.rows(); ++i ) {
+						if( plot_id_idx.contains( std::string( plots_table_[ id_col, i ] ) ) ) {
+							DEBUG0 << "Insert " << i << ": " << std::string( plots_table_[ id_col, i ] );
 							table_row_ok.insert( i );
 						}
-					if( table_row_ok.size() != plots_.size() )
+					}
+					if( table_row_ok.size() != plots_.size() ) {
+						pax::Debug{} << "plots_:\n" << plots_;
+						pax::Debug{} << std::format( "plot_id_idx:\n{}", plot_id_idx );
+						pax::Debug{} << std::format( "table_row_ok:\n{}", table_row_ok );
 						throw error_message( std::format( "table_row_ok should have {} elements, but has {}.", 
 							plots_.size(), table_row_ok.size() ) );
-
+					}
 					const auto predicate = [ &table_row_ok ]( std::size_t i ) { 
 						return table_row_ok.contains( i ); 
 					};
@@ -353,10 +377,14 @@ namespace pax {
 					reduced_table			  = plots_table_.as_str( predicate );
 				}
 
-				if( reduced_table.rows() != plots_.size() )
+				if( reduced_table.rows() != plots_.size() ) {
+					pax::Debug{} << std::format( "reduced_table:\n{}", reduced_table );
+					pax::Debug{} << "plots_:\n" << plots_;
 					throw error_message( std::format( "Reduced table should have {} rows, but has {}.", 
 						plots_.size(), reduced_table.rows() ) );
+				}
 
+				DEBUG0 << "plot_stuff::save_metrics insert metrics into reduced_table";
 				{	// Create a Text_table with the metrics and insert it into reduced_table.
 					// The order of items must correspond to the order in reduced_table.
 					std::stringstream			out;
@@ -373,8 +401,8 @@ namespace pax {
 					const auto					begin = metrics_.begin();
 					const auto					end   = metrics_.end();
 					for( std::size_t i{}; i<reduced_table.rows(); ++i ) {
-						const std::size_t		plot_idx = plot_id_idx.at( std::string( reduced_table[ i, id_col ] ) );
-						assert( plots_[ plot_idx ].id() == std::string( reduced_table[ i, id_col ] ) );
+						const std::size_t		plot_idx = plot_id_idx.at( std::string( reduced_table[ id_col, i ] ) );
+						assert( plots_[ plot_idx ].id() == std::string( reduced_table[ id_col, i ] ) );
 
 						auto				  & metric_aggrs = plots_[ plot_idx ].metric_aggregator();
 						auto					itr   = begin;
@@ -388,6 +416,7 @@ namespace pax {
 				}
 
 				// Save the result. 
+				DEBUG0 << "plot_stuff::save_metrics save the reduced_table to \"" << plot_metrics_dest_ << '"';
 				reduced_table.save( plot_metrics_dest_ );
 			}
 		} catch( const std::exception & error_ ) {
@@ -395,7 +424,7 @@ namespace pax {
 				error_.what(), std::span( metric_names ), to_string( plot_metrics_dest_ )
 			) );
 		}
-		// DEBUG << "plot_stuff::save_metrics end\n";
+		DEBUG0 << "plot_stuff::save_metrics end";
 	}
 
 #undef DEBUG

@@ -86,9 +86,7 @@ namespace pax {
 		friend constexpr Out & operator<<(
 			Out				  & out_,
 			const Circle	  & c_
-		) {
-			return out_ << std::string( c_ );
-		}
+		) {	return out_ << std::string( c_ );				}
 	};
 	
 	using Circle2d			  = Circle< double, 2 >;
@@ -165,6 +163,18 @@ namespace pax {
 	
 		/// Return the [unique] id. No other circle/plot may have the same. 
 		constexpr const std::string & id() 							const noexcept	{	return m_id;	}
+
+		/// Circle contents to std::string.
+		explicit constexpr operator std::string() 					const			{
+			return std::format( "{{{}, {}, {}}}", Base::center(), Base::radius(), id() );
+		}
+
+		/// Stream a Circle's contents.
+		template< typename Out >
+		friend constexpr Out & operator<<(
+			Out					  & out_,
+			const Circle_w_id	  & c_
+		) {	return out_ << std::string( c_ );				}
 	};
 	
 	using Circle_w_id2d		  = Circle_w_id< double, 2 >;
