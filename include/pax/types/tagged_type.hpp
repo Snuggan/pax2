@@ -8,6 +8,7 @@
 
 namespace pax {
 
+	/// Base class for having semantically dedicated types for specific uses.
 	template< typename Tag, typename T >
 	struct Tagged {
 		using				tag		= Tag;
@@ -34,11 +35,13 @@ namespace pax {
 		friend std::ostream & operator<<( Out & out_, const Tagged tg )					{	return out_ << tg();	}
 	};
 
+	/// Dedicated clas to semantically distinguish between flags in function calls. 
 	template< typename Tag >
 	using Bool = Tagged< Tag, bool >;
 
 
-
+	/// Base class for having dedicated types for Col, Row, etc.
+	/// So as not to mix their order when accessing tables etc. 
 	template< typename Tag >
 	struct Idx : Tagged< Tag, std::size_t > {
 		using type		   = std::size_t;
@@ -66,8 +69,8 @@ namespace pax {
 		friend constexpr Idx operator-( Idx tg, type t )	  noexcept	{	return tg -= t;					}
 	};
 
-	using Col = Idx< struct Col_tag >;
-	using Row = Idx< struct Row_tag >;
+	using Col = Idx< struct Col_tag >;		///< To symantically distiguish column index.
+	using Row = Idx< struct Row_tag >;		///< To symantically distiguish row index.
 
 }	// namespace pax
 
