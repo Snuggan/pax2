@@ -22,7 +22,7 @@ namespace pax {
 	
 	/// Always returns true.
 	/// Useful in calls with required predicate but you don't need one: use always_true. 
-	static constexpr auto always_true = []( std::size_t ){ return true; };
+	static constexpr auto always_true = []( Row ){ return true; };
 
 
 
@@ -53,23 +53,23 @@ namespace pax {
 
 
 		template< typename T, typename ...U, typename Predicate, Size ...I >
-			requires( std::is_invocable_r_v< bool, Predicate, Size > )
+			requires( std::is_invocable_r_v< bool, Predicate, Row > )
 		constexpr std::vector< T > export_values_impl( 
 			const Table_meta< T, U... >	  & meta_,
 			Predicate					 && pred_,
 			std::integer_sequence< Size, I... >
 		) const {
 			const auto						idxs = m_header.index( meta_.names() );
-			Size		 					r{};	// The predicator needs the row number.
+			Row			 					r{};	// The predicator needs the row number.
 			std::vector< T >				result;
-			result.reserve( m_table.rows() );
+			result.reserve( m_table.rows()() );
 			try {									// Create and push a T value for each row.
-				for( auto itr{ m_table.begin() }; r < m_table.rows(); ++r, itr+= m_table.cols() ) 
+				for( auto itr{ m_table.begin() }; r < m_table.rows(); ++r, itr+= m_table.cols()() ) 
 					if( pred_( r ) )		result.emplace_back( from_string< U...[ I ] >( itr[ idxs[ I ] ] )... );
 			} catch( const std::exception & error_ ) {
 				throw error_message( std::format( 
 					"{} (Text_table row {}: Creating type '{}' from columns {}.)", 
-					error_.what(), r+1, type_name_rt< T >, meta_.names() ) );
+					error_.what(), r()+1, type_name_rt< T >, meta_.names() ) );
 			}
 			return result;
 		}
@@ -140,7 +140,7 @@ namespace pax {
 				m_table.rows()(), other_.m_table.rows()() ) );
 			
 			// Copy columns with same existing id, save index of others.
-			std::vector< Size > 			cols_to_add{};
+			std::vector< Col > 			cols_to_add{};
 			for( Col col{}; col<other_.m_table.cols(); ++col ) {
 				const Col c				  = Col( m_header.add( other_.m_header[ col() ] ) );
 				if( c < m_table.cols() )	std::copy_n( other_.m_table.begin_col( col ), m_table.rows()(), m_table.begin_col( c ) );
@@ -150,8 +150,8 @@ namespace pax {
 			// Add the columns with new header. 
 			Col			 					c{ m_table.cols() };
 			m_table.resize( c + cols_to_add.size(), m_table.rows() );
-			for( const Size col : cols_to_add ) {
-				std::copy_n( other_.m_table.begin_col( Col( col ) ), m_table.rows(), m_table.begin_col( c ) );
+			for( const auto col : cols_to_add ) {
+				std::copy_n( other_.m_table.begin_col( col ), m_table.rows()(), m_table.begin_col( c ) );
 				++c;
 			}
 
@@ -167,7 +167,7 @@ namespace pax {
 		/// Return a vector with T, using meta_ for constructor types and column names.
 		/// - All meta_.names() must be in the header. 
 		template< typename Predicate = const decltype( always_true ) &, typename T, typename ...U >
-			requires( std::is_invocable_r_v< bool, Predicate, Size > )
+			requires( std::is_invocable_r_v< bool, Predicate, Row > )
 		constexpr std::vector< T > export_values( 
 			const Table_meta< T, U... >	  & meta_,
 			Predicate					 && pred_ = always_true
@@ -179,7 +179,7 @@ namespace pax {
 		/// Return a vector with T, formed from the column col_id_.
 		/// - col_id_ must be in the header. 
 		template< typename T, traits::string Str, typename Predicate = const decltype( always_true ) & >
-			requires( std::is_invocable_r_v< bool, Predicate, Size > )
+			requires( std::is_invocable_r_v< bool, Predicate, Row > )
 		constexpr std::vector< T > export_values( 
 			const Str					  & col_id_,
 			Predicate					 && pred_ = always_true
@@ -194,7 +194,7 @@ namespace pax {
 		///	- You can compact a table by table = table.make_copy()
 		///	- If predicate_ is given, only rows with true predicate(r) are copied. 
 		template< typename Predicate = const decltype( always_true ) & >
-			requires( std::is_invocable_r_v< bool, Predicate, Size > )
+			requires( std::is_invocable_r_v< bool, Predicate, Row > )
 		constexpr Text_table make_copy( Predicate && predicate_ = always_true ) const {
 			std::stringstream				temp;
 			stream( temp, predicate_ , m_col_mark);
@@ -218,7 +218,7 @@ namespace pax {
 		/// Stream the table as text to out_.
 		///
 		template< typename Out, typename Predicate >
-			requires( std::is_invocable_r_v< bool, Predicate, Size > )
+			requires( std::is_invocable_r_v< bool, Predicate, Row > )
 		void stream(
 			Out							  & out_,
 			Predicate						predicate_,					///< Only rows with true predicate_(r) are srtreamed.
@@ -243,7 +243,7 @@ namespace pax {
 		
 		/// Save the table contents to a file at path_.
 		template< typename Predicate = const decltype( always_true ) & >
-			requires( std::is_invocable_r_v< bool, Predicate, Size > )
+			requires( std::is_invocable_r_v< bool, Predicate, Row > )
 		void save( 
 			const dest_path				  & path_, 						///< A path to a file in an existing directory.
 			Predicate						predicate_ = always_true,	///< Only rows with true predicate_(r) are srtreamed.
@@ -257,7 +257,7 @@ namespace pax {
 		/// Return the table as a string.
 		/// Mainly for testing and debugging purposes. 
 		template< typename Predicate = const decltype( always_true ) & >
-			requires( std::is_invocable_r_v< bool, Predicate, Size > )
+			requires( std::is_invocable_r_v< bool, Predicate, Row > )
 		string_type as_str(
 			Predicate						predicate_ = always_true,	///< Only rows with true predicate_(r) are srtreamed.
 			value_type						col_mark_  = value_type{}	///< If zero, the previous col mark is used.

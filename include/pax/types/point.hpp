@@ -5,6 +5,8 @@
 #pragma once
 
 #include "base.hpp"
+#include "tagged_type.hpp"
+
 #include <array>
 #include <cmath>		// std::fma
 #include <utility>		// std::forward
@@ -15,34 +17,6 @@ namespace pax {
 	using std::get;
 	template< typename T, typename ... U >	struct Table_meta;
 	template< typename T >					struct Object_meta;
-
-
-
-	template< typename Tag >
-	struct Size {
-		using				tag		= Tag;
-		using				type	= std::size_t;
-		type				value;
-		constexpr Size()										noexcept		:	value{ 0u  } {}
-		explicit constexpr Size( type sz_ )						noexcept		:	value{ sz_ } {}
-		constexpr operator type()								const noexcept	{	return value;					}
-		constexpr type operator()()								const noexcept	{	return value;					}
-		constexpr Size & operator++()							noexcept		{	++value;		return *this;	}
-		constexpr Size & operator+=( type i )					noexcept		{	value += i;		return *this;	}
-		constexpr Size & operator--()							noexcept		{	--value;		return *this;	}
-		constexpr Size & operator-=( type i )					noexcept		{	value -= i;		return *this;	}
-
-		friend constexpr Size operator+( Size sz, type i )		noexcept		{	return Size{ sz() + i };		}
-		friend constexpr Size operator+( type i, Size sz )		noexcept		{	return Size{ sz() + i };		}
-		friend constexpr Size operator-( Size sz, type i )		noexcept		{	return Size{ sz() - i };		}
-		friend constexpr Size operator-( type i, Size sz )		noexcept		{	return Size{ sz() - i };		}
-
-		friend constexpr bool operator== ( Size sz0, Size sz1 )	noexcept		{	return sz0() ==  sz1();			}
-		friend constexpr auto operator<=>( Size sz0, Size sz1 )	noexcept		{	return sz0() <=> sz1();			}
-	};
-
-	using Col = Size< struct Col_tag >;
-	using Row = Size< struct Row_tag >;
 
 
 
@@ -102,7 +76,7 @@ namespace pax {
 		const Row			row_,
 		Uis 		 && ... uis_ 
 	) noexcept {
-		return { col_, row_, static_cast< std::size_t >( std::forward< Uis >( uis_ ) ) ... };
+		return { col_(), row_(), static_cast< std::size_t >( std::forward< Uis >( uis_ ) ) ... };
 	}
 	
 

@@ -100,15 +100,15 @@ namespace pax {
 	DOCTEST_TEST_CASE( "Table basics, constructed with rows and cols" ) { 
 		{
 			Table< int >		   table{ Col( 0 ), Row( 0 ) };
-			DOCTEST_FAST_CHECK_EQ( table.cols(),			0 );
-			DOCTEST_FAST_CHECK_EQ( table.rows(),			0 );
+			DOCTEST_FAST_CHECK_EQ( table.cols(),			Col( 0 ) );
+			DOCTEST_FAST_CHECK_EQ( table.rows(),			Row( 0 ) );
 			DOCTEST_FAST_CHECK_EQ( table.elements(),		0 );
 			DOCTEST_FAST_CHECK_EQ( sum( table.span() ),		0 );
 		}
 		{
 			Table< int >		   table{ Col( 10 ), Row( 12 ) };
-			DOCTEST_FAST_CHECK_EQ( table.cols(),			 10 );
-			DOCTEST_FAST_CHECK_EQ( table.rows(),			 12 );
+			DOCTEST_FAST_CHECK_EQ( table.cols(),			 Col( 10 ) );
+			DOCTEST_FAST_CHECK_EQ( table.rows(),			 Row( 12 ) );
 			DOCTEST_FAST_CHECK_EQ( table.elements(),		120 );
 			DOCTEST_FAST_CHECK_EQ( sum( table.span() ),		  0 );
 		}
@@ -155,43 +155,43 @@ namespace pax {
 			static constexpr int data1[] = { 1, 0, 0, 0, 0 };
 			{	// 1x5 -> 5x1 -> 0x0
 				Table table( std::span{ data0 }, Col( 5 ) );
-				DOCTEST_FAST_CHECK_EQ( table.rows(), 1 );
-				DOCTEST_FAST_CHECK_EQ( table.cols(), 5 );
+				DOCTEST_FAST_CHECK_EQ( table.rows(), Row( 1 ) );
+				DOCTEST_FAST_CHECK_EQ( table.cols(), Col( 5 ) );
 				DOCTEST_FAST_CHECK_EQ( table.span(), std::span( data0 ) );
 				table.resize( Col( 1 ), Row( 5 ) );
-				DOCTEST_FAST_CHECK_EQ( table.rows(), 5 );
-				DOCTEST_FAST_CHECK_EQ( table.cols(), 1 );
+				DOCTEST_FAST_CHECK_EQ( table.rows(), Row( 5 ) );
+				DOCTEST_FAST_CHECK_EQ( table.cols(), Col( 1 ) );
 				DOCTEST_FAST_CHECK_EQ( table.span(), std::span( data1 ) );
 				table.resize( Col( 2 ), Row( 0 ) );
-				DOCTEST_FAST_CHECK_EQ( table.rows(), 0 );
-				DOCTEST_FAST_CHECK_EQ( table.cols(), 0 );
+				DOCTEST_FAST_CHECK_EQ( table.rows(), Row( 0 ) );
+				DOCTEST_FAST_CHECK_EQ( table.cols(), Col( 0 ) );
 				DOCTEST_FAST_CHECK_EQ( table.span(), std::span< int >{} );
 			}
 			{	// 5x1 -> 1x5 -> 0x0
 				Table table( std::span{ data0 }, Col( 1 ) );
-				DOCTEST_FAST_CHECK_EQ( table.rows(), 5 );
-				DOCTEST_FAST_CHECK_EQ( table.cols(), 1 );
+				DOCTEST_FAST_CHECK_EQ( table.rows(), Row( 5 ) );
+				DOCTEST_FAST_CHECK_EQ( table.cols(), Col( 1 ) );
 				DOCTEST_FAST_CHECK_EQ( table.span(), std::span( data0 ) );
 				table.resize( Col( 5 ), Row( 1 ) );
-				DOCTEST_FAST_CHECK_EQ( table.rows(), 1 );
-				DOCTEST_FAST_CHECK_EQ( table.cols(), 5 );
+				DOCTEST_FAST_CHECK_EQ( table.rows(), Row( 1 ) );
+				DOCTEST_FAST_CHECK_EQ( table.cols(), Col( 5 ) );
 				DOCTEST_FAST_CHECK_EQ( table.span(), std::span( data1 ) );
 				table.resize( Col( 8 ), Row( 0 ) );
-				DOCTEST_FAST_CHECK_EQ( table.rows(), 0 );
-				DOCTEST_FAST_CHECK_EQ( table.cols(), 0 );
+				DOCTEST_FAST_CHECK_EQ( table.rows(), Row( 0 ) );
+				DOCTEST_FAST_CHECK_EQ( table.cols(), Col( 0 ) );
 				DOCTEST_FAST_CHECK_EQ( table.span(), std::span< int >{} );
 			}
 			{	// 0x0 -> 4x5
 				Table< int > table;
 				table.resize( Col( 5 ), Row( 4 ) );
-				DOCTEST_FAST_CHECK_EQ( table.rows(), 4 );
-				DOCTEST_FAST_CHECK_EQ( table.cols(), 5 );
+				DOCTEST_FAST_CHECK_EQ( table.rows(), Row( 4 ) );
+				DOCTEST_FAST_CHECK_EQ( table.cols(), Col( 5 ) );
 			}
 		}
 		{	// Normal resize.
 			Table table( sp, Col( 4 ) );
-			DOCTEST_FAST_CHECK_EQ( table.rows(),		 8 );
-			DOCTEST_FAST_CHECK_EQ( table.cols(), 		 4 );
+			DOCTEST_FAST_CHECK_EQ( table.rows(),		 Row( 8 ) );
+			DOCTEST_FAST_CHECK_EQ( table.cols(), 		 Col( 4 ) );
 			DOCTEST_FAST_CHECK_EQ( table[ Col( 1 ), Row( 3 ) ],		13 );
 			DOCTEST_FAST_CHECK_EQ( table[ Col( 3 ), Row( 7 ) ],		31 );
 
@@ -217,68 +217,68 @@ namespace pax {
 	}
 	DOCTEST_TEST_CASE( "Table remove_rows" ) { 
 		Table table( sp, Col( 8 ) );
-		DOCTEST_FAST_CHECK_EQ( table.rows(),		 4 );
-		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 8 );
+		DOCTEST_FAST_CHECK_EQ( table.rows(),		 Row( 4 ) );
+		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 Col( 8 ) );
 		DOCTEST_FAST_CHECK_EQ( table[ Col( 7 ), Row( 1 ) ],		15 );
 		DOCTEST_FAST_CHECK_EQ( table[ Col( 7 ), Row( 2 ) ],		23 );
 		
 		// table.print( std::cout );
 		// table.remove_rows( 2 );
 		// table.print( std::cout );
-		// DOCTEST_FAST_CHECK_EQ( table.rows(),		 3 );
-		// DOCTEST_FAST_CHECK_EQ( table.cols(), 	 8 );
+		// DOCTEST_FAST_CHECK_EQ( table.rows(),		 Row( 3 ) );
+		// DOCTEST_FAST_CHECK_EQ( table.cols(), 	 Col( 8 ) );
 		// DOCTEST_FAST_CHECK_EQ( table[ Col( 1 ), Row( 7 ) ],		15 );
 		// DOCTEST_FAST_CHECK_EQ( table[ Col( 2 ), Row( 7 ) ],		31 );
 		//
 		// table.remove_rows( 2 );
-		// DOCTEST_FAST_CHECK_EQ( table.rows(),		 2 );
-		// DOCTEST_FAST_CHECK_EQ( table.cols(), 	 8 );
+		// DOCTEST_FAST_CHECK_EQ( table.rows(),		 Row( 2 ) );
+		// DOCTEST_FAST_CHECK_EQ( table.cols(), 	 Col( 8 ) );
 		// DOCTEST_FAST_CHECK_EQ( table[ Col( 0 ), Row( 7 ) ],		 7 );
 		//
 		// table.remove_rows( 1 );
-		// DOCTEST_FAST_CHECK_EQ( table.rows(),		 1 );
-		// DOCTEST_FAST_CHECK_EQ( table.cols(), 	 8 );
+		// DOCTEST_FAST_CHECK_EQ( table.rows(),		 Row( 1 ) );
+		// DOCTEST_FAST_CHECK_EQ( table.cols(), 	 Col( 8 ) );
 		// DOCTEST_FAST_CHECK_EQ( table[ Col( 0 ), Row( 7 ) ],		 7 );
 		//
 		// table.remove_rows( 0 );
-		// DOCTEST_FAST_CHECK_EQ( table.rows(),		 0 );
-		// DOCTEST_FAST_CHECK_EQ( table.cols(), 	 0 );
+		// DOCTEST_FAST_CHECK_EQ( table.rows(),		 Row( 0 ) );
+		// DOCTEST_FAST_CHECK_EQ( table.cols(), 	 Col( 0 ) );
 	}
 	DOCTEST_TEST_CASE( "Table remove_cols" ) { 
 		{
 			Table table( sp, Col( 4 ) );
 			table.remove_cols( Col( 1 ), 2 );
-			DOCTEST_FAST_CHECK_EQ( table.rows(),	 8 );
-			DOCTEST_FAST_CHECK_EQ( table.cols(), 	 2 );
+			DOCTEST_FAST_CHECK_EQ( table.rows(),	 Row( 8 ) );
+			DOCTEST_FAST_CHECK_EQ( table.cols(), 	 Col( 2 ) );
 			DOCTEST_FAST_CHECK_EQ( table[ Col( 0 ), Row( 7 ) ],	28 );
 			DOCTEST_FAST_CHECK_EQ( table[ Col( 1 ), Row( 7 ) ],	31 );
 		}
 
 		Table table( sp, Col( 4 ) );
-		DOCTEST_FAST_CHECK_EQ( table.rows(),		 8 );
-		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 4 );
+		DOCTEST_FAST_CHECK_EQ( table.rows(),		 Row( 8 ) );
+		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 Col( 4 ) );
 		DOCTEST_FAST_CHECK_EQ( table[ Col( 1 ), Row( 7 ) ],		29 );
 		DOCTEST_FAST_CHECK_EQ( table[ Col( 2 ), Row( 7 ) ],		30 );
 		
 		table.remove_cols( Col( 2 ) );
-		DOCTEST_FAST_CHECK_EQ( table.rows(),		 8 );
-		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 3 );
+		DOCTEST_FAST_CHECK_EQ( table.rows(),		 Row( 8 ) );
+		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 Col( 3 ) );
 		DOCTEST_FAST_CHECK_EQ( table[ Col( 1 ), Row( 7 ) ],		29 );
 		DOCTEST_FAST_CHECK_EQ( table[ Col( 2 ), Row( 7 ) ],		31 );
 		
 		table.remove_cols( Col( 2 ) );
-		DOCTEST_FAST_CHECK_EQ( table.rows(),		 8 );
-		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 2 );
+		DOCTEST_FAST_CHECK_EQ( table.rows(),		 Row( 8 ) );
+		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 Col( 2 ) );
 		DOCTEST_FAST_CHECK_EQ( table[ Col( 0 ), Row( 7 ) ],		28 );
 		
 		table.remove_cols( Col( 1 ) );
-		DOCTEST_FAST_CHECK_EQ( table.rows(),		 8 );
-		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 1 );
+		DOCTEST_FAST_CHECK_EQ( table.rows(),		 Row( 8 ) );
+		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 Col( 1 ) );
 		DOCTEST_FAST_CHECK_EQ( table[ Col( 0 ), Row( 7 ) ],		28 );
 		
 		table.remove_cols( Col( 0 ) );
-		DOCTEST_FAST_CHECK_EQ( table.rows(),		 0 );
-		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 0 );
+		DOCTEST_FAST_CHECK_EQ( table.rows(),		 Row( 0 ) );
+		DOCTEST_FAST_CHECK_EQ( table.cols(), 		 Col( 0 ) );
 	}
 
 	namespace Text_ns {

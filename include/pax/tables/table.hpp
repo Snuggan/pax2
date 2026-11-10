@@ -74,7 +74,7 @@ namespace pax {
 		constexpr Table(
 			const std::span< U, N >	data_, 
 			const Col		 		cols_
-		) : Indexer2d( cols_, Row( data_.size()/cols_ ) ), m_data( data_.begin(), data_.end() ) {}
+		) : Indexer2d( cols_, Row( data_.size()/cols_() ) ), m_data( data_.begin(), data_.end() ) {}
 
 		constexpr value_type operator[]( const Col c_, const Row r_ )					const noexcept	{
 			return m_data[ scalar_index( c_, r_ ) ];
@@ -105,10 +105,10 @@ namespace pax {
 		constexpr auto end  ()							  noexcept	{	return m_data.end();						}
 
 		/// Iterators for column c_.
-		constexpr auto begin_col( const Col c_ )	const noexcept	{	return stride( c_, Row{},  cols() );		}
-		constexpr auto begin_col( const Col c_ )		  noexcept	{	return stride( c_, Row{},  cols() );		}
-		constexpr auto end_col  ( const Col c_ )	const noexcept	{	return stride( c_, rows(), cols() );		}
-		constexpr auto end_col  ( const Col c_ )		  noexcept	{	return stride( c_, rows(), cols() );		}
+		constexpr auto begin_col( const Col c_ )	const noexcept	{	return stride( c_, Row{},  cols()() );		}
+		constexpr auto begin_col( const Col c_ )		  noexcept	{	return stride( c_, Row{},  cols()() );		}
+		constexpr auto end_col  ( const Col c_ )	const noexcept	{	return stride( c_, rows(), cols()() );		}
+		constexpr auto end_col  ( const Col c_ )		  noexcept	{	return stride( c_, rows(), cols()() );		}
 
 		/// Iterators for row r_.
 		constexpr auto begin_row( const Row r_ )	const noexcept	{	return stride( Col{}, r_, 1u );				}
@@ -144,17 +144,17 @@ namespace pax {
 		constexpr void remove_cols( const Col col_, const index_type qtity_ = 1 ) {
 			assert( col_ + qtity_ <= cols() );
 
-			auto	dest		  = m_data.data() + col_;
-			auto	new_row		  = cols() - qtity_;
+			auto	dest		  = m_data.data() + col_();
+			auto	new_row		  = cols()() - qtity_;
 			auto	srce		  = dest + qtity_;
-			auto	end			  = m_data.data() + elements() - cols();
+			auto	end			  = m_data.data() + elements() - cols()();
 			while( srce <= end ) {
 				std::copy_n( srce, new_row, dest );
 				dest			 += new_row;
-				srce			 += cols();
+				srce			 += cols()();
 			}
-			std::copy_n( srce, cols() - col_() - qtity_, dest );
-			static_cast< Indexer2d & >( *this )  = ( cols() > qtity_ ) 
+			std::copy_n( srce, cols()() - col_() - qtity_, dest );
+			static_cast< Indexer2d & >( *this )  = ( cols()() > qtity_ ) 
 				? Indexer2d{ cols() - qtity_,  rows() } 
 				: Indexer2d{};
 		}
@@ -162,7 +162,7 @@ namespace pax {
 		/// Stream the rows for which predicate_[ i ] is true to out_ using col_mark_ as column deligneater. 
 		/// Row deligneator is '\n'.
 		template< typename Out, typename Predicate >
-			requires( std::is_invocable_r_v< bool, Predicate, index_type > )
+			requires( std::is_invocable_r_v< bool, Predicate, Row > )
 		void print(
 			Out							  & out_,
 			Predicate					 && row_predicate_, 
@@ -204,7 +204,7 @@ namespace pax {
 	};
 
 	template< typename U, std::size_t N >
-	Table( std::span< U, N >, std::size_t )	-> Table< std::remove_cv_t< U > >;
+	Table( std::span< U, N >, Col )	-> Table< std::remove_cv_t< U > >;
 	
 	
 	

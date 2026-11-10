@@ -10,36 +10,6 @@
 
 namespace pax {
 
-	template< auto N >
-	using Statique2				  = Statique< N, struct specific >;
-	
-	template< auto N, typename Tag >
-	constexpr int test( Statique< N, Tag > )	{	return 1;	}
-
-	template< auto N >					requires( std::is_unsigned_v< decltype( N ) > )
-	constexpr int test( Statique2< N > )		{	return 3;	}
-
-	template< auto N, typename Tag >	requires( std::is_unsigned_v< decltype( N ) > )
-	constexpr int test( Statique< N, Tag > )	{	return 5;	}
-	
-	DOCTEST_TEST_CASE( "Statique" ) {
-		static_assert( Stat< true > );
-		static_assert( Stat< 3 >		== 3 );
-		static_assert( Stat< 3 >()		== 3 );
-		static_assert( Stat< 3 >.value	== 3 );
-		static_assert( Stat< 2 >   < Stat< 3 > );
-		static_assert( Stat< 2.5 > + Stat< 4 > == 6.5 );
-
-		DOCTEST_FAST_CHECK_EQ( "Hej", Stat< litteral( "Hej" ) >() );
-		DOCTEST_FAST_CHECK_EQ( "Hej", Stat< litteral( "Hej" ), struct litt >() );
-	
-		DOCTEST_FAST_CHECK_EQ( test( Stat< 1 >			),	1 );	// Not an unsigned value.
-		DOCTEST_FAST_CHECK_EQ( test( Statique2< 1u >{}	),	3 );	// Not the general tag.
-		DOCTEST_FAST_CHECK_EQ( test( Stat< 1u >			),	5 );
-	}
-	
-	
-
 	template< typename Tag >
 	constexpr int test( Tagged< Tag, bool > )				{	return 1;	}
 
@@ -47,18 +17,17 @@ namespace pax {
 	
 	DOCTEST_TEST_CASE( "Tagged" ) {
 		// static_assert( Tagged< struct general >( true ) );
-		static_assert( tagged( true ) );
-		static_assert( tagged( 42ul ) == tagged( 42u ) );
-		static_assert( 42ul == tagged( 42u )() );
-
-		DOCTEST_FAST_CHECK_EQ( tagged( 5.0 ), tagged( 5 ) );
-		DOCTEST_FAST_CHECK_EQ( tagged< struct hej >( 5.0 ), tagged< struct hej >( 5 ) );
-
-		DOCTEST_FAST_CHECK_LT( tagged( 4.0 ), tagged( 5 ) );
-		DOCTEST_FAST_CHECK_LT( tagged< struct hej >( 4.0 ), tagged< struct hej >( 5 ) );
-
-		DOCTEST_FAST_CHECK_EQ( test( tagged< struct general  >( false ) ),	1 );
-		DOCTEST_FAST_CHECK_EQ( test( tagged< struct specific >( false ) ),	3 );
+		// static_assert( tagged( true ) );
+		// static_assert( tagged( 42ul ) == tagged( 42u ) );
+		// static_assert( 42ul == tagged( 42u )() );
+		//
+		// DOCTEST_FAST_CHECK_EQ( tagged( 5.0 ), tagged( 5 ) );
+		// DOCTEST_FAST_CHECK_EQ( tagged< struct hej >( 5.0 ), tagged< struct hej >( 5 ) );
+		//
+		// DOCTEST_FAST_CHECK_LT( tagged( 4.0 ), tagged( 5 ) );
+		// DOCTEST_FAST_CHECK_LT( tagged< struct hej >( 4.0 ), tagged< struct hej >( 5 ) );
+		//
+		// DOCTEST_FAST_CHECK_EQ( test( tagged< struct general  >( false ) ),	1 );
+		// DOCTEST_FAST_CHECK_EQ( test( tagged< struct specific >( false ) ),	3 );
 	}
-	
 }

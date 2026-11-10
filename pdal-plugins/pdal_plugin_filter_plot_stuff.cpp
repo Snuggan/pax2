@@ -331,7 +331,7 @@ namespace pax {
 			if( !plots_.empty() && !plot_metrics_dest_.empty() && !metrics_.empty() ) {
 				const Col						id_col = Col( plots_table_.header().index( id_col_name_ ) );
 				DEBUG0 << std::format( "ID column:          \"{}\" => {}", id_col_name_, id_col() );
-				if( id_col == -1u )
+				if( id_col() == -1u )
 					throw error_message( std::format( "In the plots table, there is no column \"{}\".", id_col_name_ ) );
 
 				// Create an unordered map of all id -> index in plots_.
@@ -359,24 +359,21 @@ namespace pax {
 					for( Row row{}; row<plots_table_.rows(); ++row ) {
 						if( plot_id_idx.contains( std::string( plots_table_[ id_col, row ] ) ) ) {
 							DEBUG0 << "Insert row " << row << ": " << std::string( plots_table_[ id_col, row ] );
-							table_row_ok.insert( row );
+							table_row_ok.insert( row() );
 						}
 					}
 					if( table_row_ok.size() != plots_.size() ) {
-						pax::Debug{} << "plots_:\n" << plots_;
-						pax::Debug{} << std::format( "plot_id_idx:\n{}", plot_id_idx );
-						pax::Debug{} << std::format( "table_row_ok:\n{}", table_row_ok );
 						throw error_message( std::format( "table_row_ok should have {} elements, but has {}.", 
 							plots_.size(), table_row_ok.size() ) );
 					}
-					const auto predicate = [ &table_row_ok ]( std::size_t i ) { 
-						return table_row_ok.contains( i ); 
+					const auto predicate = [ &table_row_ok ]( Row row ) { 
+						return table_row_ok.contains( row() ); 
 					};
 
 					reduced_table			  = plots_table_.as_str( predicate );
 				}
 
-				if( reduced_table.rows() != plots_.size() ) {
+				if( reduced_table.rows()() != plots_.size() ) {
 					pax::Debug{} << std::format( "reduced_table:\n{}", reduced_table );
 					pax::Debug{} << "plots_:\n" << plots_;
 					throw error_message( std::format( "Reduced table should have {} rows, but has {}.", 

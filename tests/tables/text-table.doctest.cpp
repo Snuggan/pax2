@@ -25,12 +25,12 @@ namespace pax {
 			const std::string_view		table_contentsAB( "r1;r2;r3;R1;R3\na1;1;1.3;A4;A5\nb1;2;2.3;B4;B5\nc1;3;3.3;C4;C5\n" );
 			table.insert_cols( Text_table{ std::string{ table_contentsB } } );
 			DOCTEST_FAST_CHECK_EQ( table.as_str(), table_contentsAB );
-			DOCTEST_FAST_CHECK_EQ( table.rows(),				3 );
-			DOCTEST_FAST_CHECK_EQ( table.cols(),				5 );
+			DOCTEST_FAST_CHECK_EQ( table.rows(),				Row( 3 ) );
+			DOCTEST_FAST_CHECK_EQ( table.cols(),				Col( 5 ) );
 			DOCTEST_FAST_CHECK_EQ( table.size(),				15 );
 			DOCTEST_FAST_CHECK_EQ( table[ Col( 3 ), Row( 1 ) ],	"B4" );
 			DOCTEST_FAST_CHECK_EQ( table.row( Row( 1 ) )[ 3 ],	"B4" );
-			DOCTEST_FAST_CHECK_EQ( table.row( Row( 1 ) ).size(),table.cols() );
+			DOCTEST_FAST_CHECK_EQ( table.row( Row( 1 ) ).size(),table.cols()() );
 			DOCTEST_FAST_CHECK_EQ( table.begin()[ 8 ],			"B4" );
 			DOCTEST_FAST_CHECK_EQ( table.begin_row( Row( 1 ) )[ 3 ],	"B4" );
 			DOCTEST_FAST_CHECK_EQ( table.begin_col( Col( 3 ) )[ 1 ],	"B4" );
