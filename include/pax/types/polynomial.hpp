@@ -48,7 +48,7 @@ namespace pax {
 			std::span< F, N >				p_,
 			const std::type_identity_t< F >	x_
 		) noexcept {
-			static  constexpr bool every_2nd = variant & ( Horners::fma_odd | Horners::fma_even );
+			static  constexpr bool every_2nd = variant & ( Horners::fma_odd + Horners::fma_even );
 			static  constexpr bool non_logical_size = every_2nd && ( ( N & 1u ) == ( variant & Horners::fma_odd ) );
 			if		constexpr( N == 0u ) 	return {};
 			else if constexpr( N == 1u ) 	return p_[ 0 ];
@@ -56,16 +56,20 @@ namespace pax {
 			else if constexpr( N == 3u ) 	return fma( x_, fma( x_, p_[ 2 ], p_[ 1 ] ), p_[ 0 ] );
 			else {
 				auto	itr		  = p_.end();
-				if constexpr( non_logical_size )					// If the every_2nd is out of sync.
-						assert( !*( --itr ) && "Last coeff should be zero but is not" );
+				if constexpr( non_logical_size ) {					// If the every_2nd is out of sync.
+						--itr;
+						assert( !*itr && "Last coeff should be zero but is not" );
+				}
 				auto	res		  = ( p_.begin() == itr ) ? 0 : *( --itr );
 				const F	xx		  = every_2nd ? x_ * x_ : x_;		// Optimisation when enery 2nd coeff is zero.
 
 				if constexpr( variant >= Horners::fma_compensated ) {	// Compensated Horner.
 					std::decay_t< F >	cmp{};						// Compensation for rounding errors.
 					while( itr > p_.begin() + every_2nd ) {
-						if constexpr( every_2nd )					// Optimisation when enery 2nd coeff is zero.
-							assert( !*( --itr ) && "Every second coeff should be zero (compensated)" );
+						if constexpr( every_2nd ) {					// Optimisation when enery 2nd coeff is zero.
+							--itr;
+							assert( !*itr && "Every second coeff should be zero (compensated)" );
+						}
 						auto tmp  = res;
 						res		  =	fma( xx, res, *( --itr ) );
 						cmp		 +=	( tmp * xx + *itr ) - ( res - cmp );
@@ -73,8 +77,10 @@ namespace pax {
 					res += cmp;
 				} else {												// Quick Horner.
 					while( itr > p_.begin() + every_2nd ) {
-						if constexpr( every_2nd )					// Optimisation when enery 2nd coeff is zero.
-							assert( !*( --itr ) && "Every second coeff should be zero" );
+						if constexpr( every_2nd ) {					// Optimisation when enery 2nd coeff is zero.
+							--itr;
+							assert( !*itr && "Every second coeff should be zero" );
+						}
 						res = fma( xx, res, *( --itr ) );
 					}
 				}
