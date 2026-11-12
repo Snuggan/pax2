@@ -43,48 +43,43 @@ namespace pax {
 	/// Horner's iterative method with std::fma.
 	template< Horners variant >
 	struct Horner {
+		static  constexpr bool is_odd		  = variant & ( Horners::fma_odd  );
+		static  constexpr bool is_even		  = variant & ( Horners::fma_even );
+		static  constexpr bool every_2nd	  = is_odd || is_even;
+		static  constexpr bool compensated	  = variant >= Horners::fma_compensated;
+
 		template< is::floating F, std::size_t N >
 		[[nodiscard]] static constexpr F operator()(
-			std::span< F, N >				p_,
-			const std::type_identity_t< F >	x_
+			std::span< F, N >					p_,
+			const std::type_identity_t< F >		x_
 		) noexcept {
-			static  constexpr bool every_2nd = variant & ( Horners::fma_odd + Horners::fma_even );
-			static  constexpr bool non_logical_size = every_2nd && ( ( N & 1u ) == ( variant & Horners::fma_odd ) );
-			if		constexpr( N == 0u ) 	return {};
-			else if constexpr( N == 1u ) 	return p_[ 0 ];
-			else if constexpr( N == 2u ) 	return fma( x_, p_[ 1 ], p_[ 0 ] );
-			else if constexpr( N == 3u ) 	return fma( x_, fma( x_, p_[ 2 ], p_[ 1 ] ), p_[ 0 ] );
+			if		constexpr( N == 0u ) 		return {};
+			else if constexpr( N == 1u ) 		return p_[ 0 ];
+			else if constexpr( N == 2u ) 		return fma( x_, p_[ 1 ], p_[ 0 ] );
+			else if constexpr( N == 3u ) 		return fma( x_, fma( x_, p_[ 2 ], p_[ 1 ] ), p_[ 0 ] );
 			else {
 				auto	itr		  = p_.end();
-				if constexpr( non_logical_size ) {					// If the every_2nd is out of sync.
-						--itr;
-						assert( !*itr && "Last coeff should be zero but it is not" );
+				if constexpr( ( N & 1u ) && is_odd ) {				// If the every 2nd is out of sync.
+						--itr;		assert( !*itr && "Last coeff should be zero but it is not" );
 				}
-				auto	res		  = ( p_.begin() == itr ) ? 0 : *( --itr );
-				const F	xx		  = every_2nd ? x_ * x_ : x_;		// Optimisation when enery 2nd coeff is zero.
 
-				if constexpr( variant >= Horners::fma_compensated ) { // Compensated Horner.
-					std::decay_t< F >	cmp{};						// Compensation for rounding errors.
-					while( itr > p_.begin() + every_2nd ) {
-						if constexpr( every_2nd ) {					// Optimisation when enery 2nd coeff is zero.
-							--itr;
-							assert( !*itr && "Every second coeff should be zero (compensated)" );
-						}
-						auto tmp  = res;
-						res		  =	fma( xx, res, *( --itr ) );
-						cmp		 +=	( tmp * xx + *itr ) - ( res - cmp );
+				auto	res		  = ( p_.begin() == itr ) ? 0 : *( --itr );
+				auto	tmp		  = res;
+				const F	xx		  = every_2nd ? x_ * x_ : x_;		// Optimisation when enery 2nd coeff is zero.
+				std::decay_t< F >	cmp{};							// Compensation for rounding errors.
+
+				while( itr > p_.begin() + every_2nd ) {
+					if constexpr( every_2nd ) {						// Optimisation when enery 2nd coeff is zero.
+						--itr;		assert( !*itr && "Every second coeff should be zero" );
 					}
-					res += cmp;
-				} else {											// Quick Horner.
-					while( itr > p_.begin() + every_2nd ) {
-						if constexpr( every_2nd ) {					// Optimisation when enery 2nd coeff is zero.
-							--itr;
-							assert( !*itr && "Every second coeff should be zero" );
-						}
-						res = fma( xx, res, *( --itr ) );
+					res			  =	fma( xx, res, *( --itr ) );
+					if constexpr( compensated ) { 
+						cmp		 +=	tmp*xx + *itr + cmp - res;
+						tmp		  = res;
 					}
 				}
-				if constexpr( variant & Horners::fma_odd )			res *= x_;
+				if constexpr( compensated )							res += cmp;
+				if constexpr( is_odd )								res *= x_;
 				return res;
 			}
 		}

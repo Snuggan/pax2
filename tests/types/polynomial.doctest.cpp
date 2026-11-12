@@ -220,10 +220,19 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( chebyshev2< 5 >, polynomial(  0.0, 6,  0, -32,   0, 32 ) );
 		DOCTEST_FAST_CHECK_EQ( chebyshev2< 6 >, polynomial( -1.0, 0, 24,   0, -80,  0, 64 ) );
 
-		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 1 >( 3 ), 6 );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 2 >( 3 ), 35 );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 4 >( 3 ), 1189 );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 5 >( 3 ), 6930 );
+		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< 0 >( 3 ), chebyshev1< 0 >( 3 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< 1 >( 3 ), chebyshev1< 1 >( 3 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< 2 >( 3 ), chebyshev1< 2 >( 3 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< 3 >( 3 ), chebyshev1< 3 >( 3 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< 4 >( 3 ), chebyshev1< 4 >( 3 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< 5 >( 3 ), chebyshev1< 5 >( 3 ) );
+
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 0 >( 3 ), chebyshev2< 0 >( 3 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 1 >( 3 ), chebyshev2< 1 >( 3 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 2 >( 3 ), chebyshev2< 2 >( 3 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 3 >( 3 ), chebyshev2< 3 >( 3 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 4 >( 3 ), chebyshev2< 4 >( 3 ) );
+		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 5 >( 3 ), chebyshev2< 5 >( 3 ) );
 
 		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< 5 >, polynomial(  0.0,  5,  0, -20,   0, 16 ) );
 		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< 6 >, polynomial( -1.0,  0, 18,   0, -48,  0, 32 ) );
