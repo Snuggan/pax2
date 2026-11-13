@@ -53,41 +53,49 @@ namespace pax {
 			std::span< F, N >					p_,
 			const std::type_identity_t< F >		x_
 		) noexcept {
-			if		constexpr( N == 0u ) 		return {};
-			else if constexpr( N == 1u ) 		return p_[ 0 ];
-			else if constexpr( N == 2u ) 		return fma( x_, p_[ 1 ], p_[ 0 ] );
-			else if constexpr( N == 3u ) 		return fma( x_, fma( x_, p_[ 2 ], p_[ 1 ] ), p_[ 0 ] );
-			else {
-				auto	itr		  = p_.end();
-				if constexpr( ( N & 1u ) && is_odd ) {				// If the every 2nd is out of sync.
-						--itr;		assert( !*itr && "Last coeff should be zero but it is not" );
-				}
-
-				auto	res		  = ( p_.begin() == itr ) ? 0 : *( --itr );
-				auto	tmp		  = res;
-				const F	xx		  = every_2nd ? x_ * x_ : x_;		// Optimisation when enery 2nd coeff is zero.
-				std::decay_t< F >	cmp{};							// Compensation for rounding errors.
-
-				while( itr > p_.begin() + every_2nd ) {
-					if constexpr( every_2nd ) {						// Optimisation when enery 2nd coeff is zero.
-						--itr;		assert( !*itr && "Every second coeff should be zero" );
-					}
-					res			  =	fma( xx, res, *( --itr ) );
-					if constexpr( compensated ) { 
-						cmp		 +=	tmp*xx + *itr + cmp - res;
-						tmp		  = res;
-					}
-				}
-				if constexpr( compensated )							res += cmp;
-				if constexpr( is_odd )								res *= x_;
-				return res;
+			if 			constexpr( N == 0u ) 	return {};
+			else if 	constexpr( N == 1u ) 	return p_[ 0 ];
+			else if 	constexpr( is_even ) {
+				if 		constexpr( N <= 2u )	return p_[ 0 ];
+				else if constexpr( N <= 4u )	return fma( x_*x_, p_[ 2 ], p_[ 0 ] );
+			} else if 	constexpr( is_odd  ) {
+				if 		constexpr( N <= 3u )	return p_[ 1 ]*x_;
+				else if constexpr( N <= 5u )	return fma( x_*x_, p_[ 3 ], p_[ 1 ] )*x_;
+			} else {
+				if 		constexpr( N == 2u )	return fma( x_, p_[ 1 ], p_[ 0 ] );
+				else if constexpr( N == 3u )	return fma( x_, fma( x_, p_[ 2 ], p_[ 1 ] ), p_[ 0 ] );
+				else if constexpr( N == 4u )	return fma( x_, fma( x_, fma( x_, p_[ 3 ], p_[ 2 ] ), p_[ 1 ] ), p_[ 0 ] );
 			}
+
+			auto	itr		  = p_.end();
+			if constexpr( every_2nd && ( ( N & 1u ) == is_odd ) ) {	// If the every 2nd is out of sync.
+					--itr;		assert( !*itr && "Last coeff should be zero but it is not" );
+			}
+
+			auto	res		  = ( p_.begin() == itr ) ? 0 : *( --itr );
+			auto	tmp		  = res;
+			const F	xx		  = every_2nd ? x_ * x_ : x_;		// Optimisation when enery 2nd coeff is zero.
+			std::decay_t< F >	cmp{};							// Compensation for rounding errors.
+
+			while( itr > p_.begin() + is_odd ) {
+				if constexpr( every_2nd ) {						// Optimisation when enery 2nd coeff is zero.
+					--itr;		assert( !*itr && "Every second coeff should be zero" );
+				}
+				res			  =	fma( xx, res, *( --itr ) );
+				if constexpr( compensated ) { 
+					cmp		 +=	tmp*xx + *itr + cmp - res;
+					tmp		  = res;
+				}
+			}
+			if constexpr( compensated )							res += cmp;
+			if constexpr( is_odd )								res *= x_;
+			return res;
 		}
 	};
 	
-	using horner_fma		  = Horner< Horners::fma_all >;			///< Quick Horner algorithm using fma, if available.
-	using horner_fma_even	  = Horner< Horners::fma_even >;		///< Quick, use when odd coeffs are zero.
-	using horner_fma_odd	  = Horner< Horners::fma_odd >;			///< Quick, use when even coeffs are zero.
+	using horner_fma		  = Horner< Horners::fma_all >;		///< Quick Horner algorithm using fma, if available.
+	using horner_fma_even	  = Horner< Horners::fma_even >;	///< Quick, use when odd coeffs are zero.
+	using horner_fma_odd	  = Horner< Horners::fma_odd >;		///< Quick, use when even coeffs are zero.
 	using horner_fma_comp	  = Horner< Horners::fma_compensated >;	///< More accurate Horner, but slightly slower.
 	using horner_fma_comp_even= Horner< Horners::fma_compensated_even >;
 	using horner_fma_comp_odd = Horner< Horners::fma_compensated_odd >;
