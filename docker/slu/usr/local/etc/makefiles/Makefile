@@ -24,6 +24,7 @@
 metrics_set								:= basic-linear
 
 # Set the debug level of info for pdal. 0 (zero) is for normal production, 3 is for debugging.
+pdal_debug								:= 8
 pdal_debug								:= 0
 
 
@@ -142,6 +143,10 @@ ALL_SOURCE_DIRS				 =	$(base_data_dir) $(pc_source_dir) $(pc_filtered_dir)		\
 								$(raster_metrics_dir) $(plots_dest_dir)						\
 								$(estimates_dir) $(mosaic_dir) $(temporary_dir) #$(rar_source_dir) 
 
+PLOTS_METADATA_FILE			 =	$(base_data_dir)plots.csv
+RUTA_METADATA_FILE			 =	$(base_data_dir)ruta_meta.csv
+FILTER_DEM_FILE				 =	$(base_data_dir)dem.tif
+
 PDAL_PLUGIN_raster_metrics	 =	"filters.raster_metrics"
 PDAL_PLUGIN_plot_stuff		 =	"filters.plot_stuff"
 TOOL_concat_plot_metrics	 =	$(TOOL_PREFIX)concat-tables
@@ -162,19 +167,25 @@ GENERAL_ARGUMENTS			:= --verbose --meta
 ###	Default make
 
 .PHONY: all
-all: create_dirs filter metrics estimate mosaic
+all: create_dirs check_base_files filter metrics estimate mosaic
 
 .PHONY: create_dirs
 create_dirs: $(ALL_SOURCE_DIRS) $(plots_individual_metrics_dir) $(plots_individual_points_dir)
 $(ALL_SOURCE_DIRS) $(plots_individual_metrics_dir) $(plots_individual_points_dir): 
 	@$(MKDIR) "$@"
 
+CHECK_EXISTENCE			:= $(PLOTS_METADATA_FILE) $(FILTER_DEM_FILE) $(RUTA_METADATA_FILE)
+
+.PHONY: check_base_files
+check_base_files: $(CHECK_EXISTENCE)
+$(CHECK_EXISTENCE):
+	@echo "ERROR, missing file: '$@'"
+	exit 1
 
 
 
 ####	FILTER					######################################
 
-FILTER_DEM				:= $(base_data_dir)dem.tif
 FILTER_MIN_Z			:= -2
 FILTER_MAX_Z			:= 50
 FILTER_LM				:= true
@@ -182,7 +193,7 @@ FILTER_LM				:= true
 PDAL_FILTER_PIPELINE	:=	{	"pipeline":[ 														\
 								{																	\
 									"type":"filters.hag_dem",										\
-									"raster":"$(strip $(FILTER_DEM))",								\
+									"raster":"$(strip $(FILTER_DEM_FILE))",							\
 									"band":"1",														\
 									"zero_ground":"false"											\
 								},{																	\
@@ -245,7 +256,7 @@ PDAL_METRICS_PIPELINE	:=	{	"pipeline":[						\
 									"data_type":"float"														\
 								},{																			\
 									"type":$(PDAL_PLUGIN_plot_stuff),										\
-									"plot_file":"$(base_data_dir)plots.csv",								\
+									"plot_file":"$(PLOTS_METADATA_FILE)",									\
 									"plot_points_dest":"$(plots_individual_points_dir)",					\
 									"metrics":"$(strip $(metrics_set))",									\
 									"nilsson_level":"$(nilsson_level)",										\
@@ -319,8 +330,6 @@ ESTIMATE				 = $(TOOL_PREFIX)regression $(GENERAL_ARGUMENTS)			\
 							--number_of_candidates=$(number_of_candidates)				\
 							--outlier_removal_perc=$(outlier_removal_percentage)		\
 							--aux_dir=$(strip $(base_data_dir))
-
-RUTA_METADATA_FILE		:= $(base_data_dir)ruta_meta.csv
 
 # These files will also ber produced.
 METRIC_FILTER_FILES		 = $(SOURCE_FILTER_FILES)
@@ -419,4 +428,4 @@ arg = svejs
 .PHONY: debug
 debug:
 	@echo "Debuginfo -------------------------------------------------------- $(NAME)"
-	@echo "ESTIMATE                            $(ESTIMATE) --source=$(strip $<) --dest=$(strip $(dir $@)) #--debug"
+	@echo "PDAL_METRICS                   $(PDAL_FILTER)"
