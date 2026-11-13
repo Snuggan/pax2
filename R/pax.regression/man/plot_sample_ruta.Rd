@@ -7,7 +7,7 @@
 plot_sample_ruta(
   ruta_id,
   plots,
-  ruta_metadata,
+  ruta_metadata_path,
   number_of_candidates,
   metadata_dest_dir = NA
 )

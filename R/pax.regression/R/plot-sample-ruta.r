@@ -25,14 +25,14 @@ required_plot_cols.plot_sample_ruta <- function() {
 plot_sample_ruta <- function(
 	ruta_id, 
 	plots, 
-	ruta_metadata, 
+	ruta_metadata_path, 
 	number_of_candidates, 
 	metadata_dest_dir	= NA
 ) {
 	log_begin()
-	log_item( "Ruta metadata file:     ", ruta_metadata )
-	if( !file.exists( ruta_metadata ) ) 
-		log_stop( "Error in plot_sample_ruta: no such ruta metadata file: ", ruta_metadata, "\n" )
+	log_item( "Ruta metadata file:     ", ruta_metadata_path )
+	if( !file.exists( ruta_metadata_path ) ) 
+		log_stop( "Error in plot_sample_ruta: no such ruta metadata file: ", ruta_metadata_path, "\n" )
 
 	if( !is.na( metadata_dest_dir ) ) {
 		metadata_dest_dir	<- file.path( metadata_dest_dir, "plot_sample_ruta" )
@@ -40,7 +40,8 @@ plot_sample_ruta <- function(
 	}
 
 	# Remove suffix from ruta_id.
-	ruta_id			<- file.name( basename( ruta_id ) )
+	ruta_id			<- file.name( basename( ruta_id ) )			# Remove the path
+	ruta_id			<- strsplit( ruta_id, "\\." )[[ 1 ]][ 1 ]	# Remove all file soffices
 	
 	# Read the input data (if necessary) and check that it contains reequired comumns.
 	message			<- "In plot_sample_ruta: "
@@ -49,11 +50,11 @@ plot_sample_ruta <- function(
 
 
 	# Get the metadata for the specific ruta_id.
-	ruta_metadata	<- read_csv_file( path_or_df=ruta_metadata, message=paste0( "ruta_metadata file, " ), 
+	ruta_metadata	<- read_csv_file( path_or_df=ruta_metadata_path, message=paste0( "ruta_metadata_path file, " ), 
 							required_cols=c( "east", "north", "id", "leaveson", "scanner_type" ) )
 	ruta			<- ( ruta_metadata$id == ruta_id )	# Check that we have a unique id. 
-	if( sum( ruta ) < 1 )	log_stop( message, "No such ruta id: '", ruta_id, "'\n" )
-	if( sum( ruta ) > 1 )	log_stop( message, "More than one such ruta id: '", ruta_id, "'\n" )
+	if( sum( ruta ) < 1 )	log_stop( message, "No such ruta id: '", ruta_id, "' in file '", ruta_metadata_path, "'\n" )
+	if( sum( ruta ) > 1 )	log_stop( message, "More than one such ruta id: '", ruta_id, "' in file '", ruta_metadata_path, "'\n" )
 	ruta			<- c( ruta_metadata[ ruta, ] )		# A list of scalar values for that row in the ruta_metadata data.frame.
 
 	log_item( "STILL: plot_sample_ruta" )
