@@ -22,15 +22,6 @@ namespace pax {
 
 	template< double a, unsigned N >
 	constexpr double mula< a, N, N > = a + N;
-
-	template< std::size_t N >
-	using even_or_odd_comp			  = Horner< ( N & 1u ) ? Horners::fma_compensated_even : Horners::fma_compensated_odd >;
-	
-	template< std::size_t N >
-	constexpr auto chebyshev1_comp	  = chebyshev1< N, double, horner_fma_comp >;
-	
-	template< std::size_t N >
-	constexpr auto chebyshev1_comp_x2 = chebyshev1< N, double, even_or_odd_comp< N + 1 > >;
 	
 
 
@@ -53,10 +44,6 @@ namespace pax {
 		static_assert( polynomial()( 5 )			== 0 );
 		static_assert( polynomial().extent			== std::dynamic_extent );
 		static_assert( polynomial( 2 ).extent		== 1u );
-		static_assert( polynomial< horner_fma_comp >( 2, 1 )[ 0 ] 	== 2.0 );
-		static_assert( polynomial< horner_fma_comp >()( 5 )			== 0 );
-		static_assert( polynomial< horner_fma_comp >().extent		== std::dynamic_extent );
-		static_assert( polynomial< horner_fma_comp >( 2 ).extent	== 1u );
 
 		static_assert( horner_fma()     ( Sp< 0 >{}, 				 2 ) ==  0 );
 		static_assert( horner_fma()     ( Sp< 1 >{ test.data(), 1 }, 2 ) ==  1 );
@@ -64,12 +51,6 @@ namespace pax {
 		static_assert( horner_fma()     ( Sp< 3 >{ test.data(), 3 }, 2 ) == 17 );
 		static_assert( horner_fma()     ( Sp< 4 >{ test.data(), 4 }, 2 ) == 49 );
 		static_assert( horner_fma()     ( Sp     { test.data(), 4 }, 2 ) == 49 );
-		static_assert( horner_fma_comp()( Sp< 0 >{}, 				 2 ) ==  0 );
-		static_assert( horner_fma_comp()( Sp< 1 >{ test.data(), 1 }, 2 ) ==  1 );
-		static_assert( horner_fma_comp()( Sp< 2 >{ test.data(), 2 }, 2 ) ==  5 );
-		static_assert( horner_fma_comp()( Sp< 3 >{ test.data(), 3 }, 2 ) == 17 );
-		static_assert( horner_fma_comp()( Sp< 4 >{ test.data(), 4 }, 2 ) == 49 );
-		static_assert( horner_fma_comp()( Sp     { test.data(), 4 }, 2 ) == 49 );
 	}
 
 	DOCTEST_TEST_CASE( "polynomial algorithm variants" ) {
@@ -77,15 +58,16 @@ namespace pax {
 		constexpr double	 		x = 2.0;
 		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< N   >( x ),		chebyshev1< N   >( x ) );
 		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< N+1 >( x ),		chebyshev1< N+1 >( x ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev1_comp_x2< N   >( x ),	chebyshev1_comp< N   >( x ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev1_comp_x2< N+1 >( x ),	chebyshev1_comp< N+1 >( x ) );
-
-		DOCTEST_FAST_CHECK_EQ( chebyshev1_comp_x2< N   >( x ),	chebyshev1_x2< N   >( x ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev1_comp_x2< N+1 >( x ),	chebyshev1_x2< N+1 >( x ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev1_comp< N   >( x ),		chebyshev1< N   >( x ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev1_comp< N+1 >( x ),		chebyshev1< N+1 >( x ) );
 	}
 	DOCTEST_TEST_CASE( "polynomial output" ) {
+		// std::cout << polynomial(-1., 2, 3, -4, 5, 1, -1 ) << '\n';
+		// std::cout << polynomial( 0. ) << '\n';
+		// std::cout << polynomial( 1. ) << '\n';
+		// std::cout << polynomial( 0., 1 ) << '\n';
+		// std::cout << polynomial( 0., 1, 0 ) << '\n';
+		// std::cout << polynomial( 0., 1, 0, 3 ) << '\n';
+		// std::cout << polynomial( 1., 0 ) << '\n';
+		//
 		// std::cout << "First order Chebychev polynomial:\n\\mbox{}\n";
 		// std::cout << "\\\\$T_0(x) = " << chebyshev1< 0 > << "$\n";
 		// std::cout << "\\\\$T_1(x) = " << chebyshev1< 1 > << "$\n";
@@ -109,14 +91,6 @@ namespace pax {
 		// std::cout << "\\\\$U_7(x) = " << chebyshev2< 7 > << "$\n";
 		// std::cout << "\\\\$U_8(x) = " << chebyshev2< 8 > << "$\n";
 		// std::cout << "\\\\$U_9(x) = " << chebyshev2< 9 > << "$\n";
-		//
-		// std::cout << polynomial(-1., 2, 3, -4, 5, 1, -1 ) << '\n';
-		// std::cout << polynomial( 0. ) << '\n';
-		// std::cout << polynomial( 1. ) << '\n';
-		// std::cout << polynomial( 0., 1 ) << '\n';
-		// std::cout << polynomial( 0., 1, 0 ) << '\n';
-		// std::cout << polynomial( 0., 1, 0, 3 ) << '\n';
-		// std::cout << polynomial( 1., 0 ) << '\n';
 	}
 	DOCTEST_TEST_CASE( "polynomial horner" ) {
 		{	// Polynomial object
@@ -141,24 +115,6 @@ namespace pax {
 			DOCTEST_FAST_CHECK_EQ( horner_fma()( poly.first( 4 ), 2 ),		answer[ 3 ] );
 			DOCTEST_FAST_CHECK_EQ( horner_fma()( poly.first( 5 ), 2 ),		answer[ 4 ] );
 			// static_assert( horner_fma( poly.first( 5 ), 2 ) == answer[ 4 ] );
-		}
-	}
-	DOCTEST_TEST_CASE( "polynomial compensated horner" ) {
-		{	// static horner_fma_comp
-			DOCTEST_FAST_CHECK_EQ( horner_fma_comp()( poly.first< 1 >(), 2 ),	answer[ 0 ] );
-			DOCTEST_FAST_CHECK_EQ( horner_fma_comp()( poly.first< 2 >(), 2 ),	answer[ 1 ] );
-			DOCTEST_FAST_CHECK_EQ( horner_fma_comp()( poly.first< 3 >(), 2 ),	answer[ 2 ] );
-			DOCTEST_FAST_CHECK_EQ( horner_fma_comp()( poly.first< 4 >(), 2 ),	answer[ 3 ] );
-			DOCTEST_FAST_CHECK_EQ( horner_fma_comp()( poly.first< 5 >(), 2 ),	answer[ 4 ] );
-			// static_assert( horner_fma_comp( poly.first< 5 >(), 2 )	==	answer[ 4 ] );
-		}
-		{	// dynamic horner_fma_comp
-			DOCTEST_FAST_CHECK_EQ( horner_fma_comp()( poly.first( 1 ), 2 ),		answer[ 0 ] );
-			DOCTEST_FAST_CHECK_EQ( horner_fma_comp()( poly.first( 2 ), 2 ),		answer[ 1 ] );
-			DOCTEST_FAST_CHECK_EQ( horner_fma_comp()( poly.first( 3 ), 2 ),		answer[ 2 ] );
-			DOCTEST_FAST_CHECK_EQ( horner_fma_comp()( poly.first( 4 ), 2 ),		answer[ 3 ] );
-			DOCTEST_FAST_CHECK_EQ( horner_fma_comp()( poly.first( 5 ), 2 ),		answer[ 4 ] );
-			// static_assert( horner_fma_comp( poly.first( 5 ), 2 ) == answer[ 4 ] );
 		}
 	}
 	DOCTEST_TEST_CASE( "polynomial addition" ) {

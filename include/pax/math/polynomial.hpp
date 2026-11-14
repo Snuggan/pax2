@@ -1,8 +1,10 @@
 // Implements a polynomial class.
-// - For static sizes (`N != dynamic_extent`) it is all `constexpr`, so can be used/initialised during compilation.
-//   Everything is noexcept.
+// - For static sizes (`N != dynamic_extent`) it is all `constexpr`, so `Polynomial` can be used/initialised during compilation.
+// - Everything is noexcept.
+// - You can use the Horner template for evaluating olynomials. There are to variants, horner_fma_even and horner_fma_odd, that
+//	 igonres the other terms. 
 // - The class is simple and does not have extensive constructors. Use the ´polynomial(...)´ functions instead.
-// - It uses base class std::array for static sizes and std::vector for dynamic. Their functionality is available.
+// - It uses base class std::array for static sizes and std::vector for dynamic. Their full functionality is available.
 // - This file implements the actual class. The polynomial-extras.hpp implements lots of bells and whistles for it,
 //   such as addition, subtraction, multiplication, division, derivation, and integration. You can also generate
 //   a number of named polynomials, such as Bessel, Chebyshev, Fibonacci, Hermite, etc.
@@ -37,8 +39,7 @@ namespace pax {
 #		endif
 	}
 
-	enum Horners {	fma_all = 0, 			fma_odd, 				fma_even, 
-					fma_compensated = 4,	fma_compensated_odd,	fma_compensated_even };
+	enum Horners {	fma_all = 0, fma_odd, fma_even	};
 
 	/// Horner's iterative method with std::fma.
 	template< Horners variant >
@@ -46,59 +47,45 @@ namespace pax {
 		static  constexpr bool is_odd		  = variant & ( Horners::fma_odd  );
 		static  constexpr bool is_even		  = variant & ( Horners::fma_even );
 		static  constexpr bool every_2nd	  = is_odd || is_even;
-		static  constexpr bool compensated	  = variant >= Horners::fma_compensated;
+
+		template< std::size_t N, is::floating F, std::size_t N0 >
+		[[nodiscard]] static constexpr F quick(
+			const std::span< F, N0 >			p_,
+			const std::type_identity_t< F >		x_
+		) noexcept {
+			if 		constexpr( N <= 0+is_odd ) 				return {};
+			else if	constexpr( N <= 1+every_2nd+is_odd )	return p_[ N0-1 ];
+			else	return fma( x_, quick< N-1-every_2nd >( p_, x_ ), p_[ N0-N+is_odd ] );
+		}
 
 		template< is::floating F, std::size_t N >
 		[[nodiscard]] static constexpr F operator()(
-			std::span< F, N >					p_,
+			const std::span< F, N >				p_,
 			const std::type_identity_t< F >		x_
 		) noexcept {
-			if 			constexpr( N == 0u ) 	return {};
-			else if 	constexpr( N == 1u ) 	return p_[ 0 ];
-			else if 	constexpr( is_even ) {
-				if 		constexpr( N <= 2u )	return p_[ 0 ];
-				else if constexpr( N <= 4u )	return fma( x_*x_, p_[ 2 ], p_[ 0 ] );
-			} else if 	constexpr( is_odd  ) {
-				if 		constexpr( N <= 3u )	return p_[ 1 ]*x_;
-				else if constexpr( N <= 5u )	return fma( x_*x_, p_[ 3 ], p_[ 1 ] )*x_;
+			if constexpr( N != std::dynamic_extent ) {
+				static constexpr bool 			Off	  = every_2nd && ( ( N & 1u ) == is_odd );
+				const auto						pp	  = std::span< F, N - Off >{ p_.data(), N - Off };
+				if 		constexpr( is_even )	return quick< N - Off >( pp, x_*x_ );
+				else if constexpr( is_odd  )	return quick< N - Off >( pp, x_*x_ )*x_;
+				else							return quick< N >( p_, x_ );
 			} else {
-				if 		constexpr( N == 2u )	return fma( x_, p_[ 1 ], p_[ 0 ] );
-				else if constexpr( N == 3u )	return fma( x_, fma( x_, p_[ 2 ], p_[ 1 ] ), p_[ 0 ] );
-				else if constexpr( N == 4u )	return fma( x_, fma( x_, fma( x_, p_[ 3 ], p_[ 2 ] ), p_[ 1 ] ), p_[ 0 ] );
-			}
-
-			auto	itr		  = p_.end();
-			if constexpr( every_2nd && ( ( N & 1u ) == is_odd ) ) {	// If the every 2nd is out of sync.
-					--itr;		assert( !*itr && "Last coeff should be zero but it is not" );
-			}
-
-			auto	res		  = ( p_.begin() == itr ) ? 0 : *( --itr );
-			auto	tmp		  = res;
-			const F	xx		  = every_2nd ? x_ * x_ : x_;		// Optimisation when enery 2nd coeff is zero.
-			std::decay_t< F >	cmp{};							// Compensation for rounding errors.
-
-			while( itr > p_.begin() + is_odd ) {
-				if constexpr( every_2nd ) {						// Optimisation when enery 2nd coeff is zero.
-					--itr;		assert( !*itr && "Every second coeff should be zero" );
+				// If every_2nd, p_.end() might be out of sync...
+				auto	itr		  = p_.end() - ( every_2nd && ( ( p_.size() & 1u ) == is_odd ) );
+				auto	res		  = ( p_.begin() == itr ) ? 0 : *( --itr );
+				const F	xx		  = every_2nd ? x_ * x_ : x_;	// Optimisation when enery 2nd coeff is zero.
+				while( itr > p_.begin() + is_odd ) {
+					if constexpr( every_2nd )	--itr;			// Optimisation when enery 2nd coeff is zero.
+					res			  =	fma( xx, res, *( --itr ) );
 				}
-				res			  =	fma( xx, res, *( --itr ) );
-				if constexpr( compensated ) { 
-					cmp		 +=	tmp*xx + *itr + cmp - res;
-					tmp		  = res;
-				}
+				return is_odd ? res*x_ : res;
 			}
-			if constexpr( compensated )							res += cmp;
-			if constexpr( is_odd )								res *= x_;
-			return res;
 		}
 	};
-	
-	using horner_fma		  = Horner< Horners::fma_all >;		///< Quick Horner algorithm using fma, if available.
-	using horner_fma_even	  = Horner< Horners::fma_even >;	///< Quick, use when odd coeffs are zero.
-	using horner_fma_odd	  = Horner< Horners::fma_odd >;		///< Quick, use when even coeffs are zero.
-	using horner_fma_comp	  = Horner< Horners::fma_compensated >;	///< More accurate Horner, but slightly slower.
-	using horner_fma_comp_even= Horner< Horners::fma_compensated_even >;
-	using horner_fma_comp_odd = Horner< Horners::fma_compensated_odd >;
+
+	using horner_fma	  = Horner< Horners::fma_all  >;	///< Quick Horner algorithm using fma, if available.
+	using horner_fma_even = Horner< Horners::fma_even >;	///< Quicker, use this when odd coeffs may be ignored.
+	using horner_fma_odd  = Horner< Horners::fma_odd  >;	///< Quicker, use this when even coeffs may be ignored.
 
 	
 	/// Implements a polynomial that uses Algo to calculate the polynomial for a given x.

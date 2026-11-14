@@ -4,7 +4,39 @@
 #pragma once
 #include "polynomial.hpp"
 
+#include <format>
 
+
+namespace std {
+	template< typename Algo, typename F, std::size_t N >
+	struct formatter< pax::Polynomial< Algo, F, N > > : formatter< string > {
+		auto format(  pax::Polynomial< Algo, F, N > sp_, format_context & ctx ) const {
+			string					res{};
+			size_t 					pow{};
+			bool					first( true );
+			for( auto item : sp_ ) {
+				if( item ) {
+					if( !first ) {
+						res				 += ( ( item > 0 ) ? " + " : " - " );
+						item			  = abs( item );
+					}
+					if( item == 1 ) switch( pow ) {
+						case 0:		res	  = std::format( "{}{}",	 res, item );		break;
+						case 1:		res	  = std::format( "{}x",		 res );				break;
+						default:	res	  = std::format( "{}x^{}",	 res, pow );		break;
+					} else switch( pow ) {
+						case 0:		res	  = std::format( "{}{}",	 res, item );		break;
+						case 1:		res	  = std::format( "{}{}x",	 res, item );		break;
+						default:	res	  = std::format( "{}{}x^{}", res, item, pow );	break;
+					}
+					first				  = false;
+				}
+				++pow;
+			}
+			return formatter< string >::format( !first ? res : std::format( "{}", 0.0 ), ctx );
+		}
+	};
+}
 namespace pax {
 	namespace is {
 		template< std::size_t N, std::size_t ...NN >
@@ -12,9 +44,7 @@ namespace pax {
 
 		template< typename A0, typename A1 >	struct Merge_algo		{	using type = horner_fma;		};
 		template< typename A0, typename A1 >	using Merge_algo_t		=	typename Merge_algo< A0, A1 >::type;
-		template< typename A >	struct Merge_algo< A, A >				{	using type = A;				};
-		template< typename A >	struct Merge_algo< horner_fma_comp, A >	{	using type = horner_fma_comp;	};
-		template< typename A >	struct Merge_algo< A, horner_fma_comp >	{	using type = horner_fma_comp;	};
+		template< typename A >	struct Merge_algo< A, A >				{	using type = A;					};
 	}
 
 
@@ -23,36 +53,14 @@ namespace pax {
 	Out & as_polynomial(
 		Out								  & out_, 
 		const std::span< F, N >				sp_ 
-	) {
-		std::size_t 						pow{};
-		bool								first( true );
-		for( auto item : sp_ ) {
-			if( item ) {
-				if( !first ) {
-					out_						 << ( ( item > 0 ) ? " + " : " - " );
-					item				  = std::abs( item );
-				}
-				if( pow ) {
-					if( item != 1 )			out_ << item;
-					out_						 << 'x';
-					if( pow > 1 )			out_ << '^' << pow;
-				} else						out_ << item;
-				first = false;
-			}
-			++pow;
-		}
-		if( first )							out_ << 0;
-		return out_;
-	}
+	) {	return out_ << std::format( "{}", polynomial( sp_ ) );				}
 
 	/// Stream the elements of a polynomial to out_.
 	template< typename Out, typename Algo, is::floating F, std::size_t N >
 	Out & operator<<(
 		Out								  & out_, 
 		const Polynomial< Algo, F, N >	  & poly_ 
-	) {
-		return as_polynomial( out_, std::span( poly_ ) );
-	}
+	) {	return out_ << std::format( "{}", poly_ );							}
 
 
 	template< bool Addition, typename Algo0, is::floating X0, std::size_t N0, 
