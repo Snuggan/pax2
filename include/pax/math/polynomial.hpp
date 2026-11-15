@@ -42,44 +42,40 @@ namespace pax {
 	enum Horners {	fma_all = 0, fma_odd, fma_even	};
 
 	/// Horner's iterative method with std::fma.
-	template< Horners variant >
+	template< Horners variant = fma_all >
 	struct Horner {
-		static  constexpr bool is_odd		  = variant & ( Horners::fma_odd  );
-		static  constexpr bool is_even		  = variant & ( Horners::fma_even );
-		static  constexpr bool every_2nd	  = is_odd || is_even;
+		static  constexpr bool is_odd	  = variant & ( Horners::fma_odd  );
+		static  constexpr bool is_even	  = variant & ( Horners::fma_even );
+		static  constexpr bool every_2nd  = is_odd || is_even;
 
+	private:
 		template< std::size_t N, is::floating F, std::size_t N0 >
-		[[nodiscard]] static constexpr F quick(
-			const std::span< F, N0 >			p_,
-			const std::type_identity_t< F >		x_
-		) noexcept {
-			if 		constexpr( N <= 0+is_odd ) 				return {};
-			else if	constexpr( N <= 1+every_2nd+is_odd )	return p_[ N0-1 ];
-			else	return fma( x_, quick< N-1-every_2nd >( p_, x_ ), p_[ N0-N+is_odd ] );
+		static constexpr F quick( const std::span< F, N0 > p_, const auto x_ ) noexcept {
+			if constexpr( N <= 1+every_2nd+is_odd )	return p_[ N0-1 ];
+			else return fma( x_, quick< N-1-every_2nd >( p_, x_ ), p_[ N0-N+is_odd ] );
 		}
 
+	public:
 		template< is::floating F, std::size_t N >
 		[[nodiscard]] static constexpr F operator()(
-			const std::span< F, N >				p_,
-			const std::type_identity_t< F >		x_
+			const std::span< F, N >			p_,
+			const std::type_identity_t< F >	x_
 		) noexcept {
-			if constexpr( N != std::dynamic_extent ) {
-				static constexpr bool 			Off	  = every_2nd && ( ( N & 1u ) == is_odd );
-				const auto						pp	  = std::span< F, N - Off >{ p_.data(), N - Off };
-				if 		constexpr( is_even )	return quick< N - Off >( pp, x_*x_ );
-				else if constexpr( is_odd  )	return quick< N - Off >( pp, x_*x_ )*x_;
-				else							return quick< N >( p_, x_ );
-			} else {
-				// If every_2nd, p_.end() might be out of sync...
+			std::decay_t< F >		res;
+			const auto xx		  = every_2nd ? x_*x_ : x_;	// Optimisation when enery 2nd coeff is zero.
+			if 		constexpr( N <= 0+is_odd )	return {};
+			else if constexpr( N != std::dynamic_extent ) {
+				static constexpr auto	NN = N - ( every_2nd && ( ( N & 1u ) == is_odd ) );
+				res				  = quick< NN >( std::span< F, NN >{ p_.data(), NN }, xx );
+			} else {										// If every_2nd, p_.end() might be out of sync...
 				auto	itr		  = p_.end() - ( every_2nd && ( ( p_.size() & 1u ) == is_odd ) );
-				auto	res		  = ( p_.begin() == itr ) ? 0 : *( --itr );
-				const F	xx		  = every_2nd ? x_ * x_ : x_;	// Optimisation when enery 2nd coeff is zero.
+				res				  = ( p_.begin() == itr ) ? 0 : *( --itr );
 				while( itr > p_.begin() + is_odd ) {
-					if constexpr( every_2nd )	--itr;			// Optimisation when enery 2nd coeff is zero.
+					if constexpr( every_2nd )		 --itr;	// Optimisation when enery 2nd coeff is zero.
 					res			  =	fma( xx, res, *( --itr ) );
 				}
-				return is_odd ? res*x_ : res;
 			}
+			return is_odd ? res*x_ : res;
 		}
 	};
 
@@ -94,8 +90,8 @@ namespace pax {
 	struct Polynomial : public std::conditional_t< N == std::dynamic_extent,
 		std::vector< std::decay_t< F > >, std::array< std::decay_t< F >, N > >
 	{
-		using algorithm						  = Algo;	///< Algorithm used to calculate a value at x.
-		static constexpr std::size_t extent	  = N;		///< Could be std::dynamic_extent.
+		using algorithm						  = Algo;		///< Algorithm used to calculate a value at x.
+		static constexpr std::size_t extent	  = N;			///< Could be std::dynamic_extent.
 		static constexpr bool is_static		  = N != std::dynamic_extent;
 		
 		/// Evaluate the polynomial at x_, using the given algorithm Algo.
