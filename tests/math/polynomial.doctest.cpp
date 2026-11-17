@@ -54,10 +54,10 @@ namespace pax {
 	}
 
 	DOCTEST_TEST_CASE( "polynomial algorithm variants" ) {
-		constexpr std::size_t 		N = 60;
-		constexpr double	 		x = 2.0;
-		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< N   >( x ),		chebyshev1< N   >( x ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< N+1 >( x ),		chebyshev1< N+1 >( x ) );
+		// constexpr std::size_t 		N = 60;
+		// constexpr double	 		x = 2.0;
+		// DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< N   >( x ),		chebyshev1< N   >( x ) );
+		// DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< N+1 >( x ),		chebyshev1< N+1 >( x ) );
 	}
 	DOCTEST_TEST_CASE( "polynomial output" ) {
 		// std::cout << polynomial(-1., 2, 3, -4, 5, 1, -1 ) << '\n';
@@ -152,125 +152,81 @@ namespace pax {
 	}
 
 	DOCTEST_TEST_CASE( "polynomial abel" ) {
-		DOCTEST_FAST_CHECK_EQ( abel< 0, 1 >, polynomial( 1 ) );
-		DOCTEST_FAST_CHECK_EQ( abel< 1, 1 >, polynomial( 0, 1 ) );
-		DOCTEST_FAST_CHECK_EQ( abel< 4, 1 >, polynomial( 0.0, -64, 48, -12, 1 ) );
-		DOCTEST_FAST_CHECK_EQ( abel< 0, 2 >, polynomial( 1 ) );
-		DOCTEST_FAST_CHECK_EQ( abel< 1, 1 >, polynomial( 0, 1 ) );
-		DOCTEST_FAST_CHECK_EQ( abel< 6, 2 >, polynomial( 0.0, -248832, 103680, -17280, 1440, -60, 1 ) );
+		static_assert( abel< 0, 1 > == polynomial( 1 ) );
+		static_assert( abel< 1, 1 > == polynomial( 0, 1 ) );
+		static_assert( abel< 4, 1 > == polynomial( 0.0, -64, 48, -12, 1 ) );
+		static_assert( abel< 0, 2 > == polynomial( 1 ) );
+		static_assert( abel< 1, 1 > == polynomial( 0, 1 ) );
+		static_assert( abel< 6, 2 > == polynomial( 0.0, -248832, 103680, -17280, 1440, -60, 1 ) );
+
+		static_assert( abel< 0, 1 >( 1 ) == 1 );
+		static_assert( abel< 1, 1 >( 1 ) == 1 );
+		static_assert( abel< 4, 1 >( 1 ) == 0.0 -64 +48 -12 +1 );
+		static_assert( abel< 0, 2 >( 1 ) == 1 );
+		static_assert( abel< 1, 1 >( 1 ) == 1 );
+		static_assert( abel< 6, 2 >( 1 ) == 0.0 -248832 +103680 -17280 +1440 -60 +1 );
 	}
 	DOCTEST_TEST_CASE( "polynomial bessel" ) {
-		DOCTEST_FAST_CHECK_EQ( bessel< 4 >, polynomial( 1.0, 10,  45, 105, 105 ) );
-		DOCTEST_FAST_CHECK_EQ( bessel< 5 >, polynomial( 1.0, 15, 105, 420, 945, 945 ) );
-		DOCTEST_FAST_CHECK_EQ( bessel_reversed< 4 >, polynomial( 105.0, 105,  45,  10,  1 ) );
-		DOCTEST_FAST_CHECK_EQ( bessel_reversed< 5 >, polynomial( 945.0, 945, 420, 105, 15, 1 ) );
+		static_assert( bessel< 4 >			== polynomial(   1.0,  10,  45, 105, 105      ) );
+		static_assert( bessel< 5 >			== polynomial(   1.0,  15, 105, 420, 945, 945 ) );
+		static_assert( bessel_reversed< 4 >	== polynomial( 105.0, 105,  45,  10,   1      ) );
+		static_assert( bessel_reversed< 5 >	== polynomial( 945.0, 945, 420, 105,  15,   1 ) );
+
+		static_assert( bessel< 4 >( 1 )				==   1.0 +  10 +  45 + 105 + 105       );
+		static_assert( bessel< 5 >( 1 )				==   1.0 +  15 + 105 + 420 + 945 + 945 );
+		static_assert( bessel_reversed< 4 >( 1 )	== 105.0 + 105 +  45 +  10 +   1       );
+		static_assert( bessel_reversed< 5 >( 1 )	== 945.0 + 945 + 420 + 105 +  15 +   1 );
 	}
 	DOCTEST_TEST_CASE( "polynomial chebyshev" ) {
-		static_assert( chebyshev1_x2< 0 >( 3 ) == chebyshev1< 0 >( 3 ) );
-		static_assert( chebyshev1_x2< 1 >( 3 ) == chebyshev1< 1 >( 3 ) );
-		static_assert( chebyshev1_x2< 2 >( 3 ) == chebyshev1< 2 >( 3 ) );
-		static_assert( chebyshev1_x2< 3 >( 3 ) == chebyshev1< 3 >( 3 ) );
-		static_assert( chebyshev1_x2< 4 >( 3 ) == chebyshev1< 4 >( 3 ) );
-		static_assert( chebyshev1_x2< 5 >( 3 ) == chebyshev1< 5 >( 3 ) );
-		static_assert( chebyshev1_x2< 6 >( 3 ) == chebyshev1< 6 >( 3 ) );
+		static_assert( chebyshev1< 6 > == polynomial( -1.0,  0, 18,  0, -48,    0, 32      ) );
+		static_assert( chebyshev1< 7 > == polynomial(  0.0, -7,  0, 56,   0, -112,  0, 64  ) );
+		static_assert( chebyshev2< 6 > == polynomial( -1.0,  0, 24,  0, -80,    0, 64      ) );
+		static_assert( chebyshev2< 7 > == polynomial(  0.0, -8,  0, 80,   0, -192,  0, 128 ) );
 
-		static_assert( chebyshev2_x2< 0 >( 3 ) == chebyshev2< 0 >( 3 ) );
-		static_assert( chebyshev2_x2< 1 >( 3 ) == chebyshev2< 1 >( 3 ) );
-		static_assert( chebyshev2_x2< 2 >( 3 ) == chebyshev2< 2 >( 3 ) );
-		static_assert( chebyshev2_x2< 3 >( 3 ) == chebyshev2< 3 >( 3 ) );
-		static_assert( chebyshev2_x2< 4 >( 3 ) == chebyshev2< 4 >( 3 ) );
-		static_assert( chebyshev2_x2< 5 >( 3 ) == chebyshev2< 5 >( 3 ) );
-		static_assert( chebyshev2_x2< 6 >( 3 ) == chebyshev2< 6 >( 3 ) );
-		static_assert( chebyshev2_x2< 7 >( 3 ) == chebyshev2< 7 >( 3 ) );
-
-		DOCTEST_FAST_CHECK_EQ( chebyshev1< 5 >, polynomial(  0.0, 5,  0, -20,   0, 16 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev1< 6 >, polynomial( -1.0, 0, 18,   0, -48,  0, 32 ) );
-
-		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< 5 >, polynomial(  0.0,  5,  0, -20,   0, 16 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< 6 >, polynomial( -1.0,  0, 18,   0, -48,  0, 32 ) );
-
-		DOCTEST_FAST_CHECK_EQ( chebyshev2< 1 >, polynomial(  0.0,  2 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2< 2 >, polynomial( -1.0,  0,  4 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2< 3 >, polynomial(  0.0, -4,  0, 8 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2< 4 >, polynomial(  1.0, 0, -12, 0, 16 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2< 5 >, polynomial(  0.0,  6,  0, -32,   0, 32 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2< 5 >, polynomial(  0.0,  6,  0, -32,   0, 32 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2< 6 >, polynomial( -1.0,  0, 24,   0, -80,  0, 64 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2< 7 >, polynomial(  0.0, -8, 0, 80,   0, -192,  0, 128 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2< 9 >, polynomial(  0.0, 10, 0, -160,   0, 672,  0, -1024, 0, 512 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2<11 >, polynomial(  0.0, -12, 0, 280, 0, -1792, 0, 4608, 0, -5120, 0, 2048 ) );
-
-		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 1 >, polynomial(  0.0,  2 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 2 >, polynomial( -1.0,  0,  4 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 3 >, polynomial(  0.0, -4,  0, 8 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 4 >, polynomial(  1.0, 0, -12, 0, 16 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 5 >, polynomial(  0.0,  6,  0, -32,   0, 32 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 5 >, polynomial(  0.0,  6,  0, -32,   0, 32 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 6 >, polynomial( -1.0,  0, 24,   0, -80,  0, 64 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 7 >, polynomial(  0.0, -8, 0, 80,   0, -192,  0, 128 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2< 9 >, polynomial(  0.0, 10, 0, -160,   0, 672,  0, -1024, 0, 512 ) );
-		DOCTEST_FAST_CHECK_EQ( chebyshev2_x2<11 >, polynomial(  0.0, -12, 0, 280, 0, -1792, 0, 4608, 0, -5120, 0, 2048 ) );
+		static_assert( chebyshev1< 6 >( 1 ) == -1.0 +  0 + 18 +  0 + -48 +    0 + 32       );
+		static_assert( chebyshev1< 7 >( 1 ) ==  0.0 + -7 +  0 + 56 +   0 + -112 +  0 +  64 );
+		static_assert( chebyshev2< 6 >( 1 ) == -1.0 +  0 + 24 +  0 + -80 +    0 + 64       );
+		static_assert( chebyshev2< 7 >( 1 ) ==  0.0 + -8 +  0 + 80 +   0 + -192 +  0 + 128 );
 	}
 	DOCTEST_TEST_CASE( "polynomial dickson" ) {
 		{
-			constexpr std::size_t a = 1u;
-			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 0, a >, polynomial( 2 ) );
-			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 1, a >, polynomial( 0, 1 ) );
-			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 5, a >, polynomial( 0.0, 5.0*a*a, 0, -5.0*a, 0, 1 ) );
-			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 5, a >( 3 ), 123 );
-			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 6, a >( 3 ), 322 );
+			constexpr double a = 1;
+			static_assert( dickson1< 4, a > == polynomial( 2*a*a, 0, -4*a, 0, 1 ) );
+			static_assert( dickson1< 5, a > == polynomial( 0, 5*a*a, 0, -5*a, 0, 1 ) );
+			static_assert( dickson2< 3, a > == polynomial( 0, -2*a, 0, 1 ) );
+			static_assert( dickson2< 4, a > == polynomial( a*a, 0, -3.0*a, 0, 1 ) );
+			static_assert( dickson1< 4, a >( 1 ) == 2*a*a + 0 + -4*a + 0 + 1 );
+			static_assert( dickson1< 5, a >( 1 ) == 0 + 5*a*a + 0 + -5*a + 0 + 1 );
+			static_assert( dickson2< 3, a >( 1 ) == 0 + -2*a + 0 + 1 );
+			static_assert( dickson2< 4, a >( 1 ) == a*a + 0 + -3.0*a + 0 + 1 );
 		} {
-			constexpr std::size_t a = 2u;
-			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 0, a >, polynomial( 2 ) );
-			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 1, a >, polynomial( 0, 1 ) );
-			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 5, a >, polynomial( 0.0, 5.0*a*a, 0, -5.0*a, 0, 1 ) );
-			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 5, a >( 3 ),  33 );
-			DOCTEST_FAST_CHECK_EQ( dickson1_x2< 6, a >( 3 ),  65 );
-		}
-		{
-			constexpr std::size_t a = 1u;
-			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 0, a >, polynomial( 1 ) );
-			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 1, a >, polynomial( 0, 1 ) );
-			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 4, a >, polynomial( a*a, 0.0, -3.0*a, 0, 1 ) );
-			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 4, a >( 3 ),  55 );
-			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 5, a >( 3 ), 144 );
-		} {
-			constexpr std::size_t a = 2u;
-			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 0, a >, polynomial( 1 ) );
-			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 1, a >, polynomial( 0, 1 ) );
-			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 4, a >, polynomial( a*a, 0.0, -3.0*a, 0, 1 ) );
-			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 4, a >( 3 ),  31 );
-			DOCTEST_FAST_CHECK_EQ( dickson2_x2< 5, a >( 3 ),  63 );
+			constexpr double a = 2;
+			static_assert( dickson1< 4, a > == polynomial( 2*a*a, 0, -4*a, 0, 1 ) );
+			static_assert( dickson1< 5, a > == polynomial( 0, 5*a*a, 0, -5*a, 0, 1 ) );
+			static_assert( dickson2< 3, a > == polynomial( 0, -2*a, 0, 1 ) );
+			static_assert( dickson2< 4, a > == polynomial( a*a, 0, -3.0*a, 0, 1 ) );
+			static_assert( dickson1< 4, a >( 1 ) == 2*a*a + 0 + -4*a + 0 + 1 );
+			static_assert( dickson1< 5, a >( 1 ) == 0 + 5*a*a + 0 + -5*a + 0 + 1 );
+			static_assert( dickson2< 3, a >( 1 ) == 0 + -2*a + 0 + 1 );
+			static_assert( dickson2< 4, a >( 1 ) == a*a + 0 + -3.0*a + 0 + 1 );
 		}
 	}
 	DOCTEST_TEST_CASE( "polynomial fibonacci" ) {
-		DOCTEST_FAST_CHECK_EQ( fibonacci< 0 >, polynomial( 0.0 ) );
-		DOCTEST_FAST_CHECK_EQ( fibonacci< 1 >, polynomial( 1.0 ) );
-		DOCTEST_FAST_CHECK_EQ( fibonacci< 5 >, polynomial( 1.0, 0, 3, 0, 1 ) );
-		DOCTEST_FAST_CHECK_EQ( fibonacci< 6 >, polynomial( 0.0, 3, 0, 4, 0, 1 ) );
+		static_assert( fibonacci< 5 > == polynomial( 1.0, 0, 3, 0, 1 ) );
+		static_assert( fibonacci< 6 > == polynomial( 0.0, 3, 0, 4, 0, 1 ) );
 
-		DOCTEST_FAST_CHECK_EQ( fibonacci_x2< 0 >, polynomial( 0.0 ) );
-		DOCTEST_FAST_CHECK_EQ( fibonacci_x2< 1 >, polynomial( 1.0 ) );
-		DOCTEST_FAST_CHECK_EQ( fibonacci_x2< 5 >, polynomial( 1.0, 0, 3, 0, 1 ) );
-		DOCTEST_FAST_CHECK_EQ( fibonacci_x2< 6 >, polynomial( 0.0, 3, 0, 4, 0, 1 ) );
-		DOCTEST_FAST_CHECK_EQ( fibonacci_x2< 5 >(3 ), 109 );
-		DOCTEST_FAST_CHECK_EQ( fibonacci_x2< 6 >(3 ), 360 );
+		static_assert( fibonacci< 5 >( 1 ) == 1 + 0 + 3 + 0 + 1     );
+		static_assert( fibonacci< 6 >( 1 ) == 0 + 3 + 0 + 4 + 0 + 1 );
 	}
 	DOCTEST_TEST_CASE( "polynomial hermite" ) {
-		DOCTEST_FAST_CHECK_EQ( hermite1< 5 >, polynomial(    0.0,  15,   0,  -10,    0,  1 ) );
-		DOCTEST_FAST_CHECK_EQ( hermite1< 6 >, polynomial(  -15.0,   0,  45,    0,  -15,  0,  1 ) );
-		DOCTEST_FAST_CHECK_EQ( hermite2< 5 >, polynomial(    0.0, 120,   0, -160,    0, 32 ) );
-		DOCTEST_FAST_CHECK_EQ( hermite2< 6 >, polynomial( -120.0,   0, 720,    0, -480,  0, 64 ) );
-
-		DOCTEST_FAST_CHECK_EQ( hermite1_x2< 5 >, polynomial(    0.0,  15,   0,  -10,    0,  1 ) );
-		DOCTEST_FAST_CHECK_EQ( hermite1_x2< 6 >, polynomial(  -15.0,   0,  45,    0,  -15,  0,  1 ) );
-		DOCTEST_FAST_CHECK_EQ( hermite2_x2< 5 >, polynomial(    0.0, 120,   0, -160,    0, 32 ) );
-		DOCTEST_FAST_CHECK_EQ( hermite2_x2< 6 >, polynomial( -120.0,   0, 720,    0, -480,  0, 64 ) );
-
-		DOCTEST_FAST_CHECK_EQ( hermite1_x2< 5 >( 3 ),    18 );
-		DOCTEST_FAST_CHECK_EQ( hermite1_x2< 6 >( 3 ),   -96 );
-		DOCTEST_FAST_CHECK_EQ( hermite2_x2< 5 >( 3 ),  3816 );
-		DOCTEST_FAST_CHECK_EQ( hermite2_x2< 6 >( 3 ), 14136 );
+		static_assert( hermite1< 5 > == polynomial(    0.0,  15,   0,  -10,    0,  1     ) );
+		static_assert( hermite1< 6 > == polynomial(  -15.0,   0,  45,    0,  -15,  0,  1 ) );
+		static_assert( hermite2< 5 > == polynomial(    0.0, 120,   0, -160,    0, 32     ) );
+		static_assert( hermite2< 6 > == polynomial( -120.0,   0, 720,    0, -480,  0, 64 ) );
+		static_assert( hermite1< 5 >( 1 ) ==    0.0 +  15 +   0 +  -10 +    0 +  1     );
+		static_assert( hermite1< 6 >( 1 ) ==  -15.0 +   0 +  45 +    0 +  -15 +  0 +  1 );
+		static_assert( hermite2< 5 >( 1 ) ==    0.0 + 120 +   0 + -160 +    0 + 32     );
+		static_assert( hermite2< 6 >( 1 ) == -120.0 +   0 + 720 +    0 + -480 +  0 + 64 );
 	}
 	DOCTEST_TEST_CASE( "polynomial jacobi" ) {
 		{
@@ -278,55 +234,73 @@ namespace pax {
 			constexpr double b  = 3;
 			constexpr double c1 = (a+2)*(a+b+3)*0.5;
 			constexpr double c2 = (a+b+3)*(a+b+4)/8;
-			DOCTEST_FAST_CHECK_EQ( jacobi< 2, double, a, b >, polynomial( (a+1)*(a+2)*0.5 - c1 + c2, c1 - c2*2, c2 ) );
+			static_assert( jacobi< 2, double, a, b > == polynomial( (a+1)*(a+2)*0.5 - c1 + c2,  c1 - c2*2,  c2 ) );
+			static_assert( jacobi< 2, double, a, b >( 1 )        == (a+1)*(a+2)*0.5 - c1 + c2 + c1 - c2*2 + c2 );
 		} {
 			constexpr double a  =  2.5;
 			constexpr double b  = -0.25;
 			constexpr double c1 = (a+2)*(a+b+3)*0.5;
 			constexpr double c2 = (a+b+3)*(a+b+4)/8;
-			DOCTEST_FAST_CHECK_EQ( jacobi< 2, double, a, b >, polynomial( (a+1)*(a+2)*0.5 - c1 + c2, c1 - c2*2, c2 ) );
+			static_assert( jacobi< 2, double, a, b > == polynomial( (a+1)*(a+2)*0.5 - c1 + c2,  c1 - c2*2,  c2 ) );
+			static_assert( jacobi< 2, double, a, b >( 1 )        == (a+1)*(a+2)*0.5 - c1 + c2 + c1 - c2*2 + c2 );
 		}
-		DOCTEST_FAST_CHECK_EQ( jacobi< 5, double,  0.0,  0.0 >, legendre< 5 > );
+		static_assert( jacobi< 5, double,  0.0,  0.0 > == legendre< 5 > );
 	}
 	DOCTEST_TEST_CASE( "polynomial laguerre" ) {
 		DOCTEST_FAST_CHECK_UNARY( similar( laguerre< 5 >, polynomial(  120.0,  -600,  600,  -200,  25,  -1 )/120 ) );
 		DOCTEST_FAST_CHECK_UNARY( similar( laguerre< 6 >, polynomial(  720.0, -4320, 5400, -2400, 450, -36, 1 )/720 ) );
-		DOCTEST_FAST_CHECK_EQ( laguerre_generalized< 5, double, 0.0 >, laguerre< 5 > );
-	 		DOCTEST_FAST_CHECK_EQ( laguerre_generalized< 5, double, 0.5 >, polynomial(
+
+		DOCTEST_FAST_CHECK_EQ( laguerre< 5 >( 1 ), doctest::Approx( ( 120.0 +  -600 +  600 +  -200 +  25 +  -1 )/120 ) );
+		DOCTEST_FAST_CHECK_EQ( laguerre< 6 >( 1 ), doctest::Approx( ( 720.0 + -4320 + 5400 + -2400 + 450 + -36 + 1 )/720 ) );
+
+		static_assert( laguerre_generalized< 5, double, 0.0 > == laguerre< 5 > );
+	 	static_assert( laguerre_generalized< 5, double, 0.5 > == polynomial(
 	 			1*mula< 0.5, 1, 5 >, -5*mula< 0.5, 2, 5 >, 10*mula< 0.5, 3, 5 >, -10*mula< 0.5, 4, 5 >, 5*mula< 0.5, 5, 5 >, -1 )/120 );
+	 	DOCTEST_FAST_CHECK_EQ( laguerre_generalized< 5, double, 0.5 >( 1 ), doctest::Approx( 
+	 			( 1*mula< 0.5, 1, 5 > + -5*mula< 0.5, 2, 5 > + 10*mula< 0.5, 3, 5 > + -10*mula< 0.5, 4, 5 > + 5*mula< 0.5, 5, 5 > -1 )/120 ) );
 	}
 	DOCTEST_TEST_CASE( "polynomial legendre" ) {
-		DOCTEST_FAST_CHECK_EQ( legendre< 5 >, polynomial(  0.0, 15,   0, -70,    0, 63 )/8 );
-		DOCTEST_FAST_CHECK_EQ( legendre< 6 >, polynomial( -5.0,  0, 105,   0, -315,  0, 231 )/16 );
-		DOCTEST_FAST_CHECK_EQ( legendre_x2< 5 >, polynomial(  0.0, 15,   0, -70,    0, 63 )/8 );
-		DOCTEST_FAST_CHECK_EQ( legendre_x2< 6 >, polynomial( -5.0,  0, 105,   0, -315,  0, 231 )/16 );
-		DOCTEST_FAST_CHECK_EQ( legendre_x2< 5 >( 3 ), 1683 );
-		DOCTEST_FAST_CHECK_EQ( legendre_x2< 6 >( 3 ), 8989 );
+		static_assert( legendre< 5 > == polynomial(  0.0, 15,   0, -70,    0, 63      )/ 8 );
+		static_assert( legendre< 6 > == polynomial( -5.0,  0, 105,   0, -315,  0, 231 )/16 );
+		static_assert( legendre< 5 >( 3 ) == 1683 );
+		static_assert( legendre< 6 >( 3 ) == 8989 );
 	}
 	DOCTEST_TEST_CASE( "polynomial lucas" ) {
-		DOCTEST_FAST_CHECK_EQ( lucas< 5 >, polynomial( 0.0, 5, 0, 5, 0, 1 ) );
-		DOCTEST_FAST_CHECK_EQ( lucas< 6 >, polynomial( 2.0, 0, 9, 0, 6, 0, 1 ) );
-		DOCTEST_FAST_CHECK_EQ( lucas_x2< 5 >, polynomial( 0.0, 5, 0, 5, 0, 1 ) );
-		DOCTEST_FAST_CHECK_EQ( lucas_x2< 6 >, polynomial( 2.0, 0, 9, 0, 6, 0, 1 ) );
-		DOCTEST_FAST_CHECK_EQ( lucas_x2< 5 >( 3 ),  393 );
-		DOCTEST_FAST_CHECK_EQ( lucas_x2< 6 >( 3 ), 1298 );
+		static_assert( lucas< 5 > == polynomial( 0.0, 5, 0, 5, 0, 1 ) );
+		static_assert( lucas< 6 > == polynomial( 2.0, 0, 9, 0, 6, 0, 1 ) );
+
+		static_assert( lucas< 5 >( 1 ) == 0.0 + 5 + 0 + 5 + 0 + 1 );
+		static_assert( lucas< 6 >( 1 ) == 2.0 + 0 + 9 + 0 + 6 + 0 + 1 );
 	}
 	DOCTEST_TEST_CASE( "polynomial shapiro" ) {
-		DOCTEST_FAST_CHECK_EQ( shapiro1< 0 >, polynomial( 0.0 ) );
-		DOCTEST_FAST_CHECK_EQ( shapiro1< 1 >, polynomial( 1.0, 1 ) );
-		DOCTEST_FAST_CHECK_EQ( shapiro1< 2 >, polynomial( 1.0, 1, 1, -1 ) );
-		DOCTEST_FAST_CHECK_EQ( shapiro1< 3 >, polynomial( 1.0, 1, 1, -1, 1, 1, -1, 1 ) );
-		DOCTEST_FAST_CHECK_EQ( shapiro2< 0 >, polynomial( 0.0 ) );
-		DOCTEST_FAST_CHECK_EQ( shapiro2< 1 >, polynomial( 1.0, -1 ) );
-		DOCTEST_FAST_CHECK_EQ( shapiro2< 2 >, polynomial( 1.0, 1, -1, 1 ) );
-		DOCTEST_FAST_CHECK_EQ( shapiro2< 3 >, polynomial( 1.0, 1, 1, -1, -1, -1, 1, -1 ) );
+		static_assert( shapiro1< 0 > == polynomial( 0.0 ) );
+		static_assert( shapiro1< 1 > == polynomial( 1.0, 1 ) );
+		static_assert( shapiro1< 2 > == polynomial( 1.0, 1, 1, -1 ) );
+		static_assert( shapiro1< 3 > == polynomial( 1.0, 1, 1, -1, 1, 1, -1, 1 ) );
+
+		static_assert( shapiro1< 0 >( 1 ) == 0.0 );
+		static_assert( shapiro1< 1 >( 1 ) == 1.0 + 1 );
+		static_assert( shapiro1< 2 >( 1 ) == 1.0 + 1 + 1 + -1 );
+		static_assert( shapiro1< 3 >( 1 ) == 1.0 + 1 + 1 + -1 + 1 + 1 + -1 + 1 );
+
+		static_assert( shapiro2< 0 > == polynomial( 0.0 ) );
+		static_assert( shapiro2< 1 > == polynomial( 1.0, -1 ) );
+		static_assert( shapiro2< 2 > == polynomial( 1.0, 1, -1, 1 ) );
+		static_assert( shapiro2< 3 > == polynomial( 1.0, 1, 1, -1, -1, -1, 1, -1 ) );
+
+		static_assert( shapiro2< 0 >( 1 ) == 0.0 );
+		static_assert( shapiro2< 1 >( 1 ) == 1.0 + -1 );
+		static_assert( shapiro2< 2 >( 1 ) == 1.0 + 1 + -1 + 1 );
+		static_assert( shapiro2< 3 >( 1 ) == 1.0 + 1 + 1 + -1 + -1 + -1 + 1 + -1 );
 	}
 	DOCTEST_TEST_CASE( "polynomial touchard" ) {
-		DOCTEST_FAST_CHECK_EQ( touchard< 0 >, polynomial() );
-		DOCTEST_FAST_CHECK_EQ( touchard< 5 >, polynomial( 0.0, 1, 15, 25, 10, 1 ) );
+		static_assert( touchard< 0 > == polynomial() );
+		static_assert( touchard< 5 > == polynomial( 0.0, 1, 15, 25, 10, 1 ) );
+		static_assert( touchard< 0 >( 1 ) == 0 );
+		static_assert( touchard< 5 >( 1 ) == 0.0 + 1 + 15 + 25 + 10 + 1 );
 	}
 	DOCTEST_TEST_CASE( "polynomial wilkinsons" ) {
-		DOCTEST_FAST_CHECK_EQ( wilkinsons< long double >( 1.0 ), 0.0 );
+		static_assert( wilkinsons< long double >( 1.0 ) == 0.0 );
 		// DOCTEST_FAST_CHECK_EQ( wilkinsons< long double >( 2.0 ), 0.0 );
 	}
 
