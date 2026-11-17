@@ -4,7 +4,7 @@
 
 #pragma once
 #include "lonlat.hpp"
-#include <pax/math/polynomial-extras.hpp>
+#include <pax/math/polynomial-named.hpp>
 #include <numbers>		// std::numbers::pi_v
 
 

@@ -2,7 +2,7 @@
 //	Contact: peder ( at ) axensten.se
 
 
-#include <pax/math/polynomial-extras.hpp>
+#include <pax/math/polynomial-named.hpp>
 #include <pax/doctest.hpp>
 #include <pax/math/comparison.hpp>
 #include <iostream>
