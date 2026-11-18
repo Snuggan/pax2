@@ -1,73 +1,70 @@
 //	Copyright (c) 2014-2016, Peder Axensten, all rights reserved.
 //	Contact: peder ( at ) axensten.se
 
-
 #include <pax/math/polynomial-named.hpp>
 #include <pax/doctest.hpp>
-#include <pax/math/comparison.hpp>
-#include <iostream>
+#include <pax/math/comparison.hpp>	// similar
 
 
 namespace pax {
 	
-	static constexpr const double poly0 [ 5 ] = { 1.0, 2.0,  3.0,  4.0,   5.0 };
-	static constexpr const double answer[ 5 ] = { 1.0, 5.0, 17.0, 49.0, 129.0 };
-	static constexpr const auto poly		  = std::span{ poly0 };
-	static constexpr const auto p			  = polynomial( poly0 );
+	static constexpr const auto p = polynomial( 1.0, 2.0, 3.0, 4.0, 5.0 );
+
+	template< double a, unsigned k, unsigned N >	constexpr double mula = ( a + k )*mula< a, k+1, N >;
+	template< double a, unsigned N >				constexpr double mula< a, N, N > = a + N;
+
+	DOCTEST_TEST_CASE( "polynomial horner" ) {
+		static constexpr const double poly0 [ 5 ] = { 1.0, 2.0, 3.0, 4.0, 5.0 };
+		static constexpr const auto poly		  = std::span{ poly0 };
 	
-	static_assert( p[ 3 ] == 4 );
+		{	// static
+			static_assert( horner_fma     ()( poly.first< 1 >(), 2 ) ==	1 );
+			static_assert( horner_fma     ()( poly.first< 2 >(), 2 ) ==	1 + 4 );
+			static_assert( horner_fma     ()( poly.first< 3 >(), 2 ) ==	1 + 4 + 12 );
+			static_assert( horner_fma     ()( poly.first< 4 >(), 2 ) ==	1 + 4 + 12 + 32 );
+			static_assert( horner_fma     ()( poly.first< 5 >(), 2 ) ==	1 + 4 + 12 + 32 + 80 );
 
-	template< double a, unsigned k, unsigned N >
-	constexpr double mula = ( a + k )*mula< a, k+1, N >;
+			static_assert( horner_fma_even()( poly.first< 1 >(), 2 ) ==	1 );
+			static_assert( horner_fma_even()( poly.first< 2 >(), 2 ) ==	1 );
+			static_assert( horner_fma_even()( poly.first< 3 >(), 2 ) ==	1 + 12 );
+			static_assert( horner_fma_even()( poly.first< 4 >(), 2 ) ==	1 + 12 );
+			static_assert( horner_fma_even()( poly.first< 5 >(), 2 ) ==	1 + 12 + 80 );
 
-	template< double a, unsigned N >
-	constexpr double mula< a, N, N > = a + N;
-	
+			static_assert( horner_fma_odd ()( poly.first< 1 >(), 2 ) ==	0 );
+			static_assert( horner_fma_odd ()( poly.first< 2 >(), 2 ) ==	4 );
+			static_assert( horner_fma_odd ()( poly.first< 3 >(), 2 ) ==	4 );
+			static_assert( horner_fma_odd ()( poly.first< 4 >(), 2 ) ==	4 + 32 );
+			static_assert( horner_fma_odd ()( poly.first< 5 >(), 2 ) ==	4 + 32 );
+		}
+		{	// dynamic
+			DOCTEST_FAST_CHECK_EQ( horner_fma     ()( poly.first( 1 ), 2 ),		1 );
+			DOCTEST_FAST_CHECK_EQ( horner_fma     ()( poly.first( 2 ), 2 ),		1 + 4 );
+			DOCTEST_FAST_CHECK_EQ( horner_fma     ()( poly.first( 3 ), 2 ),		1 + 4 + 12 );
+			DOCTEST_FAST_CHECK_EQ( horner_fma     ()( poly.first( 4 ), 2 ),		1 + 4 + 12 + 32 );
+			DOCTEST_FAST_CHECK_EQ( horner_fma     ()( poly.first( 5 ), 2 ),		1 + 4 + 12 + 32 + 80 );
 
+			DOCTEST_FAST_CHECK_EQ( horner_fma_even()( poly.first( 1 ), 2 ),		1 );
+			DOCTEST_FAST_CHECK_EQ( horner_fma_even()( poly.first( 2 ), 2 ),		1 );
+			DOCTEST_FAST_CHECK_EQ( horner_fma_even()( poly.first( 3 ), 2 ),		1 + 12 );
+			DOCTEST_FAST_CHECK_EQ( horner_fma_even()( poly.first( 4 ), 2 ),		1 + 12 );
+			DOCTEST_FAST_CHECK_EQ( horner_fma_even()( poly.first( 5 ), 2 ),		1 + 12 + 80 );
 
-	namespace {	// Static asserts
-		template< std::size_t N = std::dynamic_extent > using Sp = std::span< const double, N >;
-		constexpr std::array< double, 4 > test{{ 1.0, 2.0, 3.0, 4.0 }};
-
-		static_assert( polynomial().degree() == 0 );
-		static_assert( polynomial( 14, 0 ).degree() == 0 );
-		static_assert( polynomial( 14, 4, 0 ).degree() == 1 );
-		static_assert( polynomial( 14, 4, 8 ).extent == 3 );
-
-		static_assert( polynomial( 2, 1, 0, 0 ) 	== polynomial( 2.0, 1.0 ) );
-		static_assert( polynomial() 				== polynomial() );
-		static_assert( polynomial()				 	== polynomial( 0.0, 0.0, 0.0 ) );
-		static_assert( polynomial( 3, 2, 0, 0 ) 	<  polynomial( 2.0, 3.0 ) );
-		static_assert( polynomial( 3, 2, 0, 0 ) 	<  polynomial( 1.0, 2.0, 1.0 ) );
-
-		static_assert( polynomial( 2, 1 )( 3.0 )	== 5.0 );
-		static_assert( polynomial()( 5 )			== 0 );
-		static_assert( polynomial().extent			== std::dynamic_extent );
-		static_assert( polynomial( 2 ).extent		== 1u );
-
-		static_assert( horner_fma()     ( Sp< 0 >{}, 				 2 ) ==  0 );
-		static_assert( horner_fma()     ( Sp< 1 >{ test.data(), 1 }, 2 ) ==  1 );
-		static_assert( horner_fma()     ( Sp< 2 >{ test.data(), 2 }, 2 ) ==  5 );
-		static_assert( horner_fma()     ( Sp< 3 >{ test.data(), 3 }, 2 ) == 17 );
-		static_assert( horner_fma()     ( Sp< 4 >{ test.data(), 4 }, 2 ) == 49 );
-		static_assert( horner_fma()     ( Sp     { test.data(), 4 }, 2 ) == 49 );
-	}
-
-	DOCTEST_TEST_CASE( "polynomial algorithm variants" ) {
-		// constexpr std::size_t 		N = 60;
-		// constexpr double	 		x = 2.0;
-		// DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< N   >( x ),		chebyshev1< N   >( x ) );
-		// DOCTEST_FAST_CHECK_EQ( chebyshev1_x2< N+1 >( x ),		chebyshev1< N+1 >( x ) );
+			DOCTEST_FAST_CHECK_EQ( horner_fma_odd ()( poly.first( 1 ), 2 ),		0 );
+			DOCTEST_FAST_CHECK_EQ( horner_fma_odd ()( poly.first( 2 ), 2 ),		4 );
+			DOCTEST_FAST_CHECK_EQ( horner_fma_odd ()( poly.first( 3 ), 2 ),		4 );
+			DOCTEST_FAST_CHECK_EQ( horner_fma_odd ()( poly.first( 4 ), 2 ),		4 + 32 );
+			DOCTEST_FAST_CHECK_EQ( horner_fma_odd ()( poly.first( 5 ), 2 ),		4 + 32 );
+		}
 	}
 	DOCTEST_TEST_CASE( "polynomial output" ) {
-		// std::cout << polynomial(-1., 2, 3, -4, 5, 1, -1 ) << '\n';
-		// std::cout << polynomial( 0. ) << '\n';
-		// std::cout << polynomial( 1. ) << '\n';
-		// std::cout << polynomial( 0., 1 ) << '\n';
-		// std::cout << polynomial( 0., 1, 0 ) << '\n';
-		// std::cout << polynomial( 0., 1, 0, 3 ) << '\n';
-		// std::cout << polynomial( 1., 0 ) << '\n';
-		//
+		DOCTEST_FAST_CHECK_EQ( std::format( "{}", polynomial(-1., 2, 3, -4, 5, 1, -1 ) ),	"-1 + 2x + 3x^2 - 4x^3 + 5x^4 + x^5 - x^6" );
+		DOCTEST_FAST_CHECK_EQ( std::format( "{}", polynomial( 0. ) ),						"0" );
+		DOCTEST_FAST_CHECK_EQ( std::format( "{}", polynomial( 1. ) ),						"1" );
+		DOCTEST_FAST_CHECK_EQ( std::format( "{}", polynomial( 0., 1 ) ),					"x" );
+		DOCTEST_FAST_CHECK_EQ( std::format( "{}", polynomial( 0., 1, 0 ) ),					"x" );
+		DOCTEST_FAST_CHECK_EQ( std::format( "{}", polynomial( 0., 1, 0, 3 ) ),				"x + 3x^3" );
+		DOCTEST_FAST_CHECK_EQ( std::format( "{}", polynomial( 1., 0 ) ),					"1" );
+
 		// std::cout << "First order Chebychev polynomial:\n\\mbox{}\n";
 		// std::cout << "\\\\$T_0(x) = " << chebyshev1< 0 > << "$\n";
 		// std::cout << "\\\\$T_1(x) = " << chebyshev1< 1 > << "$\n";
@@ -92,56 +89,38 @@ namespace pax {
 		// std::cout << "\\\\$U_8(x) = " << chebyshev2< 8 > << "$\n";
 		// std::cout << "\\\\$U_9(x) = " << chebyshev2< 9 > << "$\n";
 	}
-	DOCTEST_TEST_CASE( "polynomial horner" ) {
-		{	// Polynomial object
-			constexpr auto	p = polynomial( 1.0, 2.0, 3.0, 4.0, 5.0 );
-			DOCTEST_FAST_CHECK_EQ( p( 2 ), answer[ 4 ] );
-			// constexpr auto res = p( 2 );
-			// DOCTEST_FAST_CHECK_EQ( res,    answer[ 4 ] );
-			// static_assert( res == answer[ 4 ] );
-		}
-		{	// static horner_fma
-			DOCTEST_FAST_CHECK_EQ( horner_fma()( poly.first< 1 >(), 2 ),	answer[ 0 ] );
-			DOCTEST_FAST_CHECK_EQ( horner_fma()( poly.first< 2 >(), 2 ),	answer[ 1 ] );
-			DOCTEST_FAST_CHECK_EQ( horner_fma()( poly.first< 3 >(), 2 ),	answer[ 2 ] );
-			DOCTEST_FAST_CHECK_EQ( horner_fma()( poly.first< 4 >(), 2 ),	answer[ 3 ] );
-			DOCTEST_FAST_CHECK_EQ( horner_fma()( poly.first< 5 >(), 2 ),	answer[ 4 ] );
-			// static_assert( horner_fma( poly.first< 5 >(), 2 )	==	answer[ 4 ] );
-		}
-		{	// dynamic horner_fma
-			DOCTEST_FAST_CHECK_EQ( horner_fma()( poly.first( 1 ), 2 ),		answer[ 0 ] );
-			DOCTEST_FAST_CHECK_EQ( horner_fma()( poly.first( 2 ), 2 ),		answer[ 1 ] );
-			DOCTEST_FAST_CHECK_EQ( horner_fma()( poly.first( 3 ), 2 ),		answer[ 2 ] );
-			DOCTEST_FAST_CHECK_EQ( horner_fma()( poly.first( 4 ), 2 ),		answer[ 3 ] );
-			DOCTEST_FAST_CHECK_EQ( horner_fma()( poly.first( 5 ), 2 ),		answer[ 4 ] );
-			// static_assert( horner_fma( poly.first( 5 ), 2 ) == answer[ 4 ] );
-		}
-	}
 	DOCTEST_TEST_CASE( "polynomial addition" ) {
-		DOCTEST_FAST_CHECK_EQ( polynomial( 0.0 ) + p, p );
-		DOCTEST_FAST_CHECK_EQ( p + polynomial( 0.0 ), p );
-		DOCTEST_FAST_CHECK_EQ( p + p, polynomial( 2.0, 4.0, 6.0, 8.0, 10.0 ) );
+		DOCTEST_FAST_CHECK_EQ( polynomial( 0 ) + p, p );
+		DOCTEST_FAST_CHECK_EQ( p + polynomial( 0 ), p );
+		DOCTEST_FAST_CHECK_EQ( p + p, polynomial( 2, 4, 6, 8, 10 ) );
+		DOCTEST_FAST_CHECK_EQ( p + 1, polynomial( 2, 3, 4, 5,  6 ) );
+		DOCTEST_FAST_CHECK_EQ( 1 + p, polynomial( 2, 3, 4, 5,  6 ) );
 	}
 	DOCTEST_TEST_CASE( "polynomial subtraction" ) {
 		DOCTEST_FAST_CHECK_EQ( p - polynomial( 0.0 ), p );
 		DOCTEST_FAST_CHECK_EQ( p - p + p, p );
+		DOCTEST_FAST_CHECK_EQ( p - 1, polynomial( 0,  1,  2,  3,  4 ) );
+		DOCTEST_FAST_CHECK_EQ( 1 - p, polynomial( 0, -1, -2, -3, -4 ) );
 	}
 	DOCTEST_TEST_CASE( "polynomial multiplication" ) {
 		DOCTEST_FAST_CHECK_EQ( p * polynomial( 1.0 ), p );
 		DOCTEST_FAST_CHECK_EQ( p * polynomial( 1.0, 2 ), polynomial( 1.0, 4, 7, 10, 13, 10 ) );
+		DOCTEST_FAST_CHECK_EQ( p * 2, polynomial( 2, 4, 6, 8, 10 ) );
+		DOCTEST_FAST_CHECK_EQ( 2 * p, polynomial( 2, 4, 6, 8, 10 ) );
 	}
 	DOCTEST_TEST_CASE( "polynomial division" ) {
-		constexpr auto p2	  = polynomial( 1.0, 2, 5 );
-		const     auto pp	  = p * p2;
+		constexpr auto p2			  = polynomial( 1.0, 2, 5 );
+		const     auto pp			  = p * p2;
 		DOCTEST_FAST_CHECK_EQ( pp / polynomial( 1.0 ), pp );
 		DOCTEST_FAST_CHECK_EQ( pp / p2, p );
+		DOCTEST_FAST_CHECK_EQ( p / 2, polynomial( 0.5, 1, 1.5, 2, 2.5 ) );
 	}
 	DOCTEST_TEST_CASE( "polynomial derivation" ) {
 		{
-			const     auto pp	  = Polynomial< horner_fma, double, 0 >();
+			constexpr auto pp	  = Polynomial< horner_fma, double, 0 >();
 			DOCTEST_FAST_CHECK_EQ( pp, derivate( pp ) );
 		} {
-			const     auto pp	  = derivate( p );
+			constexpr auto pp	  = derivate( p );
 			DOCTEST_FAST_CHECK_EQ( pp.extent, p.extent - 1 );
 			DOCTEST_FAST_CHECK_EQ( pp, polynomial( p[ 1 ]*1.0, p[ 2 ]*2.0, p[ 3 ]*3.0, p[ 4 ]*4.0 ) );
 		}
@@ -151,6 +130,7 @@ namespace pax {
 		DOCTEST_FAST_CHECK_EQ( derivate( integrate( p ) ), p );
 	}
 
+	// Named polynomials
 	DOCTEST_TEST_CASE( "polynomial abel" ) {
 		static_assert( abel< 0, 1 > == polynomial( 1 ) );
 		static_assert( abel< 1, 1 > == polynomial( 0, 1 ) );

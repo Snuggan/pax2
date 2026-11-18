@@ -145,20 +145,26 @@ namespace pax {
 		const Polynomial< Algo0, X0, N0 >	  & p0_,
 		const Polynomial< Algo1, X1, N1 >	  & p1_
 	) noexcept {
-		using									X	= std::decay_t< std::common_type_t< X0, X1 > >;
-		static constexpr std::size_t 			N	= is::newN< N0 + !N0 + N1 + !N1 - 1, N0, N1 >;
-		Polynomial< is::Merge_algo_t< Algo0, Algo1 >, X, N >	p{};
-		if constexpr( N == std::dynamic_extent ) p.resize( p0_.size() + p1_.size() - 1 );
+		// if( Algo1::every_2nd_coeff && ( !Algo0::every_2nd_coeff || ( p1_.size() > p0_.size() ) ) )
+		// 	return p1_*p0_;	// It is more advantageous to do it in reverse order.
+		// else {
+			using									X	= std::decay_t< std::common_type_t< X0, X1 > >;
+			static constexpr std::size_t 			N	= is::newN< N0 + !N0 + N1 + !N1 - 1, N0, N1 >;
+			Polynomial< is::Merge_algo_t< Algo0, Algo1 >, X, N >	p{};
+			if constexpr( N == std::dynamic_extent )	  p.resize( p0_.size() + p1_.size() - 1 );
 
-		auto 									itr = p.begin();
-		for( const auto c0 : p0_ ) {
-			for( const auto c1 : p1_ ) {
-				*itr = fma( c0, c1, *itr );
-				++itr;
+			auto 									itr = p.begin();
+			for( const auto c0 : p0_ ) {
+				if( c0 ) {
+					for( const auto c1 : p1_ ) {
+						*itr = fma( c0, c1, *itr );
+						++itr;
+					}
+					itr -= p1_.size() - 1;
+				} else ++itr;
 			}
-			itr -= p1_.size() - 1;
-		}
-		return p;
+			return p;
+		// }
 	}
 
 	template< typename Algo, is::floating X0, std::size_t N0 >
