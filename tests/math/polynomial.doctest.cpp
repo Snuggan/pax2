@@ -132,19 +132,19 @@ namespace pax {
 
 	// Named polynomials
 	DOCTEST_TEST_CASE( "polynomial abel" ) {
-		static_assert( abel< 0, 1 > == polynomial( 1 ) );
-		static_assert( abel< 1, 1 > == polynomial( 0, 1 ) );
-		static_assert( abel< 4, 1 > == polynomial( 0.0, -64, 48, -12, 1 ) );
-		static_assert( abel< 0, 2 > == polynomial( 1 ) );
-		static_assert( abel< 1, 1 > == polynomial( 0, 1 ) );
-		static_assert( abel< 6, 2 > == polynomial( 0.0, -248832, 103680, -17280, 1440, -60, 1 ) );
+		static_assert( abel< 0 >( 1 ) == polynomial( 1 ) );
+		static_assert( abel< 1 >( 1 ) == polynomial( 0, 1 ) );
+		static_assert( abel< 4 >( 1 ) == polynomial( 0.0, -64, 48, -12, 1 ) );
+		static_assert( abel< 0 >( 2 ) == polynomial( 1 ) );
+		static_assert( abel< 1 >( 1 ) == polynomial( 0, 1 ) );
+		static_assert( abel< 6 >( 2 ) == polynomial( 0.0, -248832, 103680, -17280, 1440, -60, 1 ) );
 
-		static_assert( abel< 0, 1 >( 1 ) == 1 );
-		static_assert( abel< 1, 1 >( 1 ) == 1 );
-		static_assert( abel< 4, 1 >( 1 ) == 0.0 -64 +48 -12 +1 );
-		static_assert( abel< 0, 2 >( 1 ) == 1 );
-		static_assert( abel< 1, 1 >( 1 ) == 1 );
-		static_assert( abel< 6, 2 >( 1 ) == 0.0 -248832 +103680 -17280 +1440 -60 +1 );
+		static_assert( abel< 0 >( 1 )( 1 ) == 1 );
+		static_assert( abel< 1 >( 1 )( 1 ) == 1 );
+		static_assert( abel< 4 >( 1 )( 1 ) == 0.0 -64 +48 -12 +1 );
+		static_assert( abel< 0 >( 2 )( 1 ) == 1 );
+		static_assert( abel< 1 >( 1 )( 1 ) == 1 );
+		static_assert( abel< 6 >( 2 )( 1 ) == 0.0 -248832 +103680 -17280 +1440 -60 +1 );
 	}
 	DOCTEST_TEST_CASE( "polynomial bessel" ) {
 		static_assert( bessel< 4 >			== polynomial(   1.0,  10,  45, 105, 105      ) );
@@ -214,17 +214,17 @@ namespace pax {
 			constexpr double b  = 3;
 			constexpr double c1 = (a+2)*(a+b+3)*0.5;
 			constexpr double c2 = (a+b+3)*(a+b+4)/8;
-			static_assert( jacobi< 2, double, a, b > == polynomial( (a+1)*(a+2)*0.5 - c1 + c2,  c1 - c2*2,  c2 ) );
-			static_assert( jacobi< 2, double, a, b >( 1 )        == (a+1)*(a+2)*0.5 - c1 + c2 + c1 - c2*2 + c2 );
+			static_assert( jacobi< 2 >( a, b ) == polynomial( (a+1)*(a+2)*0.5 - c1 + c2,  c1 - c2*2,  c2 ) );
+			static_assert( jacobi< 2 >( a, b )( 1 )        == (a+1)*(a+2)*0.5 - c1 + c2 + c1 - c2*2 + c2 );
 		} {
 			constexpr double a  =  2.5;
 			constexpr double b  = -0.25;
 			constexpr double c1 = (a+2)*(a+b+3)*0.5;
 			constexpr double c2 = (a+b+3)*(a+b+4)/8;
-			static_assert( jacobi< 2, double, a, b > == polynomial( (a+1)*(a+2)*0.5 - c1 + c2,  c1 - c2*2,  c2 ) );
-			static_assert( jacobi< 2, double, a, b >( 1 )        == (a+1)*(a+2)*0.5 - c1 + c2 + c1 - c2*2 + c2 );
+			static_assert( jacobi< 2 >( a, b ) == polynomial( (a+1)*(a+2)*0.5 - c1 + c2,  c1 - c2*2,  c2 ) );
+			static_assert( jacobi< 2 >( a, b )( 1 )        == (a+1)*(a+2)*0.5 - c1 + c2 + c1 - c2*2 + c2 );
 		}
-		static_assert( jacobi< 5, double,  0.0,  0.0 > == legendre< 5 > );
+		static_assert( jacobi< 5 >( 0.0, 0.0 ) == legendre< 5 > );
 	}
 	DOCTEST_TEST_CASE( "polynomial laguerre" ) {
 		DOCTEST_FAST_CHECK_UNARY( similar( laguerre< 5 >, polynomial(  120.0,  -600,  600,  -200,  25,  -1 )/120 ) );
@@ -280,8 +280,8 @@ namespace pax {
 		static_assert( touchard< 5 >( 1 ) == 0.0 + 1 + 15 + 25 + 10 + 1 );
 	}
 	DOCTEST_TEST_CASE( "polynomial wilkinsons" ) {
-		static_assert( wilkinsons< long double >( 1.0 ) == 0.0 );
-		// DOCTEST_FAST_CHECK_EQ( wilkinsons< long double >( 2.0 ), 0.0 );
+		static_assert( wilkinsons<>( 1.0 ) == 0.0 );
+		// DOCTEST_FAST_CHECK_EQ( wilkinsons<>( 2.0 ), 0.0 );
 	}
 
 }	// namespace pax
