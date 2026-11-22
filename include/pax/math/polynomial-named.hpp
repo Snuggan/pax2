@@ -79,27 +79,27 @@ namespace pax::poly {
 	template< std::size_t N, poly::floating X = double, typename Algo = horner_even_or_odd< N > >
 	constexpr auto high_one		  = High_one< N, X, Algo >();
 	
-	/// Bessel polynomials: https://en.wikipedia.org/wiki/Bessel_Polynomials
+	/// Bessel polynomials: https://en.wikipedia.org/wiki/Bessel_polynomials
 	template< std::size_t N, poly::floating X = double, typename Algo = horner_fma >
 	constexpr auto bessel		  = shift< 1 >( ( (N<<1) - 1 )*bessel< N-1, X, Algo > ) + bessel< N-2, X, Algo >;
 	template< poly::floating X, typename Algo >	constexpr auto bessel< 0, X, Algo > = all_one< 1, X, Algo >;
 	template< poly::floating X, typename Algo >	constexpr auto bessel< 1, X, Algo > = all_one< 2, X, Algo >;
 
-	/// Bessel reversed polynomials: https://en.wikipedia.org/wiki/Bessel_Polynomials
+	/// Bessel reversed polynomials: https://en.wikipedia.org/wiki/Bessel_polynomials
 	template< std::size_t N, poly::floating X = double, typename Algo = horner_fma >
 	constexpr auto bessel_reversed = ( (N<<1) - 1 )*bessel_reversed< N-1, X, Algo > 
 									  + shift< 2 >( bessel_reversed< N-2, X, Algo > );
 	template< poly::floating X, typename Algo >	constexpr auto bessel_reversed< 0, X, Algo > = all_one< 1, X, Algo >;
 	template< poly::floating X, typename Algo >	constexpr auto bessel_reversed< 1, X, Algo > = all_one< 2, X, Algo >;
 
-	/// Chebyshev polynomials of the first kind: https://en.wikipedia.org/wiki/Chebyshev_Polynomials
+	/// Chebyshev polynomials of the first kind: https://en.wikipedia.org/wiki/Chebyshev_polynomials
 	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
 	template< std::size_t N, poly::floating X = double, typename Algo = horner_even_or_odd< N + 1 > >
 	constexpr auto chebyshev1	  = shift< 1 >( 2*chebyshev1< N-1, X, Algo > ) - chebyshev1< N-2, X, Algo >;
 	template< poly::floating X, typename Algo >	constexpr auto chebyshev1< 0, X, Algo > = all_one < 1, X, Algo >;
 	template< poly::floating X, typename Algo >	constexpr auto chebyshev1< 1, X, Algo > = high_one< 1, X, Algo >;
 
-	/// Chebyshev polynomials of the second kind: https://en.wikipedia.org/wiki/Chebyshev_Polynomials
+	/// Chebyshev polynomials of the second kind: https://en.wikipedia.org/wiki/Chebyshev_polynomials
 	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
 	template< std::size_t N, poly::floating X = double, typename Algo = horner_even_or_odd< N + 1 > >
 	constexpr auto chebyshev2	  = shift< 1 >( 2*chebyshev2< N-1, X, Algo > ) - chebyshev2< N-2, X, Algo >;
@@ -125,7 +125,7 @@ namespace pax::poly {
 		else							return shift< 1 >( dickson2< N-1, X, Algo >( a ) ) - a*dickson2< N-2, X, Algo >( a );
 	}
 
-	/// Fibonacci polynomials: https://en.wikipedia.org/wiki/Fibonacci_Polynomials
+	/// Fibonacci polynomials: https://en.wikipedia.org/wiki/Fibonacci_polynomials
 	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
 	template< std::size_t N, poly::floating X = double, typename Algo = horner_even_or_odd< N > >
 	constexpr auto fibonacci	  = shift< 1 >( fibonacci< N-1, X, Algo > ) + fibonacci< N-2, X, Algo >;
@@ -133,21 +133,21 @@ namespace pax::poly {
 	template< poly::floating X, typename Algo >	constexpr auto fibonacci< 1, X, Algo > = all_one < 1, X, Algo >;
 	template< poly::floating X, typename Algo >	constexpr auto fibonacci< 2, X, Algo > = high_one< 1, X, Algo >;
 
-	/// Probabilist's Hermite polynomials: https://en.wikipedia.org/wiki/Hermite_Polynomials
+	/// Probabilist's Hermite polynomials: https://en.wikipedia.org/wiki/Hermite_polynomials
 	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
 	template< std::size_t N, poly::floating X = double, typename Algo = horner_even_or_odd< N+1 > >
 	constexpr auto hermite1		  = shift< 1 >( hermite1< N-1, X, Algo > ) - (N-1)*hermite1< N-2, X, Algo >;
 	template< poly::floating X, typename Algo >	constexpr auto hermite1< 0, X, Algo > = all_one < 1, X, Algo >;
 	template< poly::floating X, typename Algo >	constexpr auto hermite1< 1, X, Algo > = high_one< 1, X, Algo >;
 
-	/// Physicist's Hermite polynomials: https://en.wikipedia.org/wiki/Hermite_Polynomials
+	/// Physicist's Hermite polynomials: https://en.wikipedia.org/wiki/Hermite_polynomials
 	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
 	template< std::size_t N, poly::floating X = double, typename Algo = horner_even_or_odd< N+1 > >
 	constexpr auto hermite2		  = shift< 1 >( 2*hermite2< N-1, X, Algo > ) - 2*(N-1)*hermite2< N-2, X, Algo >;
 	template< poly::floating X, typename Algo >	constexpr auto hermite2< 0, X, Algo > = all_one < 1, X, Algo >;
 	template< poly::floating X, typename Algo >	constexpr auto hermite2< 1, X, Algo > = high_one< 1, X, Algo >*2;
 
-	/// Jacobi polynomials: https://en.wikipedia.org/wiki/Jacobi_Polynomials
+	/// Jacobi polynomials: https://en.wikipedia.org/wiki/Jacobi_polynomials
 	template< std::size_t N, poly::floating X = double, typename Algo = horner_fma >
 	constexpr auto jacobi( const X alpha, const X beta ) noexcept {
 		if      constexpr( N == 0 )		return high_one< 0, X, Algo >;
@@ -159,7 +159,7 @@ namespace pax::poly {
 		}
 	}
 
-	/// Generalized Laguerre polynomials: https://en.wikipedia.org/wiki/Laguerre_Polynomials
+	/// Generalized Laguerre polynomials: https://en.wikipedia.org/wiki/Laguerre_polynomials
 	template< std::size_t N, poly::floating X = double, typename Algo = horner_fma >
 	constexpr auto laguerre_generalized( const X a ) noexcept {
 		if      constexpr( N == 0 )		return high_one< 0, X, Algo >;
@@ -170,11 +170,11 @@ namespace pax::poly {
 		}
 	}
 
-	/// Laguerre polynomials: https://en.wikipedia.org/wiki/Laguerre_Polynomials
+	/// Laguerre polynomials: https://en.wikipedia.org/wiki/Laguerre_polynomials
 	template< std::size_t N, poly::floating X = double, typename Algo = horner_fma >
 	constexpr auto laguerre		  = laguerre_generalized< N, X, Algo >( X{} );
 
-	/// Legendre polynomials: https://en.wikipedia.org/wiki/Legendre_Polynomials
+	/// Legendre polynomials: https://en.wikipedia.org/wiki/Legendre_polynomials
 	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
 	template< std::size_t N, poly::floating X = double, typename Algo = horner_even_or_odd< N + 1 > >
 	constexpr auto legendre		  = ( shift< 1 >( ( 2*N-1 )*legendre< N-1, X, Algo > ) 
@@ -182,7 +182,7 @@ namespace pax::poly {
 	template< poly::floating X, typename Algo >	constexpr auto legendre< 0, X, Algo > = all_one < 1, X, Algo >;
 	template< poly::floating X, typename Algo >	constexpr auto legendre< 1, X, Algo > = high_one< 1, X, Algo >;
 
-	/// Lucas polynomials: https://en.wikipedia.org/wiki/Fibonacci_Polynomials
+	/// Lucas polynomials: https://en.wikipedia.org/wiki/Fibonacci_polynomials
 	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
 	template< std::size_t N, poly::floating X = double, typename Algo = horner_even_or_odd< N+1 > >
 	constexpr auto lucas		  = shift< 1 >( lucas< N-1, X, Algo > ) + lucas< N-2, X, Algo >;
@@ -201,7 +201,7 @@ namespace pax::poly {
 	template< std::size_t N, poly::floating X = double, typename Algo = horner_fma >
 	constexpr auto touchard		  = Touchard< N, X, Algo >();
 
-	/// Wilkinsons polynomial: https://en.wikipedia.org/wiki/Wilkinsons_polynomial
+	/// Wilkinsons polynomial: https://en.wikipedia.org/wiki/Wilkinson%27s_polynomial
 	template< typename Algo = horner_fma >
 	constexpr auto wilkinsons	  = polynomial< Algo >( 
 		  2'432'902'008'176'640'000.0L, -8752'948'036'761'600'000.0L, 13803'759'753'640'704'000.0L,

@@ -301,7 +301,7 @@ namespace pax {
 	) noexcept -> Polynomial< poly::Merge_algo_t< Algo0, Algo1 >, std::decay_t< std::common_type_t< X0, X1 > >, 
 												poly::newN< N0 + !N0 + N1 + !N1 - 1, N0, N1 > >
 	{
-		if( Every_2nd_coeff_v< Algo1 > && ( !Every_2nd_coeff_v< Algo0 > || ( p1_.size() > p0_.size() ) ) )
+		if( Every_2nd_coeff_v< Algo1 > && ( !Every_2nd_coeff_v< Algo0 > || ( p1_.size() < p0_.size() ) ) )
 			return p1_*p0_;						// It is more advantageous to do it in reverse order.
 		else {
 			Polynomial< poly::Merge_algo_t< Algo0, Algo1 >, std::decay_t< std::common_type_t< X0, X1 > >, 
