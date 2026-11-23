@@ -21,6 +21,12 @@
 #include <format>
 
 
+// Todo
+// - Check what wappens when shifting, multiplying, or dividing by a every-2nd-polynomial.
+// - Check what wappens when shifting, multiplying, or dividing by a polynull.
+// - Add tests for all_one, hight_one, and polynull.
+
+
 namespace pax {
 	namespace poly {
 		template< typename ... F >	concept floating	= ( std::floating_point < std::decay_t< F > > && ... );
@@ -161,7 +167,7 @@ namespace pax {
 } namespace std {
 	template< typename Algo, pax::poly::floating F, std::size_t N >
 	struct formatter< pax::Polynomial< Algo, F, N > > : formatter< string > {
-		auto format(  pax::Polynomial< Algo, F, N > sp_, format_context & ctx ) const {
+		constexpr auto format(  pax::Polynomial< Algo, F, N > sp_, format_context & ctx ) const {
 			string					res{};
 			res.reserve( sp_.size()*( pax::Every_2nd_coeff_v< Algo > ? 6 : 10 ) );
 			size_t 					pow{};

@@ -7,6 +7,7 @@
 
 namespace pax::poly {
 
+	/// An empty polynomial, same as all coefficients are zero.
 	template< poly::floating X = double, typename Algo = horner_fma >
 	constexpr auto polynull  = Polynomial< Algo, X, 0 >{};
 
@@ -213,3 +214,177 @@ namespace pax::poly {
 		                     20'615.0L,                      -210.0L,                         1.0L
 	);
 }	// namespace pax::poly
+
+namespace pax::poly::test {	//static_assert( false );
+#if !defined( NDEBUG )
+	namespace abel_ {
+		static_assert( !abel< 6 >( 1 ).every_2nd_coeff );
+		static_assert( abel< 6 >( 2 ) == polynomial( 0.0, -248832, 103680, -17280, 1440, -60, 1 ) );
+		static_assert( abel< 6 >( 2 )( 1 ) == -161051 );
+	}
+	namespace bessel_ {
+		static_assert( !bessel< 5 >.every_2nd_coeff );
+		static_assert(  bessel< 5 >				== polynomial(   1.0,  15, 105, 420, 945, 945 ) );
+		static_assert(  bessel< 5 >( 1 )			==   1.0 +  15 + 105 + 420 + 945 + 945 );
+
+		static_assert( !bessel_reversed< 5 >.every_2nd_coeff );
+		static_assert(  bessel_reversed< 5 >		== polynomial( 945.0, 945, 420, 105,  15,   1 ) );
+		static_assert(  bessel_reversed< 5 >( 1 )	== 945.0 + 945 + 420 + 105 +  15 +   1 );
+	}
+	namespace chebyshev_ {
+		static_assert( chebyshev1< 6 >.every_2nd_coeff );
+		static_assert( chebyshev1< 6 > == polynomial( -1.0,  0, 18,  0, -48,    0, 32      ) );
+		static_assert( chebyshev1< 6 >( 1 ) == -1.0 +  0 + 18 +  0 + -48 +    0 + 32       );
+
+		static_assert( chebyshev1< 7 >.every_2nd_coeff );
+		static_assert( chebyshev1< 7 > == polynomial(  0.0, -7,  0, 56,   0, -112,  0, 64  ) );
+		static_assert( chebyshev1< 7 >( 1 ) ==  0.0 + -7 +  0 + 56 +   0 + -112 +  0 +  64 );
+
+		static_assert( chebyshev2< 6 >.every_2nd_coeff );
+		static_assert( chebyshev2< 6 > == polynomial( -1.0,  0, 24,  0, -80,    0, 64      ) );
+		static_assert( chebyshev2< 6 >( 1 ) == -1.0 +  0 + 24 +  0 + -80 +    0 + 64       );
+
+		static_assert( chebyshev2< 7 >.every_2nd_coeff );
+		static_assert( chebyshev2< 7 > == polynomial(  0.0, -8,  0, 80,   0, -192,  0, 128 ) );
+		static_assert( chebyshev2< 7 >( 1 ) ==  0.0 + -8 +  0 + 80 +   0 + -192 +  0 + 128 );
+	}
+	namespace dickson1_ {
+		constexpr double a = 1;
+
+		static_assert( dickson1< 4 >( a ).every_2nd_coeff );
+		static_assert( dickson1< 4 >( a ) == polynomial( 2*a*a, 0, -4*a, 0, 1 ) );
+		static_assert( dickson1< 4 >( a )( 1 ) == 2*a*a + 0 + -4*a + 0 + 1 );
+
+		static_assert( dickson1< 5 >( a ).every_2nd_coeff );
+		static_assert( dickson1< 5 >( a ) == polynomial( 0, 5*a*a, 0, -5*a, 0, 1 ) );
+		static_assert( dickson1< 5 >( a )( 1 ) == 0 + 5*a*a + 0 + -5*a + 0 + 1 );
+
+		static_assert( dickson2< 3 >( a ).every_2nd_coeff );
+		static_assert( dickson2< 3 >( a ) == polynomial( 0, -2*a, 0, 1 ) );
+		static_assert( dickson2< 3 >( a )( 1 ) == 0 + -2*a + 0 + 1 );
+
+		static_assert( dickson2< 4 >( a ).every_2nd_coeff );
+		static_assert( dickson2< 4 >( a ) == polynomial( a*a, 0, -3.0*a, 0, 1 ) );
+		static_assert( dickson2< 4 >( a )( 1 ) == a*a + 0 + -3.0*a + 0 + 1 );
+	} 
+	namespace dickson2_ {
+		constexpr double a = 2;
+
+		static_assert( dickson1< 4 >( a ).every_2nd_coeff );
+		static_assert( dickson1< 4 >( a ) == polynomial( 2*a*a, 0, -4*a, 0, 1 ) );
+		static_assert( dickson1< 4 >( a )( 1 ) == 2*a*a + 0 + -4*a + 0 + 1 );
+
+		static_assert( dickson1< 5 >( a ).every_2nd_coeff );
+		static_assert( dickson1< 5 >( a ) == polynomial( 0, 5*a*a, 0, -5*a, 0, 1 ) );
+		static_assert( dickson1< 5 >( a )( 1 ) == 0 + 5*a*a + 0 + -5*a + 0 + 1 );
+
+		static_assert( dickson2< 3 >( a ).every_2nd_coeff );
+		static_assert( dickson2< 3 >( a ) == polynomial( 0, -2*a, 0, 1 ) );
+		static_assert( dickson2< 3 >( a )( 1 ) == 0 + -2*a + 0 + 1 );
+
+		static_assert( dickson2< 4 >( a ).every_2nd_coeff );
+		static_assert( dickson2< 4 >( a ) == polynomial( a*a, 0, -3.0*a, 0, 1 ) );
+		static_assert( dickson2< 4 >( a )( 1 ) == a*a + 0 + -3.0*a + 0 + 1 );
+	}
+	namespace fibonacci_ {
+		static_assert( fibonacci< 5 >.every_2nd_coeff );
+		static_assert( fibonacci< 5 > == polynomial( 1.0, 0, 3, 0, 1 ) );
+		static_assert( fibonacci< 5 >( 1 ) == 1 + 0 + 3 + 0 + 1     );
+
+		static_assert( fibonacci< 6 >.every_2nd_coeff );
+		static_assert( fibonacci< 6 > == polynomial( 0.0, 3, 0, 4, 0, 1 ) );
+		static_assert( fibonacci< 6 >( 1 ) == 0 + 3 + 0 + 4 + 0 + 1 );
+	}
+	namespace hermite_ {
+		static_assert( hermite1< 5 >.every_2nd_coeff );
+		static_assert( hermite1< 5 > == polynomial(    0.0,  15,   0,  -10,    0,  1     ) );
+		static_assert( hermite1< 5 >( 1 ) ==    0.0 +  15 +   0 +  -10 +    0 +  1     );
+
+		static_assert( hermite1< 6 >.every_2nd_coeff );
+		static_assert( hermite1< 6 > == polynomial(  -15.0,   0,  45,    0,  -15,  0,  1 ) );
+		static_assert( hermite1< 6 >( 1 ) ==  -15.0 +   0 +  45 +    0 +  -15 +  0 +  1 );
+
+		static_assert( hermite2< 5 >.every_2nd_coeff );
+		static_assert( hermite2< 5 > == polynomial(    0.0, 120,   0, -160,    0, 32     ) );
+		static_assert( hermite2< 5 >( 1 ) ==    0.0 + 120 +   0 + -160 +    0 + 32     );
+
+		static_assert( hermite2< 6 >.every_2nd_coeff );
+		static_assert( hermite2< 6 > == polynomial( -120.0,   0, 720,    0, -480,  0, 64 ) );
+		static_assert( hermite2< 6 >( 1 ) == -120.0 +   0 + 720 +    0 + -480 +  0 + 64 );
+	}
+	namespace jacobi_one {
+		constexpr double a  = 2;
+		constexpr double b  = 3;
+		constexpr double c1 = (a+2)*(a+b+3)*0.5;
+		constexpr double c2 = (a+b+3)*(a+b+4)/8;
+		static_assert( !jacobi< 2 >( a, b ).every_2nd_coeff );
+		static_assert(  jacobi< 2 >( a, b ) == polynomial( (a+1)*(a+2)*0.5 - c1 + c2,  c1 - c2*2,  c2 ) );
+		static_assert(  jacobi< 2 >( a, b )( 1 ) == (a+1)*(a+2)*0.5 - c1 + c2 + c1 - c2*2 + c2 );
+	}
+	namespace jacobi_two {
+		constexpr double a  =  2.5;
+		constexpr double b  = -0.25;
+		constexpr double c1 = (a+2)*(a+b+3)*0.5;
+		constexpr double c2 = (a+b+3)*(a+b+4)/8;
+		static_assert( !jacobi< 2 >( a, b ).every_2nd_coeff );
+		static_assert(  jacobi< 2 >( a, b ) == polynomial( (a+1)*(a+2)*0.5 - c1 + c2,  c1 - c2*2,  c2 ) );
+		static_assert(  jacobi< 2 >( a, b )( 1 ) == (a+1)*(a+2)*0.5 - c1 + c2 + c1 - c2*2 + c2 );
+
+		static_assert( jacobi< 5 >( 0.0, 0.0 ) == legendre< 5 > );
+	}
+	namespace laguerre_ {
+		template< double a, unsigned k, unsigned N >	constexpr double mula = ( a + k )*mula< a, k+1, N >;
+		template< double a, unsigned N >				constexpr double mula< a, N, N > = a + N;
+			
+		static_assert( !laguerre< 5 >.every_2nd_coeff );
+		static_assert(  laguerre< 5 > == laguerre_generalized< 5 >( 0.0 ) );
+		static_assert(  laguerre< 5 >( 1 ) == laguerre_generalized< 5 >( 0.0 )( 1 ) );
+
+		static_assert( !laguerre_generalized< 5 >( 0.5 ).every_2nd_coeff );
+	 	static_assert(  laguerre_generalized< 5 >( 0.5 ) == polynomial( 1*mula< 0.5, 1, 5 >, -5*mula< 0.5, 2, 5 >, 
+										  10*mula< 0.5, 3, 5 >,  -10*mula< 0.5, 4, 5 >,  5*mula< 0.5, 5, 5 >, -1 )/120 );
+	 	static_assert( -laguerre_generalized< 5 >( 0.5 )( 1 ) + ( 1*mula< 0.5, 1, 5 > + -5*mula< 0.5, 2, 5 >
+	 									+ 10*mula< 0.5, 3, 5 > + -10*mula< 0.5, 4, 5 > + 5*mula< 0.5, 5, 5 >  -1 )/120 < 1e-15 );
+	}
+	namespace legendre_ {
+		static_assert( legendre< 5 >.every_2nd_coeff );
+		static_assert( legendre< 5 > == polynomial(  0.0, 15,   0, -70,    0, 63      )/ 8 );
+		static_assert( legendre< 5 >( 3 ) == 1683 );
+
+		static_assert( legendre< 6 >.every_2nd_coeff );
+		static_assert( legendre< 6 > == polynomial( -5.0,  0, 105,   0, -315,  0, 231 )/16 );
+		static_assert( legendre< 6 >( 3 ) == 8989 );
+	}
+	namespace lucas_ {
+		static_assert( lucas< 5 >.every_2nd_coeff );
+		static_assert( lucas< 5 > == polynomial( 0.0, 5, 0, 5, 0, 1 ) );
+		static_assert( lucas< 5 >( 1 ) == 0.0 + 5 + 0 + 5 + 0 + 1 );
+
+		static_assert( lucas< 6 >.every_2nd_coeff );
+		static_assert( lucas< 6 > == polynomial( 2.0, 0, 9, 0, 6, 0, 1 ) );
+		static_assert( lucas< 6 >( 1 ) == 2.0 + 0 + 9 + 0 + 6 + 0 + 1 );
+	}
+	namespace shapiro_ {
+		static_assert( !shapiro1< 3 >.every_2nd_coeff );
+		static_assert(  shapiro1< 0 > == polynomial( 0.0 ) );
+		static_assert(  shapiro1< 3 > == polynomial( 1.0, 1, 1, -1, 1, 1, -1, 1 ) );
+		static_assert(  shapiro1< 0 >( 1 ) == 0.0 );
+		static_assert(  shapiro1< 3 >( 1 ) == 1.0 + 1 + 1 + -1 + 1 + 1 + -1 + 1 );
+
+		static_assert( !shapiro2< 6 >.every_2nd_coeff );
+		static_assert(  shapiro2< 0 > == polynomial( 0.0 ) );
+		static_assert(  shapiro2< 3 > == polynomial( 1.0, 1, 1, -1, -1, -1, 1, -1 ) );
+		static_assert(  shapiro2< 3 >( 1 ) == 1.0 + 1 + 1 + -1 + -1 + -1 + 1 + -1 );
+	}
+	namespace touchard_ {
+		static_assert( !touchard< 5 >.every_2nd_coeff );
+		static_assert(  touchard< 0 > == polynull<> );
+		static_assert(  touchard< 5 > == polynomial( 0.0, 1, 15, 25, 10, 1 ) );
+		static_assert(  touchard< 5 >( 1 ) == 0.0 + 1 + 15 + 25 + 10 + 1 );
+	}
+	namespace wilkinsons_ {
+		static_assert( wilkinsons<>( 1.0 ) == 0.0 );
+	}
+#endif
+}	// namespace pax::poly::test
+
