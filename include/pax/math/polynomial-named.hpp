@@ -7,10 +7,6 @@
 
 namespace pax::poly {
 
-	/// An empty polynomial, same as all coefficients are zero.
-	template< poly::floating X = double, typename Algo = horner_fma >
-	constexpr auto polynull  = Polynomial< Algo, X, 0 >{};
-
 	template< std::size_t N, poly::floating X, typename Algo >
 	constexpr auto All_one( const X c_ = 1 ) {
 		Polynomial< Algo, std::decay_t< X >, N >	res;
@@ -215,7 +211,7 @@ namespace pax::poly {
 	);
 }	// namespace pax::poly
 
-namespace pax::poly::test {	//static_assert( false );
+namespace pax::poly::test {
 #if !defined( NDEBUG )
 	namespace abel_ {
 		static_assert( !abel< 6 >( 1 ).every_2nd_coeff );
