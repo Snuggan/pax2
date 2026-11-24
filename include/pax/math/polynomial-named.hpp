@@ -7,27 +7,27 @@
 
 namespace pax::poly {
 
-	template< std::size_t N, poly::floating X, typename Algo >
+	template< std::size_t N, poly::floating X >
 	constexpr auto All_one( const X c_ = 1 ) {
-		Polynomial< Algo, std::decay_t< X >, N >	res;
-		for( auto & c : res )						c = c_;
+		Polynomial< horner_fma, std::decay_t< X >, N >	res;
+		for( auto & c : res )							c = c_;
 		return res;
 	};
 
-	template< std::size_t N, poly::floating X, typename Algo >
+	template< std::size_t N, poly::floating X >
 	constexpr auto High_one( const X c_ = 1 ) {
-		Polynomial< Algo, std::decay_t< X >, N+1 >	res{};
+		Polynomial< horner_even_or_odd< ( N+1 ) >, std::decay_t< X >, N+1 >	res{};
 		res.back() = c_;
 		return res;
 	};
 
-	template< std::size_t N, poly::floating X, typename Algo >
+	template< std::size_t N, poly::floating X >
 	constexpr auto shapiro( const int alternative_ ) {
 		constexpr std::size_t 			Sz = std::size_t( 1u ) << N;
-		if      constexpr( N == 0 )		return polynull< X, Algo >;
-		else if constexpr( N == 1 )		return polynomial< Algo, X >( 1, alternative_ );
+		if      constexpr( N == 0 )		return polynull< X, horner_fma >;
+		else if constexpr( N == 1 )		return polynomial< horner_fma, X >( 1, alternative_ );
 		else {
-			auto res		  = Polynomial< Algo, X, Sz >();
+			auto res		  = Polynomial< horner_fma, X, Sz >();
 			res[ 0 ]		  = res[ 1 ] = res[ 2 ] = 1;
 			res[ 3 ]		  = -1;
 			std::size_t half  = 2u;
@@ -43,164 +43,161 @@ namespace pax::poly {
 		}
 	};
 
-	template< std::size_t N, poly::floating X, typename Algo >
+	template< std::size_t N, poly::floating X >
 	constexpr auto Touchard() {
-		if      constexpr( N == 0 )		return polynull< X, Algo >;
-		else if constexpr( N == 1 )		return High_one< 1, X, Algo >();
+		if      constexpr( N == 0 )		return polynull< X, horner_fma_even >;
+		else if constexpr( N == 1 )		return High_one< 1, X >();
 		else {
-			constexpr auto temp		  = Touchard< N-1, X, Algo >();
+			constexpr auto temp		  = Touchard< N-1, X >();
 			return shift< 1 >( temp + derivate( temp ) );
 		}
 	};
 
 
 	/// Abel polynomials: https://en.wikipedia.org/wiki/Abel_polynomials
-	template< std::size_t N, poly::floating X = double, typename Algo = horner_fma >
+	template< std::size_t N, poly::floating X = double >
 	constexpr auto abel( const std::size_t a ) {
-		if constexpr( N == 0 )			return High_one< 0, X, Algo >();
+		if constexpr( N == 0 )			return High_one< 0, X >();
 		else {
-			Polynomial< Algo, X, N+1 >	res{};
-			res[ 1 ]				  = 1;
+			Polynomial< horner_fma, X, N+1 >	res{};
+			res[ 1 ]						  = 1;
 			for( std::size_t j=2; j<N+1; ++j )
 				for( std::size_t i=j; i>0; --i )
-					res[ i ]		  = res[ i - 1 ] - a*N*res[ i ];
+					res[ i ]				  = res[ i - 1 ] - a*N*res[ i ];
 			return res;
 		}
 	};
 	
 	/// Apolynomial with all coefficients equal to one.
-	template< std::size_t N, poly::floating X = double, typename Algo = horner_fma >
-	constexpr auto all_one		  = All_one< N, X, Algo >();
+	template< std::size_t N, poly::floating X = double >
+	constexpr auto all_one		  = All_one< N, X >();
 	
 	/// x^N, a polynomial with all coefficients equal to zero, except x^N.
-	template< std::size_t N, poly::floating X = double, typename Algo = horner_even_or_odd< N > >
-	constexpr auto high_one		  = High_one< N, X, Algo >();
+	template< std::size_t N, poly::floating X = double >
+	constexpr auto high_one		  = High_one< N, X >();
 	
 	/// Bessel polynomials: https://en.wikipedia.org/wiki/Bessel_polynomials
-	template< std::size_t N, poly::floating X = double, typename Algo = horner_fma >
-	constexpr auto bessel		  = shift< 1 >( ( (N<<1) - 1 )*bessel< N-1, X, Algo > ) + bessel< N-2, X, Algo >;
-	template< poly::floating X, typename Algo >	constexpr auto bessel< 0, X, Algo > = all_one< 1, X, Algo >;
-	template< poly::floating X, typename Algo >	constexpr auto bessel< 1, X, Algo > = all_one< 2, X, Algo >;
+	template< std::size_t N, poly::floating X = double >
+	constexpr auto bessel		  = shift< 1 >( ( (N<<1) - 1 )*bessel< N-1, X > ) + bessel< N-2, X >;
+	template< poly::floating X >	constexpr auto bessel< 0, X > = all_one< 1, X >;
+	template< poly::floating X >	constexpr auto bessel< 1, X > = all_one< 2, X >;
 
 	/// Bessel reversed polynomials: https://en.wikipedia.org/wiki/Bessel_polynomials
-	template< std::size_t N, poly::floating X = double, typename Algo = horner_fma >
-	constexpr auto bessel_reversed = ( (N<<1) - 1 )*bessel_reversed< N-1, X, Algo > 
-									  + shift< 2 >( bessel_reversed< N-2, X, Algo > );
-	template< poly::floating X, typename Algo >	constexpr auto bessel_reversed< 0, X, Algo > = all_one< 1, X, Algo >;
-	template< poly::floating X, typename Algo >	constexpr auto bessel_reversed< 1, X, Algo > = all_one< 2, X, Algo >;
+	template< std::size_t N, poly::floating X = double >
+	constexpr auto bessel_reversed = ( (N<<1) - 1 )*bessel_reversed< N-1, X > + shift< 2 >( bessel_reversed< N-2, X > );
+	template< poly::floating X >	constexpr auto bessel_reversed< 0, X > = all_one< 1, X >;
+	template< poly::floating X >	constexpr auto bessel_reversed< 1, X > = all_one< 2, X >;
 
 	/// Chebyshev polynomials of the first kind: https://en.wikipedia.org/wiki/Chebyshev_polynomials
 	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
-	template< std::size_t N, poly::floating X = double, typename Algo = horner_even_or_odd< N + 1 > >
-	constexpr auto chebyshev1	  = shift< 1 >( 2*chebyshev1< N-1, X, Algo > ) - chebyshev1< N-2, X, Algo >;
-	template< poly::floating X, typename Algo >	constexpr auto chebyshev1< 0, X, Algo > = all_one < 1, X, Algo >;
-	template< poly::floating X, typename Algo >	constexpr auto chebyshev1< 1, X, Algo > = high_one< 1, X, Algo >;
+	template< std::size_t N, poly::floating X = double >
+	constexpr auto chebyshev1	  = shift< 1 >( 2*chebyshev1< N-1, X > ) - chebyshev1< N-2, X >;
+	template< poly::floating X >	constexpr auto chebyshev1< 0, X > = high_one< 0, X >;
+	template< poly::floating X >	constexpr auto chebyshev1< 1, X > = high_one< 1, X >;
 
 	/// Chebyshev polynomials of the second kind: https://en.wikipedia.org/wiki/Chebyshev_polynomials
 	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
-	template< std::size_t N, poly::floating X = double, typename Algo = horner_even_or_odd< N + 1 > >
-	constexpr auto chebyshev2	  = shift< 1 >( 2*chebyshev2< N-1, X, Algo > ) - chebyshev2< N-2, X, Algo >;
-	template< poly::floating X, typename Algo >	constexpr auto chebyshev2< 0, X, Algo > = all_one < 1, X, Algo >;
-	template< poly::floating X, typename Algo >	constexpr auto chebyshev2< 1, X, Algo > = High_one< 1, X, Algo >( 2 );
+	template< std::size_t N, poly::floating X = double >
+	constexpr auto chebyshev2	  = shift< 1 >( 2*chebyshev2< N-1, X > ) - chebyshev2< N-2, X >;
+	template< poly::floating X >	constexpr auto chebyshev2< 0, X > = high_one< 0, X >;
+	template< poly::floating X >	constexpr auto chebyshev2< 1, X > = High_one< 1, X >( 2 );
 
 	/// Dickson polynomials of the first kind: https://en.wikipedia.org/wiki/Dickson_polynomial
 	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
-	template< std::size_t N, poly::floating X = double, typename Algo = horner_even_or_odd< N + 1 > >
+	template< std::size_t N, poly::floating X = double >
 	constexpr auto dickson1( const X a ) noexcept {
-		if      constexpr( N == 0 )		return polynull<    X, Algo >;
-		else if constexpr( N == 1 )		return high_one< 1, X, Algo >;
-		else if constexpr( N == 2 )		return polynomial< Algo, X >( -2*a, 0, 1 );
-		else							return shift< 1 >( dickson1< N-1, X, Algo >( a ) ) - a*dickson1< N-2, X, Algo >( a );
+		if      constexpr( N == 0 )	return polynull< X, horner_fma_even >;
+		else if constexpr( N == 1 )	return high_one< 1, X >;
+		else if constexpr( N == 2 )	return polynomial< horner_fma_even, X >( -2*a, 0, 1 );
+		else						return shift< 1 >( dickson1< N-1, X >( a ) ) - a*dickson1< N-2, X >( a );
 	}
 
 	/// Dickson polynomials of the seconnd kind: https://en.wikipedia.org/wiki/Dickson_polynomial
 	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
-	template< std::size_t N, poly::floating X = double, typename Algo = horner_even_or_odd< N + 1 > >
+	template< std::size_t N, poly::floating X = double >
 	constexpr auto dickson2( const X a ) noexcept {
-		if      constexpr( N == 0 )		return all_one < 1, X, Algo >;
-		else if constexpr( N == 1 )		return high_one< 1, X, Algo >;
-		else							return shift< 1 >( dickson2< N-1, X, Algo >( a ) ) - a*dickson2< N-2, X, Algo >( a );
+		if      constexpr( N == 0 )	return high_one< 0, X >;
+		else if constexpr( N == 1 )	return high_one< 1, X >;
+		else						return shift< 1 >( dickson2< N-1, X >( a ) ) - a*dickson2< N-2, X >( a );
 	}
 
 	/// Fibonacci polynomials: https://en.wikipedia.org/wiki/Fibonacci_polynomials
 	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
-	template< std::size_t N, poly::floating X = double, typename Algo = horner_even_or_odd< N > >
-	constexpr auto fibonacci	  = shift< 1 >( fibonacci< N-1, X, Algo > ) + fibonacci< N-2, X, Algo >;
-	template< poly::floating X, typename Algo >	constexpr auto fibonacci< 0, X, Algo > = polynull<    X, Algo >;
-	template< poly::floating X, typename Algo >	constexpr auto fibonacci< 1, X, Algo > = all_one < 1, X, Algo >;
-	template< poly::floating X, typename Algo >	constexpr auto fibonacci< 2, X, Algo > = high_one< 1, X, Algo >;
+	template< std::size_t N, poly::floating X = double >
+	constexpr auto fibonacci	  = shift< 1 >( fibonacci< N-1, X > ) + fibonacci< N-2, X >;
+	template< poly::floating X >	constexpr auto fibonacci< 0, X > = polynull< X, horner_even_or_odd< 0 > >;
+	template< poly::floating X >	constexpr auto fibonacci< 1, X > = high_one< 0, X >;
+	template< poly::floating X >	constexpr auto fibonacci< 2, X > = high_one< 1, X >;
 
 	/// Probabilist's Hermite polynomials: https://en.wikipedia.org/wiki/Hermite_polynomials
 	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
-	template< std::size_t N, poly::floating X = double, typename Algo = horner_even_or_odd< N+1 > >
-	constexpr auto hermite1		  = shift< 1 >( hermite1< N-1, X, Algo > ) - (N-1)*hermite1< N-2, X, Algo >;
-	template< poly::floating X, typename Algo >	constexpr auto hermite1< 0, X, Algo > = all_one < 1, X, Algo >;
-	template< poly::floating X, typename Algo >	constexpr auto hermite1< 1, X, Algo > = high_one< 1, X, Algo >;
+	template< std::size_t N, poly::floating X = double >
+	constexpr auto hermite1		  = shift< 1 >( hermite1< N-1, X > ) - (N-1)*hermite1< N-2, X >;
+	template< poly::floating X >	constexpr auto hermite1< 0, X > = high_one< 0, X >;
+	template< poly::floating X >	constexpr auto hermite1< 1, X > = high_one< 1, X >;
 
 	/// Physicist's Hermite polynomials: https://en.wikipedia.org/wiki/Hermite_polynomials
 	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
-	template< std::size_t N, poly::floating X = double, typename Algo = horner_even_or_odd< N+1 > >
-	constexpr auto hermite2		  = shift< 1 >( 2*hermite2< N-1, X, Algo > ) - 2*(N-1)*hermite2< N-2, X, Algo >;
-	template< poly::floating X, typename Algo >	constexpr auto hermite2< 0, X, Algo > = all_one < 1, X, Algo >;
-	template< poly::floating X, typename Algo >	constexpr auto hermite2< 1, X, Algo > = high_one< 1, X, Algo >*2;
+	template< std::size_t N, poly::floating X = double >
+	constexpr auto hermite2		  = shift< 1 >( 2*hermite2< N-1, X > ) - 2*(N-1)*hermite2< N-2, X >;
+	template< poly::floating X >	constexpr auto hermite2< 0, X > = high_one< 0, X >;
+	template< poly::floating X >	constexpr auto hermite2< 1, X > = High_one< 1, X >( 2 );
 
 	/// Jacobi polynomials: https://en.wikipedia.org/wiki/Jacobi_polynomials
-	template< std::size_t N, poly::floating X = double, typename Algo = horner_fma >
+	template< std::size_t N, poly::floating X = double >
 	constexpr auto jacobi( const X alpha, const X beta ) noexcept {
-		if      constexpr( N == 0 )		return high_one< 0, X, Algo >;
-		else if constexpr( N == 1 )		return polynomial< Algo, X >( alpha - (alpha+beta)*0.5, (alpha+beta)*0.5 + 1 );
+		if      constexpr( N == 0 )	return high_one< 0, X >;
+		else if constexpr( N == 1 )	return polynomial< horner_fma, X >( (alpha-beta)*0.5, 1 + (alpha+beta)*0.5 );
 		else {
 			const X	a = N + alpha, b = N + beta, c = a + b;
-			return ( jacobi< N-1, X, Algo >( alpha, beta ) *(c-1)*polynomial< Algo, X >( (alpha-beta)*(c-2*N), c*(c-2) )
-				   - jacobi< N-2, X, Algo >( alpha, beta ) *2*(a-1)*(b-1)*c )/( 2*(c-2)*N*(c-N) );
+			return ( jacobi< N-1, X >( alpha, beta ) *(c-1)*polynomial< horner_fma, X >( (alpha-beta)*(c-2*N), c*(c-2) )
+				   - jacobi< N-2, X >( alpha, beta ) *2*(a-1)*(b-1)*c )/( 2*(c-2)*N*(c-N) );
 		}
 	}
 
 	/// Generalized Laguerre polynomials: https://en.wikipedia.org/wiki/Laguerre_polynomials
-	template< std::size_t N, poly::floating X = double, typename Algo = horner_fma >
+	template< std::size_t N, poly::floating X = double >
 	constexpr auto laguerre_generalized( const X a ) noexcept {
-		if      constexpr( N == 0 )		return high_one< 0, X, Algo >;
-		else if constexpr( N == 1 )		return polynomial< Algo, X >( 1 + a, -1 );
+		if      constexpr( N == 0 )	return high_one< 0, X >;
+		else if constexpr( N == 1 )	return polynomial< horner_fma, X >( 1 + a, -1 );
 		else {
-			return (  laguerre_generalized< N-1, X, Algo >( a ) * polynomial< Algo, X >( ( N << 1 ) - 1 + a, -1 )
-			  		- laguerre_generalized< N-2, X, Algo >( a ) * ( N - 1 + a ) )/N;
+			return (  laguerre_generalized< N-1, X >( a ) * polynomial< horner_fma, X >( ( N << 1 ) - 1 + a, -1 )
+			  		- laguerre_generalized< N-2, X >( a ) * ( N - 1 + a ) )/N;
 		}
 	}
 
 	/// Laguerre polynomials: https://en.wikipedia.org/wiki/Laguerre_polynomials
-	template< std::size_t N, poly::floating X = double, typename Algo = horner_fma >
-	constexpr auto laguerre		  = laguerre_generalized< N, X, Algo >( X{} );
+	template< std::size_t N, poly::floating X = double >
+	constexpr auto laguerre		  = laguerre_generalized< N, X >( X{} );
 
 	/// Legendre polynomials: https://en.wikipedia.org/wiki/Legendre_polynomials
 	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
-	template< std::size_t N, poly::floating X = double, typename Algo = horner_even_or_odd< N + 1 > >
-	constexpr auto legendre		  = ( shift< 1 >( ( 2*N-1 )*legendre< N-1, X, Algo > ) 
-												- (   N-1 )*legendre< N-2, X, Algo > )/N;
-	template< poly::floating X, typename Algo >	constexpr auto legendre< 0, X, Algo > = all_one < 1, X, Algo >;
-	template< poly::floating X, typename Algo >	constexpr auto legendre< 1, X, Algo > = high_one< 1, X, Algo >;
+	template< std::size_t N, poly::floating X = double >
+	constexpr auto legendre		  = ( shift< 1 >( ( 2*N-1 )*legendre< N-1, X > ) - ( N-1 )*legendre< N-2, X > )/N;
+	template< poly::floating X >	constexpr auto legendre< 0, X > = high_one< 0, X >;
+	template< poly::floating X >	constexpr auto legendre< 1, X > = high_one< 1, X >;
 
 	/// Lucas polynomials: https://en.wikipedia.org/wiki/Fibonacci_polynomials
 	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
-	template< std::size_t N, poly::floating X = double, typename Algo = horner_even_or_odd< N+1 > >
-	constexpr auto lucas		  = shift< 1 >( lucas< N-1, X, Algo > ) + lucas< N-2, X, Algo >;
-	template< poly::floating X, typename Algo >	constexpr auto lucas< 0, X, Algo > = all_one < 1, X, Algo >*2;
-	template< poly::floating X, typename Algo >	constexpr auto lucas< 1, X, Algo > = high_one< 1, X, Algo >;
+	template< std::size_t N, poly::floating X = double >
+	constexpr auto lucas		  = shift< 1 >( lucas< N-1, X > ) + lucas< N-2, X >;
+	template< poly::floating X >	constexpr auto lucas< 0, X > = High_one< 0, X >( 2 );
+	template< poly::floating X >	constexpr auto lucas< 1, X > = high_one< 1, X >;
 
 	/// Shapiro polynomials of the first kind: https://en.wikipedia.org/wiki/Shapiro_polynomials
-	template< std::size_t N, poly::floating X = double, typename Algo = horner_fma >
-	constexpr auto shapiro1		  = shapiro< N, X, Algo >(  1 );
+	template< std::size_t N, poly::floating X = double >
+	constexpr auto shapiro1		  = shapiro< N, X >(  1 );
 
 	/// Shapiro polynomials of the second kind: https://en.wikipedia.org/wiki/Shapiro_polynomials
-	template< std::size_t N, poly::floating X = double, typename Algo = horner_fma >
-	constexpr auto shapiro2		  = shapiro< N, X, Algo >( -1 );
+	template< std::size_t N, poly::floating X = double >
+	constexpr auto shapiro2		  = shapiro< N, X >( -1 );
 
 	/// Touchard polynomials: https://en.wikipedia.org/wiki/Touchard_polynomials
-	template< std::size_t N, poly::floating X = double, typename Algo = horner_fma >
-	constexpr auto touchard		  = Touchard< N, X, Algo >();
+	template< std::size_t N, poly::floating X = double >
+	constexpr auto touchard		  = Touchard< N, X >();
 
 	/// Wilkinsons polynomial: https://en.wikipedia.org/wiki/Wilkinson%27s_polynomial
-	template< typename Algo = horner_fma >
-	constexpr auto wilkinsons	  = polynomial< Algo >( 
+	constexpr auto wilkinsons	  = polynomial< horner_fma >( 
 		  2'432'902'008'176'640'000.0L, -8752'948'036'761'600'000.0L, 13803'759'753'640'704'000.0L,
 		-12'870'931'245'150'988'800.0L,  8037'811'822'645'051'776.0L, -3599'979'517'947'607'200.0L, 
 		  1'206'647'803'780'373'360.0L,  -311'333'643'161'390'640.0L,    63'030'812'099'294'896.0L, 
@@ -379,7 +376,7 @@ namespace pax::poly::test {
 		static_assert(  touchard< 5 >( 1 ) == 0.0 + 1 + 15 + 25 + 10 + 1 );
 	}
 	namespace wilkinsons_ {
-		static_assert( wilkinsons<>( 1.0 ) == 0.0 );
+		static_assert( wilkinsons( 1.0 ) == 0.0 );
 	}
 #endif
 }	// namespace pax::poly::test
