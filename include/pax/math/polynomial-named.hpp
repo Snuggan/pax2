@@ -7,57 +7,38 @@
 
 namespace pax::poly {
 
+	template< std::size_t N, poly::floating X >	constexpr auto shapiro( const int alternative_ );
+	template< std::size_t N, poly::floating X >	constexpr auto Touchard();
+
+
+	/// A polynomial with all coefficients equal to c_.
 	template< std::size_t N, poly::floating X >
-	constexpr auto All_one( const X c_ = 1 ) {
+	constexpr auto All_one( const X c_ ) {
 		Polynomial< horner_fma, std::decay_t< X >, N >	res;
-		for( auto & c : res )							c = c_;
+		res.fill( c_ );
 		return res;
 	};
 
+	/// A polynomial with all coefficients equal to 1.
+	template< std::size_t N, poly::floating X = double >
+	constexpr auto all_one		  = All_one< N, X >( 1 );
+	
+	/// c_*x^N, a polynomial with all coefficients equal to zero, except c_*x^N.
 	template< std::size_t N, poly::floating X >
-	constexpr auto High_one( const X c_ = 1 ) {
+	constexpr auto High_one( const X c_ ) {
 		Polynomial< horner_even_or_odd< ( N+1 ) >, std::decay_t< X >, N+1 >	res{};
 		res.back() = c_;
 		return res;
 	};
 
-	template< std::size_t N, poly::floating X >
-	constexpr auto shapiro( const int alternative_ ) {
-		constexpr std::size_t 			Sz = std::size_t( 1u ) << N;
-		if      constexpr( N == 0 )		return polynull< X, horner_fma >;
-		else if constexpr( N == 1 )		return polynomial< horner_fma, X >( 1, alternative_ );
-		else {
-			auto res		  = Polynomial< horner_fma, X, Sz >();
-			res[ 0 ]		  = res[ 1 ] = res[ 2 ] = 1;
-			res[ 3 ]		  = -1;
-			std::size_t half  = 2u;
-			while( ( half <<= 1 ) < Sz ) {
-				std::copy(    res.begin(), res.begin() + half/2u, res.begin() + half );
-				auto ptr0   = res.begin()        + ( half >> 1 );
-				auto ptr2   = res.begin() + half + ( half >> 1 );
-				while( ptr0 < res.begin() + half )	*( ptr2++ ) = -*( ptr0++ );
-			}
-			if( alternative_ < 0 )
-				for( auto ptr = res.begin() + Sz/2; ptr < res.end(); ++ptr )	*ptr = -*ptr;
-			return res;
-		}
-	};
-
-	template< std::size_t N, poly::floating X >
-	constexpr auto Touchard() {
-		if      constexpr( N == 0 )		return polynull< X, horner_fma_even >;
-		else if constexpr( N == 1 )		return High_one< 1, X >();
-		else {
-			constexpr auto temp		  = Touchard< N-1, X >();
-			return shift< 1 >( temp + derivate( temp ) );
-		}
-	};
-
-
+	/// x^N, a polynomial with all coefficients equal to zero, except x^N.
+	template< std::size_t N, poly::floating X = double >
+	constexpr auto high_one		  = High_one< N, X >( 1 );
+	
 	/// Abel polynomials: https://en.wikipedia.org/wiki/Abel_polynomials
 	template< std::size_t N, poly::floating X = double >
 	constexpr auto abel( const std::size_t a ) {
-		if constexpr( N == 0 )			return High_one< 0, X >();
+		if constexpr( N == 0 )			return high_one< 0, X >;
 		else {
 			Polynomial< horner_fma, X, N+1 >	res{};
 			res[ 1 ]						  = 1;
@@ -67,14 +48,6 @@ namespace pax::poly {
 			return res;
 		}
 	};
-	
-	/// Apolynomial with all coefficients equal to one.
-	template< std::size_t N, poly::floating X = double >
-	constexpr auto all_one		  = All_one< N, X >();
-	
-	/// x^N, a polynomial with all coefficients equal to zero, except x^N.
-	template< std::size_t N, poly::floating X = double >
-	constexpr auto high_one		  = High_one< N, X >();
 	
 	/// Bessel polynomials: https://en.wikipedia.org/wiki/Bessel_polynomials
 	template< std::size_t N, poly::floating X = double >
@@ -106,7 +79,7 @@ namespace pax::poly {
 	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
 	template< std::size_t N, poly::floating X = double >
 	constexpr auto dickson1( const X a ) noexcept {
-		if      constexpr( N == 0 )	return polynull< X, horner_fma_even >;
+		if      constexpr( N == 0 )	return polynull< X >;
 		else if constexpr( N == 1 )	return high_one< 1, X >;
 		else if constexpr( N == 2 )	return polynomial< horner_fma_even, X >( -2*a, 0, 1 );
 		else						return shift< 1 >( dickson1< N-1, X >( a ) ) - a*dickson1< N-2, X >( a );
@@ -125,7 +98,7 @@ namespace pax::poly {
 	/// Uses quicker horner algorithm that ignores the zero valued coefficients.
 	template< std::size_t N, poly::floating X = double >
 	constexpr auto fibonacci	  = shift< 1 >( fibonacci< N-1, X > ) + fibonacci< N-2, X >;
-	template< poly::floating X >	constexpr auto fibonacci< 0, X > = polynull< X, horner_even_or_odd< 0 > >;
+	template< poly::floating X >	constexpr auto fibonacci< 0, X > = polynull< X >;
 	template< poly::floating X >	constexpr auto fibonacci< 1, X > = high_one< 0, X >;
 	template< poly::floating X >	constexpr auto fibonacci< 2, X > = high_one< 1, X >;
 
@@ -192,9 +165,40 @@ namespace pax::poly {
 	template< std::size_t N, poly::floating X = double >
 	constexpr auto shapiro2		  = shapiro< N, X >( -1 );
 
+	template< std::size_t N, poly::floating X >
+	constexpr auto shapiro( const int alternative_ ) {
+		constexpr std::size_t 		Sz = std::size_t( 1u ) << N;
+		if      constexpr( N == 0 )	return polynull< X >;
+		else if constexpr( N == 1 )	return polynomial< horner_fma, X >( 1, alternative_ );
+		else {
+			auto res			  = Polynomial< horner_fma, X, Sz >();
+			res[ 0 ]			  = res[ 1 ] = res[ 2 ] = 1;
+			res[ 3 ]			  = -1;
+			std::size_t half	  = 2u;
+			while( ( half <<= 1 ) < Sz ) {
+				std::copy( res.begin(), res.begin() + half/2u, res.begin() + half );
+				auto ptr0		  = res.begin()        + ( half >> 1 );
+				auto ptr2		  = res.begin() + half + ( half >> 1 );
+				while( ptr0 < res.begin() + half )	*( ptr2++ ) = -*( ptr0++ );
+			}
+			if( alternative_ < 0 )	for( auto ptr = res.begin() + Sz/2; ptr < res.end(); ++ptr )	*ptr = -*ptr;
+			return res;
+		}
+	};
+
 	/// Touchard polynomials: https://en.wikipedia.org/wiki/Touchard_polynomials
 	template< std::size_t N, poly::floating X = double >
 	constexpr auto touchard		  = Touchard< N, X >();
+
+	template< std::size_t N, poly::floating X >
+	constexpr auto Touchard() {
+		if      constexpr( N == 0 )		return polynull< X >;
+		else if constexpr( N == 1 )		return high_one< 1, X >;
+		else {
+			constexpr auto temp		  = Touchard< N-1, X >();
+			return shift< 1 >( temp + derivate( temp ) );
+		}
+	};
 
 	/// Wilkinsons polynomial: https://en.wikipedia.org/wiki/Wilkinson%27s_polynomial
 	constexpr auto wilkinsons	  = polynomial< horner_fma >( 
