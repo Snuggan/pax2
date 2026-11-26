@@ -19,6 +19,14 @@ namespace pax::test {
 		return true;
 	}
 
+	template< typename Algo, poly::floating F, std::size_t N >
+	void out( const Polynomial< Algo, F, N > & p_ ) {
+		std::cerr << p_ << ( Algo::odd_coeffs_only ? ", odd" : Algo::even_coeffs_only ? ", even" : ", odd+even" ) << '\n';
+	}
+
+
+
+
 	DOCTEST_TEST_CASE( "polynomial output" ) {
 		DOCTEST_FAST_CHECK_EQ( 0, 0
 			+	!check_output( pax::polynull<>,							"0" )

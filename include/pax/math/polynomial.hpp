@@ -22,7 +22,6 @@
 
 
 // Todo
-// - Check what happens with even/odd at division.
 // - Check what happens when shifting, multiplying, or dividing by a polynull.
 
 
@@ -46,10 +45,12 @@ namespace pax {
 
 	/// Horner's iterative method using std::fma. Specify if even or odd coeffs only – or both.
 	template< bool even_coeffs, bool odd_coeffs >	requires( even_coeffs || odd_coeffs )
-	class Horner {
-		static  constexpr bool every_2nd_coeff	  = !even_coeffs || !odd_coeffs;
+	struct Horner {
+		static  constexpr bool even_coeffs_only	  =  even_coeffs && !odd_coeffs;
 		static  constexpr bool odd_coeffs_only	  = !even_coeffs &&  odd_coeffs;
+		static  constexpr bool every_2nd_coeff	  = even_coeffs_only || odd_coeffs_only;
 
+	private:
 		template< std::size_t N, poly::floating F, std::size_t N0 >
 		static constexpr F quick( const std::span< F, N0 > p_, const auto x_ ) noexcept {
 			if constexpr( N <= 1+every_2nd_coeff+odd_coeffs_only )	return p_[ N0-1 ];
@@ -205,9 +206,6 @@ namespace pax {
 
 
 	namespace poly {
-		template< std::size_t N, std::size_t ...NN >
-		constexpr std::size_t newN = ( true && ... && ( NN != std::dynamic_extent ) ) ? N : std::dynamic_extent;
-
 		/// In a polynomial family even/odd often depend of the size N.
 		template< std::size_t N >	using  horner_even_or_odd = Horner< ( N & 1u ), !( N & 1u ) >;
 
@@ -223,11 +221,11 @@ namespace pax {
 
 		template< bool Addition, typename Algo0, poly::floating X0, std::size_t N0, 
 								 typename Algo1, poly::floating X1, std::size_t N1 >
-		[[nodiscard]] constexpr auto addsub(
+		[[nodiscard]] constexpr auto do_add_sub(
 			const Polynomial< Algo0, X0, N0 >	  & p0_,
 			const Polynomial< Algo1, X1, N1 >	  & p1_
 		) noexcept {
-			// If Alg0 and Algo1 vare the same, use it. If different, use horner_fma.
+			// If Alg0 and Algo1 are the same, use it.
 			using Algo = std::conditional_t< std::is_same_v< Algo0, Algo1 >, Algo0, horner_fma >;
 			Polynomial< Algo, std::decay_t< std::common_type_t< X0, X1 > >, std::max( N0, N1 ) >	p{};
 			if constexpr( !p.is_static )			p.resize( std::max( p0_.size(), p1_.size() ) );
@@ -240,18 +238,16 @@ namespace pax {
 
 		template<	typename Algo0, poly::floating X0, std::size_t N0, 
 					typename Algo1, poly::floating X1, std::size_t N1, std::size_t N >
-		struct merge { 
-			template< typename, typename >	struct Algo								{	using type = horner_fma;		};
-			template< bool A >	struct Algo< Horner< A, !A >, Horner<  A, !A > >	{	using type = horner_fma_even;	};
-			template< bool A >	struct Algo< Horner< A, !A >, Horner< !A,  A > >	{	using type = horner_fma_odd;	};
-
-			using type	  = Polynomial< typename Algo< Algo0, Algo1 >::type, 
-										std::decay_t< std::common_type_t< X0, X1 > >, 
-				 						poly::newN< N, N0, N1 > >;	
+		struct merge_mul_div { 
+			template< typename, typename >	struct merge_algos							{	using type = horner_fma;		};
+			template< bool A >	struct merge_algos< Horner< A, !A >, Horner<  A, !A > >	{	using type = horner_fma_even;	};
+			template< bool A >	struct merge_algos< Horner< A, !A >, Horner< !A,  A > >	{	using type = horner_fma_odd;	};
+			using type	  = Polynomial< typename merge_algos< Algo0, Algo1 >::type, std::decay_t< std::common_type_t< X0, X1 > >, 
+				 						( N0 != std::dynamic_extent && N1 != std::dynamic_extent ) ? N : std::dynamic_extent >;	
 		};
 		template<	typename Algo0, poly::floating X0, std::size_t N0, 
 					typename Algo1, poly::floating X1, std::size_t N1, std::size_t N >
-		using merge_t = typename merge< Algo0, X0, N0, Algo1, X1, N1, N >::type;	
+		using merge_mul_div_t = typename merge_mul_div< Algo0, X0, N0, Algo1, X1, N1, N >::type;	
 	}
 
 	/// Addition.
@@ -260,7 +256,7 @@ namespace pax {
 	[[nodiscard]] constexpr auto operator+(
 		const Polynomial< Algo0, X0, N0 >	  & p0_,
 		const Polynomial< Algo1, X1, N1 >	  & p1_
-	) noexcept {	return poly::addsub< true >( p0_, p1_ );	}
+	) noexcept {	return poly::do_add_sub< true >( p0_, p1_ );	}
 
 	template< typename Algo, poly::floating X0, std::size_t N0 >
 	[[nodiscard]] constexpr auto & operator+=(
@@ -289,7 +285,7 @@ namespace pax {
 	[[nodiscard]] constexpr auto operator-(
 		const Polynomial< Algo0, X0, N0 >	  & p0_,
 		const Polynomial< Algo1, X1, N1 >	  & p1_
-	) noexcept {	return poly::addsub< false >( p0_, p1_ );	}
+	) noexcept {	return poly::do_add_sub< false >( p0_, p1_ );	}
 
 	template< typename Algo, poly::floating X0, std::size_t N0 >
 	[[nodiscard]] constexpr auto & operator-=(
@@ -323,6 +319,10 @@ namespace pax {
 		else if( p_.size() > -n )			std::copy( p_.begin() - n, p_.end(), res.begin()     );
 		return res;
 	}
+	template< int n, typename Algo, poly::floating X >
+	[[nodiscard]] constexpr auto shift( const Polynomial< Algo, X, 0 > ) noexcept {
+		return polynull< X >;
+	}
 
 	/// Multiplication.
 	template< typename Algo0, poly::floating X0, std::size_t N0, 
@@ -330,11 +330,11 @@ namespace pax {
 	[[nodiscard]] constexpr auto operator*(
 		const Polynomial< Algo0, X0, N0 >	  & p0_,
 		const Polynomial< Algo1, X1, N1 >	  & p1_
-	) noexcept -> poly::merge_t< Algo0, X0, N0, Algo1, X1, N1, N0 + !N0 + N1 + !N1 - 1 > {
+	) noexcept -> poly::merge_mul_div_t< Algo0, X0, N0, Algo1, X1, N1, N0 + !N0 + N1 + !N1 - 1 > {
 		if( Every_2nd_coeff_v< Algo1 > && ( !Every_2nd_coeff_v< Algo0 > || ( p1_.size() < p0_.size() ) ) )
 			return p1_*p0_;						// It is more advantageous to do it in reverse order.
 		else {
-			poly::merge_t< Algo0, X0, N0, Algo1, X1, N1, N0 + !N0 + N1 + !N1 - 1 >		p{};
+			poly::merge_mul_div_t< Algo0, X0, N0, Algo1, X1, N1, N0 + !N0 + N1 + !N1 - 1 >		p{};
 			if constexpr( !p.is_static )		p.resize( p0_.size() + p1_.size() - 1 );
 			auto 								itr = p.begin();
 			for( const auto c0 : p0_ ) {
@@ -379,10 +379,10 @@ namespace pax {
 		const Polynomial< Algo0, X0, N0 >	  & p0_,
 		const Polynomial< Algo1, X1, N1 >	  & p1_
 	) noexcept {
-		poly::merge_t< Algo0, X0, N0, Algo1, X1, N1, N0 - N1 + 1 >	q{};
 		const std::size_t				d0	  = p0_.degree();
 		const std::size_t				d1	  = p1_.degree();
 		const std::size_t				d	  = d0 - d1;
+		poly::merge_mul_div_t< Algo0, X0, N0, Algo1, X1, N1, N0 - N1 + 1 >	q{};
 		if constexpr( !q.is_static )			q.resize( d + 1 );
 		q[ d ]								  = p0_[ d0 ] / p1_[ d1 ];
 		for( std::size_t i=d; i>0; ) {
@@ -441,6 +441,13 @@ namespace pax {
 		auto									dest  = res.data();
 		for( auto & x : p0_ )					*( ++dest ) = x/++i;
 		return res;
+	}
+	template< typename Algo, poly::floating X >
+	[[nodiscard]] constexpr auto integrate(
+		const Polynomial< Algo, X, 0 >, 
+		const std::type_identity_t< X >		  = 0
+	) noexcept {
+		return polynull< X >;
 	}
 
 }	// namespace pax
@@ -521,6 +528,8 @@ namespace pax::poly::test {
 		static_assert( polynull<> >  polynomial( -4 ) );
 	}
 	namespace poly::addition_ {
+		static_assert( polynull<> + p == p );
+		static_assert( p + polynull<> == p );
 		static_assert( polynomial( 0 ) + p == p );
 		static_assert( p + polynomial( 0 ) == p );
 		static_assert( p + p == polynomial( 2, 4, 6, 8, 10 ) );
@@ -528,6 +537,8 @@ namespace pax::poly::test {
 		static_assert( 1 + p == polynomial( 2, 3, 4, 5,  6 ) );
 	}
 	namespace poly::subtraction_ {
+		static_assert( polynull<> - p == 0 - p );
+		static_assert( p - polynull<> == p );
 		static_assert( p - polynomial( 0.0 ) == p );
 		static_assert( p - p + p == p );
 		static_assert( p - 1 == polynomial( 0,  1,  2,  3,  4 ) );
@@ -545,6 +556,8 @@ namespace pax::poly::test {
 		static_assert( shift< -9 >( p ) == pax::polynull<> );
 		static_assert( shift< -9 >( p ).extent == 0 );
 
+		static_assert( shift<  3 >( polynull<> ).extent == 0 );
+
 		// Check handling of odd/even.
 		constexpr auto even = polynomial< horner_fma_even >( 1.0, 0.0, 3.0, 0.0, 5.0 );
 		static_assert( even( 1 ) == 9 );
@@ -553,11 +566,35 @@ namespace pax::poly::test {
 		static_assert( shift< 2 >( even ) == polynomial( 0.0, 0.0, 1.0, 0.0, 3.0, 0.0, 5.0 ) );
 		static_assert( shift< 2 >( even )( 1 ) == 9 );
 	}
+
+	constexpr auto even3 = polynomial< horner_fma_even >( 1.0, 0, 3 );
+	constexpr auto even5 = polynomial< horner_fma_even >( 1.0, 0, 3, 0, 5 );
+	constexpr auto even6 = even5 * even3;
+	constexpr auto odd4  = polynomial< horner_fma_odd  >( 0.0, 2, 0, 4 );
+	constexpr auto odd6  = polynomial< horner_fma_odd  >( 0.0, 2, 0, 4, 0, 6 );
+	constexpr auto odd7  = odd6 * even3;
+	constexpr auto odd8  = odd4 *  odd6;
 	namespace poly::multiplication_ {
+		static_assert( p * polynull<> == polynull<> );
+		static_assert( polynull<> * p == polynull<> );
 		static_assert( p * polynomial( 1.0 ) == p );
 		static_assert( p * polynomial( 1.0, 2 ) == polynomial( 1.0, 4, 7, 10, 13, 10 ) );
 		static_assert( p * 2 == polynomial( 2, 4, 6, 8, 10 ) );
 		static_assert( 2 * p == polynomial( 2, 4, 6, 8, 10 ) );
+
+		namespace {	// Preservation of even/odd.
+			constexpr auto even_mul = even5 * even5;
+			static_assert( even_mul.every_2nd_coeff );
+			static_assert( even_mul( 2 ) != 0 );
+
+			constexpr auto odd_mul = odd6 * odd6;
+			static_assert( odd_mul.every_2nd_coeff );
+			static_assert( odd_mul( 2 ) != 0 );
+
+			constexpr auto odd_even_mul = odd6 * even5;
+			static_assert( odd_even_mul.every_2nd_coeff );
+			static_assert( odd_even_mul( 2 ) != 0 );
+		}
 	}
 	namespace poly::division_ {
 		constexpr auto p2			  = polynomial( 1.0, 2, 5 );
@@ -567,26 +604,21 @@ namespace pax::poly::test {
 		static_assert( p / 2 == polynomial( 0.5, 1, 1.5, 2, 2.5 ) );
 
 		namespace {	// Preservation of even/odd.
-			constexpr auto even3 = polynomial< horner_fma_even >( 1.0, 0, 3 );
-			constexpr auto even5 = polynomial< horner_fma_even >( 1.0, 0, 3, 0, 5 );
-			constexpr auto even6 = even5 * even3;
-			constexpr auto odd4  = polynomial< horner_fma_even >( 0.0, 2, 0, 4 );
-			constexpr auto odd6  = polynomial< horner_fma_even >( 0.0, 2, 0, 4, 0, 6 );
-			constexpr auto odd7  = odd6 * even3;
-			constexpr auto odd8  = odd4 *  odd6;
-
 			constexpr auto even_div = even6 / even5;
 			static_assert( even_div.every_2nd_coeff );
+			static_assert( even_div( 2 ) != 0 );
 			static_assert( even_div( 2 ) == even3( 2 ) );
 			static_assert( even_div == even3 );
 
 			constexpr auto odd_div = odd8 / odd6;
 			static_assert( odd_div.every_2nd_coeff );
+			static_assert( odd_div( 2 ) != 0 );
 			static_assert( odd_div( 2 ) == odd4( 2 ) );
 			static_assert( odd_div == odd4 );
 
 			constexpr auto odd_even_div = odd7 / even3;
 			static_assert( odd_even_div.every_2nd_coeff );
+			static_assert( odd_even_div( 2 ) != 0 );
 			static_assert( odd_even_div( 2 ) == odd6( 2 ) );
 			static_assert( odd_even_div == odd6 );
 		}
@@ -594,6 +626,8 @@ namespace pax::poly::test {
 	namespace poly::derivation {
 		constexpr auto pp0	  = Polynomial< horner_fma, double, 0 >();
 		static_assert( pp0 == derivate( pp0 ) );
+		static_assert( derivate( polynull<> ) == polynull<> );
+		static_assert( derivate( polynull<> ).extent == 0 );
 
 		constexpr auto pp	  = derivate( p );
 		static_assert( pp.extent == p.extent - 1 );
@@ -602,6 +636,8 @@ namespace pax::poly::test {
 	namespace poly::integration {
 		static_assert( integrate( p, 1.5 ) == polynomial( 1.5, 1, 1, 1, 1, 1 ) );
 		static_assert( derivate( integrate( p ) ) == p );
+		static_assert( integrate( polynull<> ) == polynull<> );
+		static_assert( integrate( polynull<> ).extent == 0 );
 	}
 #endif
 }	// namespace pax::poly::test
