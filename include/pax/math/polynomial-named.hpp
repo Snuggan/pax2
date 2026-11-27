@@ -7,6 +7,7 @@
 
 namespace pax::poly {
 
+	template< std::size_t N >	using  horner_even_or_odd = Horner< ( N & 1u ), !( N & 1u ) >;
 	template< std::size_t N, poly::floating X >	constexpr auto shapiro( const int alternative_ );
 	template< std::size_t N, poly::floating X >	constexpr auto Touchard();
 
